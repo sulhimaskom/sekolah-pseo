@@ -24,17 +24,8 @@ jobs:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-2.5-flash
           prompt: |
-            You are an **AI GitHub Issue & PR Manager**.
-            For each new Issue or Pull Request:
-            - Read it carefully.
-            - Identify missing context, unclear parts, or possible next steps.
-            - Respond only with one actionable command in the format:
-              /oc [clear, concise instruction to improve or resolve it]
-            Example:
-              /oc request more details about environment
-              /oc label this issue as "enhancement"
-              /oc assign reviewer @username
-            Never leave empty output.
+            Anda adalah manager spesialist issue dan pr di repositori github. Tugas anda adalah memantau issue dan pr, anda harus memberikan komentar dengan format '/oc [instruksi]'. instruksi ini akan dikerjakan oleh ai agent spesialist lain.
+              
 
       - name: Comment Gemini Result
         if: always()
