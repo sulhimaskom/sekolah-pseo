@@ -18,19 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ⚙️ Setup Node.js (dibutuhkan untuk npm install)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      # ⚡ Install Gemini CLI (versi dipin agar stabil)
-      - name: Install Gemini CLI
-        run: |
-          npm install -g @google/gemini-cli@1.2.3
-          echo "✅ Gemini CLI installed: $(gemini --version)"
-
       # 🚀 Jalankan Gemini Action
       - name: Run Gemini CLI Action
         uses: google-github-actions/run-gemini-cli@v0
