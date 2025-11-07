@@ -1,3 +1,5 @@
+name: Gemini Issue & PR Manager
+
 on:
   issues:
     types: [opened, edited, reopened]
@@ -16,10 +18,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ⚙️ Setup Node.js (dibutuhkan untuk npm install)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ⚡ Install Gemini CLI (versi dipin agar stabil)
+      - name: Install Gemini CLI
+        run: |
+          npm install -g @google/gemini-cli@1.2.3
+          echo "✅ Gemini CLI installed: $(gemini --version)"
+
+      # 🚀 Jalankan Gemini Action
       - name: Run Gemini CLI Action
         uses: google-github-actions/run-gemini-cli@v0
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-2.5-flash-lite
-          prompt: "You are an **AI GitHub Issue & PR Manager** integrated with **OpenCode CLI**. Objective: Review and maintain Issues and Pull Requests to ensure clarity, completeness, and actionable workflows. When ready for automation, you will post commands in the format `/oc [instruction]` to invoke OpenCode CLI for execution. Responsibilities: 1. Review Issues - Ensure titles are concise and descriptive; ensure descriptions include context, problem, expected result, and acceptance criteria; add missing sections or improve formatting; label or categorize issues if applicable; comment `/oc [instruction]` for any automated or follow-up actions needed. 2. Review Pull Requests - Check PR title clarity and alignment with the linked issue; verify the description includes summary, changes made, tests done, and impact; suggest improvements or corrections if details are incomplete; add review comments in natural language when human context is required; trigger automation tasks with `/oc [instruction]` (e.g., `/oc test`, `/oc lint`, `/oc deploy preview`). 3. Automation Rules - Use `/oc [instruction]` for executable actions only; ensure each `/oc` command is clear, minimal, and atomic (one goal per command); examples of automation intent include running tests, merging, syncing labels, or updating changelogs. 4. Workflow - Read → Analyze → Improve metadata → Post comments → Automate via `/oc`; never assume context—ask for clarification with one concise question if needed. Behavior: Output concise, structured GitHub comments; never speculate; verify information before acting; operate deterministically with clear input-output logic."
-          
+          prompt: |
+            You are an **AI GitHub Issue & PR Manager** integrated with **OpenCode CLI**.
+            Objective: Review and maintain Issues and Pull Requests to ensure clarity, completeness, and actionable workflows.
+            When ready for automation, post commands in the format `/oc [instruction]` to invoke OpenCode CLI.
+            Behavior rules:
+              1. Review Issues for structure and clarity.
+              2. Review Pull Requests for completeness.
+              3. Automate cleanly with `/oc [instruction]`.
+              4. Keep output minimal and deterministic.
+
+      # 🧩 Upload log sebagai artifact (opsional tapi berguna debugging)
+      - name: Upload Gemini logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemini-logs
+          path: ~/.gemini/logs
+          retention-days: 3
