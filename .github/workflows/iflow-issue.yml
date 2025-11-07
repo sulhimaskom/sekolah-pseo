@@ -5,6 +5,8 @@ on:
     types: [opened, reopened]
   issue_comment:
     types: [created]
+  pull_request:
+    types: [closed]
   workflow_dispatch:
     inputs:
       issue_number:
@@ -18,7 +20,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: '${{ github.workflow }}-${{ github.event.issue.number }}'
+  group: '${{ github.workflow }}-${{ github.event.issue.number || github.run_id }}'
   cancel-in-progress: true
 
 defaults:
@@ -36,13 +38,15 @@ jobs:
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
       )
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout repository
+      - name: Checkout (shallow)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Run iFlow PR Specialist
-        id: iflow_pr
         uses: iflow-ai/iflow-cli-action@v2.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,42 +56,62 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         with:
           api_key: ${{ secrets.IFLOW_API_KEY }}
-          timeout: "3600"
-          debug: "true"
+          timeout: "1200"
+          debug: "false"
           prompt: |
             ## Role
-            You are a PR Specialist AI that handles GitHub issues end-to-end.
+            You are an efficient PR Specialist AI. Analyze, label, solve, and create a PR with minimal resource usage.
 
             ## Tasks
-            1. Analyze the issue title and body.
-            2. Add relevant labels (`kind/*`, `priority/*`) using:
-               `gh issue edit "${ISSUE_NUMBER}" --add-label "label1,label2"`
-            3. Remove "status/needs-triage" if present.
-            4. Solve the issue by creating a fix or enhancement in code.
-            5. Commit all changes with:
-               `git checkout -b fix/issue-${ISSUE_NUMBER}`
-               `git add . && git commit -m "fix: resolve issue #${ISSUE_NUMBER}"`
-            6. Push and open a pull request:
-               `git push origin fix/issue-${ISSUE_NUMBER}`
-               `gh pr create --title "Fix: #${ISSUE_NUMBER}" --body "Auto-resolved by iFlow PR Specialist" --head fix/issue-${ISSUE_NUMBER} --base main`
-            7. Comment on the issue:
-               `"✅ Issue resolved automatically. PR created for review."`
+            1. Identify and apply the correct labels (`kind/*`, `priority/*`).
+               - `gh issue edit "${ISSUE_NUMBER}" --add-label "label1,label2"`
+               - Remove "status/needs-triage" if present.
+            2. Implement the smallest necessary fix or enhancement.
+            3. Validate build or syntax if possible.
+            4. Create and push branch:
+               ```
+               git checkout -b fix/issue-${ISSUE_NUMBER}
+               git add .
+               git commit -m "fix: resolve issue #${ISSUE_NUMBER}"
+               git push origin fix/issue-${ISSUE_NUMBER}
+               ```
+            5. Open PR:
+               ```
+               gh pr create --title "Fix: #${ISSUE_NUMBER}" \
+                 --body "Auto-resolved by iFlow PR Specialist" \
+                 --head fix/issue-${ISSUE_NUMBER} --base main
+               ```
+            6. Add comment:
+               `gh issue comment "${ISSUE_NUMBER}" --body "✅ Issue resolved automatically. PR created for review."`
 
             ## Notes
-            - Do not ask for input.
-            - Use minimal commits.
-            - Ensure no dirty branches before push.
-            - Build must succeed before PR creation.
+            - Stop if no code changes.
+            - Avoid unnecessary commands.
+            - Always ensure clean branch before push.
 
-      - name: Post Failure Comment
-        if: failure()
+  auto-close:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-close related issue
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.rest.issues.createComment({
-              owner: '${{ github.repository }}'.split('/')[0],
-              repo: '${{ github.repository }}'.split('/')[1],
-              issue_number: '${{ github.event.issue.number }}',
-              body: '❌ iFlow PR Specialist failed. Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-            })
+            const prBody = context.payload.pull_request.body || "";
+            const issueRef = prBody.match(/#(\d+)/);
+            if (issueRef) {
+              const issueNumber = parseInt(issueRef[1]);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: "🎉 PR merged! Issue closed automatically by iFlow PR Specialist."
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: "closed"
+              });
+            }
