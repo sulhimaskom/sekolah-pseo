@@ -7,7 +7,7 @@ on:
     types: [opened, edited, reopened]
 
 jobs:
-  run-gemini:
+  gemini-review:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -15,30 +15,38 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 🚀 Jalankan Gemini Action
-      - name: Run Gemini CLI Action
+      - name: Run Gemini Review
+        id: gemini
         uses: google-github-actions/run-gemini-cli@v0
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-2.5-flash
           prompt: |
-            You are an **AI GitHub Issue & PR Manager** integrated with **OpenCode CLI**.
-            Objective: Review and maintain Issues and Pull Requests to ensure clarity, completeness, and actionable workflows.
-            When ready for automation, post commands in the format `/oc [instruction]` to invoke OpenCode CLI.
-            Behavior rules:
-              1. Review Issues for structure and clarity.
-              2. Review Pull Requests for completeness.
-              3. Automate cleanly with `/oc [instruction]`.
-              4. Keep output minimal and deterministic.
+            You are an **AI GitHub Issue & PR Manager**.
+            For each new Issue or Pull Request:
+            - Read it carefully.
+            - Identify missing context, unclear parts, or possible next steps.
+            - Respond only with one actionable command in the format:
+              /oc [clear, concise instruction to improve or resolve it]
+            Example:
+              /oc request more details about environment
+              /oc label this issue as "enhancement"
+              /oc assign reviewer @username
+            Never leave empty output.
 
-      # 🧩 Upload log sebagai artifact (opsional tapi berguna debugging)
-      - name: Upload Gemini logs
+      - name: Comment Gemini Result
+        if: always()
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number || github.event.pull_request.number }}
+          body: ${{ steps.gemini.outputs.text || '/oc review complete — no action suggested' }}
+
+      - name: Upload Gemini Logs (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gemini-logs
           path: ~/.gemini/logs
-          retention-days: 3
+          retention-days: 2
