@@ -1,2 +1,21 @@
-# sekolah-pseo
-Static site generator for Indonesian schools dataset (pSEO)
+# Sekolah PSEO
+
+这是学校 PSEO 项目的文档。
+
+## 目录结构
+
+- `src/` - 源代码
+- `tests/` - 测试文件
+- `scripts/` - 脚本文件
+- `docs/` - 文档文件
+
+## 开发指南
+
+1. 克隆仓库
+2. 安装依赖
+3. 运行测试
+4. 提交更改
+
+## 贡献
+
+欢迎贡献代码和文档。
