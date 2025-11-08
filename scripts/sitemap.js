@@ -5,21 +5,21 @@
  * been populated with HTML files.
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const MAX_URLS_PER_SITEMAP = 50000;
 
 function collectUrls(dir, baseUrl) {
   const urls = [];
   function walk(current, relative) {
-    for (const entry of fs.readdirSync(current)) {
-      const fullPath = path.join(current, entry);
-      const relPath = path.join(relative, entry);
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory()) {
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      const relPath = path.join(relative, entry.name);
+      if (entry.isDirectory()) {
         walk(fullPath, relPath);
-      } else if (entry.endsWith('.html')) {
+      } else if (entry.name.endsWith('.html')) {
         urls.push(`${baseUrl}/${relPath.replace(/\\/g, '/')}`);
       }
     }
@@ -33,7 +33,10 @@ function writeSitemapFiles(urls, outDir) {
   for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
     const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
     const filename = `sitemap-${String(sitemapFiles.length + 1).padStart(3, '0')}.xml`;
-    const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    const content = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ]
       .concat(
         chunk.map(u => {
           return `  <url><loc>${u}</loc></url>`;
@@ -48,7 +51,10 @@ function writeSitemapFiles(urls, outDir) {
 }
 
 function writeSitemapIndex(files, outDir, baseUrl) {
-  const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+  const content = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+  ]
     .concat(
       files.map(f => {
         return `  <sitemap><loc>${baseUrl}/${f}</loc></sitemap>`;
@@ -60,7 +66,7 @@ function writeSitemapIndex(files, outDir, baseUrl) {
 }
 
 function generateSitemaps() {
-  const distDir = path.join(__dirname, '../dist');
+  const distDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../dist');
   const outDir = distDir; // put sitemap files in dist
   const baseUrl = 'https://example.com'; // TODO: update to your domain or Cloudflare pages URL
   const urls = collectUrls(distDir, baseUrl);
@@ -69,6 +75,6 @@ function generateSitemaps() {
   console.log(`Generated ${sitemapFiles.length} sitemap files with ${urls.length} URLs total`);
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   generateSitemaps();
 }

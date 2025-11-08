@@ -1,0 +1,26 @@
+{
+  "name": "sekolah-pseo",
+  "version": "1.0.0",
+  "description": "Static site generator for Indonesian schools dataset (pSEO)",
+  "main": "scripts/build-pages.js",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-pages.js",
+    "etl": "node scripts/etl.js",
+    "sitemap": "node scripts/sitemap.js",
+    "validate-links": "node scripts/validate-links.js",
+    "lint": "eslint scripts/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "indonesia",
+    "schools",
+    "static-site-generator"
+  ],
+  "author": "pSEO Project",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^9.39.1",
+    "eslint-formatter-unix": "^9.0.1"
+  }
+}

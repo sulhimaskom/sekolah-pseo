@@ -5,18 +5,18 @@
  * small datasets. For larger sites consider streaming and concurrency.
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 function collectHtmlFiles(dir) {
   const files = [];
   function walk(current) {
-    for (const entry of fs.readdirSync(current)) {
-      const fullPath = path.join(current, entry);
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory()) {
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
         walk(fullPath);
-      } else if (entry.endsWith('.html')) {
+      } else if (entry.name.endsWith('.html')) {
         files.push(fullPath);
       }
     }
@@ -27,12 +27,12 @@ function collectHtmlFiles(dir) {
 
 function extractLinks(html) {
   const matches = [];
-  const regex = /href=\"([^\"]+)\"/g;
+  const regex = /href="([^"]+)"/g;
   let match;
   while ((match = regex.exec(html)) !== null) {
     const href = match[1];
     // consider only relative links
-    if (href && !href.match(/^https?:/)) {
+    if (href && !/^https?:/.test(href)) {
       matches.push(href);
     }
   }
@@ -40,9 +40,11 @@ function extractLinks(html) {
 }
 
 function validateLinks() {
-  const distDir = path.join(__dirname, '../dist');
+  const distDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../dist');
   const htmlFiles = collectHtmlFiles(distDir);
   const broken = [];
+  const checkedPaths = new Set();
+  
   htmlFiles.forEach(file => {
     const content = fs.readFileSync(file, 'utf8');
     const links = extractLinks(content);
@@ -50,11 +52,19 @@ function validateLinks() {
       // Normalize path: remove query/hash
       const clean = link.split(/[?#]/)[0];
       const targetPath = path.join(path.dirname(file), clean);
+      
+      // Avoid checking the same path multiple times
+      if (checkedPaths.has(targetPath)) {
+        return;
+      }
+      checkedPaths.add(targetPath);
+      
       if (!fs.existsSync(targetPath)) {
         broken.push({ source: file, link: link });
       }
     });
   });
+  
   if (broken.length > 0) {
     console.warn('Found broken links:');
     broken.forEach(b => console.warn(`  ${b.source} -> ${b.link}`));
@@ -63,6 +73,6 @@ function validateLinks() {
   }
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   validateLinks();
 }

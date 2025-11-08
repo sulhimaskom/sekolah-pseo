@@ -16,7 +16,11 @@
  * @param {string} input
  * @returns {string}
  */
-function slugify(input) {
+export default function slugify(input) {
+  if (typeof input !== 'string') {
+    return '';
+  }
+  
   return input
     .toString()
     .normalize('NFD') // split accented characters into base + diacritic
@@ -26,5 +30,3 @@ function slugify(input) {
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-');
 }
-
-module.exports = slugify;

@@ -19,7 +19,7 @@
  * or `papaparse`.
  */
 
-const fs = require('fs');
+import fs from 'fs';
 
 /**
  * Parse a CSV string into an array of objects. This minimal parser assumes
@@ -50,6 +50,9 @@ function parseCsv(csvData) {
  * @returns {string}
  */
 function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
   return value
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
@@ -85,7 +88,7 @@ function normaliseRecord(raw) {
  */
 function run() {
   // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  const rawPath = new URL('../external/raw.csv', import.meta.url).pathname;
   if (!fs.existsSync(rawPath)) {
     console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
     process.exit(1);
@@ -95,15 +98,22 @@ function run() {
   const processed = rawRecords
     .map(normaliseRecord)
     .filter(rec => rec.npsn && /^\d+$/.test(rec.npsn));
+  
+  if (processed.length === 0) {
+    console.error('No valid records found in the dataset.');
+    process.exit(1);
+  }
+  
   const header = Object.keys(processed[0]);
   const lines = [header.join(',')].concat(
     processed.map(rec => header.map(h => rec[h]).join(','))
   );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
+  const outPath = new URL('../data/schools.csv', import.meta.url).pathname;
   fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   run();
 }
+
