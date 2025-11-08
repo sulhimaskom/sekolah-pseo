@@ -30,6 +30,9 @@ function loadSchools() {
   });
 }
 
+// Cache for directory paths to avoid repeated mkdirSync calls
+const dirCache = new Set();
+
 /**
  * Write a single school page. In a real implementation you would render an
  * Astro/Eleventy template here. For now we create a simple HTML stub with
@@ -49,7 +52,13 @@ function writeSchoolPage(school) {
     'kecamatan',
     slugify(school.kecamatan)
   );
-  fs.mkdirSync(outDir, { recursive: true });
+  
+  // Only create directory if not already created
+  if (!dirCache.has(outDir)) {
+    fs.mkdirSync(outDir, { recursive: true });
+    dirCache.add(outDir);
+  }
+  
   const filename = `${school.npsn}-${slugify(school.nama)}.html`;
   const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n</body>\n</html>`;
   fs.writeFileSync(path.join(outDir, filename), content, 'utf8');

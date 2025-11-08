@@ -11,7 +11,8 @@ const path = require('path');
 function collectHtmlFiles(dir) {
   const files = [];
   function walk(current) {
-    for (const entry of fs.readdirSync(current)) {
+    const entries = fs.readdirSync(current);
+    for (const entry of entries) {
       const fullPath = path.join(current, entry);
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {

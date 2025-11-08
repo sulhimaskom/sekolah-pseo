@@ -22,9 +22,7 @@
 const fs = require('fs');
 
 /**
- * Parse a CSV string into an array of objects. This minimal parser assumes
- * there are no quoted fields containing commas. It splits on newlines and
- * commas, which is sufficient for the initial pilot dataset.
+ * Parse a CSV string into an array of objects. Handles quoted fields properly.
  *
  * @param {string} csvData
  * @returns {Array<Object>}
@@ -32,11 +30,32 @@ const fs = require('fs');
 function parseCsv(csvData) {
   const lines = csvData.trim().split(/\r?\n/);
   const header = lines.shift().split(',').map(h => h.trim());
+  
   return lines.map(line => {
-    const values = line.split(',');
+    // Handle quoted fields properly
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    // Don't forget the last field
+    values.push(current.trim());
+    
     const record = {};
     header.forEach((h, i) => {
-      record[h] = values[i] ? values[i].trim() : '';
+      record[h] = values[i] || '';
     });
     return record;
   });

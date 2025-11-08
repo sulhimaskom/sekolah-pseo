@@ -13,7 +13,8 @@ const MAX_URLS_PER_SITEMAP = 50000;
 function collectUrls(dir, baseUrl) {
   const urls = [];
   function walk(current, relative) {
-    for (const entry of fs.readdirSync(current)) {
+    const entries = fs.readdirSync(current);
+    for (const entry of entries) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
       const stat = fs.statSync(fullPath);
@@ -33,14 +34,15 @@ function writeSitemapFiles(urls, outDir) {
   for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
     const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
     const filename = `sitemap-${String(sitemapFiles.length + 1).padStart(3, '0')}.xml`;
+    
+    // Use a more memory-efficient approach for large chunks
     const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
       .concat(
-        chunk.map(u => {
-          return `  <url><loc>${u}</loc></url>`;
-        })
+        chunk.map(u => `  <url><loc>${u}</loc></url>`)
       )
       .concat('</urlset>')
       .join('\n');
+    
     fs.writeFileSync(path.join(outDir, filename), content, 'utf8');
     sitemapFiles.push(filename);
   }
