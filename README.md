@@ -7,14 +7,23 @@
 - `src/` - 源代码
 - `tests/` - 测试文件
 - `scripts/` - 脚本文件
-- `docs/` - 文档文件
+- `data/` - 数据文件
 
 ## 开发指南
 
 1. 克隆仓库
-2. 安装依赖
-3. 运行测试
-4. 提交更改
+2. 安装依赖: `npm install`
+3. 运行ETL处理: `npm run etl`
+4. 构建页面: `npm run build`
+5. 生成站点地图: `npm run sitemap`
+6. 验证链接: `npm run validate-links`
+
+## 可用脚本
+
+- `npm run build` - 生成学校页面
+- `npm run etl` - 处理原始数据
+- `npm run sitemap` - 生成站点地图
+- `npm run validate-links` - 验证内部链接
 
 ## 贡献
 

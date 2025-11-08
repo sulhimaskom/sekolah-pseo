@@ -19,7 +19,7 @@
  * or `papaparse`.
  */
 
-const fs = require('fs');
+const fs = require('fs').promises;
 
 /**
  * Parse a CSV string into an array of objects. This minimal parser assumes
@@ -50,6 +50,9 @@ function parseCsv(csvData) {
  * @returns {string}
  */
 function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
   return value
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
@@ -80,30 +83,58 @@ function normaliseRecord(raw) {
 }
 
 /**
+ * Validate a normalized record to ensure it meets the required criteria.
+ *
+ * @param {Object} record
+ * @returns {boolean}
+ */
+function validateRecord(record) {
+  // Check that NPSN exists and is numeric
+  return record.npsn && /^\d+$/.test(record.npsn);
+}
+
+/**
  * Entry point: read raw data, normalise and write output. For now this
  * function simply reads from a single CSV file at `external/raw.csv`.
  */
-function run() {
+async function run() {
   // TODO: Update this path to point to the cloned repository data source.
   const rawPath = require('path').join(__dirname, '../external/raw.csv');
-  if (!fs.existsSync(rawPath)) {
+  try {
+    await fs.access(rawPath);
+  } catch {
     console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
     process.exit(1);
   }
-  const rawCsv = fs.readFileSync(rawPath, 'utf8');
+  
+  const rawCsv = await fs.readFile(rawPath, 'utf8');
   const rawRecords = parseCsv(rawCsv);
+  
+  console.log(`Loaded ${rawRecords.length} raw records`);
+  
   const processed = rawRecords
     .map(normaliseRecord)
-    .filter(rec => rec.npsn && /^\d+$/.test(rec.npsn));
+    .filter(validateRecord);
+    
+  console.log(`Processed ${processed.length} valid records`);
+  
+  if (processed.length === 0) {
+    console.error('No valid records found after processing');
+    process.exit(1);
+  }
+  
   const header = Object.keys(processed[0]);
   const lines = [header.join(',')].concat(
     processed.map(rec => header.map(h => rec[h]).join(','))
   );
   const outPath = require('path').join(__dirname, '../data/schools.csv');
-  fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
+  await fs.writeFile(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
 
 if (require.main === module) {
-  run();
+  run().catch(error => {
+    console.error('ETL process failed:', error);
+    process.exit(1);
+  });
 }

@@ -5,30 +5,31 @@
  * been populated with HTML files.
  */
 
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 
 const MAX_URLS_PER_SITEMAP = 50000;
 
-function collectUrls(dir, baseUrl) {
+async function collectUrls(dir, baseUrl) {
   const urls = [];
-  function walk(current, relative) {
-    for (const entry of fs.readdirSync(current)) {
+  async function walk(current, relative) {
+    const entries = await fs.readdir(current);
+    for (const entry of entries) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
-      const stat = fs.statSync(fullPath);
+      const stat = await fs.stat(fullPath);
       if (stat.isDirectory()) {
-        walk(fullPath, relPath);
+        await walk(fullPath, relPath);
       } else if (entry.endsWith('.html')) {
         urls.push(`${baseUrl}/${relPath.replace(/\\/g, '/')}`);
       }
     }
   }
-  walk(dir, '');
+  await walk(dir, '');
   return urls;
 }
 
-function writeSitemapFiles(urls, outDir) {
+async function writeSitemapFiles(urls, outDir) {
   const sitemapFiles = [];
   for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
     const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
@@ -41,13 +42,13 @@ function writeSitemapFiles(urls, outDir) {
       )
       .concat('</urlset>')
       .join('\n');
-    fs.writeFileSync(path.join(outDir, filename), content, 'utf8');
+    await fs.writeFile(path.join(outDir, filename), content, 'utf8');
     sitemapFiles.push(filename);
   }
   return sitemapFiles;
 }
 
-function writeSitemapIndex(files, outDir, baseUrl) {
+async function writeSitemapIndex(files, outDir, baseUrl) {
   const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     .concat(
       files.map(f => {
@@ -56,19 +57,22 @@ function writeSitemapIndex(files, outDir, baseUrl) {
     )
     .concat('</sitemapindex>')
     .join('\n');
-  fs.writeFileSync(path.join(outDir, 'sitemap-index.xml'), content, 'utf8');
+  await fs.writeFile(path.join(outDir, 'sitemap-index.xml'), content, 'utf8');
 }
 
-function generateSitemaps() {
+async function generateSitemaps() {
   const distDir = path.join(__dirname, '../dist');
   const outDir = distDir; // put sitemap files in dist
   const baseUrl = 'https://example.com'; // TODO: update to your domain or Cloudflare pages URL
-  const urls = collectUrls(distDir, baseUrl);
-  const sitemapFiles = writeSitemapFiles(urls, outDir);
-  writeSitemapIndex(sitemapFiles, outDir, baseUrl);
+  const urls = await collectUrls(distDir, baseUrl);
+  const sitemapFiles = await writeSitemapFiles(urls, outDir);
+  await writeSitemapIndex(sitemapFiles, outDir, baseUrl);
   console.log(`Generated ${sitemapFiles.length} sitemap files with ${urls.length} URLs total`);
 }
 
 if (require.main === module) {
-  generateSitemaps();
+  generateSitemaps().catch(error => {
+    console.error('Sitemap generation failed:', error);
+    process.exit(1);
+  });
 }
