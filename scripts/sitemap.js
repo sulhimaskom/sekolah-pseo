@@ -10,17 +10,38 @@ const path = require('path');
 
 const MAX_URLS_PER_SITEMAP = 50000;
 
+/**
+ * Collect all HTML URLs from the dist directory
+ * @param {string} dir - Directory to scan
+ * @param {string} baseUrl - Base URL for the site
+ * @returns {Array<string>} - Array of URLs
+ */
 function collectUrls(dir, baseUrl) {
   const urls = [];
   function walk(current, relative) {
-    for (const entry of fs.readdirSync(current)) {
+    // Security: Check if directory exists before reading
+    if (!fs.existsSync(current)) {
+      console.warn(`Directory ${current} does not exist`);
+      return;
+    }
+    
+    const entries = fs.readdirSync(current);
+    for (const entry of entries) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
+      
+      // Security: Skip hidden files and directories
+      if (entry.startsWith('.')) continue;
+      
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
         walk(fullPath, relPath);
       } else if (entry.endsWith('.html')) {
-        urls.push(`${baseUrl}/${relPath.replace(/\\/g, '/')}`);
+        // Security: Validate URL length
+        const url = `${baseUrl}/${relPath.replace(/\\/g, '/')}`;
+        if (url.length <= 2048) { // Standard URL length limit
+          urls.push(url);
+        }
       }
     }
   }
@@ -28,15 +49,29 @@ function collectUrls(dir, baseUrl) {
   return urls;
 }
 
+/**
+ * Write sitemap files with URL chunks
+ * @param {Array<string>} urls - Array of URLs to include
+ * @param {string} outDir - Output directory
+ * @returns {Array<string>} - Array of generated sitemap filenames
+ */
 function writeSitemapFiles(urls, outDir) {
   const sitemapFiles = [];
   for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
     const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
     const filename = `sitemap-${String(sitemapFiles.length + 1).padStart(3, '0')}.xml`;
-    const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    const content = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ]
       .concat(
         chunk.map(u => {
-          return `  <url><loc>${u}</loc></url>`;
+          // Security: Escape URL special characters
+          const escapedUrl = u.replace(/&/g, '&amp;')
+                              .replace(/</g, '&lt;')
+                              .replace(/>/g, '&gt;')
+                              .replace(/"/g, '&quot;');
+          return `  <url><loc>${escapedUrl}</loc></url>`;
         })
       )
       .concat('</urlset>')
@@ -47,11 +82,25 @@ function writeSitemapFiles(urls, outDir) {
   return sitemapFiles;
 }
 
+/**
+ * Write the sitemap index file
+ * @param {Array<string>} files - Array of sitemap filenames
+ * @param {string} outDir - Output directory
+ * @param {string} baseUrl - Base URL for the site
+ */
 function writeSitemapIndex(files, outDir, baseUrl) {
-  const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+  const content = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+  ]
     .concat(
       files.map(f => {
-        return `  <sitemap><loc>${baseUrl}/${f}</loc></sitemap>`;
+        // Security: Escape URL special characters
+        const escapedUrl = `${baseUrl}/${f}`.replace(/&/g, '&amp;')
+                                            .replace(/</g, '&lt;')
+                                            .replace(/>/g, '&gt;')
+                                            .replace(/"/g, '&quot;');
+        return `  <sitemap><loc>${escapedUrl}</loc></sitemap>`;
       })
     )
     .concat('</sitemapindex>')
@@ -59,10 +108,20 @@ function writeSitemapIndex(files, outDir, baseUrl) {
   fs.writeFileSync(path.join(outDir, 'sitemap-index.xml'), content, 'utf8');
 }
 
+/**
+ * Generate sitemaps for all HTML files in the dist directory
+ */
 function generateSitemaps() {
   const distDir = path.join(__dirname, '../dist');
   const outDir = distDir; // put sitemap files in dist
   const baseUrl = 'https://example.com'; // TODO: update to your domain or Cloudflare pages URL
+  
+  // Check if dist directory exists
+  if (!fs.existsSync(distDir)) {
+    console.warn('Dist directory does not exist. Creating it now.');
+    fs.mkdirSync(distDir, { recursive: true });
+  }
+  
   const urls = collectUrls(distDir, baseUrl);
   const sitemapFiles = writeSitemapFiles(urls, outDir);
   writeSitemapIndex(sitemapFiles, outDir, baseUrl);

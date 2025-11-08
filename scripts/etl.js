@@ -20,6 +20,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Parse a CSV string into an array of objects. This minimal parser assumes
@@ -36,7 +37,9 @@ function parseCsv(csvData) {
     const values = line.split(',');
     const record = {};
     header.forEach((h, i) => {
-      record[h] = values[i] ? values[i].trim() : '';
+      // Security: Limit field length to prevent potential DoS
+      const value = values[i] ? values[i].trim() : '';
+      record[h] = value.length > 1000 ? value.substring(0, 1000) : value;
     });
     return record;
   });
@@ -50,10 +53,21 @@ function parseCsv(csvData) {
  * @returns {string}
  */
 function sanitize(value) {
+  if (!value) return '';
   return value
+    .toString()
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
     .trim();
+}
+
+/**
+ * Validate NPSN (National School Identification Number)
+ * @param {string} npsn
+ * @returns {boolean}
+ */
+function validateNPSN(npsn) {
+  return npsn && /^\d{8}$/.test(npsn);
 }
 
 /**
@@ -80,26 +94,35 @@ function normaliseRecord(raw) {
 }
 
 /**
- * Entry point: read raw data, normalise and write output. For now this
- * function simply reads from a single CSV file at `external/raw.csv`.
+ * Entry point: read raw data, normalise and write output.
  */
 function run() {
-  // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  // Updated path to match the actual location of schools.csv
+  const rawPath = path.join(__dirname, '../schools.csv');
   if (!fs.existsSync(rawPath)) {
-    console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
+    console.error('Raw data file not found. Please ensure schools.csv exists in the project root.');
     process.exit(1);
   }
   const rawCsv = fs.readFileSync(rawPath, 'utf8');
   const rawRecords = parseCsv(rawCsv);
   const processed = rawRecords
     .map(normaliseRecord)
-    .filter(rec => rec.npsn && /^\d+$/.test(rec.npsn));
+    .filter(rec => validateNPSN(rec.npsn));
+  
+  if (processed.length === 0) {
+    console.error('No valid records found after processing.');
+    process.exit(1);
+  }
+  
   const header = Object.keys(processed[0]);
   const lines = [header.join(',')].concat(
-    processed.map(rec => header.map(h => rec[h]).join(','))
+    processed.map(rec => header.map(h => {
+      // Escape CSV values that contain commas or quotes
+      const value = rec[h] || '';
+      return value.includes(',') || value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value;
+    }).join(','))
   );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
+  const outPath = path.join(__dirname, '../schools.csv');
   fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
