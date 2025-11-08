@@ -1,7 +1,7 @@
 # iFlow CLI Automation Workflow
 #
 # This workflow orchestrates a suite of automated tasks using the
-iFlow CLI GitHub Action.  The goal is to empower a solo developer
+# iFlow CLI GitHub Action.  The goal is to empower a solo developer
 # to delegate issue triage, feature implementation, pull‑request
 # reviews, code optimisation and security hardening to an AI agent.
 # Each job leverages iFlow to analyse context, execute shell
