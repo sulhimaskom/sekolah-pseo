@@ -1,7 +1,7 @@
- # iFlow CLI Automation Workflow
+# iFlow CLI Automation Workflow
 #
 # This workflow orchestrates a suite of automated tasks using the
-# iFlow CLI GitHub Action.  The goal is to empower a solo developer
+iFlow CLI GitHub Action.  The goal is to empower a solo developer
 # to delegate issue triage, feature implementation, pull‑request
 # reviews, code optimisation and security hardening to an AI agent.
 # Each job leverages iFlow to analyse context, execute shell
@@ -71,8 +71,11 @@ jobs:
        contains(github.event.comment.body, '@iflow-cli /triage')) ||
       (github.event_name == 'workflow_dispatch' && inputs.issue_number)
     runs-on: ubuntu-latest
+    # Require write access so the triage job can create branches,
+    # push commits and open pull requests. Without `contents: write`
+    # the GitHub Actions token is read‑only and iFlow cannot push.
     permissions:
-      contents: read
+      contents: write
       issues: write
       pull-requests: write
     defaults:
