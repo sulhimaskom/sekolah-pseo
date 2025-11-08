@@ -27,3 +27,42 @@ jobs:
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
         with:
           model: iflowcn/qwen3-coder
+
+  # Consolidate other workflows functionality here
+  # This job handles nightly maintenance
+  maintenance:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run iFlow CLI for Repository Maintenance
+        uses: iflow-ai/iflow-cli-action@v2.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          api_key: ${{ secrets.IFLOW_API_KEY }}
+          timeout: '10800'
+          debug: 'false'
+          prompt: |
+            ## Role
+            You are an AI architect and security engineer performing
+            comprehensive maintenance on the repository.
+
+            ## Tasks
+            1. Analyse the entire codebase for performance bottlenecks,
+               deprecated APIs, and security vulnerabilities.
+            2. Generate optimised code or refactors where necessary to
+               improve readability, performance and modularity.
+            3. Consolidate duplicate or dead code. Remove unused files and
+               dependencies.
+            4. Upgrade dependencies to the latest stable versions,
+               respecting semantic versioning constraints.
+            5. Create a new branch and open a pull request with a summary
+               of the changes.
