@@ -1,55 +1,18 @@
-# iFlow CLI Automation Workflow
-#
-# This workflow orchestrates a suite of automated tasks using the
-# iFlow CLI GitHub Action.  The goal is to empower a solo developer
-# to delegate issue triage, feature implementation, pull‑request
-# reviews, code optimisation and security hardening to an AI agent.
-# Each job leverages iFlow to analyse context, execute shell
-# commands via the GitHub CLI (`gh`) and update the repository.
-#
-# To enable this workflow you must configure an `IFLOW_API_KEY` secret in
-# your repository.  You may also want to create a personal access
-# token with `repo`, `issues` and `pull_request` scopes and assign it
-# to `GITHUB_TOKEN` if you need to push commits or open pull requests.
-
-name: "iFlow CLI Automation"
-
-# Trigger the workflow on various events.  You can customise these
-# triggers to suit your development process.  By default the workflow
-# will respond to issue and pull request events, scheduled maintenance,
-# pushes to the default branch and manual dispatches.
+name: "🤖 iFlow CLI Automation"
 on:
-  # Handle new or reopened issues and comments to triage and optionally
-  # implement features.  Comments allow maintainers to explicitly invoke
-  # iFlow on a specific issue by mentioning "@iflow-cli /implement".
   issues:
     types: [opened, reopened]
   issue_comment:
     types: [created]
-
-  # Review pull requests whenever they are opened, reopened or updated
-  # (synchronised).  Maintainers can also trigger an additional review
-  # by adding a comment containing "@iflow-cli /review" on the PR.
   pull_request:
     types: [opened, reopened, synchronize]
   pull_request_review_comment:
     types: [created]
-
-  # Run optimisation and security hardening on pushes to the default
-  # branch.  Adjust the branch pattern if your default branch is
-  # something other than `main`.
   push:
     branches:
       - main
-
-  # Schedule a nightly maintenance run at 02:00 UTC (09:00 Asia/Jakarta)
-  # to perform architecture analysis, dependency updates and general
-  # housekeeping.  Change the cron expression as needed.
   schedule:
     - cron: '0 2 * * *'
-
-  # Allow manual triggers via the GitHub UI.  Maintainers can specify
-  # issue or pull request numbers to process on demand.
   workflow_dispatch:
     inputs:
       issue_number:
@@ -60,20 +23,14 @@ on:
         description: 'Optional: pull request number to review or apply changes'
         required: false
         type: number
-
 jobs:
-  # Job: triage and optionally implement issues
   triage_issue:
-    # Run only when triggered by issue events or manual dispatch with an issue number
     if: |
       github.event_name == 'issues' ||
       (github.event_name == 'issue_comment' &&
        contains(github.event.comment.body, '@iflow-cli /triage')) ||
       (github.event_name == 'workflow_dispatch' && inputs.issue_number)
     runs-on: ubuntu-latest
-    # Require write access so the triage job can create branches,
-    # push commits and open pull requests. Without `contents: write`
-    # the GitHub Actions token is read‑only and iFlow cannot push.
     permissions:
       contents: write
       issues: write
@@ -84,18 +41,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # Run iFlow CLI to classify the issue and apply labels.  When
-      # maintainers comment with "@iflow-cli /implement", the same prompt
-      # will also implement the requested feature by creating a branch,
-      # committing changes and opening a pull request.  The API key is
-      # sourced from repository secrets.  The `GITHUB_TOKEN` is passed
-      # via environment so iFlow can authenticate to GitHub CLI commands.
       - name: "Run iFlow CLI for Issue Triage and Implementation"
         uses: iflow-ai/iflow-cli-action@v2.1.0
         id: iflow_issue
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           ISSUE_TITLE: ${{ github.event.issue.title || 'manual' }}
           ISSUE_BODY: ${{ github.event.issue.body || '' }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
@@ -118,7 +68,7 @@ jobs:
             * The issue number is `${{ env.ISSUE_NUMBER }}` in
               repository `${{ env.REPOSITORY }}`.
             * You have access to `gh` commands authenticated with
-              `${{ env.GITHUB_TOKEN }}` and a checked‑out repository.
+              `${{ env.GH_TOKEN }}` and a checked‑out repository.
 
             ## Tasks
             1. List existing labels using `gh label list` and classify the
@@ -187,7 +137,7 @@ jobs:
         uses: iflow-ai/iflow-cli-action@v2.1.0
         id: iflow_review
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
           BASE_REF: ${{ github.event.pull_request.base.ref || 'main' }}
           HEAD_REF: ${{ github.event.pull_request.head.ref || '' }}
@@ -248,7 +198,7 @@ jobs:
         uses: iflow-ai/iflow-cli-action@v2.1.0
         id: iflow_apply_review
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           COMMENT_ID: ${{ github.event.comment.id }}
         with:
@@ -263,7 +213,7 @@ jobs:
             ## Context
             * Pull request number: `${{ env.PR_NUMBER }}`
             * Review comment ID: `${{ env.COMMENT_ID }}`
-            * You have the repository checked out and the `GITHUB_TOKEN`
+            * You have the repository checked out and the `GH_TOKEN`
               available for authentication.
 
             ## Tasks
@@ -310,7 +260,7 @@ jobs:
         uses: iflow-ai/iflow-cli-action@v2.1.0
         id: iflow_maintenance
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           REPOSITORY: ${{ github.repository }}
         with:
           api_key: ${{ secrets.IFLOW_API_KEY }}
