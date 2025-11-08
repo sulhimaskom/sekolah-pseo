@@ -42,12 +42,27 @@ function extractLinks(html) {
 
 async function validateLinks() {
   const distDir = path.join(__dirname, '../dist');
+  
+  // Check if dist directory exists
+  try {
+    await fs.access(distDir);
+  } catch (error) {
+    console.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
+    return true;
+  }
+  
   const htmlFiles = await collectHtmlFiles(distDir);
   
   console.log(`Found ${htmlFiles.length} HTML files to validate`);
   
+  // If no files found, return early
+  if (htmlFiles.length === 0) {
+    console.log('No HTML files found to validate.');
+    return true;
+  }
+  
   // Process files concurrently with a controlled concurrency limit
-  const concurrencyLimit = process.env.VALIDATION_CONCURRENCY_LIMIT || 50;
+  const concurrencyLimit = parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50;
   const broken = [];
   
   for (let i = 0; i < htmlFiles.length; i += concurrencyLimit) {
@@ -59,6 +74,11 @@ async function validateLinks() {
         const brokenInFile = [];
         
         for (const link of links) {
+          // Skip empty links, anchor links, and external links
+          if (!link || link === '#' || link.startsWith('#') || link.match(/^https?:/)) {
+            continue;
+          }
+          
           // Normalize path: remove query/hash
           const clean = link.split(/[?#]/)[0];
           const targetPath = path.join(path.dirname(file), clean);

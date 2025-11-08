@@ -12,6 +12,21 @@ const fs = require('fs').promises;
 const path = require('path');
 const slugify = require('./slugify');
 
+// Ensure dist directory exists
+const distDir = path.join(__dirname, '../dist');
+
+/**
+ * Ensure the dist directory exists.
+ */
+async function ensureDistDir() {
+  try {
+    await fs.mkdir(distDir, { recursive: true });
+  } catch (error) {
+    console.error(`Failed to create dist directory: ${error.message}`);
+    throw error;
+  }
+}
+
 /**
  * Load the processed schools CSV into an array of objects.
  */
@@ -111,6 +126,9 @@ async function writeSchoolPagesConcurrently(schools, concurrencyLimit = 100) {
  * flags to limit by region to adhere to the monthly build cap.
  */
 async function build() {
+  // Ensure dist directory exists before building
+  await ensureDistDir();
+  
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
   
