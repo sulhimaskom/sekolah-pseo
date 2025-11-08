@@ -60,19 +60,25 @@ async function writeSchoolPage(school) {
     throw new Error('School object missing required fields');
   }
   
+  // Pre-compute slugs to avoid redundant calls
+  const provinsiSlug = slugify(school.provinsi);
+  const kabKotaSlug = slugify(school.kab_kota);
+  const kecamatanSlug = slugify(school.kecamatan);
+  const namaSlug = slugify(school.nama);
+  
   const outDir = path.join(
     __dirname,
     '..',
     'dist',
     'provinsi',
-    slugify(school.provinsi),
+    provinsiSlug,
     'kabupaten',
-    slugify(school.kab_kota),
+    kabKotaSlug,
     'kecamatan',
-    slugify(school.kecamatan)
+    kecamatanSlug
   );
   await fs.mkdir(outDir, { recursive: true });
-  const filename = `${school.npsn}-${slugify(school.nama)}.html`;
+  const filename = `${school.npsn}-${namaSlug}.html`;
   const content = `<!DOCTYPE html>\n<html lang=\"id\">\n<head>\n  <meta charset=\"utf-8\" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
   await fs.writeFile(path.join(outDir, filename), content, 'utf8');
 }
