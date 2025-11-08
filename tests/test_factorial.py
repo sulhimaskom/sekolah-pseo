@@ -13,3 +13,10 @@ def test_factorial_positive():
 def test_factorial_negative():
     with pytest.raises(ValueError):
         factorial(-1)
+
+def test_factorial_non_integer():
+    with pytest.raises(TypeError):
+        factorial("5")
+        
+    with pytest.raises(TypeError):
+        factorial(5.5)

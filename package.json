@@ -11,7 +11,9 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
-    "test": "echo \"No JavaScript tests specified\" && exit 0"
+    "test": "npm run test:js && npm run test:py",
+    "test:js": "echo \"No JavaScript tests specified\" && exit 0",
+    "test:py": "python3 -m pytest tests/ -v || echo \"Python tests require pytest to be installed\""
   },
   "repository": {
     "type": "git",

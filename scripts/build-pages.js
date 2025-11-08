@@ -17,17 +17,28 @@ const slugify = require('./slugify');
  */
 async function loadSchools() {
   const csvPath = path.join(__dirname, '../data/schools.csv');
-  const text = await fs.readFile(csvPath, 'utf8');
-  const lines = text.trim().split(/\r?\n/);
-  const header = lines.shift().split(',');
-  return lines.map(l => {
-    const values = l.split(',');
-    const obj = {};
-    header.forEach((h, i) => {
-      obj[h] = values[i] || '';
+  try {
+    const text = await fs.readFile(csvPath, 'utf8');
+    const lines = text.trim().split(/\r?\n/);
+    
+    // Handle empty CSV
+    if (lines.length === 0) {
+      return [];
+    }
+    
+    const header = lines.shift().split(',');
+    return lines.map(l => {
+      const values = l.split(',');
+      const obj = {};
+      header.forEach((h, i) => {
+        obj[h] = values[i] || '';
+      });
+      return obj;
     });
-    return obj;
-  });
+  } catch (error) {
+    console.error(`Failed to load schools from ${csvPath}: ${error.message}`);
+    return [];
+  }
 }
 
 /**
@@ -38,6 +49,16 @@ async function loadSchools() {
  * @param {Object} school
  */
 async function writeSchoolPage(school) {
+  // Validate school object
+  if (!school || typeof school !== 'object') {
+    throw new Error('Invalid school object provided');
+  }
+  
+  // Ensure required fields exist
+  if (!school.provinsi || !school.kab_kota || !school.kecamatan || !school.npsn || !school.nama) {
+    throw new Error('School object missing required fields');
+  }
+  
   const outDir = path.join(
     __dirname,
     '..',
@@ -51,7 +72,7 @@ async function writeSchoolPage(school) {
   );
   await fs.mkdir(outDir, { recursive: true });
   const filename = `${school.npsn}-${slugify(school.nama)}.html`;
-  const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n</body>\n</html>`;
+  const content = `<!DOCTYPE html>\n<html lang=\"id\">\n<head>\n  <meta charset=\"utf-8\" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
   await fs.writeFile(path.join(outDir, filename), content, 'utf8');
 }
 

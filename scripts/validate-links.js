@@ -47,7 +47,7 @@ async function validateLinks() {
   console.log(`Found ${htmlFiles.length} HTML files to validate`);
   
   // Process files concurrently with a controlled concurrency limit
-  const concurrencyLimit = 50;
+  const concurrencyLimit = process.env.VALIDATION_CONCURRENCY_LIMIT || 50;
   const broken = [];
   
   for (let i = 0; i < htmlFiles.length; i += concurrencyLimit) {
@@ -64,8 +64,16 @@ async function validateLinks() {
           const targetPath = path.join(path.dirname(file), clean);
           try {
             await fs.access(targetPath);
-          } catch {
-            brokenInFile.push({ source: file, link: link });
+          } catch (error) {
+            // Only report as broken if it's not a directory (which would be a valid path)
+            try {
+              const stat = await fs.stat(targetPath);
+              if (!stat.isDirectory()) {
+                brokenInFile.push({ source: file, link: link });
+              }
+            } catch {
+              brokenInFile.push({ source: file, link: link });
+            }
           }
         }
         
