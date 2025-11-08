@@ -21,6 +21,14 @@
 
 const fs = require('fs').promises;
 
+// Export functions for testing
+module.exports = {
+  parseCsv,
+  sanitize,
+  normaliseRecord,
+  validateRecord
+};
+
 /**
  * Parse a CSV string into an array of objects. This minimal parser assumes
  * there are no quoted fields containing commas. It splits on newlines and
