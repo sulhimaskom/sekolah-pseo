@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
 
@@ -97,8 +97,7 @@ jobs:
           ACTOR: ${{ github.actor }}
         with:
           api_key: ${{ secrets.IFLOW_API_KEY }}
-          timeout: "3600"
-          debug: "true"
+          timeout: "36000"
           prompt: |
             ## Role
             You are a GitHub Action Specialist — an intelligent automation engineer.
