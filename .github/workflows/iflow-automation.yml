@@ -1,4 +1,4 @@
-# iFlow CLI Automation Workflow
+ iFlow CLI Automation Workflow
 #
 # This workflow orchestrates a suite of automated tasks using the
 iFlow CLI GitHub Action.  The goal is to empower a solo developer
