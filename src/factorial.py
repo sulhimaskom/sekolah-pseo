@@ -9,7 +9,10 @@ def factorial(n):
         
     Raises:
         ValueError: 当 n 为负数时抛出异常
+        TypeError: 当 n 不是整数时抛出异常
     """
+    if not isinstance(n, int):
+        raise TypeError("输入必须是整数")
     if n < 0:
         raise ValueError("阶乘不能为负数")
     if n == 0 or n == 1:

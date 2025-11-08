@@ -30,8 +30,25 @@ const fs = require('fs').promises;
  * @returns {Array<Object>}
  */
 function parseCsv(csvData) {
+  // Handle empty or invalid CSV data
+  if (!csvData || typeof csvData !== 'string') {
+    return [];
+  }
+  
   const lines = csvData.trim().split(/\r?\n/);
+  
+  // Handle empty CSV
+  if (lines.length === 0) {
+    return [];
+  }
+  
   const header = lines.shift().split(',').map(h => h.trim());
+  
+  // Handle CSV with only header
+  if (lines.length === 0) {
+    return [];
+  }
+  
   return lines.map(line => {
     const values = line.split(',');
     const record = {};
@@ -53,10 +70,12 @@ function sanitize(value) {
   if (typeof value !== 'string') {
     return '';
   }
+  
   return value
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
-    .trim();
+    .trim()
+    .replace(/[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g, ''); // remove non-printable characters except common Unicode
 }
 
 /**
@@ -66,6 +85,11 @@ function sanitize(value) {
  * @returns {Object}
  */
 function normaliseRecord(raw) {
+  // Handle case where raw is null or undefined
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  
   return {
     npsn: sanitize(raw.npsn || raw.NPSN || ''),
     nama: sanitize(raw.nama || raw.nama_sekolah || raw.Nama || ''),
@@ -89,6 +113,11 @@ function normaliseRecord(raw) {
  * @returns {boolean}
  */
 function validateRecord(record) {
+  // Handle case where record is null or undefined
+  if (!record || typeof record !== 'object') {
+    return false;
+  }
+  
   // Check that NPSN exists and is numeric
   return record.npsn && /^\d+$/.test(record.npsn);
 }
@@ -98,12 +127,12 @@ function validateRecord(record) {
  * function simply reads from a single CSV file at `external/raw.csv`.
  */
 async function run() {
-  // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  // Use environment variable for data path, fallback to default path
+  const rawPath = process.env.RAW_DATA_PATH || require('path').join(__dirname, '../external/raw.csv');
   try {
     await fs.access(rawPath);
   } catch {
-    console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
+    console.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
     process.exit(1);
   }
   

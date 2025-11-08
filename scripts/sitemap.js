@@ -63,7 +63,8 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
 async function generateSitemaps() {
   const distDir = path.join(__dirname, '../dist');
   const outDir = distDir; // put sitemap files in dist
-  const baseUrl = 'https://example.com'; // TODO: update to your domain or Cloudflare pages URL
+  // Use environment variable for baseUrl, fallback to example.com for development
+  const baseUrl = process.env.SITE_URL || 'https://example.com';
   const urls = await collectUrls(distDir, baseUrl);
   const sitemapFiles = await writeSitemapFiles(urls, outDir);
   await writeSitemapIndex(sitemapFiles, outDir, baseUrl);

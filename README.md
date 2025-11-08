@@ -24,6 +24,13 @@
 - `npm run etl` - 处理原始数据
 - `npm run sitemap` - 生成站点地图
 - `npm run validate-links` - 验证内部链接
+- `npm test` - 运行所有测试
+
+## 环境变量
+
+- `SITE_URL` - 网站基础URL，用于生成站点地图 (默认: https://example.com)
+- `RAW_DATA_PATH` - 原始数据文件路径 (默认: external/raw.csv)
+- `VALIDATION_CONCURRENCY_LIMIT` - 链接验证并发限制 (默认: 50)
 
 ## 贡献
 
