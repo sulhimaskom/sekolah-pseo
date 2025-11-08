@@ -12,35 +12,11 @@
  *    and plausible coordinates
  *  - Append an `updated_at` timestamp to each record
  *  - Write the result to `data/schools.csv`
- *
- * This file is intentionally kept simple to avoid adding external dependencies.
- * It uses Node.js built‑in modules (fs) and a minimal CSV parser. In a real
- * implementation you may consider using a robust library such as `csv-parse`
- * or `papaparse`.
  */
 
 const fs = require('fs');
-
-/**
- * Parse a CSV string into an array of objects. This minimal parser assumes
- * there are no quoted fields containing commas. It splits on newlines and
- * commas, which is sufficient for the initial pilot dataset.
- *
- * @param {string} csvData
- * @returns {Array<Object>}
- */
-function parseCsv(csvData) {
-  const lines = csvData.trim().split(/\r?\n/);
-  const header = lines.shift().split(',').map(h => h.trim());
-  return lines.map(line => {
-    const values = line.split(',');
-    const record = {};
-    header.forEach((h, i) => {
-      record[h] = values[i] ? values[i].trim() : '';
-    });
-    return record;
-  });
-}
+const path = require('path');
+const { parseCsv, toCsv } = require('./csv-utils');
 
 /**
  * Sanitize a string by trimming whitespace, collapsing multiple spaces and
@@ -50,6 +26,8 @@ function parseCsv(csvData) {
  * @returns {string}
  */
 function sanitize(value) {
+  if (typeof value !== 'string') return '';
+  
   return value
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
@@ -85,7 +63,7 @@ function normaliseRecord(raw) {
  */
 function run() {
   // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  const rawPath = path.join(__dirname, '../external/raw.csv');
   if (!fs.existsSync(rawPath)) {
     console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
     process.exit(1);
@@ -95,12 +73,11 @@ function run() {
   const processed = rawRecords
     .map(normaliseRecord)
     .filter(rec => rec.npsn && /^\d+$/.test(rec.npsn));
-  const header = Object.keys(processed[0]);
-  const lines = [header.join(',')].concat(
-    processed.map(rec => header.map(h => rec[h]).join(','))
-  );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
-  fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
+  
+  // Convert to CSV and write to file
+  const csvOutput = toCsv(processed);
+  const outPath = path.join(__dirname, '../data/schools.csv');
+  fs.writeFileSync(outPath, csvOutput, 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
 
