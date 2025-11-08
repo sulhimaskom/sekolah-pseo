@@ -11,6 +11,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const slugify = require('./slugify');
+const { parseCsv } = require('./utils');
 
 // Ensure dist directory exists
 const distDir = path.join(__dirname, '../dist');
@@ -34,22 +35,7 @@ async function loadSchools() {
   const csvPath = path.join(__dirname, '../data/schools.csv');
   try {
     const text = await fs.readFile(csvPath, 'utf8');
-    const lines = text.trim().split(/\r?\n/);
-    
-    // Handle empty CSV
-    if (lines.length === 0) {
-      return [];
-    }
-    
-    const header = lines.shift().split(',');
-    return lines.map(l => {
-      const values = l.split(',');
-      const obj = {};
-      header.forEach((h, i) => {
-        obj[h] = values[i] || '';
-      });
-      return obj;
-    });
+    return parseCsv(text);
   } catch (error) {
     console.error(`Failed to load schools from ${csvPath}: ${error.message}`);
     return [];
