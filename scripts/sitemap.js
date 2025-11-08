@@ -63,6 +63,16 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
 async function generateSitemaps() {
   const distDir = path.join(__dirname, '../dist');
   const outDir = distDir; // put sitemap files in dist
+  
+  // Check if dist directory exists
+  try {
+    await fs.access(distDir);
+  } catch (error) {
+    console.error(`Dist directory not found at ${distDir}. Please run the build process first.`);
+    console.error(`Error details: ${error.message}`);
+    process.exit(1);
+  }
+  
   // Use environment variable for baseUrl, fallback to example.com for development
   const baseUrl = process.env.SITE_URL || 'https://example.com';
   const urls = await collectUrls(distDir, baseUrl);

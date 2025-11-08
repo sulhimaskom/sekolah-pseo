@@ -79,9 +79,18 @@ async function validateLinks() {
             continue;
           }
           
-          // Normalize path: remove query/hash
+          // Normalize path: remove query/hash and resolve to absolute path
           const clean = link.split(/[?#]/)[0];
-          const targetPath = path.join(path.dirname(file), clean);
+          const targetPath = path.resolve(path.dirname(file), clean);
+          
+          // Security check: ensure targetPath is within distDir to prevent path traversal
+          const distDir = path.resolve(path.join(__dirname, '../dist'));
+          if (!targetPath.startsWith(distDir)) {
+            console.warn(`Warning: Link ${link} in ${file} resolves outside dist directory`);
+            brokenInFile.push({ source: file, link: link });
+            continue;
+          }
+          
           try {
             await fs.access(targetPath);
           } catch (error) {

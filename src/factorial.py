@@ -11,12 +11,17 @@ def factorial(n):
         ValueError: 当 n 为负数时抛出异常
         TypeError: 当 n 不是整数时抛出异常
     """
+    # Input validation
     if not isinstance(n, int):
         raise TypeError("输入必须是整数")
     if n < 0:
         raise ValueError("阶乘不能为负数")
+    
+    # Base cases
     if n == 0 or n == 1:
         return 1
+    
+    # Calculate factorial iteratively to avoid stack overflow for large n
     result = 1
     for i in range(2, n + 1):
         result *= i

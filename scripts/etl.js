@@ -140,8 +140,9 @@ async function run() {
   const rawPath = process.env.RAW_DATA_PATH || require('path').join(__dirname, '../external/raw.csv');
   try {
     await fs.access(rawPath);
-  } catch {
+  } catch (error) {
     console.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
+    console.error(`Error details: ${error.message}`);
     process.exit(1);
   }
   

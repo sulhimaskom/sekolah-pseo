@@ -21,8 +21,9 @@ const distDir = path.join(__dirname, '../dist');
 async function ensureDistDir() {
   try {
     await fs.mkdir(distDir, { recursive: true });
+    console.log(`Ensured dist directory exists at: ${distDir}`);
   } catch (error) {
-    console.error(`Failed to create dist directory: ${error.message}`);
+    console.error(`Failed to create dist directory at ${distDir}: ${error.message}`);
     throw error;
   }
 }
@@ -38,6 +39,7 @@ async function loadSchools() {
     
     // Handle empty CSV
     if (lines.length === 0) {
+      console.warn(`CSV file at ${csvPath} is empty.`);
       return [];
     }
     
@@ -52,6 +54,7 @@ async function loadSchools() {
     });
   } catch (error) {
     console.error(`Failed to load schools from ${csvPath}: ${error.message}`);
+    console.error(`Current working directory: ${process.cwd()}`);
     return [];
   }
 }
