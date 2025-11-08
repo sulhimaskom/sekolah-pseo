@@ -21,6 +21,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const { parseCsv } = require('./utils');
 
 // Export functions for testing
 module.exports = {
@@ -29,44 +30,6 @@ module.exports = {
   normaliseRecord,
   validateRecord
 };
-
-/**
- * Parse a CSV string into an array of objects. This minimal parser assumes
- * there are no quoted fields containing commas. It splits on newlines and
- * commas, which is sufficient for the initial pilot dataset.
- *
- * @param {string} csvData
- * @returns {Array<Object>}
- */
-function parseCsv(csvData) {
-  // Handle empty or invalid CSV data
-  if (!csvData || typeof csvData !== 'string') {
-    return [];
-  }
-  
-  const lines = csvData.trim().split(/\r?\n/);
-  
-  // Handle empty CSV
-  if (lines.length === 0) {
-    return [];
-  }
-  
-  const header = lines.shift().split(',').map(h => h.trim());
-  
-  // Handle CSV with only header
-  if (lines.length === 0) {
-    return [];
-  }
-  
-  return lines.map(line => {
-    const values = line.split(',');
-    const record = {};
-    header.forEach((h, i) => {
-      record[h] = values[i] ? values[i].trim() : '';
-    });
-    return record;
-  });
-}
 
 /**
  * Sanitize a string by trimming whitespace, collapsing multiple spaces and
