@@ -84,7 +84,7 @@ async function writeSchoolPage(school) {
  * @param {Array<Object>} schools
  * @param {number} concurrencyLimit
  */
-async function writeSchoolPagesConcurrently(schools, concurrencyLimit = 100) {
+async function writeSchoolPagesConcurrently(schools, concurrencyLimit = parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100) {
   const results = [];
   for (let i = 0; i < schools.length; i += concurrencyLimit) {
     const batch = schools.slice(i, i + concurrencyLimit);

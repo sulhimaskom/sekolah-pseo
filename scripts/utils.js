@@ -87,7 +87,3 @@ function parseCsvLine(line) {
 module.exports = {
   parseCsv
 };
-
-module.exports = {
-  parseCsv
-};
