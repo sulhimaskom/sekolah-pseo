@@ -20,6 +20,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Parse a CSV string into an array of objects. This minimal parser assumes
@@ -50,6 +51,9 @@ function parseCsv(csvData) {
  * @returns {string}
  */
 function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
   return value
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
@@ -80,12 +84,21 @@ function normaliseRecord(raw) {
 }
 
 /**
+ * Validate NPSN (National School Identity Number) - should be numeric
+ * @param {string} npsn
+ * @returns {boolean}
+ */
+function isValidNPSN(npsn) {
+  return npsn && /^\d+$/.test(npsn);
+}
+
+/**
  * Entry point: read raw data, normalise and write output. For now this
  * function simply reads from a single CSV file at `external/raw.csv`.
  */
 function run() {
   // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  const rawPath = path.join(__dirname, '../external/raw.csv');
   if (!fs.existsSync(rawPath)) {
     console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
     process.exit(1);
@@ -94,12 +107,25 @@ function run() {
   const rawRecords = parseCsv(rawCsv);
   const processed = rawRecords
     .map(normaliseRecord)
-    .filter(rec => rec.npsn && /^\d+$/.test(rec.npsn));
+    .filter(rec => isValidNPSN(rec.npsn));
+  
+  if (processed.length === 0) {
+    console.error('No valid records found after processing.');
+    process.exit(1);
+  }
+  
   const header = Object.keys(processed[0]);
   const lines = [header.join(',')].concat(
     processed.map(rec => header.map(h => rec[h]).join(','))
   );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
+  const outPath = path.join(__dirname, '../data/schools.csv');
+  
+  // Ensure output directory exists
+  const outDir = path.dirname(outPath);
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir, { recursive: true });
+  }
+  
   fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
