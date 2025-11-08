@@ -1,0 +1,26 @@
+{
+  "name": "sekolah-pseo",
+  "version": "1.0.0",
+  "description": "Static site generator for Indonesian schools dataset (pSEO)",
+  "main": "index.js",
+  "scripts": {
+    "build": "node scripts/build-pages.js",
+    "etl": "node scripts/etl.js",
+    "sitemap": "node scripts/sitemap.js",
+    "validate-links": "node scripts/validate-links.js",
+    "clean": "rm -rf dist/",
+    "full-build": "npm run clean && npm run etl && npm run build && npm run sitemap && npm run validate-links",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "indonesia",
+    "schools",
+    "static-site-generator",
+    "astro"
+  ],
+  "author": "pSEO Project",
+  "license": "MIT",
+  "devDependencies": {
+    "astro": "^5.15.4"
+  }
+}

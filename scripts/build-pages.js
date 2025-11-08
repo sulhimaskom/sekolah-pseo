@@ -24,7 +24,7 @@ function loadSchools() {
     const values = l.split(',');
     const obj = {};
     header.forEach((h, i) => {
-      obj[h] = values[i] || '';
+      obj[h] = values[i] ? values[i].trim() : '';
     });
     return obj;
   });
@@ -51,8 +51,26 @@ function writeSchoolPage(school) {
   );
   fs.mkdirSync(outDir, { recursive: true });
   const filename = `${school.npsn}-${slugify(school.nama)}.html`;
-  const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n</body>\n</html>`;
+  const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${escapeHtml(school.nama)}</title>\n</head>\n<body>\n  <h1>${escapeHtml(school.nama)}</h1>\n  <p>NPSN: ${escapeHtml(school.npsn)}</p>\n  <p>Alamat: ${escapeHtml(school.alamat)}</p>\n  <p>Jenjang: ${escapeHtml(school.bentuk_pendidikan)}</p>\n  <p>Status: ${escapeHtml(school.status)}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n</body>\n</html>`;
   fs.writeFileSync(path.join(outDir, filename), content, 'utf8');
+}
+
+/**
+ * Escape HTML entities to prevent XSS vulnerabilities
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function escapeHtml(text) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 /**
@@ -61,7 +79,18 @@ function writeSchoolPage(school) {
  */
 function build() {
   const schools = loadSchools();
-  schools.forEach(writeSchoolPage);
+  
+  // Process schools in batches to avoid memory issues with large datasets
+  const batchSize = 1000;
+  let processedCount = 0;
+  
+  for (let i = 0; i < schools.length; i += batchSize) {
+    const batch = schools.slice(i, i + batchSize);
+    batch.forEach(writeSchoolPage);
+    processedCount += batch.length;
+    console.log(`Processed ${processedCount} of ${schools.length} school pages`);
+  }
+  
   console.log(`Generated ${schools.length} school pages`);
 }
 

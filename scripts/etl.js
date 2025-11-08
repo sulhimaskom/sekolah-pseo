@@ -20,6 +20,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Parse a CSV string into an array of objects. This minimal parser assumes
@@ -50,6 +51,9 @@ function parseCsv(csvData) {
  * @returns {string}
  */
 function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
   return value
     .replace(/\s+/g, ' ') // collapse whitespace
     .replace(/[\u0000-\u001F]/g, '') // remove control chars
@@ -80,26 +84,57 @@ function normaliseRecord(raw) {
 }
 
 /**
+ * Validate a record to ensure it has required fields and valid data.
+ *
+ * @param {Object} record
+ * @returns {boolean}
+ */
+function validateRecord(record) {
+  return record.npsn && /^\d+$/.test(record.npsn);
+}
+
+/**
  * Entry point: read raw data, normalise and write output. For now this
  * function simply reads from a single CSV file at `external/raw.csv`.
  */
 function run() {
   // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  const rawPath = path.join(__dirname, '../external/raw.csv');
   if (!fs.existsSync(rawPath)) {
     console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
     process.exit(1);
   }
   const rawCsv = fs.readFileSync(rawPath, 'utf8');
   const rawRecords = parseCsv(rawCsv);
-  const processed = rawRecords
-    .map(normaliseRecord)
-    .filter(rec => rec.npsn && /^\d+$/.test(rec.npsn));
+  
+  // Process records with better error handling
+  const processed = [];
+  for (const rawRecord of rawRecords) {
+    try {
+      const normalized = normaliseRecord(rawRecord);
+      if (validateRecord(normalized)) {
+        processed.push(normalized);
+      }
+    } catch (error) {
+      console.warn('Skipping invalid record:', error.message);
+    }
+  }
+  
+  if (processed.length === 0) {
+    console.error('No valid records found in the dataset.');
+    process.exit(1);
+  }
+  
   const header = Object.keys(processed[0]);
-  const lines = [header.join(',')].concat(
-    processed.map(rec => header.map(h => rec[h]).join(','))
-  );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
+  const lines = [header.join(',')];
+  
+  // More efficient way to build CSV content
+  for (const record of processed) {
+    const row = header.map(h => record[h] || '').join(',');
+    lines.push(row);
+  }
+  
+  const outPath = path.join(__dirname, '../data/schools.csv');
   fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
