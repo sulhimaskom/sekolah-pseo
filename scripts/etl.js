@@ -20,6 +20,7 @@
  */
 
 const fs = require('fs').promises;
+const path = require('path');
 
 // Export functions for testing
 module.exports = {
@@ -94,7 +95,7 @@ function sanitize(value) {
  */
 function normaliseRecord(raw) {
   // Handle case where raw is null or undefined
-  if (!raw || typeof raw !== 'object') {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {};
   }
   
@@ -106,7 +107,7 @@ function normaliseRecord(raw) {
     alamat: sanitize(raw.alamat || raw.alamat_jalan || ''),
     kelurahan: sanitize(raw.kelurahan || raw.desa || ''),
     kecamatan: sanitize(raw.kecamatan || ''),
-    kab_kota: sanitize(raw.kabupaten || raw.kota || ''),
+    kab_kota: sanitize(raw.kabupaten || raw.kab_kota || raw.kota || ''),
     provinsi: sanitize(raw.provinsi || ''),
     lat: sanitize(raw.lat || raw.latitude || ''),
     lon: sanitize(raw.lon || raw.longitude || ''),

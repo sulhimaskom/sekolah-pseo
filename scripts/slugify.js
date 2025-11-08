@@ -21,6 +21,11 @@ function slugify(input) {
     return '';
   }
   
+  // Handle empty string case
+  if (input.trim() === '') {
+    return '';
+  }
+  
   return input
     .toString()
     .normalize('NFD') // split accented characters into base + diacritic
@@ -28,7 +33,7 @@ function slugify(input) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
+    .replace(/-{2,}/g, '-') || 'untitled';
 }
 
 module.exports = slugify;
