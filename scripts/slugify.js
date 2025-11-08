@@ -17,6 +17,10 @@
  * @returns {string}
  */
 function slugify(input) {
+  if (typeof input !== 'string') {
+    return '';
+  }
+  
   return input
     .toString()
     .normalize('NFD') // split accented characters into base + diacritic
