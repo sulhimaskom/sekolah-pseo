@@ -99,6 +99,9 @@ function normaliseRecord(raw) {
     return {};
   }
   
+  // Cache the current date to avoid creating multiple Date objects
+  const currentDate = new Date().toISOString().split('T')[0];
+  
   return {
     npsn: sanitize(raw.npsn || raw.NPSN || ''),
     nama: sanitize(raw.nama || raw.nama_sekolah || raw.Nama || ''),
@@ -111,7 +114,7 @@ function normaliseRecord(raw) {
     provinsi: sanitize(raw.provinsi || ''),
     lat: sanitize(raw.lat || raw.latitude || ''),
     lon: sanitize(raw.lon || raw.longitude || ''),
-    updated_at: new Date().toISOString().split('T')[0],
+    updated_at: currentDate,
   };
 }
 
