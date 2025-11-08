@@ -23,3 +23,46 @@ jobs:
         with:
           name: dist
           path: dist
+
+  # Consolidate other workflows functionality here
+  # This job handles issue and PR management
+  issue-pr-management:
+    if: |
+      github.event_name == 'issues' ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run iFlow CLI for Issue & PR Management
+        uses: iflow-ai/iflow-cli-action@v2.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          api_key: ${{ secrets.IFLOW_API_KEY }}
+          timeout: '7200'
+          debug: 'false'
+          prompt: |
+            ## Role
+            You are an AI developer and project manager responsible for
+            triaging issues and managing pull requests.  Operate entirely
+            through the GitHub CLI (`gh`) and the local git repository.
+            
+            ## Tasks
+            1. For new issues:
+               - Classify the issue by kind (bug, enhancement, documentation, cleanup, etc.)
+               - Apply appropriate labels using `gh issue edit`
+               - Remove any `status/needs-triage` label if present
+            2. For new pull requests:
+               - Review the changes using `git diff`
+               - Provide constructive feedback on code quality, potential security vulnerabilities,
+                 performance issues, and adherence to the project's style
+               - Post a summary comment on the pull request using `gh pr comment`
+            3. For issue comments:
+               - If the comment contains `@iflow-cli /implement`, implement the feature or fix
+               - Create a new git branch, make changes, commit, push, and create a PR
