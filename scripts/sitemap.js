@@ -7,6 +7,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const CONFIG = require('./config');
 
 const MAX_URLS_PER_SITEMAP = 50000;
 
@@ -70,10 +71,9 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
 }
 
 async function generateSitemaps() {
-  const distDir = path.join(__dirname, '../dist');
+  const distDir = CONFIG.DIST_DIR;
   const outDir = distDir; // put sitemap files in dist
-  // Use environment variable for baseUrl, fallback to example.com for development
-  const baseUrl = process.env.SITE_URL || 'https://example.com';
+  const baseUrl = CONFIG.SITE_URL;
   const urls = await collectUrls(distDir, baseUrl);
   const sitemapFiles = await writeSitemapFiles(urls, outDir);
   await writeSitemapIndex(sitemapFiles, outDir, baseUrl);

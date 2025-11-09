@@ -7,6 +7,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const CONFIG = require('./config');
 
 async function collectHtmlFiles(dir) {
   const files = [];
@@ -42,7 +43,7 @@ function extractLinks(html) {
 }
 
 async function validateLinks() {
-  const distDir = path.join(__dirname, '../dist');
+  const distDir = CONFIG.DIST_DIR;
   
   // Check if dist directory exists
   try {
@@ -63,7 +64,7 @@ async function validateLinks() {
   }
   
   // Process files concurrently with a controlled concurrency limit
-  const concurrencyLimit = parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50;
+  const concurrencyLimit = CONFIG.VALIDATION_CONCURRENCY_LIMIT;
   const broken = [];
   
   for (let i = 0; i < htmlFiles.length; i += concurrencyLimit) {

@@ -22,6 +22,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { parseCsv } = require('./utils');
+const CONFIG = require('./config');
 
 // Export functions for testing
 module.exports = {
@@ -107,8 +108,7 @@ function validateRecord(record) {
  * function simply reads from a single CSV file at `external/raw.csv`.
  */
 async function run() {
-  // Use environment variable for data path, fallback to default path
-  const rawPath = process.env.RAW_DATA_PATH || path.join(__dirname, '../external/raw.csv');
+  const rawPath = CONFIG.RAW_DATA_PATH;
   try {
     await fs.access(rawPath);
   } catch {
@@ -148,9 +148,8 @@ async function run() {
     lines.push(...batchLines);
   }
   
-  const outPath = path.join(__dirname, '../data/schools.csv');
-  await fs.writeFile(outPath, lines.join('\n'), 'utf8');
-  console.log(`Wrote ${processed.length} records to ${outPath}`);
+  await fs.writeFile(CONFIG.SCHOOLS_CSV_PATH, lines.join('\n'), 'utf8');
+  console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 }
 
 if (require.main === module) {
