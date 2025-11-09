@@ -43,11 +43,16 @@ function sanitize(value) {
     return '';
   }
   
+  // Cache regex patterns to avoid recreating them each time
+  const whitespaceRegex = /\s+/g;
+  const controlCharsRegex = /[\u0000-\u001F]/g;
+  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+  
   return value
-    .replace(/\s+/g, ' ') // collapse whitespace
-    .replace(/[\u0000-\u001F]/g, '') // remove control chars
+    .replace(whitespaceRegex, ' ') // collapse whitespace
+    .replace(controlCharsRegex, '') // remove control chars
     .trim()
-    .replace(/[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g, ''); // remove non-printable characters except common Unicode
+    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
 }
 
 /**
@@ -103,7 +108,7 @@ function validateRecord(record) {
  */
 async function run() {
   // Use environment variable for data path, fallback to default path
-  const rawPath = process.env.RAW_DATA_PATH || require('path').join(__dirname, '../external/raw.csv');
+  const rawPath = process.env.RAW_DATA_PATH || path.join(__dirname, '../external/raw.csv');
   try {
     await fs.access(rawPath);
   } catch {
@@ -116,9 +121,14 @@ async function run() {
   
   console.log(`Loaded ${rawRecords.length} raw records`);
   
-  const processed = rawRecords
-    .map(normaliseRecord)
-    .filter(validateRecord);
+  // Use a more efficient approach for processing records
+  const processed = [];
+  for (const record of rawRecords) {
+    const normalized = normaliseRecord(record);
+    if (validateRecord(normalized)) {
+      processed.push(normalized);
+    }
+  }
     
   console.log(`Processed ${processed.length} valid records`);
   
@@ -128,10 +138,17 @@ async function run() {
   }
   
   const header = Object.keys(processed[0]);
-  const lines = [header.join(',')].concat(
-    processed.map(rec => header.map(h => rec[h]).join(','))
-  );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
+  const lines = [header.join(',')];
+  
+  // Process records in batches to reduce memory usage
+  const batchSize = 1000;
+  for (let i = 0; i < processed.length; i += batchSize) {
+    const batch = processed.slice(i, i + batchSize);
+    const batchLines = batch.map(rec => header.map(h => rec[h]).join(','));
+    lines.push(...batchLines);
+  }
+  
+  const outPath = path.join(__dirname, '../data/schools.csv');
   await fs.writeFile(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }

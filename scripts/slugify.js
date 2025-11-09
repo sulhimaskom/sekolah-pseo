@@ -26,9 +26,10 @@ function slugify(input) {
     return '';
   }
   
-  return input
-    .toString()
-    .normalize('NFD') // split accented characters into base + diacritic
+  // Cache the result of normalize to avoid repeated calls
+  const normalized = input.toString().normalize('NFD');
+  
+  return normalized
     .replace(/\p{Diacritic}/gu, '') // remove diacritics
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

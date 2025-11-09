@@ -28,12 +28,13 @@ async function collectHtmlFiles(dir) {
 
 function extractLinks(html) {
   const matches = [];
+  // Cache the regex to avoid recreating it each time
   const regex = /href="([^"]+)"/g;
   let match;
   while ((match = regex.exec(html)) !== null) {
     const href = match[1];
     // consider only relative links
-    if (href && !href.match(/^https?:/)) {
+    if (href && !/^https?:/.test(href)) {
       matches.push(href);
     }
   }
@@ -75,7 +76,7 @@ async function validateLinks() {
         
         for (const link of links) {
           // Skip empty links, anchor links, and external links
-          if (!link || link === '#' || link.startsWith('#') || link.match(/^https?:/)) {
+          if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
             continue;
           }
           

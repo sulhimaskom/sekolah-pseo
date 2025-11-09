@@ -79,7 +79,7 @@ async function writeSchoolPage(school) {
   );
   await fs.mkdir(outDir, { recursive: true });
   const filename = `${school.npsn}-${namaSlug}.html`;
-  const content = `<!DOCTYPE html>\n<html lang=\"id\">\n<head>\n  <meta charset=\"utf-8\" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
+  const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
   await fs.writeFile(path.join(outDir, filename), content, 'utf8');
 }
 
@@ -124,7 +124,9 @@ async function build() {
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
   
-  const { successful, failed } = await writeSchoolPagesConcurrently(schools);
+  // Allow concurrency limit to be configured via environment variable
+  const concurrencyLimit = parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100;
+  const { successful, failed } = await writeSchoolPagesConcurrently(schools, concurrencyLimit);
   console.log(`Generated ${successful} school pages (${failed} failed)`);
 }
 
