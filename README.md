@@ -31,6 +31,7 @@
 - `SITE_URL` - 网站基础URL，用于生成站点地图 (默认: https://example.com)
 - `RAW_DATA_PATH` - 原始数据文件路径 (默认: external/raw.csv)
 - `VALIDATION_CONCURRENCY_LIMIT` - 链接验证并发限制 (默认: 50)
+- `BUILD_CONCURRENCY_LIMIT` - 页面构建并发限制 (默认: 100)
 
 ## 贡献
 
