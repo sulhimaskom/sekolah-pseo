@@ -21,8 +21,8 @@ const CONFIG = {
   SITE_URL: process.env.SITE_URL || 'https://example.com',
   
   // Concurrency limits
-  BUILD_CONCURRENCY_LIMIT: parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100,
-  VALIDATION_CONCURRENCY_LIMIT: parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50,
+  BUILD_CONCURRENCY_LIMIT: Math.max(1, parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100),
+  VALIDATION_CONCURRENCY_LIMIT: Math.max(1, parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50),
   
   // Directories
   ROOT_DIR: ROOT_DIR,
