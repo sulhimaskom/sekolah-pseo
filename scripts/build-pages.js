@@ -124,7 +124,7 @@ async function build() {
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
   
-  const { successful, failed } = await writeSchoolPagesConcurrently(schools, CONFIG.BUILD_CONCURRENCY_LIMIT);
+  const { successful, failed } = await writeSchoolPagesConcurrently(schools);
   console.log(`Generated ${successful} school pages (${failed} failed)`);
 }
 
