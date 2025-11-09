@@ -12,9 +12,10 @@ const fs = require('fs').promises;
 const path = require('path');
 const slugify = require('./slugify');
 const { parseCsv } = require('./utils');
+const CONFIG = require('./config');
 
 // Ensure dist directory exists
-const distDir = path.join(__dirname, '../dist');
+const distDir = CONFIG.DIST_DIR;
 
 /**
  * Ensure the dist directory exists.
@@ -32,12 +33,11 @@ async function ensureDistDir() {
  * Load the processed schools CSV into an array of objects.
  */
 async function loadSchools() {
-  const csvPath = path.join(__dirname, '../data/schools.csv');
   try {
-    const text = await fs.readFile(csvPath, 'utf8');
+    const text = await fs.readFile(CONFIG.SCHOOLS_CSV_PATH, 'utf8');
     return parseCsv(text);
   } catch (error) {
-    console.error(`Failed to load schools from ${csvPath}: ${error.message}`);
+    console.error(`Failed to load schools from ${CONFIG.SCHOOLS_CSV_PATH}: ${error.message}`);
     return [];
   }
 }
@@ -90,7 +90,7 @@ async function writeSchoolPage(school) {
  * @param {Array<Object>} schools
  * @param {number} concurrencyLimit
  */
-async function writeSchoolPagesConcurrently(schools, concurrencyLimit = parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100) {
+async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT) {
   const results = [];
   for (let i = 0; i < schools.length; i += concurrencyLimit) {
     const batch = schools.slice(i, i + concurrencyLimit);
@@ -124,9 +124,7 @@ async function build() {
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
   
-  // Allow concurrency limit to be configured via environment variable
-  const concurrencyLimit = parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100;
-  const { successful, failed } = await writeSchoolPagesConcurrently(schools, concurrencyLimit);
+  const { successful, failed } = await writeSchoolPagesConcurrently(schools, CONFIG.BUILD_CONCURRENCY_LIMIT);
   console.log(`Generated ${successful} school pages (${failed} failed)`);
 }
 
