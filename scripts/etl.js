@@ -23,6 +23,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const { parseCsv } = require('./utils');
 
+// Pre-compile regex patterns for better performance
+const WHITESPACE_REGEX = /\s+/g;
+const CONTROL_CHARS_REGEX = /[\u0000-\u001F]/g;
+const NON_PRINTABLE_REGEX = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+
 // Export functions for testing
 module.exports = {
   parseCsv,
@@ -43,32 +48,28 @@ function sanitize(value) {
     return '';
   }
   
-  // Cache regex patterns to avoid recreating them each time
-  const whitespaceRegex = /\s+/g;
-  const controlCharsRegex = /[\u0000-\u001F]/g;
-  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
-  
   return value
-    .replace(whitespaceRegex, ' ') // collapse whitespace
-    .replace(controlCharsRegex, '') // remove control chars
+    .replace(WHITESPACE_REGEX, ' ') // collapse whitespace
+    .replace(CONTROL_CHARS_REGEX, '') // remove control chars
     .trim()
-    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
+    .replace(NON_PRINTABLE_REGEX, ''); // remove non-printable characters except common Unicode
 }
 
 /**
  * Normalise a record into the canonical schema expected by the site generator.
  *
  * @param {Object} raw
+ * @param {string} currentDate - Current date in YYYY-MM-DD format
  * @returns {Object}
  */
-function normaliseRecord(raw) {
+function normaliseRecord(raw, currentDate) {
   // Handle case where raw is null or undefined
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {};
   }
   
-  // Cache the current date to avoid creating multiple Date objects
-  const currentDate = new Date().toISOString().split('T')[0];
+  // If currentDate is not provided, generate it
+  const date = currentDate || new Date().toISOString().split('T')[0];
   
   return {
     npsn: sanitize(raw.npsn || raw.NPSN || ''),
@@ -82,7 +83,7 @@ function normaliseRecord(raw) {
     provinsi: sanitize(raw.provinsi || ''),
     lat: sanitize(raw.lat || raw.latitude || ''),
     lon: sanitize(raw.lon || raw.longitude || ''),
-    updated_at: currentDate,
+    updated_at: date,
   };
 }
 
@@ -121,10 +122,13 @@ async function run() {
   
   console.log(`Loaded ${rawRecords.length} raw records`);
   
+  // Pre-compute the current date to avoid creating multiple Date objects
+  const currentDate = new Date().toISOString().split('T')[0];
+  
   // Use a more efficient approach for processing records
   const processed = [];
   for (const record of rawRecords) {
-    const normalized = normaliseRecord(record);
+    const normalized = normaliseRecord(record, currentDate);
     if (validateRecord(normalized)) {
       processed.push(normalized);
     }

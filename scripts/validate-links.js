@@ -26,12 +26,13 @@ async function collectHtmlFiles(dir) {
   return files;
 }
 
+// Pre-compile regex for better performance
+const HREF_REGEX = /href="([^"]+)"/g;
+
 function extractLinks(html) {
   const matches = [];
-  // Cache the regex to avoid recreating it each time
-  const regex = /href="([^"]+)"/g;
   let match;
-  while ((match = regex.exec(html)) !== null) {
+  while ((match = HREF_REGEX.exec(html)) !== null) {
     const href = match[1];
     // consider only relative links
     if (href && !/^https?:/.test(href)) {

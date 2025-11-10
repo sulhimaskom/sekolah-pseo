@@ -48,8 +48,9 @@ async function loadSchools() {
  * placeholders.
  *
  * @param {Object} school
+ * @param {Map} slugCache - Cache for slug computations
  */
-async function writeSchoolPage(school) {
+async function writeSchoolPage(school, slugCache = new Map()) {
   // Validate school object
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
@@ -60,11 +61,30 @@ async function writeSchoolPage(school) {
     throw new Error('School object missing required fields');
   }
   
-  // Pre-compute slugs to avoid redundant calls
-  const provinsiSlug = slugify(school.provinsi);
-  const kabKotaSlug = slugify(school.kab_kota);
-  const kecamatanSlug = slugify(school.kecamatan);
-  const namaSlug = slugify(school.nama);
+  // Use cache for slug computations to avoid redundant calls
+  let provinsiSlug = slugCache.get(school.provinsi);
+  if (!provinsiSlug) {
+    provinsiSlug = slugify(school.provinsi);
+    slugCache.set(school.provinsi, provinsiSlug);
+  }
+  
+  let kabKotaSlug = slugCache.get(school.kab_kota);
+  if (!kabKotaSlug) {
+    kabKotaSlug = slugify(school.kab_kota);
+    slugCache.set(school.kab_kota, kabKotaSlug);
+  }
+  
+  let kecamatanSlug = slugCache.get(school.kecamatan);
+  if (!kecamatanSlug) {
+    kecamatanSlug = slugify(school.kecamatan);
+    slugCache.set(school.kecamatan, kecamatanSlug);
+  }
+  
+  let namaSlug = slugCache.get(school.nama);
+  if (!namaSlug) {
+    namaSlug = slugify(school.nama);
+    slugCache.set(school.nama, namaSlug);
+  }
   
   const outDir = path.join(
     __dirname,
@@ -79,7 +99,7 @@ async function writeSchoolPage(school) {
   );
   await fs.mkdir(outDir, { recursive: true });
   const filename = `${school.npsn}-${namaSlug}.html`;
-  const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
+  const content = `<!DOCTYPE html>\n<html lang=\"id\">\n<head>\n  <meta charset=\"utf-8\" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
   await fs.writeFile(path.join(outDir, filename), content, 'utf8');
 }
 
@@ -92,9 +112,11 @@ async function writeSchoolPage(school) {
  */
 async function writeSchoolPagesConcurrently(schools, concurrencyLimit = parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100) {
   const results = [];
+  const slugCache = new Map(); // Cache for slug computations
+  
   for (let i = 0; i < schools.length; i += concurrencyLimit) {
     const batch = schools.slice(i, i + concurrencyLimit);
-    const batchPromises = batch.map(school => writeSchoolPage(school));
+    const batchPromises = batch.map(school => writeSchoolPage(school, slugCache));
     const batchResults = await Promise.allSettled(batchPromises);
     results.push(...batchResults);
     

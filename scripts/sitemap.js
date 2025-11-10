@@ -12,6 +12,8 @@ const MAX_URLS_PER_SITEMAP = 50000;
 
 async function collectUrls(dir, baseUrl) {
   const urls = [];
+  const htmlExtensions = new Set(['.html']); // Use Set for faster lookups
+  
   async function walk(current, relative) {
     const entries = await fs.readdir(current);
     for (const entry of entries) {
@@ -20,7 +22,7 @@ async function collectUrls(dir, baseUrl) {
       const stat = await fs.stat(fullPath);
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
-      } else if (entry.endsWith('.html')) {
+      } else if (htmlExtensions.has(path.extname(entry).toLowerCase())) {
         urls.push(`${baseUrl}/${relPath.replace(/\\/g, '/')}`);
       }
     }
