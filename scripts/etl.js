@@ -39,7 +39,8 @@ module.exports = {
  * @returns {string}
  */
 function sanitize(value) {
-  if (typeof value !== 'string') {
+  // Handle null, undefined, and non-string inputs (as per test expectation)
+  if (value === null || value === undefined || typeof value !== 'string') {
     return '';
   }
   
@@ -109,6 +110,13 @@ function validateRecord(record) {
 async function run() {
   // Use environment variable for data path, fallback to default path
   const rawPath = process.env.RAW_DATA_PATH || path.join(__dirname, '../external/raw.csv');
+  
+  // Validate rawPath to prevent path traversal vulnerabilities
+  if (!path.isAbsolute(rawPath) && rawPath.includes('..')) {
+    console.error(`Invalid data file path: ${rawPath}. Path traversal is not allowed.`);
+    process.exit(1);
+  }
+  
   try {
     await fs.access(rawPath);
   } catch {
@@ -116,41 +124,54 @@ async function run() {
     process.exit(1);
   }
   
-  const rawCsv = await fs.readFile(rawPath, 'utf8');
-  const rawRecords = parseCsv(rawCsv);
-  
-  console.log(`Loaded ${rawRecords.length} raw records`);
-  
-  // Use a more efficient approach for processing records
-  const processed = [];
-  for (const record of rawRecords) {
-    const normalized = normaliseRecord(record);
-    if (validateRecord(normalized)) {
-      processed.push(normalized);
-    }
-  }
+  try {
+    const rawCsv = await fs.readFile(rawPath, 'utf8');
+    const rawRecords = parseCsv(rawCsv);
     
-  console.log(`Processed ${processed.length} valid records`);
-  
-  if (processed.length === 0) {
-    console.error('No valid records found after processing');
+    console.log(`Loaded ${rawRecords.length} raw records`);
+    
+    // Use a more efficient approach for processing records
+    const processed = [];
+    for (const record of rawRecords) {
+      const normalized = normaliseRecord(record);
+      if (validateRecord(normalized)) {
+        processed.push(normalized);
+      }
+    }
+      
+    console.log(`Processed ${processed.length} valid records`);
+    
+    if (processed.length === 0) {
+      console.error('No valid records found after processing');
+      process.exit(1);
+    }
+    
+    const header = Object.keys(processed[0]);
+    const lines = [header.join(',')];
+    
+    // Process records in batches to reduce memory usage
+    const batchSize = 1000;
+    for (let i = 0; i < processed.length; i += batchSize) {
+      const batch = processed.slice(i, i + batchSize);
+      const batchLines = batch.map(rec => header.map(h => {
+        const value = rec[h] || '';
+        // Escape quotes in CSV values
+        return `"${value.replace(/"/g, '""')}"`;
+      }).join(','));
+      lines.push(...batchLines);
+    }
+    
+    const outPath = path.join(__dirname, '../data/schools.csv');
+    
+    // Ensure the data directory exists
+    await fs.mkdir(path.dirname(outPath), { recursive: true });
+    
+    await fs.writeFile(outPath, lines.join('\n'), 'utf8');
+    console.log(`Wrote ${processed.length} records to ${outPath}`);
+  } catch (error) {
+    console.error('ETL process failed:', error.message);
     process.exit(1);
   }
-  
-  const header = Object.keys(processed[0]);
-  const lines = [header.join(',')];
-  
-  // Process records in batches to reduce memory usage
-  const batchSize = 1000;
-  for (let i = 0; i < processed.length; i += batchSize) {
-    const batch = processed.slice(i, i + batchSize);
-    const batchLines = batch.map(rec => header.map(h => rec[h]).join(','));
-    lines.push(...batchLines);
-  }
-  
-  const outPath = path.join(__dirname, '../data/schools.csv');
-  await fs.writeFile(outPath, lines.join('\n'), 'utf8');
-  console.log(`Wrote ${processed.length} records to ${outPath}`);
 }
 
 if (require.main === module) {

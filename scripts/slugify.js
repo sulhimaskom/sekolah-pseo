@@ -17,6 +17,12 @@
  * @returns {string}
  */
 function slugify(input) {
+  // Handle null and undefined inputs
+  if (input === null || input === undefined) {
+    return '';
+  }
+  
+  // Handle non-string inputs by returning empty string (as per test expectation)
   if (typeof input !== 'string') {
     return '';
   }
@@ -26,15 +32,24 @@ function slugify(input) {
     return '';
   }
   
-  // Cache the result of normalize to avoid repeated calls
-  const normalized = input.toString().normalize('NFD');
-  
-  return normalized
-    .replace(/\p{Diacritic}/gu, '') // remove diacritics
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-') || 'untitled';
+  try {
+    // Cache the result of normalize to avoid repeated calls
+    const normalized = input.toString().normalize('NFD');
+    
+    return normalized
+      .replace(/\p{Diacritic}/gu, '') // remove diacritics
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-') || 'untitled';
+  } catch (error) {
+    // Fallback for environments that don't support normalize or regex features
+    return input
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-') || 'untitled';
+  }
 }
 
 module.exports = slugify;

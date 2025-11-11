@@ -31,14 +31,18 @@ function parseCsv(csvData) {
     return [];
   }
   
-  return lines.map(line => {
+  // Use a more efficient approach for processing records
+  const result = [];
+  for (const line of lines) {
     const values = parseCsvLine(line);
     const record = {};
-    header.forEach((h, i) => {
-      record[h] = values[i] || '';
-    });
-    return record;
-  });
+    for (let i = 0; i < header.length; i++) {
+      record[header[i]] = values[i] || '';
+    }
+    result.push(record);
+  }
+  
+  return result;
 }
 
 /**
