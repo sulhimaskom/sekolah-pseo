@@ -1,69 +1,202 @@
-name: opencode
+name: PR Handler
 
 on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, review_requested]
+  pull_request_review:
+    types: [submitted]
   issue_comment:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to process'
+        required: true
+        type: number
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+# Concurrency per PR to prevent conflicts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: true
 
 jobs:
-  opencode:
-    if: |
-      contains(github.event.comment.body, ' /oc') ||
-      startsWith(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, ' /opencode') ||
-      startsWith(github.event.comment.body, '/opencode')
-    runs-on: ubuntu-latest
+  pr-handler:
+    name: PR Handler
+    runs-on: ubuntu-slim
+    timeout-minutes: 40
     permissions:
       id-token: write
       contents: write
       pull-requests: write
       issues: write
+      actions: write
+    
+    env:
+      GH_TOKEN: ${{ github.token }}
+      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+      
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run opencode
-        uses: sst/opencode/github@latest
-        env:
-          IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
-        with:
-          model: iflowcn/qwen3-coder
-          share: false
-
-  # Consolidate other workflows functionality here
-  # This job handles nightly maintenance
-  maintenance:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Run iFlow CLI for Repository Maintenance
-        uses: iflow-ai/iflow-cli-action@v2.1.0
+          ref: ${{ github.event.pull_request.head.ref || github.head_ref }}
+      
+      - name: Install OpenCode CLI
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+      
+      - name: Get PR Details
+        id: pr_details
+        run: |
+          PR_INFO=$(gh pr view $PR_NUMBER --json title,body,author,headRefName,baseRefName,state,mergeable,reviewDecision,statusCheckRollup)
+          echo "PR_INFO=$PR_INFO" >> $GITHUB_OUTPUT
+          echo "BRANCH_NAME=$(echo $PR_INFO | jq -r '.headRefName')" >> $GITHUB_OUTPUT
+          echo "BASE_BRANCH=$(echo $PR_INFO | jq -r '.baseRefName')" >> $GITHUB_OUTPUT
+          echo "MERGEABLE=$(echo $PR_INFO | jq -r '.mergeable')" >> $GITHUB_OUTPUT
+          echo "REVIEW_DECISION=$(echo $PR_INFO | jq -r '.reviewDecision')" >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          api_key: ${{ secrets.IFLOW_API_KEY }}
-          timeout: '10800'
-          debug: 'false'
-          prompt: |
-            ## Role
-            You are an AI architect and security engineer performing
-            comprehensive maintenance on the repository.
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Run PR Analysis
+        id: analyze_pr
+        timeout-minutes: 25
+        run: |
+          opencode run "$(cat <<'PROMPT'
+          Anda adalah PR Handler Expert yang bertugas menangani Pull Request secara komprehensif.
 
-            ## Tasks
-            1. Analyse the entire codebase for performance bottlenecks,
-               deprecated APIs, and security vulnerabilities.
-            2. Generate optimised code or refactors where necessary to
-               improve readability, performance and modularity.
-            3. Consolidate duplicate or dead code. Remove unused files and
-               dependencies.
-            4. Upgrade dependencies to the latest stable versions,
-               respecting semantic versioning constraints.
-            5. Create a new branch and open a pull request with a summary
-               of the changes.
+          ========================================
+          TUGAS UTAMA
+          ========================================
+          1. Analisis perubahan kode dalam PR ini
+          2. Identifikasi dan selesaikan masalah teknis
+          3. Review komentar yang ada dan buat tanggapan
+          4. Pastikan PR siap untuk merge
+          5. Berikan rekomendasi tindakan selanjutnya
+
+          ========================================
+          LANGKAH KERJA
+          ========================================
+          1. Analisis Kode
+          - Review setiap file yang diubah
+          - Identifikasi bug potensial, code smells, dan pelanggaran standar
+          - Periksa konsistensi dengan kodebase yang ada
+          - Evaluasi dampak perubahan pada sistem secara keseluruhan
+
+          2. Penanganan Masalah
+          - Perbaiki masalah kecil (formatting, typo, dokumentasi) secara langsung
+          - Buat komentar untuk masalah yang memerlukan perhatian khusus
+          - Sertakan contoh perbaikan konkret untuk masalah kompleks
+          - Prioritaskan masalah berdasarkan tingkat keparahan
+
+          3. Interaksi dengan Contributor
+          - Jawab semua komentar yang belum ditanggapi
+          - Berikan feedback yang konstruktif dan spesifik
+          - Akui kontribusi positif dan usaha yang telah dilakukan
+          - Gunakan bahasa yang sopan dan menghargai
+
+          4. Verifikasi Status PR
+          - Periksa status semua test dan CI checks
+          - Pastikan semua reviewer yang diperlukan telah memberikan approval
+          - Verifikasi bahwa PR memenuhi kriteria merge tim
+          - Identifikasi blocker yang menghalangi merge
+
+          5. Tindakan Penutupan
+          - Jika PR siap merge: tambahkan label 'ready-to-merge' dan beri komentar persetujuan
+          - Jika masih ada masalah: buat komentar terstruktur dengan daftar tindakan yang diperlukan
+          - Jika memerlukan perhatian manual: tag reviewer yang sesuai dengan permintaan spesifik
+          - Berikan ringkasan status PR secara keseluruhan
+
+          ========================================
+          BATASAN PENTING
+          ========================================
+          - JANGAN merge PR secara langsung, hanya berikan rekomendasi
+          - Hanya perbaiki masalah kecil yang tidak kontroversial (formatting, typo)
+          - Untuk perubahan besar atau perubahan logika bisnis, berikan saran tapi jangan langsung ubah
+          - JANGAN menyimpan atau menggunakan secret/API key dalam kode
+          - Selalu hormati batasan yang ditetapkan oleh tim dalam CONTRIBUTING.md
+          - Jika ragu tentang suatu perubahan, minta review manual dari maintainer
+
+          Tindakan yang diizinkan:
+          - Membuat komentar pada PR
+          - Membuat commit untuk perbaikan kecil pada branch PR
+          - Memberikan rekomendasi spesifik untuk perbaikan
+          - Menambahkan/menghapus label pada PR
+          
+          Tindakan yang DILARANG:
+          - Merge PR secara langsung
+          - Mengubah dependensi utama tanpa approval
+          - Mengubah konfigurasi deployment atau infrastruktur sensitif
+          - Mengabaikan test yang gagal tanpa analisis menyeluruh
+          PROMPT
+          )" \
+            --model iflowcn/glm-4.6 \
+            --repo ${{ github.repository }} \
+      
+      - name: Verify PR Status
+        id: verify_status
+        run: |
+          # Check CI status
+          CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq '.statusCheckRollup.state')
+          
+          # Check reviews
+          APPROVAL_COUNT=$(gh pr view $PR_NUMBER --json reviews --jq '[.reviews[] | select(.state == "APPROVED")] | length')
+          
+          # Check if PR has the ready-to-merge label
+          HAS_READY_LABEL=$(gh pr view $PR_NUMBER --json labels --jq '.labels[] | select(.name == "ready-to-merge")')
+          
+          echo "CI_STATUS=$CI_STATUS" >> $GITHUB_OUTPUT
+          echo "APPROVAL_COUNT=$APPROVAL_COUNT" >> $GITHUB_OUTPUT
+          echo "HAS_READY_LABEL=$HAS_READY_LABEL" >> $GITHUB_OUTPUT
+          
+          if [[ "$CI_STATUS" == "SUCCESS" && "$APPROVAL_COUNT" -ge 1 && -n "$HAS_READY_LABEL" ]]; then
+            echo "ready=true" >> $GITHUB_OUTPUT
+          else
+            echo "ready=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Merge PR if ready
+        if: steps.verify_status.outputs.ready == 'true'
+        run: |
+          echo "🎉 PR #$PR_NUMBER telah memenuhi semua kriteria dan siap untuk merge!"
+          gh pr merge $PR_NUMBER --merge --delete-branch --admin
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Request Manual Review if Blocked
+        if: steps.verify_status.outputs.ready == 'false' && steps.analyze_pr.outcome == 'success'
+        run: |
+          BLOCKERS=$(gh pr view $PR_NUMBER --json statusCheckRollup,reviews --jq '
+            .statusCheckRollup.contexts | map(select(.state != "SUCCESS")) as $failedChecks |
+            .reviews | map(select(.state == "CHANGES_REQUESTED")) as $blockingReviews |
+            {
+              failedChecks: $failedChecks,
+              blockingReviews: $blockingReviews
+            } | tojson
+          ')
+          
+          gh pr comment $PR_NUMBER --body "🔄 **PR Status Update**
+
+          PR ini masih memerlukan beberapa perbaikan sebelum dapat di-merge:
+
+          - [ ] **Test/Checks**: Ada check yang masih gagal
+          - [ ] **Review**: Masih ada review yang meminta perubahan
+          - [ ] **Komentar**: Beberapa komentar perlu ditanggapi
+
+          Silakan periksa komentar terbaru dari bot untuk detail perbaikan yang diperlukan. Jika Anda memerlukan bantuan tambahan, tag @maintainer yang sesuai."
+          
+          # Add label to indicate it needs attention
+          gh pr edit $PR_NUMBER --add-label "needs-attention"
+        env:
+          GH_TOKEN: ${{ github.token }}
