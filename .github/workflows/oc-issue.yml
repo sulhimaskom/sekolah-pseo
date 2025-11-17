@@ -1,16 +1,9 @@
 name: Issue Solver with OpenCode
 
 on:
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
-    inputs:
-      issue_number:
-        description: 'Nomor issue untuk dipecahkan'
-        required: false
-        type: number
-  issues:
-    types: [opened, edited, reopened]
-  issue_comment:
-    types: [created]
 
 permissions:
   id-token: write
