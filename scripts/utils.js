@@ -48,42 +48,54 @@ function parseCsv(csvData) {
  * @returns {Array<string>}
  */
 function parseCsvLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"' && !inQuotes) {
-      // Start of quoted field
-      inQuotes = true;
-    } else if (char === '"' && inQuotes) {
-      // End of quoted field or escaped quote
-      if (i + 1 < line.length && line[i + 1] === '"') {
-        // Escaped quote
-        current += '"';
-        i++; // Skip next quote
-      } else {
-        // End of quoted field
-        inQuotes = false;
-      }
-    } else if (char === ',' && !inQuotes) {
-      // End of field
-      result.push(current.trim());
-      current = '';
-    } else {
-      // Regular character
-      current += char;
-    }
-  }
-  
-  // Add the last field
-  result.push(current.trim());
-  
-  return result;
-}
+   const result = [];
+   let current = '';
+   let inQuotes = false;
+   
+   for (let i = 0; i < line.length; i++) {
+     const char = line[i];
+     
+     if (char === '"' && !inQuotes) {
+       // Start of quoted field
+       inQuotes = true;
+     } else if (char === '"' && inQuotes) {
+       // End of quoted field or escaped quote
+       if (i + 1 < line.length && line[i + 1] === '"') {
+         // Escaped quote
+         current += '"';
+         i++; // Skip next quote
+       } else {
+         // End of quoted field
+         inQuotes = false;
+       }
+     } else if (char === ',' && !inQuotes) {
+       // End of field
+       result.push(current.trim());
+       current = '';
+     } else {
+       // Regular character
+       current += char;
+     }
+   }
+   
+   // Add the last field
+   result.push(current.trim());
+   
+   return result;
+ }
+
+ /**
+  * Calculate the sum of two numbers
+  * 
+  * @param {number} a - First number
+  * @param {number} b - Second number
+  * @returns {number} The sum of a and b
+  */
+ function sum(a, b) {
+   return a + b;
+ }
 
 module.exports = {
-  parseCsv
-};
+   parseCsv,
+   sum
+ };
