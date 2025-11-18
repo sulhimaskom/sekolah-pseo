@@ -84,6 +84,21 @@ function parseCsvLine(line) {
   return result;
 }
 
+/**
+ * Function to compute the sum of two numbers
+ * 
+ * @param {number} a - First number
+ * @param {number} b - Second number
+ * @returns {number} - Sum of the two numbers
+ */
+function addNumbers(a, b) {
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    throw new Error('Both parameters must be numbers');
+  }
+  return a + b;
+}
+
 module.exports = {
-  parseCsv
+  parseCsv,
+  addNumbers
 };
