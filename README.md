@@ -1,38 +1,38 @@
 # Sekolah PSEO
 
-这是学校 PSEO 项目的文档。
+Ini adalah dokumentasi untuk proyek Sekolah PSEO.
 
-## 目录结构
+## Struktur Direktori
 
-- `src/` - 源代码
-- `tests/` - 测试文件
-- `scripts/` - 脚本文件
-- `data/` - 数据文件
+- `src/` - Kode sumber
+- `tests/` - File pengujian
+- `scripts/` - File skrip
+- `data/` - File data
 
-## 开发指南
+## Panduan Pengembangan
 
-1. 克隆仓库
-2. 安装依赖: `npm install`
-3. 运行ETL处理: `npm run etl`
-4. 构建页面: `npm run build`
-5. 生成站点地图: `npm run sitemap`
-6. 验证链接: `npm run validate-links`
+1. Kloning repositori
+2. Instal dependensi: `npm install`
+3. Jalankan pemrosesan ETL: `npm run etl`
+4. Bangun halaman: `npm run build`
+5. Hasilkan peta situs: `npm run sitemap`
+6. Validasi tautan: `npm run validate-links`
 
-## 可用脚本
+## Skrip Tersedia
 
-- `npm run build` - 生成学校页面
-- `npm run etl` - 处理原始数据
-- `npm run sitemap` - 生成站点地图
-- `npm run validate-links` - 验证内部链接
-- `npm test` - 运行所有测试
+- `npm run build` - Bangun halaman sekolah
+- `npm run etl` - Proses data mentah
+- `npm run sitemap` - Hasilkan peta situs
+- `npm run validate-links` - Validasi tautan internal
+- `npm test` - Jalankan semua pengujian
 
-## 环境变量
+## Variabel Lingkungan
 
-- `SITE_URL` - 网站基础URL，用于生成站点地图 (默认: https://example.com)
-- `RAW_DATA_PATH` - 原始数据文件路径 (默认: external/raw.csv)
-- `VALIDATION_CONCURRENCY_LIMIT` - 链接验证并发限制 (默认: 50)
-- `BUILD_CONCURRENCY_LIMIT` - 页面构建并发限制 (默认: 100)
+- `SITE_URL` - URL dasar situs web, untuk menghasilkan peta situs (bawaan: https://example.com)
+- `RAW_DATA_PATH` - Jalur file data mentah (bawaan: external/raw.csv)
+- `VALIDATION_CONCURRENCY_LIMIT` - Batas konkurensi validasi tautan (bawaan: 50)
+- `BUILD_CONCURRENCY_LIMIT` - Batas konkurensi pembuatan halaman (bawaan: 100)
 
-## 贡献
+## Kontribusi
 
-欢迎贡献代码和文档。
+Kontribusi kode dan dokumentasi sangat dipersilakan.
