@@ -1,6 +1,6 @@
 # Sekolah PSEO
 
-这是学校 PSEO 项目的文档。
+Ini adalah dokumentasi proyek Sekolah PSEO.
 
 ## 目录结构
 
