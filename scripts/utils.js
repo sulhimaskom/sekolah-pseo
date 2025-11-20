@@ -92,8 +92,8 @@ function parseCsvLine(line) {
  * @returns {number} - Sum of the two numbers
  */
 function addNumbers(a, b) {
-  if (typeof a !== 'number' || typeof b !== 'number') {
-    throw new Error('Both parameters must be numbers');
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    throw new Error('Both parameters must be finite numbers');
   }
   return a + b;
 }
