@@ -35,7 +35,7 @@ test('addNumbers computes sum of two numbers', () => {
   assert.strictEqual(addNumbers(2, 3), 5);
   assert.strictEqual(addNumbers(-1, 1), 0);
   assert.strictEqual(addNumbers(0, 0), 0);
-  assert.strictEqual(addNumbers(10.5, 2.3), 12.8);
+  assert.ok(Math.abs(addNumbers(10.5, 2.3) - 12.8) < Number.EPSILON, '10.5 + 2.3 should be close to 12.8');
 });
 
 test('addNumbers throws error for non-number inputs', () => {
