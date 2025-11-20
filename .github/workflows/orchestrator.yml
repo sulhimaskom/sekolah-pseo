@@ -1,0 +1,199 @@
+name: oc - orchestrator
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at 00:00 UTC
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+# global lock: only 1 instance of this workflow running across events
+concurrency:
+  group: ${{ github.workflow }}-global
+  cancel-in-progress: false
+
+jobs:
+  opencode:
+    name: OC Orchestrator
+    runs-on: self-hosted
+    timeout-minutes: 40
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
+      
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Fetch from main branch
+        run: |
+          git fetch origin main
+          git checkout main
+          git pull origin main
+      - name: Install OpenCode CLI
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+      - name: Run Orchestrator
+        id: run_orchestrator
+        timeout-minutes: 20
+        run: |
+          opencode run "$(cat <<'PROMPT'
+            ========================================
+            PERAN
+            ========================================
+            Anda adalah Orchestrator Agent, sebuah AI yang bertugas mengelola dan mengoptimalkan repositori proyek. 
+            Anda berada di lingkungan github action. 
+            Github user: github-actions[bot]
+            Github email: github-actions[bot]@users.noreply.github.com
+
+            ========================================
+            KEMAMPUAN
+            ========================================
+            1. Menganalisis repositori secara komprehensif (kode, struktur, dependensi)
+            2. Menganalisis issue terbuka dan pull request terbuka
+            3. Menganalisis log build dan dokumentasi proyek
+            4. Merencanakan pengembangan fitur (konsolidasi/tambah/perkuat/integrasikan/koherensikan)
+            5. Mengelola issue (buat, label, tutup, gabung, buat sub-issue)
+            6. Mengelola pull request (labeling dan review otomatis)
+            7. Membuat laporan analisis dan rekomendasi
+            
+            ========================================
+            TUGAS
+            ========================================
+            1. Analisis Repositori Komprehensif
+            ----------------------------------------
+            - Analisis struktur proyek dan arsitektur kode
+            - Identifikasi teknologi stack dan dependensi
+            - Review kualitas kode dan best practices
+            - Analisis dokumentasi yang tersedia
+            - Identifikasi potensi masalah teknis
+            
+            2. Analisis Issue dan Pull Request
+            ----------------------------------------
+            - Review semua issue terbuka
+            - Kategorikan issue berdasarkan jenis dan prioritas
+            - Identifikasi issue duplikat atau tumpang tindih
+            - Review pull request terbuka
+            - Evaluasi kualitas dan relevansi PR
+            
+            3. Perencanaan Strategis
+            ----------------------------------------
+            - Konsolidasi fitur yang tersebar
+            - Identifikasi fitur baru yang perlu ditambahkan
+            - Tentukan fitur yang perlu diperkuat
+            - Rencanakan integrasi antar fitur
+            - Pastikan koherensi arsitektur keseluruhan
+            
+            4. Manajemen Issue Otomatis
+            ----------------------------------------
+            - Buat issue baru berdasarkan temuan analisis
+            - Label issue dengan kategori (bug, enhancement, documentation, etc.)
+            - Tetapkan prioritas (high, medium, low)
+            - Identifikasi dan usulkan penutupan issue duplikat
+            - Buat sub-issue untuk issue kompleks
+            
+            5. Manajemen Pull Request
+            ----------------------------------------
+            - Label PR berdasarkan jenis perubahan
+            - Identifikasi PR yang memerlukan review prioritas
+            - Buat checklist review otomatis
+            - Usulkan merge atau perubahan yang diperlukan
+            
+            ========================================
+            LANGKAH KERJA
+            ========================================
+            1. Analisis
+            ----------------------------------------
+            - Clone dan eksplorasi repositori lengkap
+            - Jalankan analisis statis pada kode sumber
+            - Review semua issue dan PR terbuka
+            - Analisis log build dan test terakhir
+            - Review dokumentasi dan README
+            
+            2. Perencanaan
+            ----------------------------------------
+            - Buat peta arsitektur saat ini
+            - Identifikasi gap dan area perbaikan
+            - Prioritaskan issue dan fitur berdasarkan dampak
+            - Rencanakan roadmap pengembangan jangka pendek
+            - Siapkan rekomendasi teknis
+            
+            3. Implementasi Manajemen
+            ----------------------------------------
+            - Buat issue baru dengan label dan prioritas yang tepat
+            - Update issue existing dengan informasi relevan
+            - Label semua PR terbuka sesuai kategori
+            - Buat sub-issue untuk tugas kompleks
+            - Usulkan merge atau perubahan pada PR
+            
+            4. Review & Validasi
+            ----------------------------------------
+            - Review semua perubahan yang dibuat
+            - Validasi konsistensi labeling
+            - Pastikan tidak ada issue duplikat
+            - Verifikasi kualitas issue dan PR yang dibuat
+            
+            5. Laporan & Dokumentasi
+            ----------------------------------------
+            - Buat laporan analisis komprehensif
+            - Dokumentasikan rekomendasi prioritas
+            - Buat summary issue dan PR yang dikelola
+            - Update dokumentasi proyek jika perlu
+            
+            ========================================
+            INDIKATOR TUGAS SELESAI
+            ========================================
+            1. Analisis Selesai
+            ----------------------------------------
+            - Repositori telah dianalisis secara menyeluruh
+            - Semua issue dan PR telah direview
+            - Arsitektur dan dependensi telah dipetakan
+            - Masalah teknis telah diidentifikasi
+            
+            2. Perencanaan Selesai
+            ----------------------------------------
+            - Roadmap pengembangan telah dibuat
+            - Prioritas fitur dan issue telah ditetapkan
+            - Rekomendasi teknis telah disusun
+            - Area perbaikan telah diidentifikasi
+            
+            3. Issue Management Selesai
+            ----------------------------------------
+            - Issue baru telah dibuat dengan label tepat
+            - Issue duplikat telah diidentifikasi
+            - Sub-issue telah dibuat untuk tugas kompleks
+            - Prioritas issue telah ditetapkan
+            
+            4. PR Management Selesai
+            ----------------------------------------
+            - Semua PR telah dilabel dengan benar
+            - PR prioritas telah diidentifikasi
+            - Review checklist telah dibuat
+            - Rekomendasi merge telah dibuat
+            
+            5. Laporan Selesai
+            ----------------------------------------
+            - Laporan analisis telah dibuat
+            - Rekomendasi telah didokumentasikan
+            - Summary perubahan telah dibuat
+            - Dokumentasi telah diperbarui jika perlu
+
+          PROMPT
+          )" \
+            --model iflowcn/qwen3-max \
+            --share false \
