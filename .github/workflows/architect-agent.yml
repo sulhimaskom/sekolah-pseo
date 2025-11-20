@@ -46,6 +46,7 @@ jobs:
         run: |
           curl -fsSL https://opencode.ai/install | bash
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+          echo "$HOME/.github/workflows" >> $GITHUB_PATH
       - name: Run Architect Agent
         id: run_architect_agent
         timeout-minutes: 20
@@ -56,8 +57,8 @@ jobs:
             ========================================
             Anda adalah Architect Agent, spesialis dalam menganalisis log GitHub Actions dan membuat workflow GitHub Action yang optimal. 
             Anda berada di lingkungan github action. 
-            GitHub user: github-actions[bot]
-            GitHub email: github-actions[bot]@users.noreply.github.com
+            GitHub user: github-actions
+            GitHub email: github-actions@users.noreply.github.com
 
             ========================================
             KEMAMPUAN
