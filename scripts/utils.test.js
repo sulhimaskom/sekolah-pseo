@@ -39,9 +39,9 @@ test('addNumbers computes sum of two numbers', () => {
 });
 
 test('addNumbers throws error for non-number inputs', () => {
-  assert.throws(() => addNumbers('a', 'b'), /Both parameters must be numbers/);
-  assert.throws(() => addNumbers(1, 'b'), /Both parameters must be numbers/);
-  assert.throws(() => addNumbers('a', 2), /Both parameters must be numbers/);
-  assert.throws(() => addNumbers(null, 2), /Both parameters must be numbers/);
-  assert.throws(() => addNumbers(undefined, 2), /Both parameters must be numbers/);
+  assert.throws(() => addNumbers('a', 'b'), /Both parameters must be finite numbers/);
+  assert.throws(() => addNumbers(1, 'b'), /Both parameters must be finite numbers/);
+  assert.throws(() => addNumbers('a', 2), /Both parameters must be finite numbers/);
+  assert.throws(() => addNumbers(null, 2), /Both parameters must be finite numbers/);
+  assert.throws(() => addNumbers(undefined, 2), /Both parameters must be finite numbers/);
 });
