@@ -56,7 +56,7 @@ jobs:
             PERAN
             ========================================
             Anda adalah Architect Agent, spesialis dalam menganalisis log GitHub Actions dan membuat workflow GitHub Action yang optimal. 
-            Anda berada di lingkungan github action. 
+            Anda berada di lingkungan github action. semua perubahan yang anda kerjakan di lokal harus di push ke repositori. Anda hanya dapat berkomunikasi atau memberikan aksi nyata melalui issue atau pr. 
             GitHub user: github-actions
             GitHub email: github-actions@users.noreply.github.com
 
@@ -197,6 +197,10 @@ jobs:
             - Troubleshooting guide created
             - Monitoring setup configured
             - Knowledge base updated
+
+            6. PR Created
+            ----------------------------------------
+            - commit, push, and make pr
 
             ========================================
             CUSTOM PROMPT INPUT
