@@ -34,14 +34,19 @@ async function writeSitemapFiles(urls, outDir) {
   for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
     const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
     const filename = `sitemap-${String(sitemapFiles.length + 1).padStart(3, '0')}.xml`;
-    const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-      .concat(
-        chunk.map(u => {
-          return `  <url><loc>${u}</loc></url>`;
-        })
-      )
-      .concat('</urlset>')
-      .join('\n');
+    
+    // Use array join for better performance when building large strings
+    const contentParts = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ];
+    
+    // Process URLs in batches for better memory usage
+    const urlParts = chunk.map(u => `  <url><loc>${u}</loc></url>`);
+    contentParts.push(...urlParts);
+    contentParts.push('</urlset>');
+    
+    const content = contentParts.join('\n');
     await fs.writeFile(path.join(outDir, filename), content, 'utf8');
     sitemapFiles.push(filename);
   }
@@ -49,21 +54,26 @@ async function writeSitemapFiles(urls, outDir) {
 }
 
 async function writeSitemapIndex(files, outDir, baseUrl) {
-  const content = ['<?xml version="1.0" encoding="UTF-8"?>', '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    .concat(
-      files.map(f => {
-        return `  <sitemap><loc>${baseUrl}/${f}</loc></sitemap>`;
-      })
-    )
-    .concat('</sitemapindex>')
-    .join('\n');
+  // Use array join for better performance when building large strings
+  const contentParts = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+  ];
+  
+  // Process files in batches for better memory usage
+  const sitemapParts = files.map(f => `  <sitemap><loc>${baseUrl}/${f}</loc></sitemap>`);
+  contentParts.push(...sitemapParts);
+  contentParts.push('</sitemapindex>');
+  
+  const content = contentParts.join('\n');
   await fs.writeFile(path.join(outDir, 'sitemap-index.xml'), content, 'utf8');
 }
 
 async function generateSitemaps() {
   const distDir = path.join(__dirname, '../dist');
   const outDir = distDir; // put sitemap files in dist
-  const baseUrl = 'https://example.com'; // TODO: update to your domain or Cloudflare pages URL
+  // Use environment variable for baseUrl, fallback to example.com for development
+  const baseUrl = process.env.SITE_URL || 'https://example.com';
   const urls = await collectUrls(distDir, baseUrl);
   const sitemapFiles = await writeSitemapFiles(urls, outDir);
   await writeSitemapIndex(sitemapFiles, outDir, baseUrl);

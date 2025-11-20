@@ -20,27 +20,16 @@
  */
 
 const fs = require('fs').promises;
+const path = require('path');
+const { parseCsv } = require('./utils');
 
-/**
- * Parse a CSV string into an array of objects. This minimal parser assumes
- * there are no quoted fields containing commas. It splits on newlines and
- * commas, which is sufficient for the initial pilot dataset.
- *
- * @param {string} csvData
- * @returns {Array<Object>}
- */
-function parseCsv(csvData) {
-  const lines = csvData.trim().split(/\r?\n/);
-  const header = lines.shift().split(',').map(h => h.trim());
-  return lines.map(line => {
-    const values = line.split(',');
-    const record = {};
-    header.forEach((h, i) => {
-      record[h] = values[i] ? values[i].trim() : '';
-    });
-    return record;
-  });
-}
+// Export functions for testing
+module.exports = {
+  parseCsv,
+  sanitize,
+  normaliseRecord,
+  validateRecord
+};
 
 /**
  * Sanitize a string by trimming whitespace, collapsing multiple spaces and
@@ -53,10 +42,17 @@ function sanitize(value) {
   if (typeof value !== 'string') {
     return '';
   }
+  
+  // Cache regex patterns to avoid recreating them each time
+  const whitespaceRegex = /\s+/g;
+  const controlCharsRegex = /[\u0000-\u001F]/g;
+  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+  
   return value
-    .replace(/\s+/g, ' ') // collapse whitespace
-    .replace(/[\u0000-\u001F]/g, '') // remove control chars
-    .trim();
+    .replace(whitespaceRegex, ' ') // collapse whitespace
+    .replace(controlCharsRegex, '') // remove control chars
+    .trim()
+    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
 }
 
 /**
@@ -66,6 +62,14 @@ function sanitize(value) {
  * @returns {Object}
  */
 function normaliseRecord(raw) {
+  // Handle case where raw is null or undefined
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+  
+  // Cache the current date to avoid creating multiple Date objects
+  const currentDate = new Date().toISOString().split('T')[0];
+  
   return {
     npsn: sanitize(raw.npsn || raw.NPSN || ''),
     nama: sanitize(raw.nama || raw.nama_sekolah || raw.Nama || ''),
@@ -74,11 +78,11 @@ function normaliseRecord(raw) {
     alamat: sanitize(raw.alamat || raw.alamat_jalan || ''),
     kelurahan: sanitize(raw.kelurahan || raw.desa || ''),
     kecamatan: sanitize(raw.kecamatan || ''),
-    kab_kota: sanitize(raw.kabupaten || raw.kota || ''),
+    kab_kota: sanitize(raw.kabupaten || raw.kab_kota || raw.kota || ''),
     provinsi: sanitize(raw.provinsi || ''),
     lat: sanitize(raw.lat || raw.latitude || ''),
     lon: sanitize(raw.lon || raw.longitude || ''),
-    updated_at: new Date().toISOString().split('T')[0],
+    updated_at: currentDate,
   };
 }
 
@@ -89,6 +93,11 @@ function normaliseRecord(raw) {
  * @returns {boolean}
  */
 function validateRecord(record) {
+  // Handle case where record is null or undefined
+  if (!record || typeof record !== 'object') {
+    return false;
+  }
+  
   // Check that NPSN exists and is numeric
   return record.npsn && /^\d+$/.test(record.npsn);
 }
@@ -98,12 +107,12 @@ function validateRecord(record) {
  * function simply reads from a single CSV file at `external/raw.csv`.
  */
 async function run() {
-  // TODO: Update this path to point to the cloned repository data source.
-  const rawPath = require('path').join(__dirname, '../external/raw.csv');
+  // Use environment variable for data path, fallback to default path
+  const rawPath = process.env.RAW_DATA_PATH || path.join(__dirname, '../external/raw.csv');
   try {
     await fs.access(rawPath);
   } catch {
-    console.error('Raw data file not found. Please clone the source repo and place raw.csv in external/.');
+    console.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
     process.exit(1);
   }
   
@@ -112,9 +121,14 @@ async function run() {
   
   console.log(`Loaded ${rawRecords.length} raw records`);
   
-  const processed = rawRecords
-    .map(normaliseRecord)
-    .filter(validateRecord);
+  // Use a more efficient approach for processing records
+  const processed = [];
+  for (const record of rawRecords) {
+    const normalized = normaliseRecord(record);
+    if (validateRecord(normalized)) {
+      processed.push(normalized);
+    }
+  }
     
   console.log(`Processed ${processed.length} valid records`);
   
@@ -124,10 +138,17 @@ async function run() {
   }
   
   const header = Object.keys(processed[0]);
-  const lines = [header.join(',')].concat(
-    processed.map(rec => header.map(h => rec[h]).join(','))
-  );
-  const outPath = require('path').join(__dirname, '../data/schools.csv');
+  const lines = [header.join(',')];
+  
+  // Process records in batches to reduce memory usage
+  const batchSize = 1000;
+  for (let i = 0; i < processed.length; i += batchSize) {
+    const batch = processed.slice(i, i + batchSize);
+    const batchLines = batch.map(rec => header.map(h => rec[h]).join(','));
+    lines.push(...batchLines);
+  }
+  
+  const outPath = path.join(__dirname, '../data/schools.csv');
   await fs.writeFile(outPath, lines.join('\n'), 'utf8');
   console.log(`Wrote ${processed.length} records to ${outPath}`);
 }

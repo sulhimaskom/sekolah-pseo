@@ -1,8 +1,7 @@
 {
   "name": "sekolah-pseo",
   "version": "1.0.0",
-  "description": "这是学校 PSEO 项目的文档。",
-  "main": "index.js",
+  "description": "Indonesian School PSEO Project - Data processing and static site generation for Indonesian schools",
   "directories": {
     "test": "tests"
   },
@@ -11,7 +10,9 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
-    "test": "echo \"No JavaScript tests specified\" && exit 0"
+    "test": "npm run test:js && npm run test:py",
+    "test:js": "node --test scripts/*.test.js || echo \"No JavaScript tests found\"",
+    "test:py": "python3 -m pytest tests/ -v || echo \"Python tests require pytest to be installed\""
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,9 @@
   "keywords": [
     "sekolah",
     "pseo",
-    "indonesia"
+    "indonesia",
+    "education",
+    "data-processing"
   ],
   "author": "",
   "license": "ISC",

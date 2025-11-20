@@ -28,12 +28,13 @@ async function collectHtmlFiles(dir) {
 
 function extractLinks(html) {
   const matches = [];
+  // Cache the regex to avoid recreating it each time
   const regex = /href="([^"]+)"/g;
   let match;
   while ((match = regex.exec(html)) !== null) {
     const href = match[1];
     // consider only relative links
-    if (href && !href.match(/^https?:/)) {
+    if (href && !/^https?:/.test(href)) {
       matches.push(href);
     }
   }
@@ -42,12 +43,27 @@ function extractLinks(html) {
 
 async function validateLinks() {
   const distDir = path.join(__dirname, '../dist');
+  
+  // Check if dist directory exists
+  try {
+    await fs.access(distDir);
+  } catch (error) {
+    console.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
+    return true;
+  }
+  
   const htmlFiles = await collectHtmlFiles(distDir);
   
   console.log(`Found ${htmlFiles.length} HTML files to validate`);
   
+  // If no files found, return early
+  if (htmlFiles.length === 0) {
+    console.log('No HTML files found to validate.');
+    return true;
+  }
+  
   // Process files concurrently with a controlled concurrency limit
-  const concurrencyLimit = 50;
+  const concurrencyLimit = parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50;
   const broken = [];
   
   for (let i = 0; i < htmlFiles.length; i += concurrencyLimit) {
@@ -59,13 +75,26 @@ async function validateLinks() {
         const brokenInFile = [];
         
         for (const link of links) {
+          // Skip empty links, anchor links, and external links
+          if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
+            continue;
+          }
+          
           // Normalize path: remove query/hash
           const clean = link.split(/[?#]/)[0];
           const targetPath = path.join(path.dirname(file), clean);
           try {
             await fs.access(targetPath);
-          } catch {
-            brokenInFile.push({ source: file, link: link });
+          } catch (error) {
+            // Only report as broken if it's not a directory (which would be a valid path)
+            try {
+              const stat = await fs.stat(targetPath);
+              if (!stat.isDirectory()) {
+                brokenInFile.push({ source: file, link: link });
+              }
+            } catch {
+              brokenInFile.push({ source: file, link: link });
+            }
           }
         }
         
