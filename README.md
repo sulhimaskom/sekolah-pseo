@@ -1,13 +1,13 @@
 # Sekolah PSEO
 
-Ini adalah dokumentasi proyek Sekolah PSEO.
+Ini adalah dokumentasi untuk proyek Sekolah PSEO.
 
 ## Struktur Direktori
 
 - `src/` - Kode sumber
-- `tests/` - File-file pengujian
-- `scripts/` - File-file skrip
-- `data/` - File-file data
+- `tests/` - File tes
+- `scripts/` - File skrip
+- `data/` - File data
 
 ## Panduan Pengembangan
 
@@ -15,23 +15,23 @@ Ini adalah dokumentasi proyek Sekolah PSEO.
 2. Instal dependensi: `npm install`
 3. Jalankan proses ETL: `npm run etl`
 4. Bangun halaman: `npm run build`
-5. Hasilkan peta situs: `npm run sitemap`
+5. Generate sitemap: `npm run sitemap`
 6. Validasi tautan: `npm run validate-links`
 
 ## Skrip yang Tersedia
 
-- `npm run build` - Hasilkan halaman sekolah
+- `npm run build` - Generate halaman sekolah
 - `npm run etl` - Proses data mentah
-- `npm run sitemap` - Hasilkan peta situs
+- `npm run sitemap` - Generate sitemap
 - `npm run validate-links` - Validasi tautan internal
-- `npm test` - Jalankan semua pengujian
+- `npm test` - Jalankan semua tes
 
 ## Variabel Lingkungan
 
-- `SITE_URL` - URL dasar situs web, untuk menghasilkan peta situs (bawaan: https://example.com)
-- `RAW_DATA_PATH` - Jalur file data mentah (bawaan: external/raw.csv)
-- `VALIDATION_CONCURRENCY_LIMIT` - Batas konkurensi validasi tautan (bawaan: 50)
-- `BUILD_CONCURRENCY_LIMIT` - Batas konkurensi pembuatan halaman (bawaan: 100)
+- `SITE_URL` - URL dasar website, untuk generate sitemap (default: https://example.com)
+- `RAW_DATA_PATH` - Lokasi file data mentah (default: external/raw.csv)
+- `VALIDATION_CONCURRENCY_LIMIT` - Batas konkurensi validasi tautan (default: 50)
+- `BUILD_CONCURRENCY_LIMIT` - Batas konkurensi pembuatan halaman (default: 100)
 
 ## Kontribusi
 
