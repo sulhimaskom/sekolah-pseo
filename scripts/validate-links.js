@@ -48,7 +48,7 @@ async function validateLinks() {
   // Check if dist directory exists
   try {
     await fs.access(distDir);
-  } catch (error) {
+  } catch {
     console.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
     return true;
   }
@@ -86,7 +86,7 @@ async function validateLinks() {
           const targetPath = path.join(path.dirname(file), clean);
           try {
             await fs.access(targetPath);
-          } catch (error) {
+          } catch {
             // Only report as broken if it's not a directory (which would be a valid path)
             try {
               const stat = await fs.stat(targetPath);

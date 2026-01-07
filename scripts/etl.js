@@ -20,7 +20,6 @@
  */
 
 const fs = require('fs').promises;
-const path = require('path');
 const { parseCsv } = require('./utils');
 const CONFIG = require('./config');
 

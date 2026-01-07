@@ -9,8 +9,6 @@ const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
 
-const MAX_URLS_PER_SITEMAP = 50000;
-
 async function collectUrls(dir, baseUrl) {
   const urls = [];
   async function walk(current, relative) {
@@ -32,8 +30,8 @@ async function collectUrls(dir, baseUrl) {
 
 async function writeSitemapFiles(urls, outDir) {
   const sitemapFiles = [];
-  for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
-    const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
+  for (let i = 0; i < urls.length; i += CONFIG.MAX_URLS_PER_SITEMAP) {
+    const chunk = urls.slice(i, i + CONFIG.MAX_URLS_PER_SITEMAP);
     const filename = `sitemap-${String(sitemapFiles.length + 1).padStart(3, '0')}.xml`;
     
     // Use array join for better performance when building large strings

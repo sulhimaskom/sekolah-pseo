@@ -24,6 +24,9 @@ const CONFIG = {
   BUILD_CONCURRENCY_LIMIT: Math.max(1, parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100),
   VALIDATION_CONCURRENCY_LIMIT: Math.max(1, parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50),
   
+  // Sitemap limits
+  MAX_URLS_PER_SITEMAP: Math.max(1, parseInt(process.env.MAX_URLS_PER_SITEMAP) || 50000),
+  
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,
