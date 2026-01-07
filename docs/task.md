@@ -1502,3 +1502,45 @@ school-page.js (template - ~70 lines)
 - [x] No regressions in functionality
 - [x] Architecture documented in blueprint.md
 - [x] Tasks tracked in task.md
+
+## Backlog
+
+### [REFACTOR] Resilience Pattern Consistency - Fix Inconsistent fs.access Usage
+
+- Location: scripts/validate-links.js (line 89)
+- Issue: Uses `fs.access` directly instead of `safeAccess` from fs-safe.js. This breaks the resilience pattern consistency - all other file operations in this file use resilient wrappers. Direct fs operations bypass timeout, retry, and circuit breaker protection.
+- Suggestion: Replace `fs.access(targetPath)` with `safeAccess(targetPath)` to maintain consistency with resilience patterns. Add error handling for IntegrationError cases.
+- Priority: High
+- Effort: Small
+
+### [REFACTOR] Code Duplication - Extract Directory Walking Utility
+
+- Location: scripts/validate-links.js (collectHtmlFiles) and scripts/sitemap.js (collectUrls)
+- Issue: Both scripts contain nearly identical recursive directory walking logic (15-20 lines each). This violates DRY principle and makes maintenance harder - changes need to be made in two places.
+- Suggestion: Extract common directory walking logic into a shared utility function in scripts/utils.js (e.g., `walkDirectory(dir, callback)`). Refactor both scripts to use this utility.
+- Priority: Medium
+- Effort: Medium
+
+### [REFACTOR] Complex Nested Logic - Extract Link Validation Logic
+
+- Location: scripts/validate-links.js (lines 75-100)
+- Issue: The link validation logic within the batch processing has deeply nested try-catch blocks and conditional checks. This makes the code hard to read, test, and maintain. Cognitive complexity is high.
+- Suggestion: Extract the inner link validation logic into a separate function `validateLinksInFile(file)` that returns array of broken links. Simplify the main batch processing loop.
+- Priority: Medium
+- Effort: Medium
+
+### [REFACTOR] Code Reusability - Extract CSV Writing Utility
+
+- Location: scripts/etl.js (lines 140-148)
+- Issue: CSV writing logic is manually implemented with batching logic inline in the `run()` function. This couples CSV serialization with ETL orchestration and makes the code harder to test. No CSV writing utility exists for reuse.
+- Suggestion: Extract CSV writing logic into a reusable utility function `writeCsv(data, outputPath)` in scripts/utils.js. The utility should handle header generation, batching, and safe file writing. Update etl.js to use this utility.
+- Priority: Medium
+- Effort: Medium
+
+### [REFACTOR] Code Readability - Simplify Concurrency Control Pattern
+
+- Location: scripts/build-pages.js (lines 93-116) and scripts/validate-links.js (lines 73-113)
+- Issue: Both scripts implement nearly identical concurrency control pattern using for-loop with batch slicing and Promise.allSettled. This pattern is duplicated and could be abstracted into a reusable utility.
+- Suggestion: Extract concurrency control pattern into a utility function `processConcurrently(items, processor, limit)` in scripts/utils.js. Refactor both scripts to use this utility.
+- Priority: Low
+- Effort: Medium
