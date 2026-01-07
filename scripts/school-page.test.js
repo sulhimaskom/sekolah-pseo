@@ -165,7 +165,7 @@ describe('generateSchoolPageHtml', () => {
     const html = generateSchoolPageHtml(validSchool);
 
     assert.ok(html.includes('.skip-link'));
-    assert.ok(html.includes('z-index: 100'));
+    assert.ok(html.includes('z-index: var(--z-index-fixed)'));
   });
 
   it('includes semantic HTML structure', () => {

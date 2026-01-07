@@ -14,15 +14,18 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 | Resilience | Custom implementation | Timeout, retry, circuit breaker |
 | Testing | Node.js Test, pytest | Test framework |
 | Linting | ESLint | Code quality enforcement |
+| Design System | Custom CSS modules | Design tokens, responsive styles |
 
 ## Project Structure
 
 ```
-sekolah-pseo/
+ sekolah-pseo/
  ├── src/
  │   ├── presenters/         # Presentation layer
- │   │   └── templates/      # Page templates
- │   │       └── school-page.js  # School HTML template
+ │   │   ├── templates/      # Page templates
+ │   │   │   └── school-page.js  # School HTML template
+ │   │   ├── design-system.js    # Design tokens (colors, spacing, typography)
+ │   │   └── styles.js          # Generated CSS with responsive design
  │   └── services/           # Business logic layer
  │       └── PageBuilder.js   # Page generation service
  ├── scripts/                # Controllers/Orchestrators

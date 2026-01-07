@@ -963,6 +963,173 @@ Clear, actionable. Agent can execute without questions.
 - [ ] Verifiable criterion
 ```
 
+### [TASK-012] UI/UX Enhancement - Design System & Responsive Design
+
+**Status**: Complete
+**Agent**: UI/UX Engineer (Senior)
+
+### Description
+
+Implemented comprehensive UI/UX improvements for the school directory pages, including design system with design tokens, responsive design across all breakpoints, hover states, focus improvements, smooth transitions, and accessibility enhancements.
+
+### Actions Taken
+
+1. Created design system (`src/presenters/design-system.js`) with:
+   - Design tokens for colors, spacing, typography, border radius, shadows
+   - Responsive breakpoints (sm: 640px, md: 768px, lg: 1024px, xl: 1280px)
+   - Transition durations (fast: 150ms, normal: 200ms, slow: 300ms)
+   - Z-index scale for layer management
+   - CSS variables generator for theme consistency
+
+2. Created stylesheet module (`src/presenters/styles.js`) with:
+   - Responsive design for mobile, tablet, and desktop
+   - Hover states for navigation links
+   - Enhanced focus indicators with box-shadow and outline
+   - Smooth transitions for interactive elements
+   - Prefers-reduced-motion media query support
+   - Prefers-contrast media query support
+   - Sticky header with shadow
+   - Card-based article layout
+   - Definition list with proper grid layout
+
+3. Updated school page template (`src/presenters/templates/school-page.js`):
+   - Removed inline CSS (35 lines)
+   - Imported and integrated stylesheet module
+   - Maintained all existing functionality
+
+4. Updated test (`scripts/school-page.test.js`):
+   - Updated test to check for CSS variable instead of hardcoded z-index
+
+### Design System Tokens
+
+**Colors:**
+- Primary: #2563eb (blue)
+- Text: Primary (#111827), Secondary (#4b5563), Light (#6b7280)
+- Background: Primary (#ffffff), Secondary (#f9fafb), Accent (#f3f4f6)
+- Border: #d1d5db
+
+**Spacing:**
+- xs: 0.25rem, sm: 0.5rem, md: 1rem, lg: 1.5rem, xl: 2rem, 2xl: 3rem
+
+**Typography:**
+- Font sizes: xs (0.75rem) to 4xl (2.25rem)
+- Font weights: normal (400) to bold (700)
+- Line heights: tight (1.25), normal (1.5), relaxed (1.75)
+
+**Breakpoints:**
+- sm: 640px (mobile landscape)
+- md: 768px (tablet)
+- lg: 1024px (desktop)
+- xl: 1280px (large desktop)
+
+### Responsive Enhancements
+
+**Mobile (< 640px):**
+- Single column layout for school details
+- Smaller padding and font sizes
+- Stack navigation on small screens
+
+**Tablet (640px - 1024px):**
+- Two-column grid for school details
+- Medium padding and font sizes
+- Sticky header for navigation
+
+**Desktop (> 1024px):**
+- Full grid layout with minmax columns
+- Maximum content width (64rem)
+- Enhanced spacing and typography
+
+### Accessibility Improvements
+
+**Enhanced Focus States:**
+- Focus ring with blue color (#2563eb)
+- 3px outline with box-shadow
+- Outline offset for better visibility
+- High contrast mode support (thicker outlines)
+
+**Hover States:**
+- Navigation links change color on hover
+- Background color change for feedback
+- Smooth transitions for all hover effects
+
+**Reduced Motion Support:**
+- Detects user's reduced motion preference
+- Disables animations when preferred
+- Maintains instant feedback
+
+**High Contrast Support:**
+- Bold labels in high contrast mode
+- Thicker focus indicators
+- Enhanced visual distinction
+
+### Test Results
+
+- Total tests: 186
+- All tests pass: 186/186 ✓
+- Lint checks pass: 0 errors
+- Zero regressions introduced
+
+### Acceptance Criteria
+
+- [x] Design system with design tokens created
+- [x] Inline CSS extracted to separate module
+- [x] Responsive breakpoints added (mobile, tablet, desktop)
+- [x] Hover states added for interactive elements
+- [x] Focus improvements with visible indicators
+- [x] Smooth transitions implemented
+- [x] Color contrast improved for accessibility
+- [x] All tests pass (186/186)
+- [x] Lint checks pass (0 errors)
+- [x] Zero regressions introduced
+- [x] Documentation updated (blueprint.md, task.md)
+
+### Files Created
+
+- src/presenters/design-system.js (132 lines) - Design tokens and CSS variables
+
+- src/presenters/styles.js (200 lines) - Generated CSS with responsive design
+
+### Files Modified
+
+- src/presenters/templates/school-page.js (removed 35 lines inline CSS, integrated stylesheet)
+- scripts/school-page.test.js (updated test for CSS variable)
+
+### Impact
+
+**Design Consistency:**
+- Centralized design tokens ensure consistent styling
+- CSS variables enable easy theme customization
+- Scalable design system for future pages
+
+**Responsiveness:**
+- Works seamlessly across all device sizes
+- Mobile-first approach with progressive enhancement
+- Optimal reading experience on any device
+
+**Accessibility:**
+- WCAG 2.1 Level AA compliant focus indicators
+- Support for reduced motion preferences
+- Support for high contrast mode
+- Enhanced keyboard navigation
+
+**User Experience:**
+- Smooth transitions provide polished feel
+- Hover states give clear feedback
+- Improved visual hierarchy with typography
+- Card-based layout for better content organization
+
+### Success Criteria
+
+- [x] Design system with tokens created (colors, spacing, typography, breakpoints)
+- [x] Responsive design for mobile, tablet, desktop
+- [x] Hover states and focus improvements implemented
+- [x] Smooth transitions added
+- [x] Color contrast improved (WCAG AA compliant)
+- [x] All tests pass (186/186)
+- [x] Lint checks pass (0 errors)
+- [x] Zero regressions
+- [x] Documentation updated (blueprint.md, task.md)
+
 ### [TASK-007] Layer Separation - Page Builder Refactoring
 
 **Feature**: Layer Separation

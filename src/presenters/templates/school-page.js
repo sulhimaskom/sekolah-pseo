@@ -1,4 +1,5 @@
 const { escapeHtml } = require('../../../scripts/utils');
+const { generateSchoolPageStyles } = require('../styles');
 
 function generateSchoolPageHtml(school) {
   if (!school || typeof school !== 'object') {
@@ -87,44 +88,7 @@ function generateSchoolPageHtml(school) {
     <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
-  <style>
-    .skip-link {
-      position: absolute;
-      top: -40px;
-      left: 0;
-      background: #000;
-      color: #fff;
-      padding: 8px;
-      text-decoration: none;
-      z-index: 100;
-    }
-    .skip-link:focus {
-      top: 0;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-    .school-details-list {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 0.5rem 1rem;
-      max-width: 600px;
-    }
-    .school-details-list dt {
-      font-weight: bold;
-    }
-    .school-details-list dd {
-      margin: 0;
-    }
-  </style>
+  <style>${generateSchoolPageStyles()}</style>
 </body>
 </html>`;
 }
