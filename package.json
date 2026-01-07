@@ -10,6 +10,7 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
+    "lint": "eslint scripts/*.js",
     "test": "npm run test:js && npm run test:py",
     "test:js": "node --test scripts/*.test.js || echo \"No JavaScript tests found\"",
     "test:py": "python3 -m pytest tests/ -v || echo \"Python tests require pytest to be installed\""
@@ -31,5 +32,9 @@
   "bugs": {
     "url": "https://github.com/sulhimaskom/sekolah-pseo/issues"
   },
-  "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme"
+  "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme",
+  "devDependencies": {
+    "eslint": "9.39.2",
+    "globals": "^17.0.0"
+  }
 }

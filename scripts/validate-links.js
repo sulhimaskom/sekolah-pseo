@@ -8,14 +8,20 @@
 const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
+const { safeReadFile, safeAccess, safeReaddir, safeStat } = require('./fs-safe');
+
+// Export functions for testing
+module.exports = {
+  extractLinks
+};
 
 async function collectHtmlFiles(dir) {
   const files = [];
   async function walk(current) {
-    const entries = await fs.readdir(current);
+    const entries = await safeReaddir(current);
     for (const entry of entries) {
       const fullPath = path.join(current, entry);
-      const stat = await fs.stat(fullPath);
+      const stat = await safeStat(fullPath);
       if (stat.isDirectory()) {
         await walk(fullPath);
       } else if (entry.endsWith('.html')) {
@@ -45,10 +51,9 @@ function extractLinks(html) {
 async function validateLinks() {
   const distDir = CONFIG.DIST_DIR;
   
-  // Check if dist directory exists
   try {
-    await fs.access(distDir);
-  } catch (error) {
+    await safeAccess(distDir);
+  } catch {
     console.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
     return true;
   }
@@ -57,13 +62,11 @@ async function validateLinks() {
   
   console.log(`Found ${htmlFiles.length} HTML files to validate`);
   
-  // If no files found, return early
   if (htmlFiles.length === 0) {
     console.log('No HTML files found to validate.');
     return true;
   }
   
-  // Process files concurrently with a controlled concurrency limit
   const concurrencyLimit = CONFIG.VALIDATION_CONCURRENCY_LIMIT;
   const broken = [];
   
@@ -71,25 +74,22 @@ async function validateLinks() {
     const batch = htmlFiles.slice(i, i + concurrencyLimit);
     const batchPromises = batch.map(async (file) => {
       try {
-        const content = await fs.readFile(file, 'utf8');
+        const content = await safeReadFile(file);
         const links = extractLinks(content);
         const brokenInFile = [];
         
         for (const link of links) {
-          // Skip empty links, anchor links, and external links
           if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
             continue;
           }
           
-          // Normalize path: remove query/hash
           const clean = link.split(/[?#]/)[0];
           const targetPath = path.join(path.dirname(file), clean);
           try {
             await fs.access(targetPath);
-          } catch (error) {
-            // Only report as broken if it's not a directory (which would be a valid path)
+          } catch {
             try {
-              const stat = await fs.stat(targetPath);
+              const stat = await safeStat(targetPath);
               if (!stat.isDirectory()) {
                 brokenInFile.push({ source: file, link: link });
               }
@@ -109,7 +109,6 @@ async function validateLinks() {
     const batchResults = await Promise.all(batchPromises);
     batchResults.flat().forEach(brokenLink => broken.push(brokenLink));
     
-    // Log progress
     console.log(`Processed ${Math.min(i + concurrencyLimit, htmlFiles.length)} of ${htmlFiles.length} files`);
   }
   

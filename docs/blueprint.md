@@ -1,0 +1,164 @@
+# Architecture Blueprint
+
+## Overview
+
+Static site generator for Indonesian school directory (Sekolah PSEO).
+
+## Tech Stack
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Build System | Node.js | Build automation |
+| Template Engine | Astro | Static site generation |
+| Data Processing | Node.js | ETL pipeline |
+| Resilience | Custom implementation | Timeout, retry, circuit breaker |
+| Testing | Node.js Test, pytest | Test framework |
+| Linting | ESLint | Code quality enforcement |
+
+## Project Structure
+
+```
+sekolah-pseo/
+ ├── src/
+ │   └── templates/          # Astro templates
+ │       ├── index/          # Homepage template
+ │       ├── profil/         # School profile template
+ │       └── generator/      # Generator template
+ ├── scripts/                # Build scripts
+ │   ├── build-pages.js      # Page generator
+ │   ├── etl.js              # Data ETL
+ │   ├── sitemap.js          # Sitemap generator
+ │   ├── validate-links.js   # Link validation
+ │   ├── config.js           # Shared configuration
+ │   ├── utils.js            # Utility functions
+ │   ├── slugify.js          # URL slug generation
+ │   ├── resilience.js        # Resilience patterns (retry, timeout, circuit breaker)
+ │   ├── fs-safe.js          # Resilient file system wrappers
+ │   └── *.test.js          # Test files
+ ├── data/
+ │   └── schools.csv         # School data source
+ ├── dist/                   # Generated HTML pages
+ └── tests/                  # Test files
+```
+
+## Core Components
+
+### Data Pipeline (ETL)
+- **Input**: Raw CSV (external/raw.csv)
+- **Output**: Processed CSV (data/schools.csv)
+- **Purpose**: Clean, normalize, and validate school data
+
+### Page Builder
+- **Input**: Processed CSV (data/schools.csv)
+- **Output**: Static HTML (dist/)
+- **Purpose**: Generate individual school pages
+
+### Sitemap Generator
+- **Input**: Generated pages (dist/)
+- **Output**: sitemap.xml
+- **Purpose**: SEO indexing
+
+### Link Validator
+- **Input**: Generated pages (dist/)
+- **Output**: Validation report
+- **Purpose**: Internal link integrity
+
+## Standards
+
+### Code Style
+- JavaScript: CommonJS (type: commonjs)
+- Node version: Latest LTS
+- No external build tools (pure Node.js)
+
+### Environment Variables
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| SITE_URL | Base URL for sitemap | https://example.com |
+| RAW_DATA_PATH | Raw CSV location | external/raw.csv |
+| VALIDATION_CONCURRENCY_LIMIT | Link validation concurrency | 50 |
+| BUILD_CONCURRENCY_LIMIT | Page build concurrency | 100 |
+
+### Data Schema
+- Province
+- City/Kabupaten
+- District/Kecamatan
+- School ID (NPSN)
+- School Name
+- School Type (SD/SMP/SMA/SMK/etc)
+- Address
+- Contact Information
+
+## Patterns
+
+### Concurrency Management
+All long-running operations use concurrency limits:
+- Link validation: 50 concurrent requests
+- Page building: 100 concurrent operations
+
+### Error Handling
+- ETL: Log errors, skip invalid records
+- Build: Fail fast, report missing fields
+- Validation: Continue on failure, report all errors
+
+### Resilience Patterns
+
+#### Timeouts
+All file system operations use timeouts to prevent indefinite blocking:
+- File reads: 30 second default timeout
+- File writes: 30 second default timeout
+- Directory operations: 5 second default timeout
+- Directory reads: 10 second default timeout
+
+#### Retry Logic with Exponential Backoff
+Transient file system errors are automatically retried:
+- Max attempts: 3 for most operations
+- Initial delay: 100ms
+- Backoff multiplier: 2x
+- Max delay: 10 seconds
+- Transient errors: EAGAIN, EIO, ENOSPC, EBUSY, ETIMEDOUT
+
+#### Circuit Breaker Pattern
+Prevents cascade failures by blocking operations after repeated failures:
+- File read circuit breaker: 5 failures -> open, 60s reset timeout
+- File write circuit breaker: 5 failures -> open, 60s reset timeout
+- States: CLOSED (normal), OPEN (blocking), HALF_OPEN (testing recovery)
+- Automatic state transitions between states
+
+#### Standardized Error Format
+All integration errors use `IntegrationError` with consistent structure:
+```javascript
+{
+  name: 'IntegrationError',
+  message: 'Error description',
+  code: 'ERROR_CODE',
+  details: { ...context },
+  timestamp: 'ISO-8601'
+}
+```
+
+Error codes:
+- `TIMEOUT`: Operation exceeded time limit
+- `RETRY_EXHAUSTED`: All retry attempts failed
+- `CIRCUIT_BREAKER_OPEN`: Circuit breaker is blocking
+- `FILE_READ_ERROR`: File reading failed
+- `FILE_WRITE_ERROR`: File writing failed
+- `VALIDATION_ERROR`: Data validation failed
+- `CONFIGURATION_ERROR`: Configuration issue
+
+#### File System Operations
+All file system operations use resilient wrappers (`fs-safe.js`):
+- `safeReadFile()` - reads with timeout, retry, and circuit breaker
+- `safeWriteFile()` - writes with timeout, retry, and circuit breaker
+- `safeMkdir()` - creates directories with timeout and retry
+- `safeAccess()` - checks file existence with timeout
+- `safeReaddir()` - lists directory contents with timeout and retry
+- `safeStat()` - gets file stats with timeout and retry
+
+## Decisions Log
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-01-07 | Use Astro for templating | Lightweight, fast static site generation |
+| 2026-01-07 | CSV over database | Simple, portable, low overhead |
+| 2026-01-07 | Node.js scripts | Cross-platform, easy to maintain |
+| 2026-01-07 | Implement resilience patterns | Prevent cascading failures, handle transient errors |

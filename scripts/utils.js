@@ -98,7 +98,21 @@ function addNumbers(a, b) {
   return a + b;
 }
 
+function escapeHtml(text) {
+  if (text === null || text === undefined) {
+    return '';
+  }
+  const str = String(text);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 module.exports = {
   parseCsv,
-  addNumbers
+  addNumbers,
+  escapeHtml
 };

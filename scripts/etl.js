@@ -19,10 +19,9 @@
  * or `papaparse`.
  */
 
-const fs = require('fs').promises;
-const path = require('path');
 const { parseCsv } = require('./utils');
 const CONFIG = require('./config');
+const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
 
 // Export functions for testing
 module.exports = {
@@ -110,46 +109,54 @@ function validateRecord(record) {
 async function run() {
   const rawPath = CONFIG.RAW_DATA_PATH;
   try {
-    await fs.access(rawPath);
-  } catch {
+    await safeAccess(rawPath);
+  } catch (error) {
     console.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
+    console.error(`Error details: ${error.message}`);
     process.exit(1);
   }
   
-  const rawCsv = await fs.readFile(rawPath, 'utf8');
-  const rawRecords = parseCsv(rawCsv);
-  
-  console.log(`Loaded ${rawRecords.length} raw records`);
-  
-  // Use a more efficient approach for processing records
-  const processed = [];
-  for (const record of rawRecords) {
-    const normalized = normaliseRecord(record);
-    if (validateRecord(normalized)) {
-      processed.push(normalized);
-    }
-  }
+  try {
+    const rawCsv = await safeReadFile(rawPath);
+    const rawRecords = parseCsv(rawCsv);
     
-  console.log(`Processed ${processed.length} valid records`);
-  
-  if (processed.length === 0) {
-    console.error('No valid records found after processing');
+    console.log(`Loaded ${rawRecords.length} raw records`);
+    
+    const processed = [];
+    for (const record of rawRecords) {
+      const normalized = normaliseRecord(record);
+      if (validateRecord(normalized)) {
+        processed.push(normalized);
+      }
+    }
+        
+    console.log(`Processed ${processed.length} valid records`);
+    
+    if (processed.length === 0) {
+      console.error('No valid records found after processing');
+      process.exit(1);
+    }
+    
+    const header = Object.keys(processed[0]);
+    const lines = [header.join(',')];
+    
+    const batchSize = 1000;
+    for (let i = 0; i < processed.length; i += batchSize) {
+      const batch = processed.slice(i, i + batchSize);
+      const batchLines = batch.map(rec => header.map(h => rec[h]).join(','));
+      lines.push(...batchLines);
+    }
+    
+    await safeWriteFile(CONFIG.SCHOOLS_CSV_PATH, lines.join('\n'));
+    console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
+  } catch (error) {
+    if (error.name === 'IntegrationError') {
+      console.error(`Integration error: ${error.code} - ${error.message}`);
+    } else {
+      console.error(`ETL process failed: ${error.message}`);
+    }
     process.exit(1);
   }
-  
-  const header = Object.keys(processed[0]);
-  const lines = [header.join(',')];
-  
-  // Process records in batches to reduce memory usage
-  const batchSize = 1000;
-  for (let i = 0; i < processed.length; i += batchSize) {
-    const batch = processed.slice(i, i + batchSize);
-    const batchLines = batch.map(rec => header.map(h => rec[h]).join(','));
-    lines.push(...batchLines);
-  }
-  
-  await fs.writeFile(CONFIG.SCHOOLS_CSV_PATH, lines.join('\n'), 'utf8');
-  console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 }
 
 if (require.main === module) {
