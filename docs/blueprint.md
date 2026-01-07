@@ -68,6 +68,25 @@ sekolah-pseo/
 
 ### Code Style
 - JavaScript: CommonJS (type: commonjs)
+- Module system: CommonJS (module.exports/require)
+- Function exports: Named exports for testing
+- Error handling: IntegrationError for integration failures
+
+### API Documentation
+All internal modules have documented API contracts in `docs/api.md`:
+- Function signatures with parameter types
+- Return types and error conditions
+- Usage examples
+- Module dependencies
+- Error handling patterns
+
+### API Design Principles
+- **Contract First**: All functions have clear input/output contracts
+- **Self-Documenting**: Meaningful function names and parameters
+- **Type Safety**: Input validation for all public functions
+- **Error Consistency**: Standardized IntegrationError format
+- **Idempotency**: Safe operations produce same result
+- **Backward Compatibility**: No breaking changes without versioning
 - Node version: Latest LTS
 - No external build tools (pure Node.js)
 

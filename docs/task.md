@@ -2,6 +2,199 @@
 
 ## Completed Tasks
 
+### [TASK-011] API Standardization - Comprehensive Module Documentation
+
+**Status**: Complete
+**Agent**: Integration Engineer (Senior)
+
+### Description
+
+Created comprehensive API documentation for all internal modules in the Sekolah PSEO project. This documentation standardizes module contracts, function signatures, error handling, and usage patterns across the codebase.
+
+### Actions Taken
+
+1. Created `docs/api.md` with complete API documentation for all modules:
+   - **Configuration Module** (`scripts/config.js`): Central config with path validation
+   - **Utility Module** (`scripts/utils.js`): CSV parsing, HTML escaping, arithmetic
+   - **Resilience Module** (`scripts/resilience.js`): Timeout, retry, circuit breaker patterns
+   - **File System Module** (`scripts/fs-safe.js`): Resilient file system wrappers
+   - **Slugify Module** (`scripts/slugify.js`): URL slug generation with caching
+   - **ETL Module** (`scripts/etl.js`): Data extraction, transformation, loading
+   - **Page Builder Module** (`src/services/PageBuilder.js`): Page generation logic
+   - **School Page Template Module** (`src/presenters/templates/school-page.js`): HTML generation
+
+2. Documented for each module:
+   - **Purpose**: Clear description of module responsibilities
+   - **Exports**: Complete list of exported functions/classes
+   - **Function Signatures**: Parameter types, return types, error conditions
+   - **Usage Examples**: Practical code examples for each function
+   - **Dependencies**: Module dependency relationships
+
+3. Added comprehensive error handling standards:
+   - IntegrationError format and structure
+   - Error code mapping table
+   - Error handling patterns with code examples
+   - Circuit breaker monitoring patterns
+
+4. Created module dependency graph showing:
+   - Hierarchical dependencies between modules
+   - Flow from high-level (controller) to low-level (utilities)
+   - Clear separation of concerns
+
+5. Documented API design principles:
+   - Contract First: All functions have clear input/output contracts
+   - Self-Documenting: Meaningful function names and parameters
+   - Type Safety: Input validation for all public functions
+   - Error Consistency: Standardized IntegrationError format
+   - Idempotency: Safe operations produce same result
+   - Backward Compatibility: No breaking changes without versioning
+
+6. Added best practices section covering:
+   - Always use resilient wrappers (fs-safe.js)
+   - Validate input early
+   - Use IntegrationError for integration failures
+   - Set appropriate timeouts
+   - Handle circuit breaker states
+   - Sanitize user input (escapeHtml)
+   - Use meaningful error details
+
+7. Added testing guidelines:
+   - Unit testing: Isolated function testing
+   - Integration testing: Module interaction testing
+   - Contract testing: API signature validation
+
+8. Updated blueprint.md to reference new API documentation and API standards
+
+### API Documentation Structure
+
+**Module Organization:**
+```
+scripts/           # Controllers and utilities
+├── config.js      # Configuration module
+├── utils.js       # Shared utility functions
+├── resilience.js  # Resilience patterns
+├── fs-safe.js     # Resilient file system wrappers
+├── slugify.js     # URL slug generation
+├── etl.js         # ETL operations
+├── build-pages.js # Page build controller
+├── sitemap.js     # Sitemap generator
+└── validate-links.js # Link validation
+
+src/
+├── services/
+│   └── PageBuilder.js  # Page builder service layer
+└── presenters/
+    └── templates/
+        └── school-page.js  # HTML template generation
+```
+
+**Standardized Error Format:**
+```javascript
+{
+  name: 'IntegrationError',
+  message: 'Error description',
+  code: 'ERROR_CODE',
+  details: { ...context },
+  timestamp: 'ISO-8601'
+}
+```
+
+**Error Codes:**
+- `TIMEOUT`: Operation exceeded time limit
+- `RETRY_EXHAUSTED`: All retry attempts failed
+- `CIRCUIT_BREAKER_OPEN`: Circuit breaker is blocking
+- `FILE_READ_ERROR`: File reading failed
+- `FILE_WRITE_ERROR`: File writing failed
+- `VALIDATION_ERROR`: Data validation failed
+- `CONFIGURATION_ERROR`: Configuration issue
+
+### Acceptance Criteria
+
+- [x] All modules documented with complete API contracts
+- [x] Function signatures documented (parameters, returns, errors)
+- [x] Usage examples provided for all public functions
+- [x] Error handling standards documented
+- [x] Module dependencies documented
+- [x] Best practices section added
+- [x] Testing guidelines documented
+- [x] API design principles defined
+- [x] Blueprint.md updated to reference API documentation
+- [x] All tests pass (186/186)
+- [x] Lint checks pass (0 errors)
+
+### Files Created
+
+- docs/api.md (comprehensive API documentation - 650+ lines)
+
+### Files Modified
+
+- docs/blueprint.md (added API standards section)
+- docs/task.md (this entry)
+
+### Documentation Coverage
+
+**Modules Documented:** 8 modules
+
+**Functions Documented:**
+- config.js: 1 function (validatePath)
+- utils.js: 3 functions (parseCsv, escapeHtml, addNumbers)
+- resilience.js: 5 exports (IntegrationError, ERROR_CODES, isTransientError, withTimeout, retry, CircuitBreaker)
+- fs-safe.js: 6 functions (safeReadFile, safeWriteFile, safeMkdir, safeAccess, safeReaddir, safeStat)
+- slugify.js: 1 function (slugify)
+- etl.js: 4 functions (parseCsv, sanitize, normaliseRecord, validateRecord)
+- PageBuilder.js: 2 functions (buildSchoolPageData, getUniqueDirectories)
+- school-page.js: 1 function (generateSchoolPageHtml)
+
+**Total Functions Documented:** 23 functions
+
+**Documentation Sections:**
+- Module purpose and overview
+- Complete export lists
+- Detailed function documentation (23 functions)
+- Error handling standards
+- Error code mapping table
+- Module dependency graph
+- Best practices (7 guidelines)
+- Testing guidelines (3 areas)
+- API design principles (6 principles)
+- Usage examples throughout
+
+### Impact
+
+**Consistency:**
+- All modules now have standardized documentation
+- Clear contracts for all function inputs/outputs
+- Consistent error handling patterns
+
+**Maintainability:**
+- New developers can quickly understand module APIs
+- Clear dependency relationships documented
+- Best practices codified for future development
+
+**Testability:**
+- Clear contracts make testing easier
+- Expected inputs/outputs documented
+- Error conditions explicitly defined
+
+**Integration:**
+- Module interfaces clearly defined
+- Error handling patterns standardized
+- Integration points documented
+
+### Success Criteria
+
+- [x] All modules have complete API documentation
+- [x] Function signatures documented with types
+- [x] Error handling standardized across codebase
+- [x] Usage examples provided for all functions
+- [x] Module dependencies documented
+- [x] Best practices codified
+- [x] All tests pass (186/186)
+- [x] Documentation updated (blueprint.md, task.md)
+- [x] Backward compatible (no code changes, only documentation)
+
+
+
 ### [TASK-010] Security Review - Comprehensive Security Audit
 
 **Status**: Complete
