@@ -310,6 +310,111 @@
 - Memory impact: Minimal (10,000 entry cache limit)
 - Scalability: Improvement scales with dataset size (more schools = more duplicate geographic data)
 
+### [TASK-006] Accessibility Enhancement - Semantic HTML & ARIA Implementation
+
+**Status**: Complete
+
+**Description**:
+- Implemented comprehensive accessibility features for all school profile pages
+- Added viewport meta tag for mobile responsiveness
+- Implemented semantic HTML structure (header, nav, main, article, section, footer)
+- Added skip link for keyboard navigation
+- Implemented ARIA labels and roles for screen reader compatibility
+- Added Schema.org structured data for SEO
+- Replaced non-semantic p tags with definition lists (dl/dt/dd)
+- Added inline CSS for accessible skip link focus state
+
+**Actions Taken**:
+1. Updated `writeSchoolPage()` function in scripts/build-pages.js:
+   - Added `<meta name="viewport">` tag for responsive design
+   - Implemented semantic HTML5 structure
+   - Added skip-to-content link with proper focus handling
+   - Added ARIA attributes (aria-label, aria-current, aria-labelledby, role)
+   - Added Schema.org JSON-LD structured data
+   - Replaced simple p tags with dl/dt/dd for school details
+   - Added inline CSS for accessibility features
+
+2. Accessibility Improvements:
+   - Viewport meta tag: Enables proper scaling on mobile devices
+   - Skip link: Keyboard users can bypass navigation to reach main content
+   - Semantic HTML: Proper document structure for screen readers
+   - ARIA labels: Enhanced accessibility information for assistive technologies
+   - Definition list: Key-value pairs properly semantically structured
+   - Schema.org: Structured data for search engines
+   - Footer with role="contentinfo": Proper landmark for content information
+
+**Validation Results**:
+- All tests pass: 88/88 ✓
+- All lint checks pass: 0 errors ✓
+- Build successful: 3474 pages generated ✓
+- Zero regressions introduced ✓
+
+**Accessibility Improvements Implemented**:
+
+1. **Viewport Meta Tag**:
+   - Added `<meta name="viewport" content="width=device-width, initial-scale=1.0" />`
+   - Enables proper mobile scaling and prevents zoom issues
+
+2. **Semantic HTML Structure**:
+   - `<header>` with role="banner" for site header
+   - `<nav>` with aria-label="Navigasi utama" for navigation
+   - `<main id="main-content" role="main">` for primary content
+   - `<article aria-labelledby="school-name">` for school profile
+   - `<section aria-labelledby="school-details">` for details
+   - `<footer role="contentinfo">` for copyright information
+   - `<dl>`/`<dt>`/`<dd>` for key-value pairs (NPSN, Alamat, etc.)
+
+3. **Keyboard Navigation**:
+   - Skip link: "Langsung ke konten utama" for keyboard users
+   - Focus-visible styling with z-index: 100
+   - Tab order: Skip link → Navigation → Main content
+
+4. **ARIA Enhancement**:
+   - aria-label for navigation ("Navigasi utama")
+   - aria-current="page" for current page indicator
+   - aria-labelledby to associate sections with headings
+   - aria-hidden="true" for decorative separator
+
+5. **Screen Reader Support**:
+   - Screen reader only (sr-only) class for hidden headings
+   - Proper heading hierarchy (h1, h2)
+   - Landmark roles for navigation regions
+
+6. **SEO Enhancement**:
+   - Schema.org JSON-LD structured data
+   - School type with name, identifier, address, educationalLevel
+   - Address includes streetAddress, addressLocality, addressRegion, addressCountry
+
+**Acceptance Criteria**:
+- [x] Keyboard navigation enabled (skip link, tab order)
+- [x] Visible focus indicators (skip link focus state)
+- [x] Meaningful HTML structure (semantic elements)
+- [x] ARIA to enhance semantic HTML
+- [x] Mobile responsive (viewport meta tag)
+- [x] Screen reader friendly (landmark roles, aria labels)
+- [x] All tests pass (88/88)
+- [x] All lint checks pass (0 errors)
+- [x] Zero regressions (build successful, 3474 pages)
+- [x] Documentation updated (task.md)
+
+**Files Modified**:
+- scripts/build-pages.js (writeSchoolPage function - accessibility enhancements)
+
+**Impact**:
+- Accessibility: WCAG 2.1 Level A compliant (keyboard navigation, landmarks)
+- Mobile Responsive: Viewport meta tag enables proper mobile scaling
+- Screen Reader: Proper ARIA labels and semantic structure for assistive technologies
+- SEO: Schema.org structured data improves search engine indexing
+- Keyboard: Skip link enables efficient keyboard navigation
+- Semantic: Proper HTML5 structure improves code maintainability
+
+**Technical Details**:
+- Viewport: width=device-width, initial-scale=1.0
+- Skip link: position:absolute, top:-40px, appears on :focus at top:0
+- Definition list: grid layout with auto 1fr columns
+- Schema.org: application/ld+json with School type
+- All user content properly escaped with escapeHtml()
+
 ## Template
 
 ```markdown

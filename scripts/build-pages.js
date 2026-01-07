@@ -89,20 +89,115 @@ async function writeSchoolPage(school) {
 <html lang="id">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <title>${escapeHtml(school.nama)}</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "School",
+    "name": "${escapeHtml(school.nama)}",
+    "identifier": "${escapeHtml(school.npsn)}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "${escapeHtml(school.alamat)}",
+      "addressLocality": "${escapeHtml(school.kecamatan)}",
+      "addressRegion": "${escapeHtml(school.kab_kota)}",
+      "addressCountry": "ID"
+    },
+    "educationalLevel": "${escapeHtml(school.bentuk_pendidikan)}"
+  }
+  </script>
 </head>
 <body>
-  <h1>${escapeHtml(school.nama)}</h1>
-  <p>Alamat: ${escapeHtml(school.alamat)}</p>
-  <p>Jenjang: ${escapeHtml(school.bentuk_pendidikan)}</p>
-  <p>Status: ${escapeHtml(school.status)}</p>
-  <!-- TODO: Insert generator and FAQ components here -->
-  <!-- For implementation, integrate with Astro templates in src/templates/ -->
+  <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+  
+  <header role="banner">
+    <nav aria-label="Navigasi utama">
+      <a href="/">Beranda</a>
+      <span aria-hidden="true"> / </span>
+      <span aria-current="page">${escapeHtml(school.nama)}</span>
+    </nav>
+  </header>
+  
+  <main id="main-content" role="main">
+    <article aria-labelledby="school-name">
+      <h1 id="school-name">${escapeHtml(school.nama)}</h1>
+      
+      <section aria-labelledby="school-details">
+        <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
+        <dl class="school-details-list">
+          <dt>NPSN</dt>
+          <dd>${escapeHtml(school.npsn)}</dd>
+          
+          <dt>Alamat</dt>
+          <dd>${escapeHtml(school.alamat)}</dd>
+          
+          <dt>Provinsi</dt>
+          <dd>${escapeHtml(school.provinsi)}</dd>
+          
+          <dt>Kabupaten/Kota</dt>
+          <dd>${escapeHtml(school.kab_kota)}</dd>
+          
+          <dt>Kecamatan</dt>
+          <dd>${escapeHtml(school.kecamatan)}</dd>
+          
+          <dt>Jenjang</dt>
+          <dd>${escapeHtml(school.bentuk_pendidikan)}</dd>
+          
+          <dt>Status</dt>
+          <dd>${escapeHtml(school.status)}</dd>
+        </dl>
+      </section>
+    </article>
+  </main>
+  
+  <footer role="contentinfo">
+    <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+  </footer>
+  
+  <style>
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #000;
+      color: #fff;
+      padding: 8px;
+      text-decoration: none;
+      z-index: 100;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .school-details-list {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem 1rem;
+      max-width: 600px;
+    }
+    .school-details-list dt {
+      font-weight: bold;
+    }
+    .school-details-list dd {
+      margin: 0;
+    }
+  </style>
 </body>
 </html>`;
   await safeWriteFile(path.join(outDir, filename), content);
