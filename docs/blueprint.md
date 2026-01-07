@@ -20,12 +20,17 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 ```
 sekolah-pseo/
  ├── src/
- │   └── templates/          # Astro templates
- │       ├── index/          # Homepage template
- │       ├── profil/         # School profile template
- │       └── generator/      # Generator template
- ├── scripts/                # Build scripts
- │   ├── build-pages.js      # Page generator
+ │   ├── templates/          # Astro templates (unused)
+ │   │   ├── index/          # Homepage template
+ │   │   ├── profil/         # School profile template
+ │   │   └── generator/      # Generator template
+ │   ├── presenters/         # Presentation layer
+ │   │   └── templates/      # Page templates
+ │   │       └── school-page.js  # School HTML template
+ │   └── services/           # Business logic layer
+ │       └── PageBuilder.js   # Page generation service
+ ├── scripts/                # Controllers/Orchestrators
+ │   ├── build-pages.js      # Page build controller
  │   ├── etl.js              # Data ETL
  │   ├── sitemap.js          # Sitemap generator
  │   ├── validate-links.js   # Link validation
@@ -162,3 +167,6 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-01-07 | CSV over database | Simple, portable, low overhead |
 | 2026-01-07 | Node.js scripts | Cross-platform, easy to maintain |
 | 2026-01-07 | Implement resilience patterns | Prevent cascading failures, handle transient errors |
+| 2026-01-07 | Implement layer separation (controller/service/presentation) | Better separation of concerns, testability, maintainability |
+| 2026-01-07 | Extract HTML templates to separate modules | Templates testable in isolation, reusable, easy to modify |
+| 2026-01-07 | Create PageBuilder service layer | Business logic isolated from file I/O and presentation |

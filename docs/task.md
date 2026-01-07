@@ -432,3 +432,168 @@ Clear, actionable. Agent can execute without questions.
 
 - [ ] Verifiable criterion
 ```
+
+### [TASK-007] Layer Separation - Page Builder Refactoring
+
+**Feature**: Layer Separation
+**Status**: Complete
+**Agent**: Code Architect
+
+### Description
+
+Refactored build-pages.js to implement proper layer separation by:
+1. Extracting HTML template from business logic
+2. Creating PageBuilder service for page generation
+3. Converting build-pages.js to thin controller pattern
+
+This refactoring addresses architectural anti-pattern:
+- Mixed responsibilities in build-pages.js (presentation + business logic + file I/O)
+- Hardcoded HTML templates
+- God function (writeSchoolPage with 144 lines)
+
+### Actions Taken
+
+1. Created presentation layer (`src/presenters/templates/school-page.js`):
+   - Extracted HTML template string from build-pages.js
+   - Separated template generation from file writing
+   - Added validation for required school fields
+   - Templates are now testable in isolation
+
+2. Created service layer (`src/services/PageBuilder.js`):
+   - Implements business logic for page generation
+   - Handles path construction and slug generation
+   - Provides methods for single and batch page building
+   - Extracts directory pre-creation logic
+   - Services are testable without file I/O
+
+3. Refactored controller layer (`scripts/build-pages.js`):
+   - Reduced from 297 lines to ~200 lines
+   - Removed hardcoded HTML template (114 lines removed)
+   - Removed duplicate path construction logic
+   - Now acts as thin orchestrator:
+     - Coordinates data loading (CSV)
+     - Delegates to PageBuilder service (business logic)
+     - Handles file writing (I/O)
+
+4. Updated test suite:
+   - All existing tests continue to pass (88/88)
+   - No changes needed to test logic (backward compatible)
+   - Tests validate new architecture works correctly
+
+### Architecture Improvements
+
+**Before**:
+```
+build-pages.js (297 lines)
+├── CSV parsing (data access)
+├── HTML template (presentation)
+├── Path construction (business logic)
+├── File writing (I/O)
+└── Concurrency control (orchestration)
+```
+
+**After**:
+```
+build-pages.js (controller - ~200 lines)
+├── Data loading (calls loadSchools)
+├── Page building (delegates to PageBuilder)
+├── File writing (delegates to fs-safe)
+└── Orchestration (coordinates the above)
+
+PageBuilder.js (service - ~60 lines)
+├── buildSchoolPageData (single page logic)
+├── buildSchoolPagesData (batch logic)
+└── getUniqueDirectories (directory logic)
+
+school-page.js (template - ~70 lines)
+└── generateSchoolPageHtml (template only)
+```
+
+### Benefits Achieved
+
+1. **Separation of Concerns**:
+   - Templates are separate from business logic
+   - Business logic is separate from file I/O
+   - Each layer has single responsibility
+
+2. **Testability**:
+   - Templates can be tested without file I/O
+   - Services can be tested with mocked data
+   - Controller tests remain focused on orchestration
+
+3. **Maintainability**:
+   - HTML changes only affect template module
+   - Business logic changes only affect service
+   - File I/O changes only affect controller
+
+4. **Reusability**:
+   - Template can be reused by other page generators
+   - Service can be called from multiple controllers
+   - Clear interfaces between layers
+
+5. **Code Quality**:
+   - Reduced function complexity (writeSchoolPage: 144 → ~15 lines)
+   - Eliminated code duplication
+   - Better naming and organization
+
+### Test Results
+
+- Total tests: 88
+- Tests passing: 88/88 ✓
+- Test failures: 0
+- Regressions: None
+- All existing tests continue to work
+
+### Acceptance Criteria
+
+- [x] HTML template extracted to separate module
+- [x] PageBuilder service created for business logic
+- [x] build-pages.js refactored to thin controller
+- [x] All tests pass (88/88)
+- [x] Zero regressions
+- [x] Clear layer separation achieved
+- [x] Templates testable in isolation
+- [x] Business logic testable without file I/O
+- [x] Documentation updated (blueprint.md)
+
+### Files Created
+
+- src/presenters/templates/school-page.js (70 lines) - Template layer
+- src/services/PageBuilder.js (60 lines) - Service layer
+- src/services/ directory - New service layer
+- src/presenters/ directory - New presentation layer
+
+### Files Modified
+
+- scripts/build-pages.js (297 → ~200 lines) - Refactored to controller pattern
+
+### Architectural Impact
+
+**Layer Separation**:
+- ✅ Presentation: Templates in `src/presenters/templates/`
+- ✅ Service: Business logic in `src/services/PageBuilder.js`
+- ✅ Controller: Orchestration in `scripts/build-pages.js`
+- ✅ Data Access: CSV parsing via `scripts/utils.js`
+- ✅ File I/O: Resilient operations via `scripts/fs-safe.js`
+
+**Code Metrics**:
+- Lines removed: ~97 (32% reduction in build-pages.js)
+- New modules: 2 (template, service)
+- Test coverage: Maintained (88/88 passing)
+
+**Future Extensions**:
+- Easy to add new page types (index, search, etc.)
+- Templates can be swapped without touching business logic
+- Services can be reused by API endpoints
+- Clear interfaces enable dependency injection
+
+### Success Criteria
+
+- [x] Each module has single, well-defined responsibility
+- [x] Dependencies flow from high-level (controller) to low-level (template/service)
+- [x] Templates are separate, reusable components
+- [x] Business logic is testable without file I/O
+- [x] All tests pass (88/88)
+- [x] No regressions in functionality
+- [x] Architecture documented in blueprint.md
+- [x] Tasks tracked in task.md
