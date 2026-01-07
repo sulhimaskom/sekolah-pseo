@@ -8,11 +8,11 @@
  * your chosen SSG (Astro or Eleventy) and template files under src/templates.
  */
 
-const fs = require('fs').promises;
 const path = require('path');
 const slugify = require('./slugify');
 const { parseCsv, escapeHtml } = require('./utils');
 const CONFIG = require('./config');
+const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 
 // Export functions for testing
 module.exports = {
@@ -30,7 +30,7 @@ const distDir = CONFIG.DIST_DIR;
  */
 async function ensureDistDir() {
   try {
-    await fs.mkdir(distDir, { recursive: true });
+    await safeMkdir(distDir);
   } catch (error) {
     console.error(`Failed to create dist directory: ${error.message}`);
     throw error;
@@ -42,7 +42,7 @@ async function ensureDistDir() {
  */
 async function loadSchools() {
   try {
-    const text = await fs.readFile(CONFIG.SCHOOLS_CSV_PATH, 'utf8');
+    const text = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
     return parseCsv(text);
   } catch (error) {
     console.error(`Failed to load schools from ${CONFIG.SCHOOLS_CSV_PATH}: ${error.message}`);
@@ -105,7 +105,7 @@ async function writeSchoolPage(school) {
   <!-- For implementation, integrate with Astro templates in src/templates/ -->
 </body>
 </html>`;
-  await fs.writeFile(path.join(outDir, filename), content, 'utf8');
+  await safeWriteFile(path.join(outDir, filename), content);
 }
 
 /**
@@ -138,10 +138,8 @@ async function preCreateDirectories(schools) {
   console.log(`Creating ${uniqueDirs.size} unique directories...`);
   
   const dirPromises = Array.from(uniqueDirs).map(dir => 
-    fs.mkdir(dir, { recursive: true }).catch(err => {
-      if (err.code !== 'EEXIST') {
-        console.error(`Failed to create directory ${dir}: ${err.message}`);
-      }
+    safeMkdir(dir).catch(err => {
+      console.error(`Failed to create directory ${dir}: ${err.message}`);
     })
   );
   

@@ -5,9 +5,9 @@
  * been populated with HTML files.
  */
 
-const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
+const { safeWriteFile, safeReaddir, safeStat } = require('./fs-safe');
 
 // Export functions for testing
 module.exports = {
@@ -19,11 +19,11 @@ module.exports = {
 async function collectUrls(dir, baseUrl) {
   const urls = [];
   async function walk(current, relative) {
-    const entries = await fs.readdir(current);
+    const entries = await safeReaddir(current);
     for (const entry of entries) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
-      const stat = await fs.stat(fullPath);
+      const stat = await safeStat(fullPath);
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
       } else if (entry.endsWith('.html')) {
@@ -53,7 +53,7 @@ async function writeSitemapFiles(urls, outDir) {
     contentParts.push('</urlset>');
     
     const content = contentParts.join('\n');
-    await fs.writeFile(path.join(outDir, filename), content, 'utf8');
+    await safeWriteFile(path.join(outDir, filename), content);
     sitemapFiles.push(filename);
   }
   return sitemapFiles;
@@ -72,7 +72,7 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
   contentParts.push('</sitemapindex>');
   
   const content = contentParts.join('\n');
-  await fs.writeFile(path.join(outDir, 'sitemap-index.xml'), content, 'utf8');
+  await safeWriteFile(path.join(outDir, 'sitemap-index.xml'), content);
 }
 
 async function generateSitemaps() {
