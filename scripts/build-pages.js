@@ -11,7 +11,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const slugify = require('./slugify');
-const { parseCsv } = require('./utils');
+const { parseCsv, escapeHtml } = require('./utils');
 const CONFIG = require('./config');
 
 // Export functions for testing
@@ -68,7 +68,6 @@ async function writeSchoolPage(school) {
     throw new Error('School object missing required fields');
   }
   
-  // Pre-compute slugs to avoid redundant calls
   const provinsiSlug = slugify(school.provinsi);
   const kabKotaSlug = slugify(school.kab_kota);
   const kecamatanSlug = slugify(school.kecamatan);
@@ -85,10 +84,68 @@ async function writeSchoolPage(school) {
     'kecamatan',
     kecamatanSlug
   );
-  await fs.mkdir(outDir, { recursive: true });
   const filename = `${school.npsn}-${namaSlug}.html`;
-  const content = `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="utf-8" />\n  <title>${school.nama}</title>\n</head>\n<body>\n  <h1>${school.nama}</h1>\n  <p>Alamat: ${school.alamat}</p>\n  <p>Jenjang: ${school.bentuk_pendidikan}</p>\n  <p>Status: ${school.status}</p>\n  <!-- TODO: Insert generator and FAQ components here -->\n  <!-- For implementation, integrate with Astro templates in src/templates/ -->\n</body>\n</html>`;
+  const content = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <title>${escapeHtml(school.nama)}</title>
+</head>
+<body>
+  <h1>${escapeHtml(school.nama)}</h1>
+  <p>Alamat: ${escapeHtml(school.alamat)}</p>
+  <p>Jenjang: ${escapeHtml(school.bentuk_pendidikan)}</p>
+  <p>Status: ${escapeHtml(school.status)}</p>
+  <!-- TODO: Insert generator and FAQ components here -->
+  <!-- For implementation, integrate with Astro templates in src/templates/ -->
+</body>
+</html>`;
   await fs.writeFile(path.join(outDir, filename), content, 'utf8');
+}
+
+/**
+ * Pre-create all unique directories needed for schools to reduce redundant fs.mkdir calls.
+ *
+ * @param {Array<Object>} schools
+ */
+async function preCreateDirectories(schools) {
+  const uniqueDirs = new Set();
+  
+  for (const school of schools) {
+    const provinsiSlug = slugify(school.provinsi);
+    const kabKotaSlug = slugify(school.kab_kota);
+    const kecamatanSlug = slugify(school.kecamatan);
+    
+    const outDir = path.join(
+      __dirname,
+      '..',
+      'dist',
+      'provinsi',
+      provinsiSlug,
+      'kabupaten',
+      kabKotaSlug,
+      'kecamatan',
+      kecamatanSlug
+    );
+    uniqueDirs.add(outDir);
+  }
+  
+  console.log(`Creating ${uniqueDirs.size} unique directories...`);
+  
+  const dirPromises = Array.from(uniqueDirs).map(dir => 
+    fs.mkdir(dir, { recursive: true }).catch(err => {
+      if (err.code !== 'EEXIST') {
+        console.error(`Failed to create directory ${dir}: ${err.message}`);
+      }
+    })
+  );
+  
+  await Promise.all(dirPromises);
 }
 
 /**
@@ -99,6 +156,8 @@ async function writeSchoolPage(school) {
  * @param {number} concurrencyLimit
  */
 async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT) {
+  await preCreateDirectories(schools);
+  
   const results = [];
   for (let i = 0; i < schools.length; i += concurrencyLimit) {
     const batch = schools.slice(i, i + concurrencyLimit);

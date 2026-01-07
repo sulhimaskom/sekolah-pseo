@@ -5,6 +5,9 @@
  * from npm.
  */
 
+const slugCache = new Map();
+const MAX_CACHE_SIZE = 10000;
+
 /**
  * Convert a string into a slug suitable for use in URLs. Steps:
  *  - Convert to lowercase
@@ -26,15 +29,28 @@ function slugify(input) {
     return '';
   }
   
-  // Cache the result of normalize to avoid repeated calls
-  const normalized = input.toString().normalize('NFD');
+  // Check cache first
+  if (slugCache.has(input)) {
+    return slugCache.get(input);
+  }
   
-  return normalized
-    .replace(/\p{Diacritic}/gu, '') // remove diacritics
+  // Compute slug
+  const normalized = input.toString().normalize('NFD');
+  const slug = normalized
+    .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-') || 'untitled';
+  
+  // Store in cache with size limit
+  if (slugCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = slugCache.keys().next().value;
+    slugCache.delete(firstKey);
+  }
+  slugCache.set(input, slug);
+  
+  return slug;
 }
 
 module.exports = slugify;
