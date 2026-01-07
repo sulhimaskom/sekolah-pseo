@@ -35,14 +35,6 @@ function buildSchoolPageData(school) {
   };
 }
 
-function buildSchoolPagesData(schools) {
-  if (!Array.isArray(schools)) {
-    throw new Error('schools must be an array');
-  }
-
-  return schools.map(school => buildSchoolPageData(school));
-}
-
 function getUniqueDirectories(schools) {
   if (!Array.isArray(schools)) {
     throw new Error('schools must be an array');
@@ -72,6 +64,5 @@ function getUniqueDirectories(schools) {
 
 module.exports = {
   buildSchoolPageData,
-  buildSchoolPagesData,
   getUniqueDirectories
 };

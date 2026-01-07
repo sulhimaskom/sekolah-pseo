@@ -20,10 +20,6 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 ```
 sekolah-pseo/
  ├── src/
- │   ├── templates/          # Astro templates (unused)
- │   │   ├── index/          # Homepage template
- │   │   ├── profil/         # School profile template
- │   │   └── generator/      # Generator template
  │   ├── presenters/         # Presentation layer
  │   │   └── templates/      # Page templates
  │   │       └── school-page.js  # School HTML template

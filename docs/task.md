@@ -2,6 +2,61 @@
 
 ## Completed Tasks
 
+### [TASK-008] Code Cleanup - Dead Code Removal & Lint Fix
+
+**Status**: Complete
+
+**Description**:
+- Removed unused import `buildSchoolPagesData` from build-pages.js
+- Removed unused `buildSchoolPagesData` function from PageBuilder.js
+- Removed unused Astro template directory (src/templates/)
+  - index/index.astro (placeholder with TODO comment)
+  - profil/profile.astro (placeholder with TODO comment)
+  - generator/generator.astro (placeholder with TODO comment)
+
+**Actions Taken**:
+1. Fixed lint error by removing unused `buildSchoolPagesData` import from scripts/build-pages.js
+2. Removed unused `buildSchoolPagesData` function from src/services/PageBuilder.js
+   - Function was defined but never used anywhere in the codebase
+   - The build process uses individual `buildSchoolPageData` calls with concurrency control instead
+3. Removed unused src/templates/ directory
+   - Three placeholder Astro templates with TODO comments
+   - Documented as "unused" in blueprint.md
+   - No references found anywhere in the codebase
+
+**Impact**:
+- Lines removed: ~60 lines of dead code
+- Files removed: 3 unused template files + 1 function
+- Lint errors: 0 (was 1)
+- All tests pass: 88/88
+- Build succeeds: 3474 pages generated
+- Zero regressions
+
+**Acceptance Criteria**:
+- [x] Build passes (3474 pages generated)
+- [x] Lint errors resolved (0 errors)
+- [x] Dead code removed (unused import, unused function, unused templates)
+- [x] All tests pass (88/88)
+- [x] Zero regressions (all functionality verified)
+- [x] Documentation updated (blueprint.md)
+
+**Files Modified**:
+- scripts/build-pages.js (removed unused import)
+- src/services/PageBuilder.js (removed unused function)
+- docs/blueprint.md (removed templates directory from structure)
+- docs/task.md (this entry)
+
+**Files Deleted**:
+- src/templates/index/index.astro
+- src/templates/profil/profile.astro
+- src/templates/generator/generator.astro
+
+**Success Criteria**:
+- [x] Build passes
+- [x] Lint errors resolved (0 errors)
+- [x] Dead/duplicate code removed
+- [x] Zero regressions
+
 ### [TASK-005] Integration Hardening - Resilience Patterns Implementation
 
 **Status**: Complete

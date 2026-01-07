@@ -14,7 +14,7 @@ const path = require('path');
 const { parseCsv } = require('./utils');
 const CONFIG = require('./config');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
-const { buildSchoolPageData, buildSchoolPagesData, getUniqueDirectories } = require('../src/services/PageBuilder');
+const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
 
 // Export functions for testing
 module.exports = {
