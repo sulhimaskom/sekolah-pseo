@@ -14,6 +14,14 @@ const slugify = require('./slugify');
 const { parseCsv } = require('./utils');
 const CONFIG = require('./config');
 
+// Export functions for testing
+module.exports = {
+  writeSchoolPage,
+  writeSchoolPagesConcurrently,
+  ensureDistDir,
+  loadSchools
+};
+
 // Ensure dist directory exists
 const distDir = CONFIG.DIST_DIR;
 

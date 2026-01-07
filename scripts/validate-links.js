@@ -9,6 +9,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
 
+// Export functions for testing
+module.exports = {
+  extractLinks
+};
+
 async function collectHtmlFiles(dir) {
   const files = [];
   async function walk(current) {

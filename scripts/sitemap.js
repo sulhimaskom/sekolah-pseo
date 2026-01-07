@@ -9,6 +9,13 @@ const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
 
+// Export functions for testing
+module.exports = {
+  collectUrls,
+  writeSitemapFiles,
+  writeSitemapIndex
+};
+
 async function collectUrls(dir, baseUrl) {
   const urls = [];
   async function walk(current, relative) {
