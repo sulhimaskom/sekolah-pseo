@@ -111,6 +111,31 @@ All internal modules have documented API contracts in `docs/api.md`:
 - Address
 - Contact Information
 
+### Data Validation
+
+**Required Fields** (must be non-empty):
+- npsn: numeric string (unique identifier)
+- nama: school name
+- bentuk_pendidikan: education level
+- provinsi: province
+- kab_kota: city/regency
+- kecamatan: district
+
+**Coordinate Validation**:
+- Latitude: -11 to 6 (Indonesia bounds)
+- Longitude: 95 to 141 (Indonesia bounds)
+- Format: decimal degrees (e.g., -6.2088)
+
+**Categorical Fields**:
+- status: N (Negeri/Public) or S (Swasta/Private)
+- bentuk_pendidikan: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB
+
+**Data Quality Metrics**:
+- Field completeness percentages
+- Coordinate validity (valid, missing, invalid)
+- NPSN uniqueness detection
+- Categorical distribution analysis
+
 ## Patterns
 
 ### Concurrency Management

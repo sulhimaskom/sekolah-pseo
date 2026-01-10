@@ -28,7 +28,11 @@ module.exports = {
   parseCsv,
   sanitize,
   normaliseRecord,
-  validateRecord
+  validateRecord,
+  validateLatLon,
+  validateCategoricalField,
+  checkNpsnUniqueness,
+  generateDataQualityReport
 };
 
 /**
@@ -93,13 +97,162 @@ function normaliseRecord(raw) {
  * @returns {boolean}
  */
 function validateRecord(record) {
-  // Handle case where record is null or undefined
   if (!record || typeof record !== 'object') {
     return false;
   }
   
-  // Check that NPSN exists and is numeric
-  return record.npsn && /^\d+$/.test(record.npsn);
+  const requiredFields = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
+  
+  for (const field of requiredFields) {
+    if (!record[field] || record[field].trim() === '') {
+      return false;
+    }
+  }
+  
+  if (!/^\d+$/.test(record.npsn)) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Validate latitude and longitude coordinates for Indonesia bounds.
+ * Indonesia: Latitude -11 to 6, Longitude 95 to 141
+ *
+ * @param {string} lat - Latitude as string
+ * @param {string} lon - Longitude as string
+ * @returns {boolean}
+ */
+function validateLatLon(lat, lon) {
+  if (!lat || !lon) {
+    return false;
+  }
+  
+  const latNum = parseFloat(lat);
+  const lonNum = parseFloat(lon);
+  
+  if (isNaN(latNum) || isNaN(lonNum)) {
+    return false;
+  }
+  
+  const INDONESIA_LAT_MIN = -11;
+  const INDONESIA_LAT_MAX = 6;
+  const INDONESIA_LON_MIN = 95;
+  const INDONESIA_LON_MAX = 141;
+  
+  return latNum >= INDONESIA_LAT_MIN && latNum <= INDONESIA_LAT_MAX &&
+         lonNum >= INDONESIA_LON_MIN && lonNum <= INDONESIA_LON_MAX;
+}
+
+/**
+ * Validate categorical field against allowed values.
+ *
+ * @param {string} field - Field value to validate
+ * @param {Array<string>} allowedValues - Array of allowed values
+ * @returns {boolean}
+ */
+function validateCategoricalField(field, allowedValues) {
+  if (!field || typeof field !== 'string') {
+    return false;
+  }
+  
+  return allowedValues.includes(field.trim());
+}
+
+/**
+ * Check if all NPSN values in the dataset are unique.
+ *
+ * @param {Array<Object>} records - Array of school records
+ * @returns {{isUnique: boolean, duplicates: Array<string>}}
+ */
+function checkNpsnUniqueness(records) {
+  const npsnMap = new Map();
+  const duplicates = [];
+  
+  for (const record of records) {
+    const npsn = record.npsn;
+    if (npsn) {
+      if (npsnMap.has(npsn)) {
+        if (!duplicates.includes(npsn)) {
+          duplicates.push(npsn);
+        }
+      } else {
+        npsnMap.set(npsn, true);
+      }
+    }
+  }
+  
+  return {
+    isUnique: duplicates.length === 0,
+    duplicates
+  };
+}
+
+/**
+ * Generate data quality metrics report.
+ *
+ * @param {Array<Object>} records - Array of school records
+ * @returns {Object}
+ */
+function generateDataQualityReport(records) {
+  const totalRecords = records.length;
+  const metrics = {
+    totalRecords,
+    fieldCompleteness: {},
+    coordinateStats: {
+      validCoordinates: 0,
+      missingCoordinates: 0,
+      invalidCoordinates: 0
+    },
+    uniqueness: {
+      uniqueNpsn: 0,
+      duplicateNpsn: 0
+    },
+    categoricalDistribution: {}
+  };
+  
+  const fields = ['npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat', 'kelurahan', 'kecamatan', 'kab_kota', 'provinsi', 'lat', 'lon'];
+  
+  for (const field of fields) {
+    const filledCount = records.filter(r => r[field] && r[field].trim() !== '').length;
+    metrics.fieldCompleteness[field] = {
+      filled: filledCount,
+      missing: totalRecords - filledCount,
+      percentage: ((filledCount / totalRecords) * 100).toFixed(2)
+    };
+  }
+  
+  for (const record of records) {
+    if (record.lat && record.lon) {
+      if (validateLatLon(record.lat, record.lon)) {
+        metrics.coordinateStats.validCoordinates++;
+      } else {
+        metrics.coordinateStats.invalidCoordinates++;
+      }
+    } else {
+      metrics.coordinateStats.missingCoordinates++;
+    }
+    
+    if (record.status) {
+      metrics.categoricalDistribution.status = metrics.categoricalDistribution.status || {};
+      const status = record.status;
+      metrics.categoricalDistribution.status[status] = (metrics.categoricalDistribution.status[status] || 0) + 1;
+    }
+    
+    if (record.bentuk_pendidikan) {
+      metrics.categoricalDistribution.bentuk_pendidikan = metrics.categoricalDistribution.bentuk_pendidikan || {};
+      const bentuk = record.bentuk_pendidikan;
+      metrics.categoricalDistribution.bentuk_pendidikan[bentuk] = (metrics.categoricalDistribution.bentuk_pendidikan[bentuk] || 0) + 1;
+    }
+  }
+  
+  const npsnCheck = checkNpsnUniqueness(records);
+  metrics.uniqueness.uniqueNpsn = totalRecords - npsnCheck.duplicates.length;
+  metrics.uniqueness.duplicateNpsn = npsnCheck.duplicates.length;
+  metrics.uniqueness.duplicates = npsnCheck.duplicates;
+  
+  return metrics;
 }
 
 /**
@@ -123,22 +276,46 @@ async function run() {
     console.log(`Loaded ${rawRecords.length} raw records`);
     
     const processed = [];
+    const rejected = [];
     for (const record of rawRecords) {
       const normalized = normaliseRecord(record);
       if (validateRecord(normalized)) {
         processed.push(normalized);
+      } else {
+        rejected.push({ npsn: normalized.npsn || 'N/A', reason: 'Missing required fields or invalid NPSN' });
       }
     }
         
     console.log(`Processed ${processed.length} valid records`);
+    console.log(`Rejected ${rejected.length} invalid records`);
     
     if (processed.length === 0) {
       console.error('No valid records found after processing');
       process.exit(1);
     }
     
+    const qualityReport = generateDataQualityReport(processed);
+    
+    console.log('\n=== Data Quality Report ===');
+    console.log(`Total records: ${qualityReport.totalRecords}`);
+    console.log(`Valid coordinates: ${qualityReport.coordinateStats.validCoordinates}`);
+    console.log(`Missing coordinates: ${qualityReport.coordinateStats.missingCoordinates}`);
+    console.log(`Invalid coordinates: ${qualityReport.coordinateStats.invalidCoordinates}`);
+    console.log(`Unique NPSN: ${qualityReport.uniqueness.uniqueNpsn}`);
+    console.log(`Duplicate NPSN: ${qualityReport.uniqueness.duplicateNpsn}`);
+    
+    if (qualityReport.uniqueness.duplicateNpsn > 0) {
+      console.warn(`\nWarning: Found ${qualityReport.uniqueness.duplicateNpsn} duplicate NPSN values:`);
+      qualityReport.uniqueness.duplicates.forEach(npsn => console.warn(`  ${npsn}`));
+    }
+    
+    console.log('\n=== Field Completeness ===');
+    for (const [field, stats] of Object.entries(qualityReport.fieldCompleteness)) {
+      console.log(`${field}: ${stats.percentage}% (${stats.filled}/${qualityReport.totalRecords})`);
+    }
+    
     await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);
-    console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
+    console.log(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {
       console.error(`Integration error: ${error.code} - ${error.message}`);
