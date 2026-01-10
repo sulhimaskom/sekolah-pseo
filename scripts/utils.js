@@ -2,6 +2,44 @@
  * Shared utility functions for the Indonesian School PSEO project
  */
 
+const path = require('path');
+const { safeReaddir, safeStat } = require('./fs-safe');
+
+/**
+ * Recursively walk a directory tree and process each file with a callback.
+ * This is a shared utility to eliminate code duplication between scripts.
+ *
+ * @param {string} dir - Directory path to walk
+ * @param {Function} callback - Callback function for each HTML file.
+ *                              Receives (fullPath, relativePath, entry, stat)
+ *                              Returns a value to be included in results array.
+ * @returns {Array} - Array of results returned by the callback for each HTML file
+ */
+async function walkDirectory(dir, callback) {
+  const results = [];
+
+  async function walk(current, relative) {
+    const entries = await safeReaddir(current);
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry);
+      const relPath = path.join(relative, entry);
+      const stat = await safeStat(fullPath);
+      
+      if (stat.isDirectory()) {
+        await walk(fullPath, relPath);
+      } else if (entry.endsWith('.html') && typeof callback === 'function') {
+        const result = await callback(fullPath, relPath, entry, stat);
+        if (result !== undefined) {
+          results.push(result);
+        }
+      }
+    }
+  }
+
+  await walk(dir, '');
+  return results;
+}
+
 /**
  * Parse a CSV string into an array of objects. This parser handles quoted fields
  * that may contain commas, which is a more robust approach than simple splitting.
@@ -111,8 +149,40 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Write array of objects to CSV file with header row.
+ * This is a simple CSV serializer that handles basic cases.
+ * For complex CSV data with quoted fields containing commas,
+ * consider using a robust library like `csv-stringify`.
+ *
+ * @param {Array<Object>} data - Array of objects to write
+ * @param {string} outputPath - Path to output CSV file
+ * @returns {Promise<void>}
+ */
+async function writeCsv(data, outputPath) {
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('Data must be a non-empty array');
+  }
+
+  const { safeWriteFile } = require('./fs-safe');
+
+  const header = Object.keys(data[0]);
+  const lines = [header.join(',')];
+
+  const batchSize = 1000;
+  for (let i = 0; i < data.length; i += batchSize) {
+    const batch = data.slice(i, i + batchSize);
+    const batchLines = batch.map(rec => header.map(h => rec[h] || '').join(','));
+    lines.push(...batchLines);
+  }
+
+  await safeWriteFile(outputPath, lines.join('\n'));
+}
+
 module.exports = {
   parseCsv,
   addNumbers,
-  escapeHtml
+  escapeHtml,
+  walkDirectory,
+  writeCsv
 };

@@ -19,9 +19,9 @@
  * or `papaparse`.
  */
 
-const { parseCsv } = require('./utils');
+const { parseCsv, writeCsv } = require('./utils');
 const CONFIG = require('./config');
-const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
+const { safeReadFile, safeAccess } = require('./fs-safe');
 
 // Export functions for testing
 module.exports = {
@@ -137,17 +137,7 @@ async function run() {
       process.exit(1);
     }
     
-    const header = Object.keys(processed[0]);
-    const lines = [header.join(',')];
-    
-    const batchSize = 1000;
-    for (let i = 0; i < processed.length; i += batchSize) {
-      const batch = processed.slice(i, i + batchSize);
-      const batchLines = batch.map(rec => header.map(h => rec[h]).join(','));
-      lines.push(...batchLines);
-    }
-    
-    await safeWriteFile(CONFIG.SCHOOLS_CSV_PATH, lines.join('\n'));
+    await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);
     console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {

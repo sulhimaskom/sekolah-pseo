@@ -5,33 +5,16 @@
  * concurrency for better performance on large datasets.
  */
 
-const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
-const { safeReadFile, safeAccess, safeReaddir, safeStat } = require('./fs-safe');
+const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
+const { walkDirectory } = require('./utils');
 
 // Export functions for testing
 module.exports = {
-  extractLinks
+  extractLinks,
+  validateLinksInFile
 };
-
-async function collectHtmlFiles(dir) {
-  const files = [];
-  async function walk(current) {
-    const entries = await safeReaddir(current);
-    for (const entry of entries) {
-      const fullPath = path.join(current, entry);
-      const stat = await safeStat(fullPath);
-      if (stat.isDirectory()) {
-        await walk(fullPath);
-      } else if (entry.endsWith('.html')) {
-        files.push(fullPath);
-      }
-    }
-  }
-  await walk(dir);
-  return files;
-}
 
 function extractLinks(html) {
   const matches = [];
@@ -48,6 +31,38 @@ function extractLinks(html) {
   return matches;
 }
 
+async function validateLinksInFile(file, links) {
+  const brokenInFile = [];
+  
+  for (const link of links) {
+    if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
+      continue;
+    }
+    
+    const clean = link.split(/[?#]/)[0];
+    const targetPath = path.join(path.dirname(file), clean);
+    
+    try {
+      await safeAccess(targetPath);
+    } catch (error) {
+      if (error.name === 'IntegrationError') {
+        try {
+          const stat = await safeStat(targetPath);
+          if (!stat.isDirectory()) {
+            brokenInFile.push({ source: file, link: link });
+          }
+        } catch (statError) {
+          if (statError.name === 'IntegrationError') {
+            brokenInFile.push({ source: file, link: link });
+          }
+        }
+      }
+    }
+  }
+  
+  return brokenInFile;
+}
+
 async function validateLinks() {
   const distDir = CONFIG.DIST_DIR;
   
@@ -58,7 +73,7 @@ async function validateLinks() {
     return true;
   }
   
-  const htmlFiles = await collectHtmlFiles(distDir);
+  const htmlFiles = await walkDirectory(distDir, (fullPath) => fullPath);
   
   console.log(`Found ${htmlFiles.length} HTML files to validate`);
   
@@ -69,37 +84,14 @@ async function validateLinks() {
   
   const concurrencyLimit = CONFIG.VALIDATION_CONCURRENCY_LIMIT;
   const broken = [];
-  
+   
   for (let i = 0; i < htmlFiles.length; i += concurrencyLimit) {
     const batch = htmlFiles.slice(i, i + concurrencyLimit);
     const batchPromises = batch.map(async (file) => {
       try {
         const content = await safeReadFile(file);
         const links = extractLinks(content);
-        const brokenInFile = [];
-        
-        for (const link of links) {
-          if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
-            continue;
-          }
-          
-          const clean = link.split(/[?#]/)[0];
-          const targetPath = path.join(path.dirname(file), clean);
-          try {
-            await fs.access(targetPath);
-          } catch {
-            try {
-              const stat = await safeStat(targetPath);
-              if (!stat.isDirectory()) {
-                brokenInFile.push({ source: file, link: link });
-              }
-            } catch {
-              brokenInFile.push({ source: file, link: link });
-            }
-          }
-        }
-        
-        return brokenInFile;
+        return await validateLinksInFile(file, links);
       } catch (error) {
         console.warn(`Failed to read file ${file}: ${error.message}`);
         return [];
