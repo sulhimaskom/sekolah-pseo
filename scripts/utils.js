@@ -149,6 +149,30 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+function formatStatus(status) {
+  if (!status) return 'Tidak Diketahui';
+  const normalized = status.trim().toUpperCase();
+  if (normalized === 'N') return 'Negeri';
+  if (normalized === 'S') return 'Swasta';
+  return status;
+}
+
+function formatEmptyValue(value, placeholder = 'Tidak tersedia') {
+  if (value === null || value === undefined || value === '') {
+    return placeholder;
+  }
+  const trimmed = String(value).trim();
+  return trimmed || placeholder;
+}
+
+function hasCoordinateData(school) {
+  if (!school) return false;
+  if (!school.lat || !school.lon) return false;
+  if (school.lat === '' || school.lon === '') return false;
+  if (parseFloat(school.lat) === 0 || parseFloat(school.lon) === 0) return false;
+  return true;
+}
+
 /**
  * Write array of objects to CSV file with header row.
  * This is a simple CSV serializer that handles basic cases.
@@ -184,5 +208,8 @@ module.exports = {
   addNumbers,
   escapeHtml,
   walkDirectory,
-  writeCsv
+  writeCsv,
+  formatStatus,
+  formatEmptyValue,
+  hasCoordinateData
 };

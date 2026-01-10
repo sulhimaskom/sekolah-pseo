@@ -148,6 +148,51 @@ section[aria-labelledby="school-details"] {
   word-break: break-word;
 }
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+.badge-status {
+  background-color: var(--color-bg-accent);
+  color: var(--color-text-primary);
+}
+
+.badge-n {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-s {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-education {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.empty-value {
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
+.details-group {
+  display: contents;
+}
+
+@media (min-width: ${DESIGN_TOKENS.breakpoints.md}) {
+  .details-group {
+    display: contents;
+  }
+}
+
 footer[role="contentinfo"] {
   text-align: center;
   padding: var(--spacing-lg);
