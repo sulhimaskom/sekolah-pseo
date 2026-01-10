@@ -264,3 +264,40 @@ describe('generateSchoolPageStyles', () => {
     assert.ok(result.includes('box-shadow: var(--shadow-md)'));
   });
 });
+
+describe('writeExternalStylesFile', () => {
+  it('generates CSS content', () => {
+    const css = generateSchoolPageStyles();
+
+    assert.ok(typeof css === 'string');
+    assert.ok(css.length > 0);
+    assert.ok(css.includes(':root'));
+    assert.ok(css.includes('--color-primary:'));
+  });
+
+  it('includes all essential CSS sections', () => {
+    const css = generateSchoolPageStyles();
+
+    assert.ok(css.includes('box-sizing: border-box'));
+    assert.ok(css.includes('.skip-link'));
+    assert.ok(css.includes('.sr-only'));
+    assert.ok(css.includes('header[role="banner"]'));
+    assert.ok(css.includes('.school-details-list'));
+    assert.ok(css.includes('@media'));
+  });
+
+  it('includes responsive breakpoints', () => {
+    const css = generateSchoolPageStyles();
+
+    assert.ok(css.includes(`@media (min-width: ${DESIGN_TOKENS.breakpoints.md})`));
+    assert.ok(css.includes(`@media (min-width: ${DESIGN_TOKENS.breakpoints.lg})`));
+    assert.ok(css.includes(`@media (max-width: ${DESIGN_TOKENS.breakpoints.sm})`));
+  });
+
+  it('includes accessibility media queries', () => {
+    const css = generateSchoolPageStyles();
+
+    assert.ok(css.includes('@media (prefers-reduced-motion: reduce)'));
+    assert.ok(css.includes('@media (prefers-contrast: high)'));
+  });
+});

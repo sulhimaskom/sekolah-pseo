@@ -31,17 +31,23 @@ function extractLinks(html) {
   return matches;
 }
 
-async function validateLinksInFile(file, links) {
+async function validateLinksInFile(file, links, distDir) {
   const brokenInFile = [];
-  
+
   for (const link of links) {
     if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
       continue;
     }
-    
+
     const clean = link.split(/[?#]/)[0];
-    const targetPath = path.join(path.dirname(file), clean);
-    
+
+    let targetPath;
+    if (clean.startsWith('/')) {
+      targetPath = path.join(distDir, clean);
+    } else {
+      targetPath = path.join(path.dirname(file), clean);
+    }
+
     try {
       await safeAccess(targetPath);
     } catch (error) {
@@ -59,7 +65,7 @@ async function validateLinksInFile(file, links) {
       }
     }
   }
-  
+
   return brokenInFile;
 }
 
@@ -91,16 +97,16 @@ async function validateLinks() {
       try {
         const content = await safeReadFile(file);
         const links = extractLinks(content);
-        return await validateLinksInFile(file, links);
+        return await validateLinksInFile(file, links, distDir);
       } catch (error) {
         console.warn(`Failed to read file ${file}: ${error.message}`);
         return [];
       }
     });
-    
+
     const batchResults = await Promise.all(batchPromises);
     batchResults.flat().forEach(brokenLink => broken.push(brokenLink));
-    
+
     console.log(`Processed ${Math.min(i + concurrencyLimit, htmlFiles.length)} of ${htmlFiles.length} files`);
   }
   

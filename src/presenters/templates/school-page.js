@@ -1,5 +1,4 @@
 const { escapeHtml } = require('../../../scripts/utils');
-const { generateSchoolPageStyles } = require('../styles');
 
 function generateSchoolPageHtml(school) {
   if (!school || typeof school !== 'object') {
@@ -24,6 +23,7 @@ function generateSchoolPageHtml(school) {
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <title>${escapeHtml(school.nama)}</title>
+  <link rel="stylesheet" href="/styles.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -87,8 +87,6 @@ function generateSchoolPageHtml(school) {
   <footer role="contentinfo">
     <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
-  
-  <style>${generateSchoolPageStyles()}</style>
 </body>
 </html>`;
 }

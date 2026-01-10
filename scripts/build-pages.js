@@ -15,13 +15,15 @@ const { parseCsv } = require('./utils');
 const CONFIG = require('./config');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
+const { writeExternalStylesFile } = require('../src/presenters/styles');
 
 // Export functions for testing
 module.exports = {
   writeSchoolPage,
   writeSchoolPagesConcurrently,
   ensureDistDir,
-  loadSchools
+  loadSchools,
+  generateExternalStyles
 };
 
 // Ensure dist directory exists
@@ -84,6 +86,15 @@ async function preCreateDirectories(schools) {
 }
 
 /**
+ * Generate external styles.css file.
+ */
+async function generateExternalStyles() {
+  console.log('Generating external styles.css...');
+  await writeExternalStylesFile(distDir);
+  console.log('Generated styles.css');
+}
+
+/**
  * Write multiple school pages concurrently with a controlled concurrency limit
  * to avoid overwhelming the file system.
  *
@@ -119,12 +130,15 @@ async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.B
  * Main build function. Orchestrates the build process by:
  * 1. Ensuring dist directory exists
  * 2. Loading school data
- * 3. Generating and writing pages
+ * 3. Generating external CSS file
+ * 4. Generating and writing pages
  *
  * You can add flags to limit by region to adhere to the monthly build cap.
  */
 async function build() {
   await ensureDistDir();
+  
+  await generateExternalStyles();
   
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);

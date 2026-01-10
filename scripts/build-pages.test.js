@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
 
-const { writeSchoolPage, writeSchoolPagesConcurrently, loadSchools } = require('./build-pages');
+const { writeSchoolPage, writeSchoolPagesConcurrently, loadSchools, generateExternalStyles } = require('./build-pages');
 const CONFIG = require('./config');
 const slugify = require('./slugify');
 
@@ -158,4 +158,17 @@ test('slugify integration: removes diacritics from Indonesian characters', () =>
   assert.strictEqual(slugify('Jawa Tengah'), 'jawa-tengah');
   assert.strictEqual(slugify('Yogyakarta'), 'yogyakarta');
   assert.strictEqual(slugify('Surabaya'), 'surabaya');
+});
+
+test('generateExternalStyles creates external CSS file', async () => {
+  await generateExternalStyles();
+
+  const stylesPath = path.join(CONFIG.DIST_DIR, 'styles.css');
+  const exists = await fs.access(stylesPath).then(() => true).catch(() => false);
+  assert.ok(exists, 'styles.css should be created');
+
+  const cssContent = await fs.readFile(stylesPath, 'utf-8');
+  assert.ok(cssContent.includes(':root'), 'CSS should contain :root selector');
+  assert.ok(cssContent.includes('--color-primary'), 'CSS should contain CSS variables');
+  assert.ok(cssContent.includes('.skip-link'), 'CSS should contain skip link styles');
 });

@@ -1,4 +1,6 @@
 const { getCssVariables, DESIGN_TOKENS } = require('./design-system');
+const { safeWriteFile } = require('../../scripts/fs-safe');
+const path = require('path');
 
 function generateSchoolPageStyles() {
   return `${getCssVariables()}
@@ -233,6 +235,14 @@ footer[role="contentinfo"] {
 }`;
 }
 
+async function writeExternalStylesFile(distDir) {
+  const css = generateSchoolPageStyles();
+  const outputPath = path.join(distDir, 'styles.css');
+  await safeWriteFile(outputPath, css);
+  return outputPath;
+}
+
 module.exports = {
-  generateSchoolPageStyles
+  generateSchoolPageStyles,
+  writeExternalStylesFile
 };
