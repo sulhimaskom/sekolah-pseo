@@ -2715,3 +2715,35 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 - Suggestion: Extract concurrency control pattern into a utility function `processConcurrently(items, processor, limit)` in scripts/utils.js. Refactor both scripts to use this utility.
 - Priority: Low
 - Effort: Medium
+
+### [REFACTOR] Dead Code - Remove Unused Utility Function
+
+- Location: scripts/utils.js (lines 132-137)
+- Issue: The `addNumbers(a, b)` function appears to be unused throughout the codebase. It was likely added during initial development but serves no purpose in the current system. Having unused code increases cognitive load and maintenance burden.
+- Suggestion: Remove the `addNumbers` function and its JSDoc documentation. If arithmetic operations are needed in the future, they should be added inline or as part of a more comprehensive math utility module.
+- Priority: Low
+- Effort: Small
+
+### [REFACTOR] Design Consistency - Centralize Process Exit Handling
+
+- Location: scripts/etl.js (lines 269, 294, 325, 332), scripts/build-pages.js (line 172), scripts/sitemap.js (line 79), scripts/validate-links.js (line 140)
+- Issue: Multiple scripts call `process.exit(1)` directly throughout the codebase. This pattern makes testing difficult, prevents proper cleanup, and creates inconsistent error handling behavior. Each script implements its own error termination without a centralized strategy.
+- Suggestion: Create a `terminate(message, code = 1)` utility function in scripts/utils.js that handles proper cleanup, logging, and process exit in a consistent manner. Alternatively, implement proper error propagation to a top-level error handler instead of exiting mid-execution.
+- Priority: Medium
+- Effort: Medium
+
+### [REFACTOR] Code Duplication - Extract File Extension Constant
+
+- Location: scripts/validate-links.js (line 30), scripts/utils.js (line 30), scripts/sitemap.js (line 11), scripts/sitemap.js (line 22)
+- Issue: The string literal `.html` is hardcoded in multiple locations throughout the codebase. This magic string makes the code brittle to change (e.g., if adding support for other file extensions) and violates the DRY principle.
+- Suggestion: Extract file extension to a constant `HTML_EXTENSION = '.html'` in scripts/config.js. Update all references to use this constant. This provides a single source of truth and makes future extensions easier.
+- Priority: Low
+- Effort: Small
+
+### [REFACTOR] Code Reusability - Extract Link Filtering Logic
+
+- Location: scripts/validate-links.js (lines 28-30, lines 39-40)
+- Issue: The logic to filter out non-relative links (external URLs, fragments, etc.) is duplicated in two places: the `extractLinks()` function and the `validateLinksInFile()` function. This creates inconsistency and makes maintenance harder.
+- Suggestion: Extract the filtering logic into a utility function `isRelativeLink(link)` in scripts/validate-links.js. This function should return true for links that should be validated (internal links) and false for external URLs, fragments, or invalid links. Both functions can then use this shared predicate.
+- Priority: Low
+- Effort: Small
