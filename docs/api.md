@@ -1995,22 +1995,22 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 │   utils.js       │ │  slugify.js  │ │ resilience.js   │
 │  (No deps)       │ │  (No deps)   │ │  (No deps)      │
 └──────────────────┘ └──────────────┘ └─────────────────┘
-                                              │
-                                              ▼
-                                     ┌──────────────────┐
-                                     │ rate-limiter.js │
-                                     │  Depends:       │
-                                     │  - resilience.js│
-                                     └────────┬─────────┘
-                                              │
-                                              ▼
- ┌─────────────────────────────────────────────────────────────┐
- │                    fs-safe.js                                │
- │  Depends: resilience.js                                     │
- └──────────────────────────┬──────────────────────────────────┘
-                           │
-            ┌───────────────┼───────────────┐
-            ▼               ▼               ▼
+                                             │
+                                             ▼
+                                    ┌──────────────────┐
+                                    │ rate-limiter.js │
+                                    │  Depends:       │
+                                    │  - resilience.js│
+                                    └────────┬─────────┘
+                                             │
+                                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    fs-safe.js                                │
+│  Depends: resilience.js                                     │
+└──────────────────────────┬──────────────────────────────────┘
+                          │
+           ┌───────────────┼───────────────┐
+           ▼               ▼               ▼
 ┌──────────────────┐ ┌──────────────┐ ┌─────────────────┐
 │     etl.js       │ │  build-pages│ │  sitemap.js     │
 │  Depends:        │ │  .js         │ │  Depends:       │
@@ -2018,50 +2018,28 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 │  - config.js     │ │  - fs-safe.js│ │  - utils.js     │
 │  - fs-safe.js    │ │  - slugify.js│ │  - config.js    │
 └──────────────────┘ │  - utils.js  │ │                  │
-                     │  - config.js │ └─────────────────┘
-                     │  - services/ │
-                     │    PageBuilder│
-                     │  - rate-     │
-                     │    limiter.js │
-                     │  - presenters/│
-                     │    styles.js │
-                     │              │
-                     └──────────────┘
-                            │
-          ┌─────────────────┼─────────────────┐
-          │                 │                 │
-          ▼                 ▼                 ▼
-┌──────────────────┐ ┌──────────────────┐ ┌─────────────────┐
-│   design-      │ │   styles.js      │ │ sitemap.js     │
-│   system.js     │ │   Depends:       │ │  Depends:       │
-│   (No deps)     │ │   - design-system│ │  - fs-safe.js   │
-└────────┬─────────┘ │   - fs-safe.js  │ │  - utils.js     │
-         │         └────────┬─────────┘ │  - config.js    │
-         │                  │             │                  │
-         │                  ▼             └─────────────────┘
-         │          ┌──────────────────┐
-         │          │   validate-     │
-         │          │   links.js      │
-         │          │   Depends:      │
-         │          │   - fs-safe.js  │
-         │          │   - utils.js    │
-         │          │   - rate-limiter│
-         │          └──────────────────┘
-         │
-         ▼
- ┌─────────────────────────────────────────────────────────────┐
- │              src/services/PageBuilder.js                     │
- │  Depends:                                                   │
- │  - slugify.js                                               │
- │  - src/presenters/templates/school-page.js                  │
- └──────────────────────────┬──────────────────────────────────┘
-                            │
-                            ▼
- ┌─────────────────────────────────────────────────────────────┐
- │         src/presenters/templates/school-page.js             │
- │  Depends:                                                   │
- │  - utils.js (escapeHtml)                                    │
- └─────────────────────────────────────────────────────────────┘
+                    │  - config.js │ └─────────────────┘
+                    │  - services/ │
+                    │    PageBuilder│
+                    │  - rate-     │
+                    │    limiter.js │
+                    │              │
+                    └──────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              src/services/PageBuilder.js                     │
+│  Depends:                                                   │
+│  - slugify.js                                               │
+│  - src/presenters/templates/school-page.js                  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│         src/presenters/templates/school-page.js             │
+│  Depends:                                                   │
+│  - utils.js (escapeHtml)                                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
