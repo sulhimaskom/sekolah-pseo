@@ -14,18 +14,22 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 | Resilience | Custom implementation | Timeout, retry, circuit breaker |
 | Testing | Node.js Test, pytest | Test framework |
 | Linting | ESLint | Code quality enforcement |
+| Design System | Custom CSS modules | Design tokens, responsive styles |
 
 ## Project Structure
 
 ```
-sekolah-pseo/
+ sekolah-pseo/
  ├── src/
- │   └── templates/          # Astro templates
- │       ├── index/          # Homepage template
- │       ├── profil/         # School profile template
- │       └── generator/      # Generator template
- ├── scripts/                # Build scripts
- │   ├── build-pages.js      # Page generator
+ │   ├── presenters/         # Presentation layer
+ │   │   ├── templates/      # Page templates
+ │   │   │   └── school-page.js  # School HTML template
+ │   │   ├── design-system.js    # Design tokens (colors, spacing, typography)
+ │   │   └── styles.js          # Generated CSS with responsive design
+ │   └── services/           # Business logic layer
+ │       └── PageBuilder.js   # Page generation service
+ ├── scripts/                # Controllers/Orchestrators
+ │   ├── build-pages.js      # Page build controller
  │   ├── etl.js              # Data ETL
  │   ├── sitemap.js          # Sitemap generator
  │   ├── validate-links.js   # Link validation
@@ -67,6 +71,25 @@ sekolah-pseo/
 
 ### Code Style
 - JavaScript: CommonJS (type: commonjs)
+- Module system: CommonJS (module.exports/require)
+- Function exports: Named exports for testing
+- Error handling: IntegrationError for integration failures
+
+### API Documentation
+All internal modules have documented API contracts in `docs/api.md`:
+- Function signatures with parameter types
+- Return types and error conditions
+- Usage examples
+- Module dependencies
+- Error handling patterns
+
+### API Design Principles
+- **Contract First**: All functions have clear input/output contracts
+- **Self-Documenting**: Meaningful function names and parameters
+- **Type Safety**: Input validation for all public functions
+- **Error Consistency**: Standardized IntegrationError format
+- **Idempotency**: Safe operations produce same result
+- **Backward Compatibility**: No breaking changes without versioning
 - Node version: Latest LTS
 - No external build tools (pure Node.js)
 
@@ -162,3 +185,6 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-01-07 | CSV over database | Simple, portable, low overhead |
 | 2026-01-07 | Node.js scripts | Cross-platform, easy to maintain |
 | 2026-01-07 | Implement resilience patterns | Prevent cascading failures, handle transient errors |
+| 2026-01-07 | Implement layer separation (controller/service/presentation) | Better separation of concerns, testability, maintainability |
+| 2026-01-07 | Extract HTML templates to separate modules | Templates testable in isolation, reusable, easy to modify |
+| 2026-01-07 | Create PageBuilder service layer | Business logic isolated from file I/O and presentation |

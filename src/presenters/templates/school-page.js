@@ -1,0 +1,98 @@
+const { escapeHtml } = require('../../../scripts/utils');
+const { generateSchoolPageStyles } = require('../styles');
+
+function generateSchoolPageHtml(school) {
+  if (!school || typeof school !== 'object') {
+    throw new Error('Invalid school object provided');
+  }
+
+  const requiredFields = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
+  const missingFields = requiredFields.filter(field => !school[field]);
+
+  if (missingFields.length > 0) {
+    throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
+  }
+
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <title>${escapeHtml(school.nama)}</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "School",
+    "name": "${escapeHtml(school.nama)}",
+    "identifier": "${escapeHtml(school.npsn)}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "${escapeHtml(school.alamat)}",
+      "addressLocality": "${escapeHtml(school.kecamatan)}",
+      "addressRegion": "${escapeHtml(school.kab_kota)}",
+      "addressCountry": "ID"
+    },
+    "educationalLevel": "${escapeHtml(school.bentuk_pendidikan)}"
+  }
+  </script>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+  
+  <header role="banner">
+    <nav aria-label="Navigasi utama">
+      <a href="/">Beranda</a>
+      <span aria-hidden="true"> / </span>
+      <span aria-current="page">${escapeHtml(school.nama)}</span>
+    </nav>
+  </header>
+  
+  <main id="main-content" role="main">
+    <article aria-labelledby="school-name">
+      <h1 id="school-name">${escapeHtml(school.nama)}</h1>
+      
+      <section aria-labelledby="school-details">
+        <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
+        <dl class="school-details-list">
+          <dt>NPSN</dt>
+          <dd>${escapeHtml(school.npsn)}</dd>
+          
+          <dt>Alamat</dt>
+          <dd>${escapeHtml(school.alamat)}</dd>
+          
+          <dt>Provinsi</dt>
+          <dd>${escapeHtml(school.provinsi)}</dd>
+          
+          <dt>Kabupaten/Kota</dt>
+          <dd>${escapeHtml(school.kab_kota)}</dd>
+          
+          <dt>Kecamatan</dt>
+          <dd>${escapeHtml(school.kecamatan)}</dd>
+          
+          <dt>Jenjang</dt>
+          <dd>${escapeHtml(school.bentuk_pendidikan)}</dd>
+          
+          <dt>Status</dt>
+          <dd>${escapeHtml(school.status)}</dd>
+        </dl>
+      </section>
+    </article>
+  </main>
+  
+  <footer role="contentinfo">
+    <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+  </footer>
+  
+  <style>${generateSchoolPageStyles()}</style>
+</body>
+</html>`;
+}
+
+module.exports = {
+  generateSchoolPageHtml
+};
