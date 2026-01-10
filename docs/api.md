@@ -12,6 +12,7 @@ scripts/           # Controllers and utilities
 ├── utils.js       # Shared utility functions
 ├── resilience.js  # Resilience patterns
 ├── fs-safe.js     # Resilient file system wrappers
+├── rate-limiter.js # Rate limiting for concurrent operations
 ├── slugify.js     # URL slug generation
 ├── etl.js         # ETL operations
 ├── build-pages.js # Page build controller
@@ -602,6 +603,135 @@ try {
 
 ---
 
+## Rate Limiter Module (`scripts/rate-limiter.js`)
+
+### Purpose
+Provides rate limiting for concurrent operations with backpressure, metrics, and queue timeout handling.
+
+### Exports
+
+```javascript
+module.exports = {
+  RateLimiter
+};
+```
+
+### Classes
+
+#### `RateLimiter`
+Implements rate limiting with concurrency control and queue management.
+
+**Constructor:**
+```javascript
+new RateLimiter(options)
+```
+
+**Options:**
+- `maxConcurrent` (number, optional): Maximum concurrent operations (default: 100)
+- `rateLimitMs` (number, optional): Rate limit in milliseconds (default: 10, reserved for future use)
+- `queueTimeoutMs` (number, optional): Queue timeout for operations (default: 30000)
+
+**Methods:**
+
+##### `execute(fn, operationName)`
+Executes function with rate limiting and backpressure.
+
+**Parameters:**
+- `fn` (Function): Async function to execute
+- `operationName` (string, optional): Operation name for tracking (default: `'operation'`)
+
+**Returns:** `Promise<any>` - Result from `fn`
+
+**Throws:**
+- `IntegrationError` with `RETRY_EXHAUSTED` code if queue timeout exceeded
+
+**Behavior:**
+- Executes up to `maxConcurrent` operations simultaneously
+- Queues additional operations when limit reached
+- Rejects queued operations after `queueTimeoutMs`
+- Tracks metrics for all operations
+
+**Usage:**
+```javascript
+const limiter = new RateLimiter({
+  maxConcurrent: 100,
+  queueTimeoutMs: 30000
+});
+
+try {
+  const result = await limiter.execute(
+    async () => {
+      // Your operation here
+      return await processData();
+    },
+    'processData'
+  );
+} catch (error) {
+  if (error.code === ERROR_CODES.RETRY_EXHAUSTED) {
+    console.error('Operation timed out in queue');
+  }
+}
+```
+
+##### `getMetrics()`
+Returns current metrics for the rate limiter.
+
+**Returns:** `Object`
+```javascript
+{
+  total: number,           // Total operations submitted
+  completed: number,      // Successfully completed operations
+  failed: number,         // Failed operations
+  rejected: number,       // Rejected operations (queue timeout)
+  queued: number,         // Currently queued operations
+  maxQueueSize: number,   // Maximum queue size observed
+  startTime: string,      // ISO-8601 timestamp of first operation
+  active: number,         // Currently active operations
+  queueLength: number,     // Current queue length
+  throughput: string,      // Operations per second
+  successRate: string     // Success percentage
+}
+```
+
+**Usage:**
+```javascript
+const metrics = limiter.getMetrics();
+console.log(`Throughput: ${metrics.throughput} ops/sec`);
+console.log(`Success rate: ${metrics.successRate}%`);
+console.log(`Queue length: ${metrics.queueLength}`);
+```
+
+##### `reset()`
+Resets all metrics and clears queue.
+
+**Returns:** `void`
+
+**Behavior:**
+- Clears queued operations and timers
+- Resets all metrics to zero
+- Does not affect active operations
+
+**Usage:**
+```javascript
+limiter.reset();
+const metrics = limiter.getMetrics();
+console.log(metrics.total); // 0
+```
+
+**Metrics Tracked:**
+- **total**: Number of operations submitted
+- **completed**: Successfully completed operations
+- **failed**: Failed operations (execution errors)
+- **rejected**: Rejected operations (queue timeout)
+- **queued**: Currently queued operations
+- **maxQueueSize**: Maximum queue size observed
+- **active**: Currently executing operations
+- **queueLength**: Current number of queued operations
+- **throughput**: Operations per second (completed / elapsed time)
+- **successRate**: Percentage of successful operations
+
+---
+
 ## Slugify Module (`scripts/slugify.js`)
 
 ### Purpose
@@ -992,15 +1122,21 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 ┌──────────────────┐ ┌──────────────┐ ┌─────────────────┐
 │   utils.js       │ │  slugify.js  │ │ resilience.js   │
 │  (No deps)       │ │  (No deps)   │ │  (No deps)      │
-└────────┬─────────┘ └──────────────┘ └─────────────────┘
-         │
-         │
-         ▼
+└──────────────────┘ └──────────────┘ └─────────────────┘
+                                             │
+                                             ▼
+                                    ┌──────────────────┐
+                                    │ rate-limiter.js │
+                                    │  Depends:       │
+                                    │  - resilience.js│
+                                    └────────┬─────────┘
+                                             │
+                                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    fs-safe.js                                │
 │  Depends: resilience.js                                     │
 └──────────────────────────┬──────────────────────────────────┘
-                           │
+                          │
            ┌───────────────┼───────────────┐
            ▼               ▼               ▼
 ┌──────────────────┐ ┌──────────────┐ ┌─────────────────┐
@@ -1013,6 +1149,8 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
                     │  - config.js │ └─────────────────┘
                     │  - services/ │
                     │    PageBuilder│
+                    │  - rate-     │
+                    │    limiter.js │
                     │              │
                     └──────────────┘
                            │
@@ -1114,6 +1252,28 @@ throw new IntegrationError(
 
 // Bad (no context)
 throw new IntegrationError('Failed to read file', ERROR_CODES.FILE_READ_ERROR);
+```
+
+### 8. Use Rate Limiters for Concurrent Operations
+```javascript
+// Good (controlled concurrency with metrics)
+const limiter = new RateLimiter({
+  maxConcurrent: 100,
+  queueTimeoutMs: 30000
+});
+
+const results = await Promise.all(
+  items.map(item =>
+    limiter.execute(async () => processItem(item), `process-${item.id}`)
+  )
+);
+
+console.log('Metrics:', limiter.getMetrics());
+
+// Bad (uncontrolled concurrency, no backpressure)
+const results = await Promise.all(
+  items.map(item => processItem(item))
+);
 ```
 
 ---

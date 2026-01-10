@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { parseCsv, addNumbers } = require('../scripts/utils');
+const { parseCsv, addNumbers, formatStatus, formatEmptyValue, hasCoordinateData } = require('../scripts/utils');
 
 test('parseCsv handles empty data', () => {
   assert.deepStrictEqual(parseCsv(''), []);
@@ -50,4 +50,68 @@ test('addNumbers throws error for non-number inputs', () => {
   assert.throws(() => addNumbers(2, Infinity), /Both parameters must be finite numbers/);
   assert.throws(() => addNumbers(2, -Infinity), /Both parameters must be finite numbers/);
   assert.throws(() => addNumbers(2, NaN), /Both parameters must be finite numbers/);
+});
+
+test('formatStatus converts N to Negeri', () => {
+  assert.strictEqual(formatStatus('N'), 'Negeri');
+  assert.strictEqual(formatStatus('n'), 'Negeri');
+  assert.strictEqual(formatStatus(' N '), 'Negeri');
+});
+
+test('formatStatus converts S to Swasta', () => {
+  assert.strictEqual(formatStatus('S'), 'Swasta');
+  assert.strictEqual(formatStatus('s'), 'Swasta');
+  assert.strictEqual(formatStatus(' S '), 'Swasta');
+});
+
+test('formatStatus handles unknown status', () => {
+  assert.strictEqual(formatStatus('X'), 'X');
+  assert.strictEqual(formatStatus('UNKNOWN'), 'UNKNOWN');
+});
+
+test('formatStatus handles empty/null input', () => {
+  assert.strictEqual(formatStatus(''), 'Tidak Diketahui');
+  assert.strictEqual(formatStatus(null), 'Tidak Diketahui');
+  assert.strictEqual(formatStatus(undefined), 'Tidak Diketahui');
+});
+
+test('formatEmptyValue returns value when not empty', () => {
+  assert.strictEqual(formatEmptyValue('Test Value'), 'Test Value');
+  assert.strictEqual(formatEmptyValue('  Test  '), 'Test');
+  assert.strictEqual(formatEmptyValue(123), '123');
+});
+
+test('formatEmptyValue returns placeholder when empty', () => {
+  assert.strictEqual(formatEmptyValue(''), 'Tidak tersedia');
+  assert.strictEqual(formatEmptyValue(null), 'Tidak tersedia');
+  assert.strictEqual(formatEmptyValue(undefined), 'Tidak tersedia');
+  assert.strictEqual(formatEmptyValue('   '), 'Tidak tersedia');
+});
+
+test('formatEmptyValue accepts custom placeholder', () => {
+  assert.strictEqual(formatEmptyValue('', '-'), '-');
+  assert.strictEqual(formatEmptyValue(null, 'N/A'), 'N/A');
+  assert.strictEqual(formatEmptyValue('Data', 'N/A'), 'Data');
+});
+
+test('hasCoordinateData returns true for valid coordinates', () => {
+  assert.strictEqual(hasCoordinateData({ lat: '-6.2088', lon: '106.8456' }), true);
+  assert.strictEqual(hasCoordinateData({ lat: '0.5', lon: '100.5' }), true);
+});
+
+test('hasCoordinateData returns false for missing coordinates', () => {
+  assert.strictEqual(hasCoordinateData({ lat: '', lon: '' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: '', lon: '106.8456' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: '-6.2088', lon: '' }), false);
+  assert.strictEqual(hasCoordinateData({}), false);
+});
+
+test('hasCoordinateData returns false for zero coordinates', () => {
+  assert.strictEqual(hasCoordinateData({ lat: '0', lon: '0' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: '0.0', lon: '0.0' }), false);
+});
+
+test('hasCoordinateData returns false for null/undefined school', () => {
+  assert.strictEqual(hasCoordinateData(null), false);
+  assert.strictEqual(hasCoordinateData(undefined), false);
 });

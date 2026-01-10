@@ -1,5 +1,4 @@
-const { escapeHtml } = require('../../../scripts/utils');
-const { generateSchoolPageStyles } = require('../styles');
+const { escapeHtml, formatStatus } = require('../../../scripts/utils');
 
 function generateSchoolPageHtml(school) {
   if (!school || typeof school !== 'object') {
@@ -24,6 +23,7 @@ function generateSchoolPageHtml(school) {
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <title>${escapeHtml(school.nama)}</title>
+  <link rel="stylesheet" href="/styles.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -59,26 +59,30 @@ function generateSchoolPageHtml(school) {
       <section aria-labelledby="school-details">
         <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
         <dl class="school-details-list">
-          <dt>NPSN</dt>
-          <dd>${escapeHtml(school.npsn)}</dd>
+          <div class="details-group">
+            <dt>NPSN</dt>
+            <dd>${escapeHtml(school.npsn)}</dd>
+            
+            <dt>Jenjang</dt>
+            <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
+            
+            <dt>Status</dt>
+            <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
+          </div>
           
-          <dt>Alamat</dt>
-          <dd>${escapeHtml(school.alamat)}</dd>
-          
-          <dt>Provinsi</dt>
-          <dd>${escapeHtml(school.provinsi)}</dd>
-          
-          <dt>Kabupaten/Kota</dt>
-          <dd>${escapeHtml(school.kab_kota)}</dd>
-          
-          <dt>Kecamatan</dt>
-          <dd>${escapeHtml(school.kecamatan)}</dd>
-          
-          <dt>Jenjang</dt>
-          <dd>${escapeHtml(school.bentuk_pendidikan)}</dd>
-          
-          <dt>Status</dt>
-          <dd>${escapeHtml(school.status)}</dd>
+          <div class="details-group">
+            <dt>Alamat</dt>
+            <dd>${escapeHtml(school.alamat)}</dd>
+            
+            <dt>Provinsi</dt>
+            <dd>${escapeHtml(school.provinsi)}</dd>
+            
+            <dt>Kabupaten/Kota</dt>
+            <dd>${escapeHtml(school.kab_kota)}</dd>
+            
+            <dt>Kecamatan</dt>
+            <dd>${escapeHtml(school.kecamatan)}</dd>
+          </div>
         </dl>
       </section>
     </article>
@@ -87,8 +91,6 @@ function generateSchoolPageHtml(school) {
   <footer role="contentinfo">
     <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
-  
-  <style>${generateSchoolPageStyles()}</style>
 </body>
 </html>`;
 }

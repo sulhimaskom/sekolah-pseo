@@ -164,8 +164,8 @@ describe('generateSchoolPageHtml', () => {
   it('includes skip link focus styles', () => {
     const html = generateSchoolPageHtml(validSchool);
 
-    assert.ok(html.includes('.skip-link'));
-    assert.ok(html.includes('z-index: var(--z-index-fixed)'));
+    assert.ok(html.includes('class="skip-link"'));
+    assert.ok(html.includes('href="/styles.css"'));
   });
 
   it('includes semantic HTML structure', () => {
@@ -352,30 +352,27 @@ describe('generateSchoolPageHtml', () => {
     assert.ok(html.includes('</dl>'));
   });
 
-  it('includes inline CSS for accessibility features', () => {
+  it('includes external CSS link', () => {
     const html = generateSchoolPageHtml(validSchool);
 
-    assert.ok(html.includes('<style>'));
-    assert.ok(html.includes('.skip-link {'));
-    assert.ok(html.includes('.sr-only {'));
-    assert.ok(html.includes('.school-details-list {'));
+    assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'));
+    assert.ok(html.includes('class="skip-link"'));
+    assert.ok(html.includes('class="sr-only"'));
+    assert.ok(html.includes('class="school-details-list"'));
   });
 
   it('includes screen reader only class styles', () => {
     const html = generateSchoolPageHtml(validSchool);
 
-    assert.ok(html.includes('.sr-only'));
-    assert.ok(html.includes('position: absolute'));
-    assert.ok(html.includes('overflow: hidden'));
-    assert.ok(html.includes('clip: rect'));
+    assert.ok(html.includes('class="sr-only"'));
   });
 
   it('includes school details list grid styles', () => {
     const html = generateSchoolPageHtml(validSchool);
 
-    assert.ok(html.includes('display: grid'));
-    assert.ok(html.includes('grid-template-columns: auto 1fr'));
-    assert.ok(html.includes('gap:'));
+    assert.ok(html.includes('class="school-details-list"'));
+    assert.ok(html.includes('<dt>'));
+    assert.ok(html.includes('<dd>'));
   });
 
   it('includes sr-only heading for screen readers', () => {
