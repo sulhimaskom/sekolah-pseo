@@ -2,6 +2,172 @@
 
 ## Completed Tasks
 
+### [TASK-017] Integration Hardening - Rate Limiting for Concurrent Operations
+
+**Status**: Complete
+**Agent**: Senior Integration Engineer
+
+### Description
+
+Implemented comprehensive rate limiting system for concurrent operations to provide controlled concurrency, backpressure handling, and detailed metrics for build and validation processes.
+
+### Actions Taken
+
+1. **Created `scripts/rate-limiter.js`** with RateLimiter class:
+    - Configurable max concurrent operations
+    - Queue management with timeout protection
+    - Comprehensive metrics tracking (total, completed, failed, rejected, throughput, success rate)
+    - Backpressure handling (queues operations when limit exceeded)
+    - Integration with existing IntegrationError and ERROR_CODES
+    - Queue timeout prevents operations from waiting indefinitely
+
+2. **Integrated rate limiter into `scripts/build-pages.js`**:
+    - Replaced batch-based concurrency with rate limiter
+    - Controlled page generation with BUILD_CONCURRENCY_LIMIT (default: 100)
+    - Added progress logging every 100 pages
+    - Added build metrics output after completion
+    - Individual operation naming for better tracking (writeSchoolPage-{npsn})
+
+3. **Integrated rate limiter into `scripts/validate-links.js`**:
+    - Replaced batch-based concurrency with rate limiter
+    - Controlled link validation with VALIDATION_CONCURRENCY_LIMIT (default: 50)
+    - Added progress logging for validation
+    - Added validation metrics output after completion
+    - Individual operation naming for better tracking (validateLinks-{filename})
+
+4. **Created comprehensive test suite** (`scripts/rate-limiter.test.js`):
+    - 25 tests covering all rate limiter functionality
+    - Constructor tests (default and custom options)
+    - Execute operation tests (single, multiple, concurrent, failed, timeout)
+    - Metrics tests (total, completed, failed, rejected, queued, active, throughput, success rate)
+    - Reset tests
+    - Edge case tests (rapid succession, empty results)
+    - All tests pass (25/25)
+
+5. **Updated API documentation** (`docs/api.md`):
+    - Added RateLimiter class documentation with full API contract
+    - Added execute() method documentation with usage examples
+    - Added getMetrics() method documentation with all metrics explained
+    - Added reset() method documentation
+    - Updated module organization to include rate-limiter.js
+    - Updated dependency graph to show rate limiter dependencies
+    - Added best practice #8: Use Rate Limiters for Concurrent Operations
+
+6. **Updated blueprint.md**:
+    - Added rate-limiter.js to project structure
+    - Added Rate Limiting section to resilience patterns
+    - Added decision log entry for rate limiter implementation
+
+### Rate Limiter Features
+
+**Concurrency Control:**
+- Configurable max concurrent operations
+- Queue management when limit exceeded
+- Automatic backpressure handling
+
+**Timeout Protection:**
+- Queue timeout (default: 30 seconds)
+- Operations rejected after timeout with IntegrationError
+- Prevents indefinite waiting
+
+**Metrics and Observability:**
+- Total operations submitted
+- Completed, failed, rejected counts
+- Currently active operations
+- Queue length metrics
+- Maximum queue size observed
+- Throughput (operations per second)
+- Success rate (percentage)
+
+**Integration:**
+- Uses existing IntegrationError class
+- Uses ERROR_CODES.RETRY_EXHAUSTED for queue timeouts
+- Compatible with existing resilience patterns
+- Configurable via CONFIG values
+
+### Test Results
+
+- New tests added: 25 (rate limiter comprehensive tests)
+- Total tests: 334 (increased from 309)
+- All tests pass: 334/334 ✓
+- All lint checks pass: 0 errors
+
+### Performance Impact
+
+**Before:**
+- Batch-based concurrency processing
+- No metrics or observability
+- Fixed batch sizes
+- No backpressure handling
+
+**After:**
+- Controlled concurrency with rate limiter
+- Comprehensive metrics on operations
+- Dynamic queue management
+- Backpressure protection
+- Queue timeout for resource exhaustion prevention
+- Throughput and success rate tracking
+
+### Acceptance Criteria
+
+- [x] Rate limiter implemented with configurable concurrency limits
+- [x] Integrated into build-pages.js for page generation
+- [x] Integrated into validate-links.js for link validation
+- [x] Metrics and observability provided (throughput, success rate, queue stats)
+- [x] All tests pass (334/334)
+- [x] Lint checks pass (0 errors)
+- [x] Documentation updated (api.md, blueprint.md, task.md)
+
+### Files Created
+
+- scripts/rate-limiter.js (RateLimiter class implementation)
+- scripts/rate-limiter.test.js (25 comprehensive tests)
+
+### Files Modified
+
+- scripts/build-pages.js (integrated rate limiter, added metrics)
+- scripts/validate-links.js (integrated rate limiter, added metrics)
+- docs/api.md (added rate limiter documentation, updated dependency graph)
+- docs/blueprint.md (added rate limiter to structure and patterns)
+- docs/task.md (this entry)
+
+### Impact
+
+**Concurrency Control:**
+- Controlled concurrency prevents resource exhaustion
+- Backpressure handling when system is overloaded
+- Queue timeout prevents indefinite waiting
+
+**Observability:**
+- Comprehensive metrics on all operations
+- Throughput tracking for performance monitoring
+- Success rate metrics for reliability tracking
+- Queue statistics for capacity planning
+
+**Maintainability:**
+- Centralized concurrency control
+- Consistent patterns across operations
+- Easier to adjust limits via configuration
+- Better debugging with operation names
+
+**User Experience:**
+- More predictable resource usage
+- Better error messages for timeouts
+- Metrics provide insights into system performance
+- Scalable solution for larger datasets
+
+### Success Criteria
+
+- [x] Rate limiter implemented with configurable limits
+- [x] Metrics and observability provided
+- [x] Integrated into build and validation processes
+- [x] All tests pass (334/334)
+- [x] Lint checks pass (0 errors)
+- [x] Documentation updated (api.md, blueprint.md, task.md)
+- [x] Backward compatible (replaces batch-based concurrency)
+
+---
+
 ### [TASK-016] Data Architecture - Comprehensive Data Validation Enhancement
 
 **Status**: Complete

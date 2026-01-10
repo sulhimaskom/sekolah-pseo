@@ -18,32 +18,33 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 
 ## Project Structure
 
-```
+ ```
  sekolah-pseo/
- ├── src/
- │   ├── presenters/         # Presentation layer
- │   │   ├── templates/      # Page templates
- │   │   │   └── school-page.js  # School HTML template
- │   │   ├── design-system.js    # Design tokens (colors, spacing, typography)
- │   │   └── styles.js          # Generated CSS with responsive design
- │   └── services/           # Business logic layer
- │       └── PageBuilder.js   # Page generation service
- ├── scripts/                # Controllers/Orchestrators
- │   ├── build-pages.js      # Page build controller
- │   ├── etl.js              # Data ETL
- │   ├── sitemap.js          # Sitemap generator
- │   ├── validate-links.js   # Link validation
- │   ├── config.js           # Shared configuration
- │   ├── utils.js            # Utility functions
- │   ├── slugify.js          # URL slug generation
- │   ├── resilience.js        # Resilience patterns (retry, timeout, circuit breaker)
- │   ├── fs-safe.js          # Resilient file system wrappers
- │   └── *.test.js          # Test files
- ├── data/
- │   └── schools.csv         # School data source
- ├── dist/                   # Generated HTML pages
- └── tests/                  # Test files
-```
+  ├── src/
+  │   ├── presenters/         # Presentation layer
+  │   │   ├── templates/      # Page templates
+  │   │   │   └── school-page.js  # School HTML template
+  │   │   ├── design-system.js    # Design tokens (colors, spacing, typography)
+  │   │   └── styles.js          # Generated CSS with responsive design
+  │   └── services/           # Business logic layer
+  │       └── PageBuilder.js   # Page generation service
+  ├── scripts/                # Controllers/Orchestrators
+  │   ├── build-pages.js      # Page build controller
+  │   ├── etl.js              # Data ETL
+  │   ├── sitemap.js          # Sitemap generator
+  │   ├── validate-links.js   # Link validation
+  │   ├── config.js           # Shared configuration
+  │   ├── utils.js            # Utility functions
+  │   ├── slugify.js          # URL slug generation
+  │   ├── resilience.js        # Resilience patterns (retry, timeout, circuit breaker)
+  │   ├── fs-safe.js          # Resilient file system wrappers
+  │   ├── rate-limiter.js     # Rate limiting for concurrent operations
+  │   └── *.test.js          # Test files
+  ├── data/
+  │   └── schools.csv         # School data source
+  ├── dist/                   # Generated HTML pages
+  └── tests/                  # Test files
+ ```
 
 ## Core Components
 
@@ -172,6 +173,14 @@ Prevents cascade failures by blocking operations after repeated failures:
 - States: CLOSED (normal), OPEN (blocking), HALF_OPEN (testing recovery)
 - Automatic state transitions between states
 
+#### Rate Limiting
+Concurrent operations are controlled with rate limiters to prevent resource exhaustion:
+- Page generation: configurable limit via BUILD_CONCURRENCY_LIMIT (default: 100)
+- Link validation: configurable limit via VALIDATION_CONCURRENCY_LIMIT (default: 50)
+- Queue timeout: 30 seconds default for waiting operations
+- Metrics: tracks total, completed, failed, rejected, throughput, success rate
+- Backpressure: queues operations when limit exceeded, rejects on timeout
+
 #### Standardized Error Format
 All integration errors use `IntegrationError` with consistent structure:
 ```javascript
@@ -213,3 +222,4 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-01-07 | Implement layer separation (controller/service/presentation) | Better separation of concerns, testability, maintainability |
 | 2026-01-07 | Extract HTML templates to separate modules | Templates testable in isolation, reusable, easy to modify |
 | 2026-01-07 | Create PageBuilder service layer | Business logic isolated from file I/O and presentation |
+| 2026-01-10 | Implement rate limiting for concurrent operations | Controlled concurrency, backpressure, metrics for operations |

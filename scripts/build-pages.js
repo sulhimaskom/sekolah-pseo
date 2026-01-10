@@ -16,6 +16,7 @@ const CONFIG = require('./config');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
+const { RateLimiter } = require('./rate-limiter');
 
 // Export functions for testing
 module.exports = {
@@ -104,18 +105,36 @@ async function generateExternalStyles() {
 async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT) {
   await preCreateDirectories(schools);
   
-  const results = [];
-  for (let i = 0; i < schools.length; i += concurrencyLimit) {
-    const batch = schools.slice(i, i + concurrencyLimit);
-    const batchPromises = batch.map(school => writeSchoolPage(school));
-    const batchResults = await Promise.allSettled(batchPromises);
-    results.push(...batchResults);
-    
-    // Log progress every batch
-    console.log(`Processed ${Math.min(i + concurrencyLimit, schools.length)} of ${schools.length} school pages`);
-  }
+  const limiter = new RateLimiter({ 
+    maxConcurrent: concurrencyLimit,
+    queueTimeoutMs: 30000
+  });
   
-  // Count successful and failed operations
+  let processed = 0;
+  const results = [];
+  
+  const writePromises = schools.map(school => 
+    limiter.execute(async () => {
+      await writeSchoolPage(school);
+      processed++;
+      
+      if (processed % 100 === 0 || processed === schools.length) {
+        console.log(`Processed ${processed} of ${schools.length} school pages`);
+      }
+    }, `writeSchoolPage-${school.npsn}`)
+  );
+  
+  const writeResults = await Promise.allSettled(writePromises);
+  results.push(...writeResults);
+  
+  const metrics = limiter.getMetrics();
+  console.log('Build metrics:', {
+    total: metrics.total,
+    completed: metrics.completed,
+    failed: metrics.failed,
+    throughput: metrics.throughput
+  });
+  
   const successful = results.filter(result => result.status === 'fulfilled').length;
   const failed = results.filter(result => result.status === 'rejected').length;
   

@@ -9,6 +9,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
 const { walkDirectory } = require('./utils');
+const { RateLimiter } = require('./rate-limiter');
 
 // Export functions for testing
 module.exports = {
@@ -88,12 +89,16 @@ async function validateLinks() {
     return true;
   }
   
-  const concurrencyLimit = CONFIG.VALIDATION_CONCURRENCY_LIMIT;
+  const limiter = new RateLimiter({ 
+    maxConcurrent: CONFIG.VALIDATION_CONCURRENCY_LIMIT,
+    queueTimeoutMs: 30000
+  });
+  
   const broken = [];
+  let processed = 0;
    
-  for (let i = 0; i < htmlFiles.length; i += concurrencyLimit) {
-    const batch = htmlFiles.slice(i, i + concurrencyLimit);
-    const batchPromises = batch.map(async (file) => {
+  const validatePromises = htmlFiles.map(file => 
+    limiter.execute(async () => {
       try {
         const content = await safeReadFile(file);
         const links = extractLinks(content);
@@ -102,14 +107,23 @@ async function validateLinks() {
         console.warn(`Failed to read file ${file}: ${error.message}`);
         return [];
       }
-    });
+    }, `validateLinks-${path.basename(file)}`)
+  );
 
-    const batchResults = await Promise.all(batchPromises);
-    batchResults.flat().forEach(brokenLink => broken.push(brokenLink));
+  const results = await Promise.all(validatePromises);
+  results.flat().forEach(brokenLink => broken.push(brokenLink));
+  processed = results.length;
 
-    console.log(`Processed ${Math.min(i + concurrencyLimit, htmlFiles.length)} of ${htmlFiles.length} files`);
-  }
-  
+  console.log(`Processed ${processed} of ${htmlFiles.length} files`);
+
+  const metrics = limiter.getMetrics();
+  console.log('Validation metrics:', {
+    total: metrics.total,
+    completed: metrics.completed,
+    failed: metrics.failed,
+    throughput: metrics.throughput
+  });
+
   if (broken.length > 0) {
     console.warn(`Found ${broken.length} broken links:`);
     broken.forEach(b => console.warn(`  ${b.source} -> ${b.link}`));
