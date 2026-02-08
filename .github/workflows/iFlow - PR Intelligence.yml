@@ -14,7 +14,7 @@ permissions:
 jobs:
   opencode:
     name: OC Manajer Kualitas Kode
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
     permissions:
       id-token: write

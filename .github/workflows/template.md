@@ -20,7 +20,7 @@ concurrency:
 jobs:
   opencode:
     name: OC [nama workflow]
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
     permissions: [setting sesuai peran]
       id-token: write

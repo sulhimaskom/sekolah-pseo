@@ -24,7 +24,7 @@ concurrency:
 jobs:
   opencode:
     name: OC Architect Agent
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
     permissions:
       id-token: write

@@ -29,7 +29,7 @@ concurrency:
 jobs:
   pr-handler:
     name: PR Handler
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
     permissions:
       id-token: write
