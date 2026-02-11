@@ -12,8 +12,11 @@
     "validate-links": "node scripts/validate-links.js",
     "lint": "eslint scripts/*.js",
     "test": "npm run test:js && npm run test:py",
-    "test:js": "node --test scripts/*.test.js || echo \"No JavaScript tests found\"",
-    "test:py": "python3 -m pytest tests/ -v || echo \"Python tests require pytest to be installed\""
+    "test:js": "node --test scripts/*.test.js",
+    "test:py": "python3 tests/run_tests.py",
+    "test:py:pytest": "python3 -m pytest tests/ -v",
+    "test:ci": "npm run test:js && npm run test:py -- --json",
+    "test:all": "npm run test:js && npm run test:py:pytest"
   },
   "repository": {
     "type": "git",
