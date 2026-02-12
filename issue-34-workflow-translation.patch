@@ -1,0 +1,107 @@
+From: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+Date: Thu, 12 Feb 2026 10:40:50 +0000
+Subject: [PATCH] fix: Standardize language in iFlow PR Intelligence workflow to Indonesian
+
+Menerjemahkan prompt bahasa Inggris ke bahasa Indonesia dalam file
+iFlow - PR Intelligence.yml sesuai dengan permintaan standarisasi bahasa
+pada issue #34.
+
+Perubahan yang dilakukan:
+- ## ROLE → ## PERAN
+- ## CONTEXT → ## KONTEKS  
+- ## GOALS → ## TUJUAN
+- ## RULES → ## ATURAN
+- Seluruh konten prompt diterjemahkan ke bahasa Indonesia
+
+Closes #34
+
+---
+ .github/workflows/iFlow - PR Intelligence.yml | 74 ++++++++++--------
+ 1 file changed, 37 insertions(+), 37 deletions(-)
+
+diff --git a/.github/workflows/iFlow - PR Intelligence.yml b/.github/workflows/iFlow - PR Intelligence.yml
+index 8021e76..03fe12f 100644
+--- a/.github/workflows/iFlow - PR Intelligence.yml
++++ b/.github/workflows/iFlow - PR Intelligence.yml
+@@ -62,44 +62,44 @@ jobs:
+         timeout-minutes: 20
+         run: |
+           opencode run "$(cat <<'PROMPT'
+-            ## ROLE
+-            You are an autonomous GitHub PR management agent.
+-            ## CONTEXT
+-            - Repository: ${{ github.repository }}
++            ## PERAN
++            Anda adalah agen manajemen PR GitHub yang mandiri.
++            ## KONTEKS
++            - Repositori: ${{ github.repository }}
+             - Data: ./pr_intel/open_prs.json
+-            - The repository is fully checked out and you have write access.
+-            ## GOALS
+-            Analyze all open PRs and automatically:
+-            1. Detect the next actionable PR:
+-               - Prioritize PRs that are mergeable but blocked by unresolved comments.
+-               - Next, PRs that are out-of-date with base branch.
+-               - Then, PRs with conflicts or failed checks.
+-            2. If all PRs are "green" (mergeable, checks passed, no unresolved threads):
+-               - Post one repository comment: "✅ All PRs are healthy. No action needed."
+-               - Exit cleanly.
+-            3. For the selected PR:
+-               - Fetch full discussion, review comments, and status checks.
+-               - Determine minimal actions to move PR toward merge readiness.
+-               - Perform safe automated steps:
+-                 - Update branch from base (if out of date): `gh pr update --rebase` or merge base.
+-                 - Resolve clear resolved comments if applicable.
+-                 - If there are unaddressed review comments with suggested code (```diff```), apply them.
+-                 - If checks failing due to known transient issues, re-run workflows via `gh run rerun`.
+-               - Re-request reviewers if new commits pushed.
+-               - Attempt merge:
+-                 - If mergeable now: `gh pr merge $PR_NUMBER --squash --delete-branch --body "Merged automatically after successful fix."`
+-                 - Else: enable auto-merge if all conditions nearly satisfied.
+-            4. Post a short summary comment in the PR:
+-               - Actions taken
+-               - Remaining blockers
+-               - Whether auto-merge enabled or not
+-            ## RULES
+-            - Skip PRs marked as draft.
+-            - Skip PRs with no changes or closed.
+-            - Never delete code branches manually unless merged.
+-            - Never expose secrets.
+-            - Never run long polling loops.
+-            - Keep commits atomic and clean.
++            - Repositori sudah sepenuhnya di-checkout dan Anda memiliki akses tulis.
++            ## TUJUAN
++            Analisis semua PR terbuka dan secara otomatis:
++            1. Deteksi PR yang dapat ditindaklanjuti berikutnya:
++               - Prioritaskan PR yang dapat di-merge tetapi terblokir oleh komentar yang belum terselesaikan.
++               - Selanjutnya, PR yang sudah tidak up-to-date dengan branch dasar.
++               - Kemudian, PR dengan konflik atau check yang gagal.
++            2. Jika semua PR "hijau" (dapat di-merge, check lolos, tidak ada thread yang belum terselesaikan):
++               - Posting satu komentar repositori: "✅ Semua PR dalam kondisi baik. Tidak diperlukan tindakan."
++               - Keluar dengan bersih.
++            3. Untuk PR yang dipilih:
++               - Ambil diskusi lengkap, komentar review, dan status check.
++               - Tentukan tindakan minimal untuk memindahkan PR menuju kesiapan merge.
++               - Lakukan langkah otomatis yang aman:
++                 - Perbarui branch dari dasar (jika tidak up-to-date): `gh pr update --rebase` atau merge base.
++                 - Selesaikan komentar yang jelas sudah terselesaikan jika berlaku.
++                 - Jika ada komentar review yang belum ditangani dengan kode yang disarankan (```diff```), terapkan.
++                 - Jika check gagal karena masalah transient yang diketahui, jalankan ulang workflow via `gh run rerun`.
++               - Minta ulang reviewer jika commit baru di-push.
++               - Coba merge:
++                 - Jika dapat di-merge sekarang: `gh pr merge $PR_NUMBER --squash --delete-branch --body "Merged secara otomatis setelah perbaikan berhasil."`
++                 - Jika tidak: aktifkan auto-merge jika semua kondisi hampir terpenuhi.
++            4. Posting komentar ringkasan singkat di PR:
++               - Tindakan yang dilakukan
++               - Blocker yang tersisa
++               - Apakah auto-merge diaktifkan atau tidak
++            ## ATURAN
++            - Lewati PR yang ditandai sebagai draft.
++            - Lewati PR tanpa perubahan atau yang sudah ditutup.
++            - Jangan hapus branch kode secara manual kecuali sudah di-merge.
++            - Jangan pernah memaparkan secret.
++            - Jangan jalankan polling loop yang lama.
++            - Jaga commit tetap atomik dan bersih.
+           PROMPT
+           )" \
+             --model iflowcn/qwen3-coder-plus \
