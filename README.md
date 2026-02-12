@@ -19,6 +19,14 @@ Proyek ini adalah platform untuk menampilkan informasi sekolah-sekolah di Indone
 5. Hasilkan sitemap: `npm run sitemap`
 6. Validasi tautan: `npm run validate-links`
 
+## Pengujian
+
+Proyek ini mencakup fungsi pengujian sederhana untuk memverifikasi pipeline CI/CD:
+
+- `addNumbers(a, b)` - Fungsi utilitas untuk menjumlahkan dua angka (terletak di `scripts/utils.js`)
+
+Jalankan pengujian dengan: `npm test`
+
 ## Lisensi
 
 ISC
