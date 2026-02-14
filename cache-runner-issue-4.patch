@@ -1,0 +1,96 @@
+From 1bf30632d8648a5bddd569af5f77e6e54b7b9d78 Mon Sep 17 00:00:00 2001
+From: github-actions <41898282+github-actions@users.noreply.github.com>
+Date: Sat, 14 Feb 2026 19:22:12 +0000
+Subject: [PATCH] ci: Add comprehensive caching to GitHub Actions workflows
+
+Implements cache configuration for GitHub Actions runners:
+
+- orchestrator.yml: Added Node.js setup with npm caching, Python setup with pip caching, comprehensive actions/cache for opencode, npm, pip, node_modules, and pytest cache
+- on-pull.yml: Added Python setup with pip caching and Python dependencies installation
+
+Benefits:
+- Faster workflow execution by caching dependencies
+- Reduced bandwidth usage
+- More reliable builds with offline fallback support
+
+Fixes #4
+---
+ .github/workflows/on-pull.yml      | 10 +++++++++
+ .github/workflows/orchestrator.yml | 35 ++++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+)
+
+diff --git a/.github/workflows/on-pull.yml b/.github/workflows/on-pull.yml
+index 58ba954..54c1fad 100644
+--- a/.github/workflows/on-pull.yml
++++ b/.github/workflows/on-pull.yml
+@@ -53,6 +53,16 @@ jobs:
+           node-version: 20
+           cache: 'npm'
+ 
++      - name: Setup Python
++        uses: actions/setup-python@v5
++        with:
++          python-version: '3.11'
++          cache: 'pip'
++
++      - name: Install Python dependencies
++        run: |
++          pip install -r requirements.txt || true
++
+       - name: Configure Git
+         run: |
+           git config --global user.name "${{ github.actor }}"
+diff --git a/.github/workflows/orchestrator.yml b/.github/workflows/orchestrator.yml
+index 058983d..2fb83db 100644
+--- a/.github/workflows/orchestrator.yml
++++ b/.github/workflows/orchestrator.yml
+@@ -39,11 +39,46 @@ jobs:
+         with:
+           fetch-depth: 0
+           token: ${{ secrets.GH_TOKEN }}
++
+       - name: Fetch from main branch
+         run: |
+           git fetch origin main
+           git checkout main
+           git pull origin main
++
++      - name: Setup Node.js
++        uses: actions/setup-node@v5
++        with:
++          node-version: '20'
++          cache: 'npm'
++
++      - name: Setup Python
++        uses: actions/setup-python@v5
++        with:
++          python-version: '3.11'
++          cache: 'pip'
++
++      - name: Cache dependencies
++        uses: actions/cache@v5
++        with:
++          path: |
++            ~/.opencode
++            ~/.npm
++            ~/.cache/pip
++            node_modules
++            .pytest_cache
++          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/requirements.txt') }}-${{ github.run_id }}
++          restore-keys: |
++            ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/requirements.txt') }}-
++            ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}-
++            ${{ runner.os }}-deps-
++
++      - name: Install npm dependencies
++        run: npm ci --prefer-offline
++
++      - name: Install Python dependencies
++        run: pip install -r requirements.txt
++
+       - name: Install OpenCode CLI
+         run: |
+           curl -fsSL https://opencode.ai/install | bash
+-- 
+2.52.0
+
