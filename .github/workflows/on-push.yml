@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Wait in Queue
-        uses: softprops/turnstyle@v2
+        uses: softprops/turnstyle@v3
         with:
           poll-interval-seconds: 30
           same-branch-only: false
@@ -81,8 +81,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/00.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -106,8 +106,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/01.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -131,8 +131,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/02.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -156,8 +156,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/03.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -181,8 +181,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/04.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -206,8 +206,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/05.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -231,8 +231,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/06.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -256,8 +256,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/07.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -281,8 +281,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/08.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -306,8 +306,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/09.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -331,8 +331,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/10.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -356,8 +356,8 @@ jobs:
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
             if opencode run "$(cat .github/prompt/11.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
+              --model opencode/kimi-k2.5-free \
+              --agent CMZ --share false; then
               echo "OpenCode execution succeeded"
               break
             else
@@ -732,5 +732,5 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model opencode/glm-4.7-free \
-            --share false \
+            --model opencode/kimi-k2.5-free \
+            --agent CMZ --share false

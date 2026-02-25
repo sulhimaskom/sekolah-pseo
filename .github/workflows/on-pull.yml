@@ -433,4 +433,4 @@ jobs:
           PROMPT
           )" \
             --model opencode/kimi-k2.5-free \
-            --share false \
+            --agent CMZ --share false

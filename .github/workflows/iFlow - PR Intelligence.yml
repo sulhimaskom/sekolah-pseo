@@ -103,7 +103,7 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/qwen3-coder-plus \
-            --share false \
+            --agent CMZ --share false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
