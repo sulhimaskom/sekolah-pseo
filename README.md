@@ -27,6 +27,27 @@ Proyek ini mencakup fungsi pengujian sederhana untuk memverifikasi pipeline CI/C
 
 Jalankan pengujian dengan: `npm test`
 
+## Konfigurasi Git
+
+Repositori ini menggunakan `.gitignore` yang telah dikonfigurasi untuk mencegah commit file sensitif:
+
+### File yang Dikecualikan
+
+- **Environment files**: `.env`, `.env.local`, `.env.*.local`
+- **Node.js**: `node_modules/`, `.npm`, `.eslintcache`
+- **Logs**: `*.log`, `npm-debug.log*`, `yarn-debug.log*`
+- **IDE**: `.idea/`, `.vscode/`, `*.swp`, `*.swo`
+- **OS**: `.DS_Store`, `Thumbs.db`
+- **Build outputs**: `dist/`, `build/`, `coverage/`
+
+### CI Verification
+
+Setiap push ke branch `main` dan pull request yang mengubah `.gitignore` akan diverifikasi oleh workflow `gitignore-check` yang:
+
+1. Memastikan pola kritis ada di `.gitignore`
+2. Memeriksa pola file sensitif umum
+3. Memverifikasi tidak ada file rahasia yang akan ter-commit
+
 ## Lisensi
 
 ISC
