@@ -49,6 +49,17 @@ This document serves as the security reference for the Sekolah PSEO project.
 #### 7. Git Security
 - **.gitignore**: Properly configured to exclude .env files, node_modules, logs
 
+#### 8. Security Researcher Coordination
+- **Location**: `public/security.txt` (RFC 9116)
+- Provides security contact information and scope
+- Encourages responsible disclosure
+
+#### 9. CI Security Checks
+- **npm audit**: `.github/workflows/security-audit.yml` - Runs weekly and on PR/push to detect known vulnerabilities
+
+### Code Patterns to Maintain
+- **.gitignore**: Properly configured to exclude .env files, node_modules, logs
+
 ### Code Patterns to Maintain
 
 #### DO ✅
@@ -71,6 +82,12 @@ This document serves as the security reference for the Sekolah PSEO project.
 | globals | ^17.0.0 | dev | ESLint globals |
 
 ### Future Security Considerations
+
+1. ~~**Security.txt**~~: Add `public/security.txt` for security researcher coordination ✅ (Done)
+2. ~~**npm audit**~~: Add to CI pipeline ✅ (Done)
+3. **Subresource Integrity**: Add SRI hashes if external resources are added
+
+### Contact
 
 1. **Security.txt**: Add `public/security.txt` for security researcher coordination
 2. **Subresource Integrity**: Add SRI hashes if external resources are added
