@@ -7,7 +7,6 @@
   },
   "scripts": {
     "dev": "npm run lint && npm run test:js",
-
     "build": "node scripts/build-pages.js",
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
