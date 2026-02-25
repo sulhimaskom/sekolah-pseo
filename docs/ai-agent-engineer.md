@@ -72,3 +72,4 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 ## Recent Improvements
 
 - **2026-02-25**: Fixed Prettier formatting in scripts/*.js (8 test files) - added missing newlines at EOF, reformatted import statements
+- **2026-02-25**: Fixed malformed comment block in homepage.js - removed 5 lines of dead code (unclosed JSDoc comment with duplicate require statements)
