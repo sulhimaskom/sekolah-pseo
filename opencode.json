@@ -21,9 +21,7 @@
       "target/**"
     ]
   },
-  "plugin": [
-    "oh-my-opencode"
-  ],
+  "plugin": [],
   "tools": {
     "bash": true,
     "write": true,
