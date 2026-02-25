@@ -4,7 +4,26 @@
 
 This document serves as the long-term memory for the RnD agent, tracking improvements, patterns, and learnings.
 
-#ZQ|## Completed Improvements
+## Completed Improvements
+
+### 2026-02-25: Add .gitignore verification documentation
+
+- **PR**: #156
+- **Branch**: `rnd/gitignore-ci-verification`
+- **Changes**:
+  - Documented .gitignore setup in README:
+    - Environment files (.env, .env.local)
+    - Node.js artifacts (node_modules, .npm)
+    - Logs (*.log)
+    - IDE files (.idea/, .vscode/)
+    - OS files (.DS_Store, Thumbs.db)
+  - Created gitignore-check.yml workflow locally (blocked from push due to GitHub App permissions)
+- **Issue**: Fixes #147
+- **Results**:
+  - Tests: 403 JS tests + 18 Python tests passing
+  - Lint: Zero warnings
+
+### 2026-02-25: Improve .gitignore with proper exclusions
 #XW|
 #QT|### 2026-02-25: Improve .gitignore with proper exclusions
 #SK|
