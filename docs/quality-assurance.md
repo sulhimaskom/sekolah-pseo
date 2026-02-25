@@ -22,7 +22,7 @@
 ### Required Checks (must pass before merge)
 1. `npm run test:js` - All JavaScript tests pass
 2. `npm run test:py` - All Python tests pass  
-3. `npm run lint` - ESLint passes with no errors
+3. `npm run lint` - ESLint passes with no errors (checks scripts/ and src/)
 4. `npm audit` - Zero vulnerabilities
 
 ### Recommended Commands
@@ -83,6 +83,11 @@ npm audit fix        # Auto-fix vulnerabilities
 ### Dev Dependencies
 - `eslint: 9.39.2`
 - `globals: ^17.0.0`
+
+### ESLint Configuration
+- Checks: `scripts/**/*.js` and `src/**/*.js`
+- Ignores: `dist/**`, `node_modules/**`, `**/*.test.js`, `eslint.config.js`
+- Rules: Error prevention (no-unused-vars, no-undef), Style (semi, quotes, no-var, prefer-const), Security (no-eval, no-implied-eval, no-new-func, no-script-url, no-throw-literal, no-proto, no-param-reassign)
 
 ### Key Runtime Dependencies
 - Node.js built-in modules (fs, path, crypto, etc.)
