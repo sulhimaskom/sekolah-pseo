@@ -636,7 +636,95 @@ footer[role="contentinfo"] {
 #SB|    color: var(--color-dark-text-secondary);
 #SB|    background-color: var(--color-dark-bg-accent);
 #SB|  }
-#SB|}
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|/* Back to top button */
+#TP|#SB|.back-to-top {
+#TP|#SB|  position: fixed;
+#TP|#SB|  bottom: var(--spacing-lg);
+#TP|#SB|  right: var(--spacing-lg);
+#TP|#SB|  background-color: var(--color-primary);
+#TP|#SB|  color: #fff;
+#TP|#SB|  border: none;
+#TP|#SB|  border-radius: var(--radius-full);
+#TP|#SB|  width: 48px;
+#TP|#SB|  height: 48px;
+#TP|#SB|  cursor: pointer;
+#TP|#SB|  display: flex;
+#TP|#SB|  align-items: center;
+#TP|#SB|  justify-content: center;
+#TP|#SB|  box-shadow: var(--shadow-md);
+#TP|#SB|  opacity: 0;
+#TP|#SB|  visibility: hidden;
+#TP|#SB|  transition: all var(--transition-normal) ease;
+#TP|#SB|  z-index: var(--z-index-fixed);
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|.back-to-top.visible {
+#TP|#SB|  opacity: 1;
+#TP|#SB|  visibility: visible;
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|.back-to-top:hover {
+#TP|#SB|  background-color: var(--color-primary-hover);
+#TP|#SB|  transform: translateY(-2px);
+#TP|#SB|  box-shadow: var(--shadow-lg);
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|.back-to-top:focus {
+#TP|#SB|  outline: 2px solid var(--color-focus);
+#TP|#SB|  outline-offset: 2px;
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|.back-to-top:focus:not(:focus-visible) {
+#TP|#SB|  outline: none;
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|.back-to-top:focus-visible {
+#TP|#SB|  outline: 2px solid var(--color-focus);
+#TP|#SB|  outline-offset: 2px;
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|.back-to-top svg {
+#TP|#SB|  width: 24px;
+#TP|#SB|  height: 24px;
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|@media (max-width: ${DESIGN_TOKENS.breakpoints.sm}) {
+#TP|#SB|  .back-to-top {
+#TP|#SB|    bottom: var(--spacing-md);
+#TP|#SB|    right: var(--spacing-md);
+#TP|#SB|    width: 40px;
+#TP|#SB|    height: 40px;
+#TP|#SB|  }
+#TP|#SB|
+#TP|#SB|  .back-to-top svg {
+#TP|#SB|    width: 20px;
+#TP|#SB|    height: 20px;
+#TP|#SB|  }
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|/* Dark mode support for back-to-top */
+#TP|#SB|@media (prefers-color-scheme: dark) {
+#TP|#SB|  .back-to-top {
+#TP|#SB|    background-color: var(--color-primary-focus);
+#TP|#SB|  }
+#TP|#SB|
+#TP|#SB|  .back-to-top:hover {
+#TP|#SB|    background-color: var(--color-primary);
+#TP|#SB|  }
+#TP|#SB|}
+#TP|#SB|
+#TP|#SB|/* Reduced motion support */
+#TP|#SB|@media (prefers-reduced-motion: reduce) {
+#TP|#SB|  .back-to-top {
+#TP|#SB|    transition: none;
+#TP|#SB|  }
+#TP|#SB|
+#TP|#SB|  .back-to-top:hover {
+#TP|#SB|    transform: none;
+#TP|#SB|  }
+#TP|#SB|}
 `;
 }
 
