@@ -24,7 +24,7 @@ async function walkDirectory(dir, callback) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
       const stat = await safeStat(fullPath);
-      
+
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
       } else if (entry.endsWith('.html') && typeof callback === 'function') {
@@ -52,23 +52,23 @@ function parseCsv(csvData) {
   if (!csvData || typeof csvData !== 'string') {
     return [];
   }
-  
+
   const lines = csvData.trim().split(/\r?\n/);
-  
+
   // Handle empty CSV
   if (lines.length === 0) {
     return [];
   }
-  
+
   // Parse header
   const headerLine = lines.shift();
   const header = parseCsvLine(headerLine);
-  
+
   // Handle CSV with only header
   if (lines.length === 0) {
     return [];
   }
-  
+
   return lines.map(line => {
     const values = parseCsvLine(line);
     const record = {};
@@ -89,10 +89,10 @@ function parseCsvLine(line) {
   const result = [];
   let current = '';
   let inQuotes = false;
-  
+
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    
+
     if (char === '"' && !inQuotes) {
       // Start of quoted field
       inQuotes = true;
@@ -115,16 +115,16 @@ function parseCsvLine(line) {
       current += char;
     }
   }
-  
+
   // Add the last field
   result.push(current.trim());
-  
+
   return result;
 }
 
 /**
  * Function to compute the sum of two numbers
- * 
+ *
  * @param {number} a - First number
  * @param {number} b - Second number
  * @returns {number} - Sum of the two numbers
@@ -215,18 +215,19 @@ function escapeCsvField(value) {
   if (value === null || value === undefined) {
     return '';
   }
-  
+
   const str = String(value);
-  
+
   // Check if the field needs quoting
-  const needsQuoting = str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r');
-  
+  const needsQuoting =
+    str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r');
+
   if (needsQuoting) {
     // Escape double quotes by doubling them
     const escaped = str.replace(/"/g, '""');
     return `"${escaped}"`;
   }
-  
+
   return str;
 }
 
@@ -239,9 +240,9 @@ module.exports = {
   writeCsv,
   formatStatus,
   formatEmptyValue,
-  hasCoordinateData
+  hasCoordinateData,
 };
-  parseCsv,
+(parseCsv,
   addNumbers,
   escapeHtml,
   escapeCsvField,
@@ -249,4 +250,4 @@ module.exports = {
   writeCsv,
   formatStatus,
   formatEmptyValue,
-  hasCoordinateData
+  hasCoordinateData);
