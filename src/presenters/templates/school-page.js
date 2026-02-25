@@ -1,6 +1,36 @@
 const { escapeHtml, formatStatus } = require('../../../scripts/utils');
+const CONFIG = require('../../../scripts/config');
 
-function generateSchoolPageHtml(school) {
+/**
+ * Generate meta description for SEO
+ * @param {Object} school - School data object
+ * @returns {string} - SEO meta description
+ */
+function generateMetaDescription(school) {
+  const { nama, bentuk_pendidikan, kab_kota, kecamatan } = school;
+  const parts = [];
+  
+  if (nama) parts.push(nama);
+  if (bentuk_pendidikan) parts.push(bentuk_pendidikan);
+  if (kab_kota) parts.push(`di ${kab_kota}`);
+  if (kecamatan) parts.push(`Kec. ${kecamatan}`);
+  
+  const description = parts.join(' - ');
+  // Truncate to optimal length for SEO (150-160 chars)
+  return description.length > 155 ? description.substring(0, 152) + '...' : description;
+}
+
+/**
+ * Generate canonical URL for the school page
+ * @param {string} relativePath - Relative path to the HTML file
+ * @returns {string} - Full canonical URL
+ */
+function generateCanonicalUrl(relativePath) {
+  const baseUrl = CONFIG.SITE_URL.replace(/\/$/, '');
+  return `${baseUrl}/${relativePath}`;
+}
+
+function generateSchoolPageHtml(school, relativePath) {
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
   }
@@ -12,18 +42,31 @@ function generateSchoolPageHtml(school) {
     throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
   }
 
+  const metaDescription = generateMetaDescription(school);
+  const canonicalUrl = generateCanonicalUrl(relativePath);
+  const currentYear = new Date().getFullYear();
+  
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="${escapeHtml(metaDescription)}" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <title>${escapeHtml(school.nama)}</title>
+  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
   <link rel="stylesheet" href="/styles.css">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="${escapeHtml(school.nama)}" />
+  <meta property="og:description" content="${escapeHtml(metaDescription)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+  
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -89,12 +132,14 @@ function generateSchoolPageHtml(school) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
 </body>
 </html>`;
 }
 
 module.exports = {
-  generateSchoolPageHtml
+  generateSchoolPageHtml,
+  generateMetaDescription,
+  generateCanonicalUrl
 };
