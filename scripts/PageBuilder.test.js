@@ -12,7 +12,7 @@ describe('buildSchoolPageData', () => {
     kecamatan: 'Menteng',
     alamat: 'Jl. Sudirman No. 1',
     bentuk_pendidikan: 'SD',
-    status: 'Negeri'
+    status: 'Negeri',
   };
 
   it('returns object with relativePath and content properties', () => {
@@ -41,128 +41,109 @@ describe('buildSchoolPageData', () => {
   });
 
   it('throws error for null school object', () => {
-    assert.throws(
-      () => buildSchoolPageData(null),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => buildSchoolPageData(null), { message: 'Invalid school object provided' });
   });
 
   it('throws error for undefined school object', () => {
-    assert.throws(
-      () => buildSchoolPageData(undefined),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => buildSchoolPageData(undefined), {
+      message: 'Invalid school object provided',
+    });
   });
 
   it('throws error for string input', () => {
-    assert.throws(
-      () => buildSchoolPageData('string'),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => buildSchoolPageData('string'), {
+      message: 'Invalid school object provided',
+    });
   });
 
   it('throws error for number input', () => {
-    assert.throws(
-      () => buildSchoolPageData(123),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => buildSchoolPageData(123), { message: 'Invalid school object provided' });
   });
 
   it('throws error for array input', () => {
-    assert.throws(
-      () => buildSchoolPageData([1, 2, 3]),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData([1, 2, 3]), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing nama field', () => {
     const schoolWithoutNama = { ...validSchool, nama: undefined };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithoutNama),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithoutNama), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing npsn field', () => {
     const schoolWithoutNpsn = { ...validSchool, npsn: undefined };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithoutNpsn),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithoutNpsn), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing provinsi field', () => {
     const schoolWithoutProvinsi = { ...validSchool, provinsi: undefined };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithoutProvinsi),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithoutProvinsi), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing kab_kota field', () => {
     const schoolWithoutKabKota = { ...validSchool, kab_kota: undefined };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithoutKabKota),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithoutKabKota), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing kecamatan field', () => {
     const schoolWithoutKecamatan = { ...validSchool, kecamatan: undefined };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithoutKecamatan),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithoutKecamatan), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for empty string nama field', () => {
     const schoolWithEmptyNama = { ...validSchool, nama: '' };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithEmptyNama),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithEmptyNama), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for empty string npsn field', () => {
     const schoolWithEmptyNpsn = { ...validSchool, npsn: '' };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithEmptyNpsn),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithEmptyNpsn), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for empty string provinsi field', () => {
     const schoolWithEmptyProvinsi = { ...validSchool, provinsi: '' };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithEmptyProvinsi),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithEmptyProvinsi), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for empty string kab_kota field', () => {
     const schoolWithEmptyKabKota = { ...validSchool, kab_kota: '' };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithEmptyKabKota),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithEmptyKabKota), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for empty string kecamatan field', () => {
     const schoolWithEmptyKecamatan = { ...validSchool, kecamatan: '' };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithEmptyKecamatan),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithEmptyKecamatan), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error listing all missing required fields', () => {
@@ -170,13 +151,13 @@ describe('buildSchoolPageData', () => {
       ...validSchool,
       nama: undefined,
       npsn: undefined,
-      provinsi: undefined
+      provinsi: undefined,
     };
 
-    assert.throws(
-      () => buildSchoolPageData(schoolWithMultipleMissing),
-      { message: /School object missing required fields: (nama|npsn|provinsi)(, (nama|npsn|provinsi)){2}/ }
-    );
+    assert.throws(() => buildSchoolPageData(schoolWithMultipleMissing), {
+      message:
+        /School object missing required fields: (nama|npsn|provinsi)(, (nama|npsn|provinsi)){2}/,
+    });
   });
 
   it('generates correct file path with NPSN and school name', () => {
@@ -191,7 +172,7 @@ describe('buildSchoolPageData', () => {
       ...validSchool,
       provinsi: 'DI Yogyakarta',
       kab_kota: 'Kota Yogyakarta',
-      kecamatan: 'Mergangsan'
+      kecamatan: 'Mergangsan',
     };
 
     const result = buildSchoolPageData(schoolWithSpecialChars);
@@ -204,7 +185,7 @@ describe('buildSchoolPageData', () => {
   it('handles Indonesian school names with special characters', () => {
     const schoolWithSpecialName = {
       ...validSchool,
-      nama: 'SMA Negeri 1 & "Test" School'
+      nama: 'SMA Negeri 1 & "Test" School',
     };
 
     const result = buildSchoolPageData(schoolWithSpecialName);
@@ -234,7 +215,7 @@ describe('buildSchoolPageData', () => {
       ...validSchool,
       alamat: undefined,
       bentuk_pendidikan: undefined,
-      status: undefined
+      status: undefined,
     };
 
     const result = buildSchoolPageData(schoolWithoutOptional);
@@ -256,7 +237,7 @@ describe('buildSchoolPageData', () => {
       ...validSchool,
       provinsi: '  DKI Jakarta  ',
       kab_kota: '  Jakarta Pusat  ',
-      kecamatan: '  Menteng  '
+      kecamatan: '  Menteng  ',
     };
 
     const result = buildSchoolPageData(schoolWithSpaces);
@@ -288,7 +269,7 @@ describe('getUniqueDirectories', () => {
     kecamatan: 'Menteng',
     alamat: 'Jl. Sudirman No. 1',
     bentuk_pendidikan: 'SD',
-    status: 'Negeri'
+    status: 'Negeri',
   };
 
   it('returns array of directory paths', () => {
@@ -299,25 +280,13 @@ describe('getUniqueDirectories', () => {
   });
 
   it('throws error for non-array input', () => {
-    assert.throws(
-      () => getUniqueDirectories(null),
-      { message: 'schools must be an array' }
-    );
+    assert.throws(() => getUniqueDirectories(null), { message: 'schools must be an array' });
 
-    assert.throws(
-      () => getUniqueDirectories(undefined),
-      { message: 'schools must be an array' }
-    );
+    assert.throws(() => getUniqueDirectories(undefined), { message: 'schools must be an array' });
 
-    assert.throws(
-      () => getUniqueDirectories('string'),
-      { message: 'schools must be an array' }
-    );
+    assert.throws(() => getUniqueDirectories('string'), { message: 'schools must be an array' });
 
-    assert.throws(
-      () => getUniqueDirectories({}),
-      { message: 'schools must be an array' }
-    );
+    assert.throws(() => getUniqueDirectories({}), { message: 'schools must be an array' });
   });
 
   it('returns empty array for empty input', () => {
@@ -343,7 +312,7 @@ describe('getUniqueDirectories', () => {
     const school2 = {
       ...validSchool,
       npsn: '87654321',
-      nama: 'SD Negeri 2 Jakarta'
+      nama: 'SD Negeri 2 Jakarta',
     };
 
     const result = getUniqueDirectories([validSchool, school2]);
@@ -356,7 +325,7 @@ describe('getUniqueDirectories', () => {
       ...validSchool,
       npsn: '87654321',
       nama: 'SD Negeri 2 Jakarta',
-      kecamatan: 'Gambir'
+      kecamatan: 'Gambir',
     };
 
     const result = getUniqueDirectories([validSchool, school2]);
@@ -371,7 +340,7 @@ describe('getUniqueDirectories', () => {
       nama: 'SD Negeri 2 Bandung',
       provinsi: 'Jawa Barat',
       kab_kota: 'Bandung',
-      kecamatan: 'Coblong'
+      kecamatan: 'Coblong',
     };
 
     const result = getUniqueDirectories([validSchool, school2]);
@@ -387,7 +356,7 @@ describe('getUniqueDirectories', () => {
       npsn: '87654321',
       nama: 'SD Negeri 2 Jakarta',
       kab_kota: 'Jakarta Selatan',
-      kecamatan: 'Tebet'
+      kecamatan: 'Tebet',
     };
 
     const result = getUniqueDirectories([validSchool, school2]);
@@ -400,7 +369,7 @@ describe('getUniqueDirectories', () => {
       ...validSchool,
       npsn: '87654321',
       nama: 'SD Negeri 2 Jakarta',
-      kecamatan: 'Gambir'
+      kecamatan: 'Gambir',
     };
 
     const result = getUniqueDirectories([validSchool, school2]);
@@ -423,7 +392,7 @@ describe('getUniqueDirectories', () => {
       ...validSchool,
       provinsi: 'DI Yogyakarta',
       kab_kota: 'Kota Yogyakarta',
-      kecamatan: 'Mergangsan'
+      kecamatan: 'Mergangsan',
     };
 
     const result = getUniqueDirectories([school]);
@@ -446,8 +415,21 @@ describe('getUniqueDirectories', () => {
     const schools = [
       validSchool,
       { ...validSchool, npsn: '87654321', nama: 'SD 2', kecamatan: 'Gambir' },
-      { ...validSchool, npsn: '11111111', nama: 'SD 3', kab_kota: 'Jakarta Selatan', kecamatan: 'Tebet' },
-      { ...validSchool, npsn: '22222222', nama: 'SD 4', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' }
+      {
+        ...validSchool,
+        npsn: '11111111',
+        nama: 'SD 3',
+        kab_kota: 'Jakarta Selatan',
+        kecamatan: 'Tebet',
+      },
+      {
+        ...validSchool,
+        npsn: '22222222',
+        nama: 'SD 4',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
     ];
 
     const result = getUniqueDirectories(schools);
@@ -469,7 +451,7 @@ describe('getUniqueDirectories', () => {
       ...validSchool,
       provinsi: '  DKI Jakarta  ',
       kab_kota: '  Jakarta Pusat  ',
-      kecamatan: '  Menteng  '
+      kecamatan: '  Menteng  ',
     };
 
     const result = getUniqueDirectories([school]);
@@ -490,7 +472,13 @@ describe('getUniqueDirectories', () => {
     const schools = [
       validSchool,
       { ...validSchool, npsn: '87654321', nama: 'SD 2', kecamatan: 'Gambir' },
-      { ...validSchool, npsn: '11111111', nama: 'SD 3', kab_kota: 'Jakarta Selatan', kecamatan: 'Tebet' }
+      {
+        ...validSchool,
+        npsn: '11111111',
+        nama: 'SD 3',
+        kab_kota: 'Jakarta Selatan',
+        kecamatan: 'Tebet',
+      },
     ];
 
     const result1 = getUniqueDirectories(schools);
@@ -506,7 +494,7 @@ describe('getUniqueDirectories', () => {
         ...validSchool,
         npsn: `${10000000 + i}`,
         nama: `SD Negeri ${i + 1}`,
-        kecamatan: `Kecamatan ${i % 10}`
+        kecamatan: `Kecamatan ${i % 10}`,
       });
     }
 

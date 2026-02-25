@@ -1,6 +1,15 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { parseCsv, sanitize, normaliseRecord, validateRecord, validateLatLon, validateCategoricalField, checkNpsnUniqueness, generateDataQualityReport } = require('../scripts/etl');
+const {
+  parseCsv,
+  sanitize,
+  normaliseRecord,
+  validateRecord,
+  validateLatLon,
+  validateCategoricalField,
+  checkNpsnUniqueness,
+  generateDataQualityReport,
+} = require('../scripts/etl');
 
 test('parseCsv handles empty data', () => {
   assert.deepStrictEqual(parseCsv(''), []);
@@ -52,7 +61,7 @@ test('validateRecord checks NPSN is numeric', () => {
     bentuk_pendidikan: 'SD',
     provinsi: 'Provinsi Test',
     kab_kota: 'Kabupaten Test',
-    kecamatan: 'Kecamatan Test'
+    kecamatan: 'Kecamatan Test',
   };
   const invalidNpsn = {
     npsn: 'abcde',
@@ -60,7 +69,7 @@ test('validateRecord checks NPSN is numeric', () => {
     bentuk_pendidikan: 'SD',
     provinsi: 'Provinsi Test',
     kab_kota: 'Kabupaten Test',
-    kecamatan: 'Kecamatan Test'
+    kecamatan: 'Kecamatan Test',
   };
   const emptyNpsn = {
     npsn: '',
@@ -68,7 +77,7 @@ test('validateRecord checks NPSN is numeric', () => {
     bentuk_pendidikan: 'SD',
     provinsi: 'Provinsi Test',
     kab_kota: 'Kabupaten Test',
-    kecamatan: 'Kecamatan Test'
+    kecamatan: 'Kecamatan Test',
   };
   assert.strictEqual(validateRecord(validRecord), true);
   assert.strictEqual(validateRecord(invalidNpsn), false);
@@ -87,7 +96,7 @@ test('validateRecord validates all required fields', () => {
     status: 'N',
     provinsi: 'Provinsi Test',
     kab_kota: 'Kabupaten Test',
-    kecamatan: 'Kecamatan Test'
+    kecamatan: 'Kecamatan Test',
   };
   assert.strictEqual(validateRecord(validRecord), true);
 });
@@ -100,7 +109,7 @@ test('validateRecord rejects missing nama', () => {
     status: 'N',
     provinsi: 'Provinsi Test',
     kab_kota: 'Kabupaten Test',
-    kecamatan: 'Kecamatan Test'
+    kecamatan: 'Kecamatan Test',
   };
   assert.strictEqual(validateRecord(invalidRecord), false);
 });
@@ -113,7 +122,7 @@ test('validateRecord rejects missing provinsi', () => {
     status: 'N',
     provinsi: '',
     kab_kota: 'Kabupaten Test',
-    kecamatan: 'Kecamatan Test'
+    kecamatan: 'Kecamatan Test',
   };
   assert.strictEqual(validateRecord(invalidRecord), false);
 });
@@ -160,7 +169,7 @@ test('checkNpsnUniqueness detects duplicates', () => {
   const records = [
     { npsn: '12345', nama: 'School 1' },
     { npsn: '67890', nama: 'School 2' },
-    { npsn: '12345', nama: 'School 3' }
+    { npsn: '12345', nama: 'School 3' },
   ];
   const result = checkNpsnUniqueness(records);
   assert.strictEqual(result.isUnique, false);
@@ -171,7 +180,7 @@ test('checkNpsnUniqueness returns true for unique NPSN', () => {
   const records = [
     { npsn: '12345', nama: 'School 1' },
     { npsn: '67890', nama: 'School 2' },
-    { npsn: '11111', nama: 'School 3' }
+    { npsn: '11111', nama: 'School 3' },
   ];
   const result = checkNpsnUniqueness(records);
   assert.strictEqual(result.isUnique, true);
@@ -186,8 +195,24 @@ test('checkNpsnUniqueness handles empty array', () => {
 
 test('generateDataQualityReport calculates field completeness', () => {
   const records = [
-    { npsn: '12345', nama: 'School 1', provinsi: 'Provinsi', kab_kota: 'Kab', kecamatan: 'Kec', lat: '-6.2', lon: '106.8' },
-    { npsn: '67890', nama: '', provinsi: 'Provinsi', kab_kota: 'Kab', kecamatan: 'Kec', lat: '', lon: '106.8' }
+    {
+      npsn: '12345',
+      nama: 'School 1',
+      provinsi: 'Provinsi',
+      kab_kota: 'Kab',
+      kecamatan: 'Kec',
+      lat: '-6.2',
+      lon: '106.8',
+    },
+    {
+      npsn: '67890',
+      nama: '',
+      provinsi: 'Provinsi',
+      kab_kota: 'Kab',
+      kecamatan: 'Kec',
+      lat: '',
+      lon: '106.8',
+    },
   ];
   const report = generateDataQualityReport(records);
   assert.strictEqual(report.totalRecords, 2);
@@ -199,7 +224,7 @@ test('generateDataQualityReport calculates coordinate stats', () => {
   const records = [
     { npsn: '12345', nama: 'School 1', lat: '-6.2', lon: '106.8' },
     { npsn: '67890', nama: 'School 2', lat: '-6.3', lon: '106.9' },
-    { npsn: '11111', nama: 'School 3', lat: '', lon: '' }
+    { npsn: '11111', nama: 'School 3', lat: '', lon: '' },
   ];
   const report = generateDataQualityReport(records);
   assert.strictEqual(report.coordinateStats.validCoordinates, 2);
@@ -210,7 +235,7 @@ test('generateDataQualityReport calculates NPSN uniqueness', () => {
   const records = [
     { npsn: '12345', nama: 'School 1' },
     { npsn: '12345', nama: 'School 2' },
-    { npsn: '67890', nama: 'School 3' }
+    { npsn: '67890', nama: 'School 3' },
   ];
   const report = generateDataQualityReport(records);
   assert.strictEqual(report.uniqueness.uniqueNpsn, 2);
@@ -222,7 +247,7 @@ test('generateDataQualityReport handles categorical distribution', () => {
   const records = [
     { npsn: '12345', nama: 'School 1', status: 'N', bentuk_pendidikan: 'SD' },
     { npsn: '67890', nama: 'School 2', status: 'S', bentuk_pendidikan: 'SD' },
-    { npsn: '11111', nama: 'School 3', status: 'N', bentuk_pendidikan: 'SMA' }
+    { npsn: '11111', nama: 'School 3', status: 'N', bentuk_pendidikan: 'SMA' },
   ];
   const report = generateDataQualityReport(records);
   assert.strictEqual(report.categoricalDistribution.status.N, 2);
