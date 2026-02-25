@@ -52,6 +52,7 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 | `npm run build`          | Build static pages |
 | `npm run sitemap`        | Generate sitemap   |
 | `npm run validate-links` | Validate links     |
+
 ## Backend Improvements Log
 
 ### 2026-02-25
