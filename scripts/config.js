@@ -47,6 +47,12 @@ const CONFIG = {
   DATA_DIR: DATA_DIR,
   EXTERNAL_DIR: EXTERNAL_DIR,
 
+  // Geographic bounds for Indonesia
+  INDONESIA_LAT_MIN: -11,
+  INDONESIA_LAT_MAX: 6,
+  INDONESIA_LON_MIN: 95,
+  INDONESIA_LON_MAX: 141,
+
   // Security utilities
   validatePath
 };

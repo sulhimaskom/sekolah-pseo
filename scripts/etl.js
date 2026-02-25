@@ -19,9 +19,9 @@
  * or `papaparse`.
  */
 
-const { parseCsv, writeCsv } = require('./utils');
+const { loadCsv, writeCsv, parseCsv } = require('./utils');
 const CONFIG = require('./config');
-const { safeReadFile, safeAccess } = require('./fs-safe');
+const { safeAccess } = require('./fs-safe');
 
 // Export functions for testing
 module.exports = {
@@ -136,13 +136,8 @@ function validateLatLon(lat, lon) {
     return false;
   }
   
-  const INDONESIA_LAT_MIN = -11;
-  const INDONESIA_LAT_MAX = 6;
-  const INDONESIA_LON_MIN = 95;
-  const INDONESIA_LON_MAX = 141;
-  
-  return latNum >= INDONESIA_LAT_MIN && latNum <= INDONESIA_LAT_MAX &&
-         lonNum >= INDONESIA_LON_MIN && lonNum <= INDONESIA_LON_MAX;
+  return latNum >= CONFIG.INDONESIA_LAT_MIN && latNum <= CONFIG.INDONESIA_LAT_MAX &&
+         lonNum >= CONFIG.INDONESIA_LON_MIN && lonNum <= CONFIG.INDONESIA_LON_MAX;
 }
 
 /**
@@ -270,8 +265,7 @@ async function run() {
   }
   
   try {
-    const rawCsv = await safeReadFile(rawPath);
-    const rawRecords = parseCsv(rawCsv);
+    const rawRecords = await loadCsv(rawPath);
     
     console.log(`Loaded ${rawRecords.length} raw records`);
     

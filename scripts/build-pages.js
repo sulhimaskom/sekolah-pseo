@@ -11,12 +11,11 @@
  */
 
 const path = require('path');
-const { parseCsv } = require('./utils');
+const { loadCsv, processConcurrently } = require('./utils');
 const CONFIG = require('./config');
-const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
+const { safeWriteFile, safeMkdir } = require('./fs-safe');
 const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
-const { RateLimiter } = require('./rate-limiter');
 
 // Export functions for testing
 module.exports = {
@@ -47,8 +46,7 @@ async function ensureDistDir() {
  */
 async function loadSchools() {
   try {
-    const text = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
-    return parseCsv(text);
+    return await loadCsv(CONFIG.SCHOOLS_CSV_PATH);
   } catch (error) {
     console.error(`Failed to load schools from ${CONFIG.SCHOOLS_CSV_PATH}: ${error.message}`);
     return [];
@@ -105,38 +103,18 @@ async function generateExternalStyles() {
 async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT) {
   await preCreateDirectories(schools);
   
-  const limiter = new RateLimiter({ 
-    maxConcurrent: concurrencyLimit,
-    queueTimeoutMs: 30000
-  });
-  
   let processed = 0;
-  const results = [];
+  const writeResults = await processConcurrently(schools, async (school) => {
+    await writeSchoolPage(school);
+    processed++;
+
+    if (processed % 100 === 0 || processed === schools.length) {
+      console.log(`Processed ${processed} of ${schools.length} school pages`);
+    }
+  }, concurrencyLimit);
   
-  const writePromises = schools.map(school => 
-    limiter.execute(async () => {
-      await writeSchoolPage(school);
-      processed++;
-      
-      if (processed % 100 === 0 || processed === schools.length) {
-        console.log(`Processed ${processed} of ${schools.length} school pages`);
-      }
-    }, `writeSchoolPage-${school.npsn}`)
-  );
-  
-  const writeResults = await Promise.allSettled(writePromises);
-  results.push(...writeResults);
-  
-  const metrics = limiter.getMetrics();
-  console.log('Build metrics:', {
-    total: metrics.total,
-    completed: metrics.completed,
-    failed: metrics.failed,
-    throughput: metrics.throughput
-  });
-  
-  const successful = results.filter(result => result.status === 'fulfilled').length;
-  const failed = results.filter(result => result.status === 'rejected').length;
+  const successful = writeResults.filter(result => result.status === 'fulfilled').length;
+  const failed = writeResults.filter(result => result.status === 'rejected').length;
   
   if (failed > 0) {
     console.warn(`Warning: ${failed} school pages failed to generate`);

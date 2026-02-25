@@ -40,6 +40,40 @@ function generateSchoolPageHtml(school) {
     "educationalLevel": "${escapeHtml(school.bentuk_pendidikan)}"
   }
   </script>
+  <style>
+    .btn-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      background-color: var(--color-bg-accent);
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      cursor: pointer;
+      transition: all var(--transition-fast) ease;
+      margin-left: var(--spacing-sm);
+      vertical-align: middle;
+    }
+    .btn-copy:hover {
+      background-color: var(--color-bg-primary);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .btn-copy:active {
+      transform: translateY(1px);
+    }
+    .btn-copy:focus {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+    .btn-copy.success {
+      background-color: #dcfce7;
+      color: #166534;
+      border-color: #166534;
+    }
+  </style>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
@@ -61,7 +95,12 @@ function generateSchoolPageHtml(school) {
         <dl class="school-details-list">
           <div class="details-group">
             <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dd>
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <button onclick="copyNpsn()" class="btn-copy" aria-label="Salin NPSN" id="copy-button">
+                Salin
+              </button>
+            </dd>
             
             <dt>Jenjang</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
@@ -91,6 +130,26 @@ function generateSchoolPageHtml(school) {
   <footer role="contentinfo">
     <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
+
+  <script>
+    function copyNpsn() {
+      const npsn = document.getElementById('npsn-value').innerText;
+      const btn = document.getElementById('copy-button');
+
+      navigator.clipboard.writeText(npsn).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = 'Tersalin!';
+        btn.classList.add('success');
+
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.classList.remove('success');
+        }, 2000);
+      }).catch(err => {
+        console.error('Gagal menyalin: ', err);
+      });
+    }
+  </script>
 </body>
 </html>`;
 }

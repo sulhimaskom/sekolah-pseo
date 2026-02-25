@@ -122,20 +122,6 @@ function parseCsvLine(line) {
   return result;
 }
 
-/**
- * Function to compute the sum of two numbers
- * 
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - Sum of the two numbers
- */
-function addNumbers(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new Error('Both parameters must be finite numbers');
-  }
-  return a + b;
-}
-
 function escapeHtml(text) {
   if (text === null || text === undefined) {
     return '';
@@ -191,21 +177,67 @@ async function writeCsv(data, outputPath) {
   const { safeWriteFile } = require('./fs-safe');
 
   const header = Object.keys(data[0]);
-  const lines = [header.join(',')];
+  const headerLine = header.map(h => {
+    if (h.includes(',') || h.includes('"') || h.includes('\n')) {
+      return `"${h.replace(/"/g, '""')}"`;
+    }
+    return h;
+  }).join(',');
+
+  const lines = [headerLine];
 
   const batchSize = 1000;
   for (let i = 0; i < data.length; i += batchSize) {
     const batch = data.slice(i, i + batchSize);
-    const batchLines = batch.map(rec => header.map(h => rec[h] || '').join(','));
+    const batchLines = batch.map(rec => header.map(h => {
+      let val = rec[h] || '';
+      if (typeof val !== 'string') val = String(val);
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    }).join(','));
     lines.push(...batchLines);
   }
 
   await safeWriteFile(outputPath, lines.join('\n'));
 }
 
+/**
+ * Load and parse a CSV file.
+ *
+ * @param {string} filePath - Path to the CSV file
+ * @returns {Promise<Array<Object>>}
+ */
+async function loadCsv(filePath) {
+  const { safeReadFile } = require('./fs-safe');
+  const csvData = await safeReadFile(filePath);
+  return parseCsv(csvData);
+}
+
+/**
+ * Process an array of items concurrently with a limit.
+ *
+ * @param {Array} items - Items to process
+ * @param {Function} processor - Function to process each item
+ * @param {number} concurrencyLimit - Maximum concurrent operations
+ * @returns {Promise<Array>} - Results of all operations (allSettled)
+ */
+async function processConcurrently(items, processor, concurrencyLimit = 100) {
+  const { RateLimiter } = require('./rate-limiter');
+  const limiter = new RateLimiter({ maxConcurrent: concurrencyLimit });
+
+  const promises = items.map((item, index) =>
+    limiter.execute(() => processor(item, index))
+  );
+
+  return Promise.allSettled(promises);
+}
+
 module.exports = {
   parseCsv,
-  addNumbers,
+  loadCsv,
+  processConcurrently,
   escapeHtml,
   walkDirectory,
   writeCsv,

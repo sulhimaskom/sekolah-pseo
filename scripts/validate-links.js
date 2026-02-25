@@ -8,8 +8,7 @@
 const path = require('path');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
-const { walkDirectory } = require('./utils');
-const { RateLimiter } = require('./rate-limiter');
+const { walkDirectory, processConcurrently } = require('./utils');
 
 // Export functions for testing
 module.exports = {
@@ -89,40 +88,22 @@ async function validateLinks() {
     return true;
   }
   
-  const limiter = new RateLimiter({ 
-    maxConcurrent: CONFIG.VALIDATION_CONCURRENCY_LIMIT,
-    queueTimeoutMs: 30000
-  });
-  
-  const broken = [];
-  let processed = 0;
-   
-  const validatePromises = htmlFiles.map(file => 
-    limiter.execute(async () => {
-      try {
-        const content = await safeReadFile(file);
-        const links = extractLinks(content);
-        return await validateLinksInFile(file, links, distDir);
-      } catch (error) {
-        console.warn(`Failed to read file ${file}: ${error.message}`);
-        return [];
-      }
-    }, `validateLinks-${path.basename(file)}`)
-  );
+  const results = await processConcurrently(htmlFiles, async (file) => {
+    try {
+      const content = await safeReadFile(file);
+      const links = extractLinks(content);
+      return await validateLinksInFile(file, links, distDir);
+    } catch (error) {
+      console.warn(`Failed to read file ${file}: ${error.message}`);
+      return [];
+    }
+  }, CONFIG.VALIDATION_CONCURRENCY_LIMIT);
 
-  const results = await Promise.all(validatePromises);
-  results.flat().forEach(brokenLink => broken.push(brokenLink));
-  processed = results.length;
+  const broken = results
+    .filter(r => r.status === 'fulfilled')
+    .flatMap(r => r.value);
 
-  console.log(`Processed ${processed} of ${htmlFiles.length} files`);
-
-  const metrics = limiter.getMetrics();
-  console.log('Validation metrics:', {
-    total: metrics.total,
-    completed: metrics.completed,
-    failed: metrics.failed,
-    throughput: metrics.throughput
-  });
+  console.log(`Processed ${results.length} of ${htmlFiles.length} files`);
 
   if (broken.length > 0) {
     console.warn(`Found ${broken.length} broken links:`);

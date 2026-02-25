@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { parseCsv, addNumbers, formatStatus, formatEmptyValue, hasCoordinateData } = require('../scripts/utils');
+const { parseCsv, formatStatus, formatEmptyValue, hasCoordinateData, writeCsv } = require('../scripts/utils');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const os = require('node:os');
 
 test('parseCsv handles empty data', () => {
   assert.deepStrictEqual(parseCsv(''), []);
@@ -29,27 +32,6 @@ test('parseCsv handles escaped quotes', () => {
   const csv = 'npsn,nama,alamat\n12345,"School ""Name""","Street, City"';
   const expected = [{ npsn: '12345', nama: 'School "Name"', alamat: 'Street, City' }];
   assert.deepStrictEqual(parseCsv(csv), expected);
-});
-
-test('addNumbers computes sum of two numbers', () => {
-  assert.strictEqual(addNumbers(2, 3), 5);
-  assert.strictEqual(addNumbers(-1, 1), 0);
-  assert.strictEqual(addNumbers(0, 0), 0);
-  assert.ok(Math.abs(addNumbers(10.5, 2.3) - 12.8) < 1e-10, '10.5 + 2.3 should be close to 12.8');
-});
-
-test('addNumbers throws error for non-number inputs', () => {
-  assert.throws(() => addNumbers('a', 'b'), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(1, 'b'), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers('a', 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(null, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(undefined, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(Infinity, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(-Infinity, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(NaN, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(2, Infinity), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(2, -Infinity), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(2, NaN), /Both parameters must be finite numbers/);
 });
 
 test('formatStatus converts N to Negeri', () => {
@@ -114,4 +96,38 @@ test('hasCoordinateData returns false for zero coordinates', () => {
 test('hasCoordinateData returns false for null/undefined school', () => {
   assert.strictEqual(hasCoordinateData(null), false);
   assert.strictEqual(hasCoordinateData(undefined), false);
+});
+
+test('writeCsv handles data with commas and quotes', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'csv-test-'));
+  const outputPath = path.join(tmpDir, 'test.csv');
+
+  const data = [
+    { id: '1', name: 'John Doe', address: 'Street, City' },
+    { id: '2', name: 'Jane "Doe"', address: 'Avenue "B", Town' }
+  ];
+
+  try {
+    await writeCsv(data, outputPath);
+    const content = await fs.readFile(outputPath, 'utf-8');
+
+    // Check header
+    assert.ok(content.startsWith('id,name,address'));
+
+    // Check first row (comma handling)
+    assert.ok(content.includes('1,John Doe,"Street, City"'));
+
+    // Check second row (quote handling)
+    assert.ok(content.includes('2,"Jane ""Doe""","Avenue ""B"", Town"'));
+
+    // Use parseCsv to verify round-trip
+    const parsed = parseCsv(content);
+    assert.deepStrictEqual(parsed, [
+      { id: '1', name: 'John Doe', address: 'Street, City' },
+      { id: '2', name: 'Jane "Doe"', address: 'Avenue "B", Town' }
+    ]);
+  } finally {
+    await fs.unlink(outputPath).catch(() => {});
+    await fs.rmdir(tmpDir).catch(() => {});
+  }
 });
