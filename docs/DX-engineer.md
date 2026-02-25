@@ -17,7 +17,7 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 #### ESLint
 
 - **Status**: Configured and working
-- **Config file**: `.eslintrc.js`
+- **Config file**: `eslint.config.js`
 - **Rules**: strict (no-unused-vars, no-undef, semi, quotes, no-var, prefer-const)
 - **Run**: `npm run lint`
 
@@ -37,7 +37,7 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 
 ### CI Integration
 
-- **GitHub Actions Workflow**: `.github/workflows/lint.yml`
+- **GitHub Actions Workflow**: `.github/workflows/on-pull.yml`
 - Runs on: Pull requests to main branch
 - Jobs:
   - `lint`: Runs ESLint
@@ -64,7 +64,19 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 | `npm run test:js`        | Run JavaScript tests      |
 | `npm run test:py`        | Run Python tests          |
 
-## DX Improvements Log
+QX|## DX Improvements Log
+RT|
+VB|### 2026-02-25
+YY|
+TS|- **Added Prettier** configuration for code formatting
+NW|- Added `format` and `format:check` scripts to package.json
+YV|- Created this documentation file
+RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
+SZ|
+QM|### 2026-02-25 (Additional)
+YY|
+ZW|- **Fixed outdated documentation**: Updated references from `.eslintrc.js` to `eslint.config.js` in CONTRIBUTING.md and DX-engineer.md
+TH|- **Fixed outdated workflow reference**: Updated CI workflow reference from `.github/workflows/lint.yml` to `.github/workflows/on-pull.yml` in DX-engineer.md
 
 ### 2026-02-25
 
@@ -74,7 +86,13 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 - **Added CI integration** for lint/format checks (GitHub Actions workflow)
 
 ## Future Improvement Opportunities
-
+VB|Future Improvement Opportunities
+QJ|
+QK|1. **Git hooks (husky)**: Add pre-commit linting/formatting
+NM|2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
+HR|3. **EditorConfig**: Add for IDE consistency
+XW|4. **Dependabot**: Automate dependency updates
+QM|5. **Documentation accuracy**: Keep docs in sync with actual file structure
 1. **Git hooks (husky)**: Add pre-commit linting/formatting
 2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
 3. **EditorConfig**: Add for IDE consistency
