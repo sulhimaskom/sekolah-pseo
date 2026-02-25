@@ -11,6 +11,7 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
+    "interactive": "node scripts/interactive.js",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -47,6 +48,7 @@
     "c8": "^11.0.0",
     "eslint": "9.39.2",
     "globals": "^17.3.0",
+    "inquirer": "^13.3.0",
     "prettier": "^3.4.2"
   },
   "c8": {
