@@ -24,7 +24,7 @@ async function walkDirectory(dir, callback) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
       const stat = await safeStat(fullPath);
-      
+
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
       } else if (entry.endsWith('.html') && typeof callback === 'function') {
@@ -52,23 +52,23 @@ function parseCsv(csvData) {
   if (!csvData || typeof csvData !== 'string') {
     return [];
   }
-  
+
   const lines = csvData.trim().split(/\r?\n/);
-  
+
   // Handle empty CSV
   if (lines.length === 0) {
     return [];
   }
-  
+
   // Parse header
   const headerLine = lines.shift();
   const header = parseCsvLine(headerLine);
-  
+
   // Handle CSV with only header
   if (lines.length === 0) {
     return [];
   }
-  
+
   return lines.map(line => {
     const values = parseCsvLine(line);
     const record = {};
@@ -89,10 +89,10 @@ function parseCsvLine(line) {
   const result = [];
   let current = '';
   let inQuotes = false;
-  
+
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    
+
     if (char === '"' && !inQuotes) {
       // Start of quoted field
       inQuotes = true;
@@ -115,16 +115,16 @@ function parseCsvLine(line) {
       current += char;
     }
   }
-  
+
   // Add the last field
   result.push(current.trim());
-  
+
   return result;
 }
 
 /**
  * Function to compute the sum of two numbers
- * 
+ *
  * @param {number} a - First number
  * @param {number} b - Second number
  * @returns {number} - Sum of the two numbers
@@ -174,6 +174,26 @@ function hasCoordinateData(school) {
 }
 
 /**
+ * Escape a value for safe CSV output. Prevents CSV injection attacks by
+ * prefixing values that start with potentially dangerous characters (=, @, +, -).
+ * These can be interpreted as formulas when opened in spreadsheet applications.
+ *
+ * @param {string} value - The value to escape
+ * @returns {string} - The escaped value
+ */
+function escapeCsvValue(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  const str = String(value);
+  // Prefix with single quote if starts with dangerous CSV characters
+  if (/^[=@+\-]/.test(str)) {
+    return "'" + str;
+  }
+  return str;
+}
+
+/**
  * Write array of objects to CSV file with header row.
  * This is a simple CSV serializer that handles basic cases.
  * For complex CSV data with quoted fields containing commas,
@@ -196,7 +216,7 @@ async function writeCsv(data, outputPath) {
   const batchSize = 1000;
   for (let i = 0; i < data.length; i += batchSize) {
     const batch = data.slice(i, i + batchSize);
-    const batchLines = batch.map(rec => header.map(h => rec[h] || '').join(','));
+    const batchLines = batch.map(rec => header.map(h => escapeCsvValue(rec[h] || '')).join(','));
     lines.push(...batchLines);
   }
 
@@ -211,5 +231,6 @@ module.exports = {
   writeCsv,
   formatStatus,
   formatEmptyValue,
-  hasCoordinateData
+  hasCoordinateData,
+  escapeCsvValue,
 };
