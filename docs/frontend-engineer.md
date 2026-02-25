@@ -31,6 +31,23 @@ This is a **static site generator** for Indonesian schools (Sekolah PSEO). The p
 
 ## Past Improvements
 
+### Custom 404 Error Page (2026-02-25)
+
+Added a custom 404.html error page to improve user experience when navigating to non-existent pages:
+
+1. **Created public/404.html** - Custom error page with:
+   - Indonesian error message ("Halaman Tidak Ditemukan")
+   - Skip link for accessibility
+   - ARIA landmarks (header, main, footer)
+   - Navigation links to homepage and sitemap
+   - Consistent styling using design tokens from design-system
+
+2. **Updated build script** - Added `cp -r public/* dist/` to copy static files during build
+
+3. **SEO optimized** - Added robots noindex tag to prevent indexing of error pages
+
+### Favicon Support (2026-02-25)
+
 ### Favicon Support (2026-02-25)
 
 Added SVG favicon to improve brand recognition and user experience:
