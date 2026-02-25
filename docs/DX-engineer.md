@@ -64,7 +64,33 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 | `npm run test:js`        | Run JavaScript tests      |
 | `npm run test:py`        | Run Python tests          |
 
-QX|## DX Improvements Log
+MV|QX|## DX Improvements Log
+MP|RT|
+KQ|VB|### 2026-02-25
+TK|YY|
+RS|TS|- **Added Prettier** configuration for code formatting
+PN|NW|- Added `format` and `format:check` scripts to package.json
+NX|YV|- Created this documentation file
+ZP|RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
+WN|SZ|
+ZJ|QM|### 2026-02-25 (Additional)
+TK|YY|
+SM|ZW|- **Fixed outdated documentation**: Updated references from `.eslintrc.js` to `eslint.config.js` in CONTRIBUTING.md and DX-engineer.md
+YQ|TH|- **Fixed outdated workflow reference**: Updated CI workflow reference from `.github/workflows/lint.yml` to `.github/workflows/on-pull.yml` in DX-engineer.md
+KB|
+VB|### 2026-02-25
+YR|
+TS|- **Added Prettier** configuration for code formatting
+NW|- Added `format` and `format:check` scripts to package.json
+YV|- Created this documentation file
+RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
+XB|
+VB|### 2026-02-25
+YR|
+TS|- **Added Node.js version consistency**: Added `engines` field to package.json (>=20.0.0)
+NW|- Added `.nvmrc` file for Node version management (Node 20)
+XB|
+YS|## Future Improvement Opportunities
 RT|
 VB|### 2026-02-25
 YY|
@@ -85,7 +111,14 @@ TH|- **Fixed outdated workflow reference**: Updated CI workflow reference from `
 - Created this documentation file
 - **Added CI integration** for lint/format checks (GitHub Actions workflow)
 
-## Future Improvement Opportunities
+YS|## Future Improvement Opportunities
+VB|
+KQ|QK|1. **Git hooks (husky)**: Add pre-commit linting/formatting
+RX|NM|2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
+PN|HR|3. **EditorConfig**: Add for IDE consistency ✅ DONE
+MS|XW|4. **Dependabot**: Automate dependency updates
+HX|QM|5. **Documentation accuracy**: Keep docs in sync with actual file structure ✅ DONE
+BX|TQ|6. **Node.js version consistency**: Add engines field and .nvmrc ✅ DONE
 VB|Future Improvement Opportunities
 QJ|
 QK|1. **Git hooks (husky)**: Add pre-commit linting/formatting
