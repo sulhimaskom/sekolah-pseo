@@ -463,5 +463,5 @@ async function writeExternalStylesFile(distDir) {
 
 module.exports = {
   generateSchoolPageStyles,
-  writeExternalStylesFile
+  writeExternalStylesFile,
 };
