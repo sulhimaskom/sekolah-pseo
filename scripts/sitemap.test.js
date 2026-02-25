@@ -35,8 +35,10 @@ test('collectUrls collects HTML files from directory structure', async () => {
   
   const urls = await collectUrls(testDir, 'https://example.com');
   assert.strictEqual(urls.length, 2);
-  assert.ok(urls.includes('https://example.com/index.html'));
-  assert.ok(urls.includes('https://example.com/subdir/page.html'));
+  assert.ok(urls.some(u => u.url === 'https://example.com/index.html'));
+  assert.ok(urls.some(u => u.url === 'https://example.com/subdir/page.html'));
+  // Verify lastmod is present
+  assert.ok(urls.every(u => u.lastmod && u.lastmod.match(/^\d{4}-\d{2}-\d{2}$/)));
 });
 
 test('collectUrls ignores non-HTML files', async () => {
@@ -51,7 +53,7 @@ test('collectUrls ignores non-HTML files', async () => {
   
   const urls = await collectUrls(testDir, 'https://example.com');
   assert.strictEqual(urls.length, 1);
-  assert.ok(urls.includes('https://example.com/index.html'));
+  assert.ok(urls.some(u => u.url === 'https://example.com/index.html'));
 });
 
 test('collectUrls handles empty directory', async () => {
@@ -80,8 +82,8 @@ test('collectUrls handles nested directory structures', async () => {
   
   const urls = await collectUrls(testDir, 'https://example.com');
   assert.strictEqual(urls.length, 2);
-  assert.ok(urls.includes('https://example.com/level1/page1.html'));
-  assert.ok(urls.includes('https://example.com/level1/level2/page2.html'));
+  assert.ok(urls.some(u => u.url === 'https://example.com/level1/page1.html'));
+  assert.ok(urls.some(u => u.url === 'https://example.com/level1/level2/page2.html'));
 });
 
 test('writeSitemapFiles creates sitemap with correct XML structure', async () => {
@@ -90,7 +92,10 @@ test('writeSitemapFiles creates sitemap with correct XML structure', async () =>
   const testDir = path.join(process.env.TEST_TEMP_DIR, 'write-test1');
   await fs.mkdir(testDir, { recursive: true });
   
-  const urls = ['https://example.com/page1.html', 'https://example.com/page2.html'];
+  const urls = [
+    { url: 'https://example.com/page1.html', lastmod: '2024-01-15' },
+    { url: 'https://example.com/page2.html', lastmod: '2024-01-16' }
+  ];
   const files = await writeSitemapFiles(urls, testDir);
   
   assert.strictEqual(files.length, 1);
@@ -99,9 +104,30 @@ test('writeSitemapFiles creates sitemap with correct XML structure', async () =>
   const content = await fs.readFile(path.join(testDir, 'sitemap-001.xml'), 'utf8');
   assert.ok(content.includes('<?xml version="1.0" encoding="UTF-8"?>'));
   assert.ok(content.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'));
-  assert.ok(content.includes('<url><loc>https://example.com/page1.html</loc></url>'));
-  assert.ok(content.includes('<url><loc>https://example.com/page2.html</loc></url>'));
+  assert.ok(content.includes('<url><loc>https://example.com/page1.html</loc><lastmod>2024-01-15</lastmod></url>'));
+  assert.ok(content.includes('<url><loc>https://example.com/page2.html</loc><lastmod>2024-01-16</lastmod></url>'));
   assert.ok(content.includes('</urlset>'));
+});
+
+test('writeSitemapFiles includes lastmod tags from file modification time', async () => {
+  const { collectUrls, writeSitemapFiles } = require('./sitemap');
+  
+  const testDir = path.join(process.env.TEST_TEMP_DIR, 'write-test-lastmod');
+  await fs.mkdir(testDir, { recursive: true });
+  
+  // Create file with specific modification time
+  const testFile = path.join(testDir, 'test.html');
+  await fs.writeFile(testFile, '<html></html>', 'utf8');
+  
+  const urls = await collectUrls(testDir, 'https://example.com');
+  assert.strictEqual(urls.length, 1);
+  assert.ok(urls[0].lastmod, 'Should have lastmod');
+  assert.ok(urls[0].lastmod.match(/^\d{4}-\d{2}-\d{2}$/), 'lastmod should be YYYY-MM-DD format');
+  
+  const files = await writeSitemapFiles(urls, testDir);
+  const content = await fs.readFile(path.join(testDir, files[0]), 'utf8');
+  assert.ok(content.includes('<lastmod>'), 'Should include lastmod tag');
+  assert.ok(content.includes(urls[0].lastmod), 'lastmod value should match');
 });
 
 test('writeSitemapFiles splits URLs into multiple sitemaps when exceeding limit', async () => {
@@ -110,7 +136,10 @@ test('writeSitemapFiles splits URLs into multiple sitemaps when exceeding limit'
   const testDir = path.join(process.env.TEST_TEMP_DIR, 'write-test2');
   await fs.mkdir(testDir, { recursive: true });
   
-  const urls = Array.from({ length: 50001 }, (_, i) => `https://example.com/page${i}.html`);
+  const urls = Array.from({ length: 50001 }, (_, i) => ({
+    url: `https://example.com/page${i}.html`,
+    lastmod: '2024-01-15'
+  }));
   const files = await writeSitemapFiles(urls, testDir);
   
   assert.strictEqual(files.length, 2);
@@ -138,7 +167,14 @@ test('writeSitemapFiles respects MAX_URLS_PER_SITEMAP configuration', async () =
   await fs.mkdir(testDir, { recursive: true });
   
   try {
-    const urls = ['url1', 'url2', 'url3', 'url4', 'url5', 'url6'];
+    const urls = [
+      { url: 'url1', lastmod: '2024-01-15' },
+      { url: 'url2', lastmod: '2024-01-15' },
+      { url: 'url3', lastmod: '2024-01-15' },
+      { url: 'url4', lastmod: '2024-01-15' },
+      { url: 'url5', lastmod: '2024-01-15' },
+      { url: 'url6', lastmod: '2024-01-15' }
+    ];
     const files = await writeSitemapFiles(urls, testDir);
     
     assert.strictEqual(files.length, 2);
@@ -216,6 +252,7 @@ test('sitemap generation integration test', async () => {
   
   const urls = await collectUrls(testDir, 'https://example.com');
   assert.strictEqual(urls.length, 2);
+  assert.ok(urls.every(u => u.url && u.lastmod));
   
   const sitemapFiles = await writeSitemapFiles(urls, testDir);
   assert.strictEqual(sitemapFiles.length, 1);
