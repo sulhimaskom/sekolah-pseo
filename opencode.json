@@ -22,12 +22,7 @@
     ]
   },
   "plugin": [
-    "oh-my-opencode",
-    "opencode-antigravity-auth",
-    "AI-Agents-public",
-    "superpowers",
-    "system_prompts_leaks",
-    "UltraRAG"
+    "oh-my-opencode"
   ],
   "tools": {
     "bash": true,
