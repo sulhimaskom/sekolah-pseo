@@ -2,11 +2,6 @@ const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
 
 /**
-const slugify = require('../../../scripts/slugify');
-const slugify = require('../../../scripts/slugify');
-const CONFIG = require('../../../scripts/config');
-
-/**
  * Aggregate school data by province
  * @param {Array<Object>} schools - Array of school data objects
  * @returns {Array<Object>} - Array of province objects with school count
