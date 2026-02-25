@@ -61,6 +61,12 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 - Updated `writeCsv()` to use the new escaping function
 - Exported `escapeCsvField` for testing
 
+### 2026-02-25 (Session 2)
+
+- **Removed dead code**: Cleaned up duplicate code block in `scripts/utils.js` (lines 245-253) that was never executed
+- Fixed missing semicolon in `module.exports`
+- PR #125: https://github.com/sulhimaskom/sekolah-pseo/pull/125
+
 ## Future Improvement Opportunities
 
 1. **Streaming CSV processing**: Process large CSV files in streaming fashion

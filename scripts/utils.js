@@ -242,12 +242,3 @@ module.exports = {
   formatEmptyValue,
   hasCoordinateData,
 };
-(parseCsv,
-  addNumbers,
-  escapeHtml,
-  escapeCsvField,
-  walkDirectory,
-  writeCsv,
-  formatStatus,
-  formatEmptyValue,
-  hasCoordinateData);
