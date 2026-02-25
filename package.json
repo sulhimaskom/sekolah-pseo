@@ -6,7 +6,7 @@
     "test": "tests"
   },
   "scripts": {
-    "dev": "npm run lint && npm run test:js",
+    "dev": "npm run lint && npm run format:scripts && npm run test:js",
     "build": "node scripts/build-pages.js",
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
@@ -14,6 +14,7 @@
     "lint": "eslint scripts/*.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "format:scripts": "prettier --check 'scripts/**/*.js'",
     "test": "npm run test:js && npm run test:py",
     "test:js": "node --test scripts/*.test.js",
     "test:py": "python3 tests/run_tests.py",

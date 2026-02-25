@@ -10,10 +10,11 @@
 
 | Metric | Status |
 |--------|--------|
-| JavaScript Tests | ✅ PASSING (320 tests) |
+| JavaScript Tests | ✅ PASSING (403 tests) |
 | Python Tests | ✅ PASSING (18 tests) |
 | ESLint | ✅ PASSING (no errors) |
 | npm audit | ✅ 0 vulnerabilities |
+| Format Check (scripts) | ✅ PASSING |
 
 ---
 
@@ -24,6 +25,7 @@
 2. `npm run test:py` - All Python tests pass  
 3. `npm run lint` - ESLint passes with no errors
 4. `npm audit` - Zero vulnerabilities
+5. `npm run format:scripts` - Prettier format check for scripts/
 
 ### Recommended Commands
 ```bash
@@ -36,6 +38,7 @@ npm run test:py      # Python tests
 npm run lint         # ESLint
 npm audit            # Security audit
 npm audit fix        # Auto-fix vulnerabilities
+npm run format:scripts # Prettier format check
 ```
 
 ---

@@ -11,7 +11,7 @@ describe('generateSchoolPageHtml', () => {
     kecamatan: 'Menteng',
     alamat: 'Jl. Sudirman No. 1',
     bentuk_pendidikan: 'SD',
-    status: 'Negeri'
+    status: 'Negeri',
   };
 
   it('generates complete HTML for valid school object', () => {
@@ -36,90 +36,77 @@ describe('generateSchoolPageHtml', () => {
   });
 
   it('throws error for null school object', () => {
-    assert.throws(
-      () => generateSchoolPageHtml(null),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => generateSchoolPageHtml(null), {
+      message: 'Invalid school object provided',
+    });
   });
 
   it('throws error for undefined school object', () => {
-    assert.throws(
-      () => generateSchoolPageHtml(undefined),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => generateSchoolPageHtml(undefined), {
+      message: 'Invalid school object provided',
+    });
   });
 
   it('throws error for non-object school input', () => {
-    assert.throws(
-      () => generateSchoolPageHtml('string'),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => generateSchoolPageHtml('string'), {
+      message: 'Invalid school object provided',
+    });
 
-    assert.throws(
-      () => generateSchoolPageHtml(123),
-      { message: 'Invalid school object provided' }
-    );
+    assert.throws(() => generateSchoolPageHtml(123), { message: 'Invalid school object provided' });
   });
 
   it('throws error for array input', () => {
-    assert.throws(
-      () => generateSchoolPageHtml([]),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml([]), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing nama field', () => {
     const schoolWithoutNama = { ...validSchool, nama: undefined };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithoutNama),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithoutNama), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing npsn field', () => {
     const schoolWithoutNpsn = { ...validSchool, npsn: undefined };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithoutNpsn),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithoutNpsn), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing provinsi field', () => {
     const schoolWithoutProvinsi = { ...validSchool, provinsi: undefined };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithoutProvinsi),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithoutProvinsi), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing kab_kota field', () => {
     const schoolWithoutKabKota = { ...validSchool, kab_kota: undefined };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithoutKabKota),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithoutKabKota), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object missing kecamatan field', () => {
     const schoolWithoutKecamatan = { ...validSchool, kecamatan: undefined };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithoutKecamatan),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithoutKecamatan), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error for school object with empty string required field', () => {
     const schoolWithEmptyNama = { ...validSchool, nama: '' };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithEmptyNama),
-      { message: /School object missing required fields/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithEmptyNama), {
+      message: /School object missing required fields/,
+    });
   });
 
   it('throws error listing all missing required fields', () => {
@@ -127,13 +114,13 @@ describe('generateSchoolPageHtml', () => {
       ...validSchool,
       nama: undefined,
       npsn: undefined,
-      provinsi: undefined
+      provinsi: undefined,
     };
 
-    assert.throws(
-      () => generateSchoolPageHtml(schoolWithMultipleMissing),
-      { message: /School object missing required fields: (nama|npsn|provinsi)(, (nama|npsn|provinsi)){2}/ }
-    );
+    assert.throws(() => generateSchoolPageHtml(schoolWithMultipleMissing), {
+      message:
+        /School object missing required fields: (nama|npsn|provinsi)(, (nama|npsn|provinsi)){2}/,
+    });
   });
 
   it('includes security meta tags', () => {
@@ -241,7 +228,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in school name to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      nama: '<script>alert("XSS")</script> Test School'
+      nama: '<script>alert("XSS")</script> Test School',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -254,7 +241,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in alamat to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      alamat: '<img src=x onerror=alert(1)> Street'
+      alamat: '<img src=x onerror=alert(1)> Street',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -266,7 +253,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in provinsi to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      provinsi: '<div>Malicious</div> Province'
+      provinsi: '<div>Malicious</div> Province',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -278,7 +265,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in kab_kota to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      kab_kota: '<span>XSS</span> City'
+      kab_kota: '<span>XSS</span> City',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -289,7 +276,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in kecamatan to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      kecamatan: '<a href="evil.com">Link</a> District'
+      kecamatan: '<a href="evil.com">Link</a> District',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -300,7 +287,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in bentuk_pendidikan to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      bentuk_pendidikan: '<script>evil</script> SD'
+      bentuk_pendidikan: '<script>evil</script> SD',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -311,7 +298,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in status to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      status: '<img src=x onerror=alert(1)> Negeri'
+      status: '<img src=x onerror=alert(1)> Negeri',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -322,7 +309,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in NPSN to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
-      npsn: '<script>alert(1)</script>12345678'
+      npsn: '<script>alert(1)</script>12345678',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
@@ -334,7 +321,7 @@ describe('generateSchoolPageHtml', () => {
     const schoolWithSpecialChars = {
       ...validSchool,
       nama: 'SMA N 1 & "Test" School',
-      alamat: 'Jl. Merdeka No. 1, Apt. 2B'
+      alamat: 'Jl. Merdeka No. 1, Apt. 2B',
     };
 
     const html = generateSchoolPageHtml(schoolWithSpecialChars);
@@ -400,7 +387,7 @@ describe('generateSchoolPageHtml', () => {
     const schoolWithEmptyOptional = {
       ...validSchool,
       alamat: '',
-      status: ''
+      status: '',
     };
 
     const html = generateSchoolPageHtml(schoolWithEmptyOptional);
@@ -431,7 +418,7 @@ describe('generateSchoolPageHtml', () => {
   it('escapes HTML in page title', () => {
     const maliciousSchool = {
       ...validSchool,
-      nama: '</title><script>alert(1)</script>'
+      nama: '</title><script>alert(1)</script>',
     };
 
     const html = generateSchoolPageHtml(maliciousSchool);
