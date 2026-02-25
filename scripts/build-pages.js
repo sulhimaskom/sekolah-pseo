@@ -16,6 +16,7 @@ const CONFIG = require('./config');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
+const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 const { RateLimiter } = require('./rate-limiter');
 
 // Export functions for testing
@@ -153,7 +154,8 @@ async function writeSchoolPagesConcurrently(
  * 1. Ensuring dist directory exists
  * 2. Loading school data
  * 3. Generating external CSS file
- * 4. Generating and writing pages
+ * 4. Generating homepage
+ * 5. Generating and writing pages
  *
  * You can add flags to limit by region to adhere to the monthly build cap.
  */
@@ -164,6 +166,12 @@ async function build() {
 
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
+
+  // Generate homepage
+  console.log('Generating homepage...');
+  const homepageHtml = generateHomepageHtml(schools);
+  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
+  console.log('Generated homepage (index.html)');
 
   const { successful, failed } = await writeSchoolPagesConcurrently(schools);
   console.log(`Generated ${successful} school pages (${failed} failed)`);
