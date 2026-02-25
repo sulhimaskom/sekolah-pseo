@@ -16,10 +16,14 @@
     "format:check": "prettier --check .",
     "test": "npm run test:js && npm run test:py",
     "test:js": "node --test scripts/*.test.js",
+    "test:js:coverage": "c8 --reporter=text --reporter=text-summary --check-coverage --lines=80 --branches=75 node --test scripts/*.test.js",
+    "test:js:coverage:report": "c8 --reporter=text --reporter=html --reporter=text-summary node --test scripts/*.test.js",
     "test:py": "python3 tests/run_tests.py",
     "test:py:pytest": "python3 -m pytest tests/ -v",
     "test:ci": "npm run test:js && npm run test:py -- --json",
-    "test:all": "npm run test:js && npm run test:py:pytest"
+    "test:all": "npm run test:js && npm run test:py:pytest",
+    "coverage": "c8 --reporter=text --reporter=text-summary --check-coverage --lines=80 --branches=75 node --test scripts/*.test.js",
+    "coverage:report": "c8 --reporter=text --reporter=html --reporter=text-summary node --test scripts/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -40,8 +44,24 @@
   },
   "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme",
   "devDependencies": {
+    "c8": "^11.0.0",
     "eslint": "9.39.2",
     "globals": "^17.3.0",
     "prettier": "^3.4.2"
+  },
+  "c8": {
+    "reporter": [
+      "text",
+      "text-summary",
+      "html"
+    ],
+    "exclude": [
+      "tests/**",
+      "**/*.test.js"
+    ],
+    "branches": 75,
+    "lines": 80,
+    "functions": 75,
+    "statements": 80
   }
 }
