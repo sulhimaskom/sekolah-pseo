@@ -99,6 +99,11 @@
 ## Areas for Documentation Improvement
 
 ### Potential Improvements (Backlog)
+- ~~CONTRIBUTING.md file for contribution guidelines~~ - DONE: Created CONTRIBUTING.md with setup, scripts, code style, and testing guidelines
+- Environment setup guide
+- Deployment documentation
+- Performance tuning guide
+- Security disclosure policy
 - CONTRIBUTING.md file for contribution guidelines
 - Environment setup guide
 - Deployment documentation
