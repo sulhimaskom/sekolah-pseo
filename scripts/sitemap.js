@@ -14,14 +14,14 @@ const { walkDirectory } = require('./utils');
 module.exports = {
   collectUrls,
   writeSitemapFiles,
-  writeSitemapIndex
+  writeSitemapIndex,
 };
 
 async function collectUrls(dir, baseUrl) {
   return await walkDirectory(dir, (fullPath, relativePath, entry, stat) => {
     return {
       url: `${baseUrl}/${relativePath.replace(/\\/g, '/')}`,
-      lastmod: stat.mtime.toISOString().split('T')[0]
+      lastmod: stat.mtime.toISOString().split('T')[0],
     };
   });
 }
@@ -31,13 +31,13 @@ async function writeSitemapFiles(urls, outDir) {
   for (let i = 0; i < urls.length; i += CONFIG.MAX_URLS_PER_SITEMAP) {
     const chunk = urls.slice(i, i + CONFIG.MAX_URLS_PER_SITEMAP);
     const filename = `sitemap-${String(sitemapFiles.length + 1).padStart(3, '0')}.xml`;
-    
+
     // Use array join for better performance when building large strings
     const contentParts = [
       '<?xml version="1.0" encoding="UTF-8"?>',
-      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ];
-    
+
     // Process URLs in batches for better memory usage
     const urlParts = chunk.map(u => {
       if (u.lastmod) {
@@ -47,7 +47,7 @@ async function writeSitemapFiles(urls, outDir) {
     });
     contentParts.push(...urlParts);
     contentParts.push('</urlset>');
-    
+
     const content = contentParts.join('\n');
     await safeWriteFile(path.join(outDir, filename), content);
     sitemapFiles.push(filename);
@@ -59,14 +59,14 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
   // Use array join for better performance when building large strings
   const contentParts = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
   ];
-  
+
   // Process files in batches for better memory usage
   const sitemapParts = files.map(f => `  <sitemap><loc>${baseUrl}/${f}</loc></sitemap>`);
   contentParts.push(...sitemapParts);
   contentParts.push('</sitemapindex>');
-  
+
   const content = contentParts.join('\n');
   await safeWriteFile(path.join(outDir, 'sitemap-index.xml'), content);
 }

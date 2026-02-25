@@ -31,7 +31,7 @@ function buildSchoolPageData(school) {
 
   return {
     relativePath,
-    content: generateSchoolPageHtml(school, relativePath)
+    content: generateSchoolPageHtml(school, relativePath),
   };
 }
 
@@ -64,5 +64,5 @@ function getUniqueDirectories(schools) {
 
 module.exports = {
   buildSchoolPageData,
-  getUniqueDirectories
+  getUniqueDirectories,
 };

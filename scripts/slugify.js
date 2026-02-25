@@ -23,33 +23,34 @@ function slugify(input) {
   if (typeof input !== 'string') {
     return '';
   }
-  
+
   // Handle empty string case
   if (input.trim() === '') {
     return '';
   }
-  
+
   // Check cache first
   if (slugCache.has(input)) {
     return slugCache.get(input);
   }
-  
+
   // Compute slug
   const normalized = input.toString().normalize('NFD');
-  const slug = normalized
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-') || 'untitled';
-  
+  const slug =
+    normalized
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-') || 'untitled';
+
   // Store in cache with size limit
   if (slugCache.size >= MAX_CACHE_SIZE) {
     const firstKey = slugCache.keys().next().value;
     slugCache.delete(firstKey);
   }
   slugCache.set(input, slug);
-  
+
   return slug;
 }
 
