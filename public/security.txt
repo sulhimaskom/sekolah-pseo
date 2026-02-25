@@ -1,0 +1,20 @@
+# Security Contact Information
+
+## Contact
+For security vulnerabilities, please open a GitHub issue with the "security" label:
+https://github.com/sulhimaskom/sekolah-pseo/issues/new?labels=security
+
+## Scope
+- sekolah-pseo repository
+- All related data processing scripts
+
+## Policy
+- We appreciate responsible disclosure
+- We will acknowledge reports within 7 days
+- We will provide updates on remediation progress
+
+## Encryption
+For sensitive communications, you may encrypt using the project maintainer's GPG key (available on GitHub profile).
+
+## Thanks
+Thank you for helping keep Sekolah PSEO secure!
