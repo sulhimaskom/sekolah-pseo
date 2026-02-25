@@ -52,7 +52,6 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 | `npm run build`          | Build static pages |
 | `npm run sitemap`        | Generate sitemap   |
 | `npm run validate-links` | Validate links     |
-
 ## Backend Improvements Log
 
 ### 2026-02-25
@@ -60,6 +59,12 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 - **Fixed CSV escaping**: Added `escapeCsvField()` function to properly escape CSV fields containing commas, quotes, or newlines according to RFC 4180
 - Updated `writeCsv()` to use the new escaping function
 - Exported `escapeCsvField` for testing
+
+### 2026-02-25 (Session 2)
+
+- **Removed dead code**: Cleaned up duplicate code block in `scripts/utils.js` (lines 245-253) that was never executed
+- Fixed missing semicolon in `module.exports`
+- PR #125: https://github.com/sulhimaskom/sekolah-pseo/pull/125
 
 ## Future Improvement Opportunities
 
