@@ -6,6 +6,43 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ## Completed Improvements
 
+### 2026-02-25: Edge Case Tests for resilience.js
+
+- **PR**: #128
+- **Branch**: `rnd/resilience-edge-cases`
+- **Changes**:
+  - Added 6 new tests for IntegrationError:
+    - Empty details object handling
+    - Various error codes validation
+    - Timestamp ISO format verification
+    - Nested details in JSON serialization
+  - Added 4 new tests for isTransientError:
+    - Empty string message handling
+    - Error objects with both code and message
+    - Empty object edge case
+    - Non-string message handling
+  - Added 5 new tests for withTimeout:
+    - Zero timeout behavior
+    - Very short timeout handling
+    - Operation name preservation in error messages
+    - Promise that resolves immediately
+  - Added 7 new tests for retry:
+    - maxDelayMs limit enforcement
+    - Custom shouldRetry function
+    - shouldRetry returning false
+    - Synchronous function error handling
+    - Error details in retry exhaustion
+  - Added 4 new tests for CircuitBreaker:
+    - lastFailureTime tracking
+    - Custom failure threshold
+    - Below threshold behavior
+    - getState() returns correct state object
+- **Results**:
+  - Tests: 403 passing (was 334, +69 new tests)
+  - Lint: N/A (eslint not installed)
+
+### 2026-02-25: Test Coverage for fs-safe.js and config.js
+
 ### 2026-02-25: Test Coverage for fs-safe.js and config.js
 
 - **PR**: #115
@@ -44,6 +81,10 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ## Future Improvement Ideas
 
-1. Add more edge case tests for resilience.js
+1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
 2. Add integration tests for the full ETL pipeline
 3. Add performance benchmarks for page building
+
+4. Add more edge case tests for resilience.js
+5. Add integration tests for the full ETL pipeline
+6. Add performance benchmarks for page building
