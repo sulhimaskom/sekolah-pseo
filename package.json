@@ -40,7 +40,7 @@
   "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme",
   "devDependencies": {
     "eslint": "9.39.2",
-    "globals": "^17.0.0",
+    "globals": "^17.3.0",
     "prettier": "^3.4.2"
   }
 }
