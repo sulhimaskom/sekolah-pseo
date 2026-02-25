@@ -1,0 +1,40 @@
+# Cache headers for Cloudflare Pages
+# https://developers.cloudflare.com/pages/platform/headers/
+
+# Security headers
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Static assets - long cache (1 year)
+# CSS and JS assets with hash fingerprints
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images - long cache (1 month)
+/*.svg
+  Cache-Control: public, max-age=2592000
+/*.png
+  Cache-Control: public, max-age=2592000
+/*.jpg
+  Cache-Control: public, max-age=2592000
+/*.ico
+  Cache-Control: public, max-age=2592000
+
+# HTML - no cache (always fresh)
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Data files - short cache (1 hour)
+/*.csv
+  Cache-Control: public, max-age=3600
+/*.json
+  Cache-Control: public, max-age=3600
+
+# XML files
+/*.xml
+  Cache-Control: public, max-age=3600

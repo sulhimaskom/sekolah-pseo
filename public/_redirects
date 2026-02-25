@@ -1,0 +1,8 @@
+# Cloudflare Pages Redirects
+# https://developers.cloudflare.com/pages/platform/redirects/
+
+# 404 fallback to home page (optional - uncomment if needed)
+# /404.html / 404
+
+# Add custom redirects below
+# Format: /source /destination [status]
