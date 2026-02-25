@@ -67,4 +67,8 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 
 - This repository uses a sophisticated multi-phase agent system (00-11 flows)
 - The agent should focus on infrastructure/improvement tasks, not new features
-- Always sync with default branch before creating PR
+#QQ|- Always sync with default branch before creating PR
+
+## Recent Improvements
+
+- **2026-02-25**: Fixed Prettier formatting in scripts/*.js (8 test files) - added missing newlines at EOF, reformatted import statements
