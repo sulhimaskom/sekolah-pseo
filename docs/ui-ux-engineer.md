@@ -78,7 +78,6 @@ Static site generator for Indonesian school pages.
 - No frontend framework - vanilla CSS generation
 - Tests are comprehensive and should pass after changes
 
-
 ### 5. Remove Orphaned Duplicate Code ✅
 
 - Fixed `src/presenters/styles.js` - removed orphaned duplicate function definition
