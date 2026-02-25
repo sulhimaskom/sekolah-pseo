@@ -450,8 +450,14 @@ footer[role="contentinfo"] {
     margin: 2cm;
   }
 }
+};
 }
 `;
+=======
+
+  }
+}`;
+>>>>>>> e8e177d (fix(ui-ux): remove orphaned duplicate code in styles.js)
 }
 
 async function writeExternalStylesFile(distDir) {
