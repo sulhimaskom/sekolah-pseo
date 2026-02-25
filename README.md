@@ -19,6 +19,39 @@ Proyek ini adalah platform untuk menampilkan informasi sekolah-sekolah di Indone
 5. Hasilkan sitemap: `npm run sitemap`
 6. Validasi tautan: `npm run validate-links`
 
+## Menu Interaktif CLI
+
+Proyek ini menyediakan menu interaktif untuk memudahkan menjalankan tugas-tugas umum:
+
+```bash
+npm run interactive
+```
+
+Menu ini menyediakan opsi berikut:
+
+| Opsi           | Deskripsi                                                  |
+| -------------- | ---------------------------------------------------------- |
+| ETL            | Jalankan pipeline pemrosesan data                          |
+| Build          | Hasilkan halaman statis                                    |
+| Sitemap        | Hasilkan file sitemap.xml                                  |
+| Validate Links | Periksa tautan yang rusak                                  |
+| Test           | Jalankan semua pengujian                                   |
+| All            | Jalankan urutan lengkap (ETL → Build → Sitemap → Validate) |
+| Help           | Tampilkan informasi penggunaan                             |
+| Exit           | Keluar dari menu                                           |
+
+Alternatifnya, Anda dapat menjalankan perintah langsung:
+
+```bash
+npm run etl           # Jalankan ETL
+npm run build         # Bangun halaman
+npm run sitemap       # Hasilkan sitemap
+npm run validate-links # Validasi tautan
+npm run test          # Jalankan pengujian
+npm run lint          # Jalankan linter
+npm run format        # Format kode
+```
+
 ## Pengujian
 
 Proyek ini mencakup fungsi pengujian sederhana untuk memverifikasi pipeline CI/CD:
