@@ -9,8 +9,8 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 ### Project Type
 
 - Node.js project with JavaScript
-- Uses Common system
-- IncludesJS module Python tests
+- Uses CommonJS module system
+- Includes JavaScript and Python tests
 
 ### Code Quality Tools
 
@@ -34,6 +34,14 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 - **Run**:
   - Check: `npm run format:check`
   - Format: `npm run format`
+
+### CI Integration
+
+- **GitHub Actions Workflow**: `.github/workflows/lint.yml`
+- Runs on: Pull requests to main branch
+- Jobs:
+  - `lint`: Runs ESLint
+  - `format`: Runs Prettier format check
 
 ### Test Suite
 
@@ -63,10 +71,11 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 - **Added Prettier** configuration for code formatting
 - Added `format` and `format:check` scripts to package.json
 - Created this documentation file
+- **Added CI integration** for lint/format checks (GitHub Actions workflow)
 
 ## Future Improvement Opportunities
 
 1. **Git hooks (husky)**: Add pre-commit linting/formatting
-2. **CI integration**: Add lint/format checks to GitHub Actions
+2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
 3. **EditorConfig**: Add for IDE consistency
 4. **Dependabot**: Automate dependency updates
