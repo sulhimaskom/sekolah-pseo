@@ -69,6 +69,22 @@ Dark Mode Support ✅### 2.
 - Hides navigation, optimizes layout for print
 - Ensures readable output on paper
 
+### 6. Back to Top Button ✅
+
+- Added floating back-to-top button to both homepage and school pages
+- Button appears after scrolling 300px down
+- Smooth scroll-to-top animation on click
+- Full accessibility: ARIA labels, focus-visible styles, keyboard accessible
+- Dark mode support via prefers-color-scheme
+- Respects prefers-reduced-motion for accessibility
+- Mobile responsive sizing (48px desktop, 40px mobile)
+
+## Testing
+
+- Added @media print for better printing
+- Hides navigation, optimizes layout for print
+- Ensures readable output on paper
+
 ## Testing
 
 - `npm run test:js` runs comprehensive tests for styles and design-system
