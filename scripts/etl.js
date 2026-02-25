@@ -32,7 +32,7 @@ module.exports = {
   validateLatLon,
   validateCategoricalField,
   checkNpsnUniqueness,
-  generateDataQualityReport
+  generateDataQualityReport,
 };
 
 /**
@@ -46,12 +46,12 @@ function sanitize(value) {
   if (typeof value !== 'string') {
     return '';
   }
-  
+
   // Cache regex patterns to avoid recreating them each time
   const whitespaceRegex = /\s+/g;
   const controlCharsRegex = /[\u0000-\u001F]/g;
   const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
-  
+
   return value
     .replace(whitespaceRegex, ' ') // collapse whitespace
     .replace(controlCharsRegex, '') // remove control chars
@@ -70,10 +70,10 @@ function normaliseRecord(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {};
   }
-  
+
   // Cache the current date to avoid creating multiple Date objects
   const currentDate = new Date().toISOString().split('T')[0];
-  
+
   return {
     npsn: sanitize(raw.npsn || raw.NPSN || ''),
     nama: sanitize(raw.nama || raw.nama_sekolah || raw.Nama || ''),
@@ -100,19 +100,19 @@ function validateRecord(record) {
   if (!record || typeof record !== 'object') {
     return false;
   }
-  
+
   const requiredFields = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
-  
+
   for (const field of requiredFields) {
     if (!record[field] || record[field].trim() === '') {
       return false;
     }
   }
-  
+
   if (!/^\d+$/.test(record.npsn)) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -128,21 +128,25 @@ function validateLatLon(lat, lon) {
   if (!lat || !lon) {
     return false;
   }
-  
+
   const latNum = parseFloat(lat);
   const lonNum = parseFloat(lon);
-  
+
   if (isNaN(latNum) || isNaN(lonNum)) {
     return false;
   }
-  
+
   const INDONESIA_LAT_MIN = -11;
   const INDONESIA_LAT_MAX = 6;
   const INDONESIA_LON_MIN = 95;
   const INDONESIA_LON_MAX = 141;
-  
-  return latNum >= INDONESIA_LAT_MIN && latNum <= INDONESIA_LAT_MAX &&
-         lonNum >= INDONESIA_LON_MIN && lonNum <= INDONESIA_LON_MAX;
+
+  return (
+    latNum >= INDONESIA_LAT_MIN &&
+    latNum <= INDONESIA_LAT_MAX &&
+    lonNum >= INDONESIA_LON_MIN &&
+    lonNum <= INDONESIA_LON_MAX
+  );
 }
 
 /**
@@ -156,7 +160,7 @@ function validateCategoricalField(field, allowedValues) {
   if (!field || typeof field !== 'string') {
     return false;
   }
-  
+
   return allowedValues.includes(field.trim());
 }
 
@@ -169,7 +173,7 @@ function validateCategoricalField(field, allowedValues) {
 function checkNpsnUniqueness(records) {
   const npsnMap = new Map();
   const duplicates = [];
-  
+
   for (const record of records) {
     const npsn = record.npsn;
     if (npsn) {
@@ -182,10 +186,10 @@ function checkNpsnUniqueness(records) {
       }
     }
   }
-  
+
   return {
     isUnique: duplicates.length === 0,
-    duplicates
+    duplicates,
   };
 }
 
@@ -203,26 +207,38 @@ function generateDataQualityReport(records) {
     coordinateStats: {
       validCoordinates: 0,
       missingCoordinates: 0,
-      invalidCoordinates: 0
+      invalidCoordinates: 0,
     },
     uniqueness: {
       uniqueNpsn: 0,
-      duplicateNpsn: 0
+      duplicateNpsn: 0,
     },
-    categoricalDistribution: {}
+    categoricalDistribution: {},
   };
-  
-  const fields = ['npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat', 'kelurahan', 'kecamatan', 'kab_kota', 'provinsi', 'lat', 'lon'];
-  
+
+  const fields = [
+    'npsn',
+    'nama',
+    'bentuk_pendidikan',
+    'status',
+    'alamat',
+    'kelurahan',
+    'kecamatan',
+    'kab_kota',
+    'provinsi',
+    'lat',
+    'lon',
+  ];
+
   for (const field of fields) {
     const filledCount = records.filter(r => r[field] && r[field].trim() !== '').length;
     metrics.fieldCompleteness[field] = {
       filled: filledCount,
       missing: totalRecords - filledCount,
-      percentage: ((filledCount / totalRecords) * 100).toFixed(2)
+      percentage: ((filledCount / totalRecords) * 100).toFixed(2),
     };
   }
-  
+
   for (const record of records) {
     if (record.lat && record.lon) {
       if (validateLatLon(record.lat, record.lon)) {
@@ -233,25 +249,28 @@ function generateDataQualityReport(records) {
     } else {
       metrics.coordinateStats.missingCoordinates++;
     }
-    
+
     if (record.status) {
       metrics.categoricalDistribution.status = metrics.categoricalDistribution.status || {};
       const status = record.status;
-      metrics.categoricalDistribution.status[status] = (metrics.categoricalDistribution.status[status] || 0) + 1;
+      metrics.categoricalDistribution.status[status] =
+        (metrics.categoricalDistribution.status[status] || 0) + 1;
     }
-    
+
     if (record.bentuk_pendidikan) {
-      metrics.categoricalDistribution.bentuk_pendidikan = metrics.categoricalDistribution.bentuk_pendidikan || {};
+      metrics.categoricalDistribution.bentuk_pendidikan =
+        metrics.categoricalDistribution.bentuk_pendidikan || {};
       const bentuk = record.bentuk_pendidikan;
-      metrics.categoricalDistribution.bentuk_pendidikan[bentuk] = (metrics.categoricalDistribution.bentuk_pendidikan[bentuk] || 0) + 1;
+      metrics.categoricalDistribution.bentuk_pendidikan[bentuk] =
+        (metrics.categoricalDistribution.bentuk_pendidikan[bentuk] || 0) + 1;
     }
   }
-  
+
   const npsnCheck = checkNpsnUniqueness(records);
   metrics.uniqueness.uniqueNpsn = totalRecords - npsnCheck.duplicates.length;
   metrics.uniqueness.duplicateNpsn = npsnCheck.duplicates.length;
   metrics.uniqueness.duplicates = npsnCheck.duplicates;
-  
+
   return metrics;
 }
 
@@ -268,13 +287,13 @@ async function run() {
     console.error(`Error details: ${error.message}`);
     process.exit(1);
   }
-  
+
   try {
     const rawCsv = await safeReadFile(rawPath);
     const rawRecords = parseCsv(rawCsv);
-    
+
     console.log(`Loaded ${rawRecords.length} raw records`);
-    
+
     const processed = [];
     const rejected = [];
     for (const record of rawRecords) {
@@ -282,20 +301,23 @@ async function run() {
       if (validateRecord(normalized)) {
         processed.push(normalized);
       } else {
-        rejected.push({ npsn: normalized.npsn || 'N/A', reason: 'Missing required fields or invalid NPSN' });
+        rejected.push({
+          npsn: normalized.npsn || 'N/A',
+          reason: 'Missing required fields or invalid NPSN',
+        });
       }
     }
-        
+
     console.log(`Processed ${processed.length} valid records`);
     console.log(`Rejected ${rejected.length} invalid records`);
-    
+
     if (processed.length === 0) {
       console.error('No valid records found after processing');
       process.exit(1);
     }
-    
+
     const qualityReport = generateDataQualityReport(processed);
-    
+
     console.log('\n=== Data Quality Report ===');
     console.log(`Total records: ${qualityReport.totalRecords}`);
     console.log(`Valid coordinates: ${qualityReport.coordinateStats.validCoordinates}`);
@@ -303,17 +325,19 @@ async function run() {
     console.log(`Invalid coordinates: ${qualityReport.coordinateStats.invalidCoordinates}`);
     console.log(`Unique NPSN: ${qualityReport.uniqueness.uniqueNpsn}`);
     console.log(`Duplicate NPSN: ${qualityReport.uniqueness.duplicateNpsn}`);
-    
+
     if (qualityReport.uniqueness.duplicateNpsn > 0) {
-      console.warn(`\nWarning: Found ${qualityReport.uniqueness.duplicateNpsn} duplicate NPSN values:`);
+      console.warn(
+        `\nWarning: Found ${qualityReport.uniqueness.duplicateNpsn} duplicate NPSN values:`
+      );
       qualityReport.uniqueness.duplicates.forEach(npsn => console.warn(`  ${npsn}`));
     }
-    
+
     console.log('\n=== Field Completeness ===');
     for (const [field, stats] of Object.entries(qualityReport.fieldCompleteness)) {
       console.log(`${field}: ${stats.percentage}% (${stats.filled}/${qualityReport.totalRecords})`);
     }
-    
+
     await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);
     console.log(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
   } catch (error) {

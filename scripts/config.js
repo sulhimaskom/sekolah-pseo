@@ -36,11 +36,20 @@ const CONFIG = {
   SITE_URL: process.env.SITE_URL || 'https://example.com',
 
   // Concurrency limits with validation
-  BUILD_CONCURRENCY_LIMIT: Math.min(1000, Math.max(1, parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100)),
-  VALIDATION_CONCURRENCY_LIMIT: Math.min(500, Math.max(1, parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50)),
+  BUILD_CONCURRENCY_LIMIT: Math.min(
+    1000,
+    Math.max(1, parseInt(process.env.BUILD_CONCURRENCY_LIMIT) || 100)
+  ),
+  VALIDATION_CONCURRENCY_LIMIT: Math.min(
+    500,
+    Math.max(1, parseInt(process.env.VALIDATION_CONCURRENCY_LIMIT) || 50)
+  ),
 
   // Sitemap limits with validation
-  MAX_URLS_PER_SITEMAP: Math.min(50000, Math.max(1, parseInt(process.env.MAX_URLS_PER_SITEMAP) || 50000)),
+  MAX_URLS_PER_SITEMAP: Math.min(
+    50000,
+    Math.max(1, parseInt(process.env.MAX_URLS_PER_SITEMAP) || 50000)
+  ),
 
   // Directories
   ROOT_DIR: ROOT_DIR,
@@ -48,7 +57,7 @@ const CONFIG = {
   EXTERNAL_DIR: EXTERNAL_DIR,
 
   // Security utilities
-  validatePath
+  validatePath,
 };
 
 module.exports = CONFIG;

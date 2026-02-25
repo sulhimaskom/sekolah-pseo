@@ -6,46 +6,46 @@ const DESIGN_TOKENS = {
     text: {
       primary: '#111827',
       secondary: '#4b5563',
-      light: '#6b7280'
+      light: '#6b7280',
     },
     background: {
       primary: '#ffffff',
       secondary: '#f9fafb',
-      accent: '#f3f4f6'
+      accent: '#f3f4f6',
     },
     border: '#d1d5db',
     focus: '#2563eb',
     skipLink: {
       background: '#000000',
-      text: '#ffffff'
+      text: '#ffffff',
     },
     // Badge colors
     badge: {
       status: { bg: '#f3f4f6', text: '#111827' },
       n: { bg: '#dcfce7', text: '#166534' },
       s: { bg: '#dbeafe', text: '#1e40af' },
-      education: { bg: '#f3e8ff', text: '#7e22ce' }
+      education: { bg: '#f3e8ff', text: '#7e22ce' },
     },
     // Dark mode colors
     dark: {
       text: {
         primary: '#f9fafb',
         secondary: '#d1d5db',
-        light: '#9ca3af'
+        light: '#9ca3af',
       },
       background: {
         primary: '#111827',
         secondary: '#1f2937',
-        accent: '#374151'
+        accent: '#374151',
       },
       border: '#4b5563',
       badge: {
         status: { bg: '#374151', text: '#f9fafb' },
         n: { bg: '#064e3b', text: '#d1fae5' },
         s: { bg: '#1e3a8a', text: '#dbeafe' },
-        education: { bg: '#581c87', text: '#f3e8ff' }
-      }
-    }
+        education: { bg: '#581c87', text: '#f3e8ff' },
+      },
+    },
   },
 
   spacing: {
@@ -54,7 +54,7 @@ const DESIGN_TOKENS = {
     md: '1rem',
     lg: '1.5rem',
     xl: '2rem',
-    '2xl': '3rem'
+    '2xl': '3rem',
   },
   typography: {
     fontSize: {
@@ -65,50 +65,50 @@ const DESIGN_TOKENS = {
       xl: '1.25rem',
       '2xl': '1.5rem',
       '3xl': '1.875rem',
-      '4xl': '2.25rem'
+      '4xl': '2.25rem',
     },
     fontWeight: {
       normal: '400',
       medium: '500',
       semibold: '600',
-      bold: '700'
+      bold: '700',
     },
     lineHeight: {
       tight: '1.25',
       normal: '1.5',
-      relaxed: '1.75'
-    }
+      relaxed: '1.75',
+    },
   },
   borderRadius: {
     sm: '0.25rem',
     md: '0.375rem',
     lg: '0.5rem',
-    full: '9999px'
+    full: '9999px',
   },
   shadows: {
     sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    focus: '0 0 0 3px rgba(37, 99, 235, 0.3)'
+    focus: '0 0 0 3px rgba(37, 99, 235, 0.3)',
   },
   breakpoints: {
     sm: '640px',
     md: '768px',
     lg: '1024px',
-    xl: '1280px'
+    xl: '1280px',
   },
   transitions: {
     fast: '150ms',
     normal: '200ms',
-    slow: '300ms'
+    slow: '300ms',
   },
   zIndex: {
     base: '1',
     dropdown: '10',
     sticky: '20',
     fixed: '100',
-    modal: '1000'
-  }
+    modal: '1000',
+  },
 };
 
 function getCssVariables() {
@@ -191,7 +191,7 @@ function getCssVariables() {
     '--color-dark-badge-s-bg': DESIGN_TOKENS.colors.dark.badge.s.bg,
     '--color-dark-badge-s-text': DESIGN_TOKENS.colors.dark.badge.s.text,
     '--color-dark-badge-education-bg': DESIGN_TOKENS.colors.dark.badge.education.bg,
-    '--color-dark-badge-education-text': DESIGN_TOKENS.colors.dark.badge.education.text
+    '--color-dark-badge-education-text': DESIGN_TOKENS.colors.dark.badge.education.text,
   };
 
   let css = ':root {\n';
@@ -205,5 +205,5 @@ function getCssVariables() {
 
 module.exports = {
   DESIGN_TOKENS,
-  getCssVariables
+  getCssVariables,
 };
