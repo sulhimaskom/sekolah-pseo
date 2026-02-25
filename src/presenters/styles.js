@@ -450,20 +450,8 @@ footer[role="contentinfo"] {
     margin: 2cm;
   }
 }
-
-async function writeExternalStylesFile(distDir) {
-    margin: 2cm;
-  }
 }
-  nav a:focus,
-  .skip-link:focus {
-    outline-width: 3px;
-  }
-
-  .school-details-list dt {
-    font-weight: var(--font-weight-bold);
-  }
-}`;
+`;
 }
 
 async function writeExternalStylesFile(distDir) {
@@ -475,5 +463,5 @@ async function writeExternalStylesFile(distDir) {
 
 module.exports = {
   generateSchoolPageStyles,
-  writeExternalStylesFile
+  writeExternalStylesFile,
 };
