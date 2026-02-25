@@ -36,7 +36,7 @@ npm install
 ## Code Style
 
 - **Language**: JavaScript (CommonJS)
-- **Linting**: ESLint (configured in `.eslintrc.js`)
+- **Linting**: ESLint (configured in `eslint.config.js`)
 - **Formatting**: Prettier (configured in `.prettierrc`)
 
 Run linting and formatting before committing:
