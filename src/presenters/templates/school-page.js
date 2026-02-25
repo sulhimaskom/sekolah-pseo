@@ -56,6 +56,8 @@ function generateSchoolPageHtml(school, relativePath) {
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <title>${escapeHtml(school.nama)}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
