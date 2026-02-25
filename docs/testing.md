@@ -64,20 +64,24 @@ Located in `tests/`:
 ## Test Categories
 
 ### Project Structure Tests
+
 - Verify required files and directories exist
 - Validate package.json structure
 - Check documentation completeness
 
 ### Configuration Tests
+
 - Environment configuration validation
 - GitHub Actions workflow checks
 
 ### Data Validation Tests
+
 - Schools.csv structure validation
 - Required column checks
 - Data integrity verification
 
 ### JavaScript Unit Tests
+
 - Individual function testing
 - Error handling validation
 - Edge case coverage
@@ -98,6 +102,7 @@ python3 tests/run_tests.py --json
 ```
 
 ### Features
+
 - No external dependencies (uses only Python standard library)
 - Works in any environment
 - Supports verbose and JSON output modes
@@ -158,6 +163,7 @@ def test_my_feature():
 ## Continuous Integration
 
 Tests run automatically on:
+
 - Every push to main branch
 - Every pull request
 
@@ -180,6 +186,7 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 ### Test Coverage
 
 Current test coverage:
+
 - JavaScript: 12 test files, 100+ test cases
 - Python: 18 test cases (standalone runner)
 - Total: 100% pass rate
@@ -187,6 +194,7 @@ Current test coverage:
 ## Test Output Examples
 
 ### JavaScript Success
+
 ```
 ✓ buildSchoolPageData (29 subtests)
 ✓ getUniqueDirectories (18 subtests)
@@ -195,6 +203,7 @@ Current test coverage:
 ```
 
 ### Python Success
+
 ```
 ✓ PASS package.json exists and is valid
 ✓ PASS Directory exists: src/

@@ -217,11 +217,11 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
 
 ## Milestones
 
-| Milestone | Target Date | Status |
-|-----------|-------------|--------|
-| Foundation Complete | 2026-01 | ✅ Complete |
-| Phase 1 Launch | 2026-03 | 📋 Planned |
-| Phase 2 Launch | 2026-06 | 📋 Planned |
-| Phase 3 Launch | 2026-09 | 📋 Planned |
-| Phase 4 Launch | 2026-12 | 📋 Planned |
-| Phase 5 Launch | 2027-03 | 📋 Planned |
+| Milestone           | Target Date | Status      |
+| ------------------- | ----------- | ----------- |
+| Foundation Complete | 2026-01     | ✅ Complete |
+| Phase 1 Launch      | 2026-03     | 📋 Planned  |
+| Phase 2 Launch      | 2026-06     | 📋 Planned  |
+| Phase 3 Launch      | 2026-09     | 📋 Planned  |
+| Phase 4 Launch      | 2026-12     | 📋 Planned  |
+| Phase 5 Launch      | 2027-03     | 📋 Planned  |

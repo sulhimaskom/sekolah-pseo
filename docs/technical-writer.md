@@ -112,7 +112,7 @@
 - ~~Environment setup guide~~ - DONE: Created docs/setup.md with prerequisites, installation, configuration, and troubleshooting
 - ~~Deployment documentation~~ - DONE: Created docs/deployment.md with GitHub Pages, Netlify, Vercel, Docker, and traditional hosting guides
 - ~~Performance tuning guide~~ - PENDING: Can be added if needed
-#VN|- ~~Security disclosure policy~~ - DONE: Created SECURITY.md with vulnerability reporting guidelines, supported versions, and security best practices
+  #VN|- ~~Security disclosure policy~~ - DONE: Created SECURITY.md with vulnerability reporting guidelines, supported versions, and security best practices
 
 ## Notes
 

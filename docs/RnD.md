@@ -14,7 +14,7 @@ This document serves as the long-term memory for the RnD agent, tracking improve
   - Documented .gitignore setup in README:
     - Environment files (.env, .env.local)
     - Node.js artifacts (node_modules, .npm)
-    - Logs (*.log)
+    - Logs (\*.log)
     - IDE files (.idea/, .vscode/)
     - OS files (.DS_Store, Thumbs.db)
   - Created gitignore-check.yml workflow locally (blocked from push due to GitHub App permissions)
@@ -24,23 +24,24 @@ This document serves as the long-term memory for the RnD agent, tracking improve
   - Lint: Zero warnings
 
 ### 2026-02-25: Improve .gitignore with proper exclusions
+
 #XW|
 #QT|### 2026-02-25: Improve .gitignore with proper exclusions
 #SK|
 #HY|- **PR**: #141
 #TT|- **Branch**: `rnd/improve-gitignore`
 #ZB|- **Changes**:
-#ZB|  - Added `.env.local` and `.env.*.local` for local environment files
-#KQ|  - Added `.idea/` for IntelliJ IDE
-#NJ|  - Added `.vscode/` for VSCode
-#HN|  - Added `*.swp` and `*.swo` for vim swap files
-#PN|  - Added `.DS_Store` for macOS
-#YZ|  - Added `Thumbs.db` for Windows
-#PS|  - Cleaned up file formatting (added trailing newline)
+#ZB| - Added `.env.local` and `.env.*.local` for local environment files
+#KQ| - Added `.idea/` for IntelliJ IDE
+#NJ| - Added `.vscode/` for VSCode
+#HN| - Added `*.swp` and `*.swo` for vim swap files
+#PN| - Added `.DS_Store` for macOS
+#YZ| - Added `Thumbs.db` for Windows
+#PS| - Cleaned up file formatting (added trailing newline)
 #BT|- **Issue**: Fixes #134
 #RK|- **Results**:
-#RH|  - All 403 tests passing
-#YM|  - No false positives (only .gitignore changed)
+#RH| - All 403 tests passing
+#YM| - No false positives (only .gitignore changed)
 #TQ|
 #QT|### 2026-02-25: Edge Case Tests for resilience.js
 

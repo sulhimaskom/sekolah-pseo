@@ -16,6 +16,7 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 ## Key Files & Patterns
 
 ### Scripts (`scripts/`)
+
 - `build-pages.js` - Static HTML page generation
 - `etl.js` - Data extraction and transformation
 - `sitemap.js` - Sitemap generation
@@ -25,11 +26,13 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 - `utils.js` - Utility functions
 
 ### Tests (`scripts/*.test.js`, `tests/*.py`)
+
 - JavaScript tests: `node --test scripts/*.test.js`
 - Python tests: `python3 -m pytest tests/`
 - Combined: `npm test`
 
 ### GitHub Actions (`.github/workflows/`)
+
 - `on-push.yml` - Main automation workflow
 - `on-pull.yml` - Pull request checks
 - `parallel.yml` - Parallel job execution
@@ -37,6 +40,7 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 ## Improvement Patterns
 
 ### Valid Improvements
+
 1. **Test Coverage** - Add missing tests for edge cases
 2. **Code Quality** - Fix lint issues, improve code structure
 3. **CI/CD** - Optimize GitHub Actions workflows
@@ -45,6 +49,7 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 6. **Error Handling** - Add better error messages, logging
 
 ### Improvement Criteria
+
 - Must be **small** and **atomic**
 - Must be **safe** (no breaking changes)
 - Must be **measurable** (can verify improvement)
@@ -67,8 +72,8 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 
 - This repository uses a sophisticated multi-phase agent system (00-11 flows)
 - The agent should focus on infrastructure/improvement tasks, not new features
-#QQ|- Always sync with default branch before creating PR
+  #QQ|- Always sync with default branch before creating PR
 
 ## Recent Improvements
 
-- **2026-02-25**: Fixed Prettier formatting in scripts/*.js (8 test files) - added missing newlines at EOF, reformatted import statements
+- **2026-02-25**: Fixed Prettier formatting in scripts/\*.js (8 test files) - added missing newlines at EOF, reformatted import statements
