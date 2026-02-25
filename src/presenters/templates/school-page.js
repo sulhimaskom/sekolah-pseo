@@ -60,7 +60,7 @@ function generateSchoolPageHtml(school, relativePath) {
   <title>${escapeHtml(school.nama)}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
-  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
+
   <link rel="stylesheet" href="/styles.css">
   
   <!-- Open Graph -->
