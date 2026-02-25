@@ -18,8 +18,11 @@ module.exports = {
 };
 
 async function collectUrls(dir, baseUrl) {
-  return await walkDirectory(dir, (fullPath, relativePath) => {
-    return `${baseUrl}/${relativePath.replace(/\\/g, '/')}`;
+  return await walkDirectory(dir, (fullPath, relativePath, entry, stat) => {
+    return {
+      url: `${baseUrl}/${relativePath.replace(/\\/g, '/')}`,
+      lastmod: stat.mtime.toISOString().split('T')[0]
+    };
   });
 }
 
@@ -36,7 +39,12 @@ async function writeSitemapFiles(urls, outDir) {
     ];
     
     // Process URLs in batches for better memory usage
-    const urlParts = chunk.map(u => `  <url><loc>${u}</loc></url>`);
+    const urlParts = chunk.map(u => {
+      if (u.lastmod) {
+        return `  <url><loc>${u.url}</loc><lastmod>${u.lastmod}</lastmod></url>`;
+      }
+      return `  <url><loc>${u.url}</loc></url>`;
+    });
     contentParts.push(...urlParts);
     contentParts.push('</urlset>');
     
