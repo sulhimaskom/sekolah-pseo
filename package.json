@@ -11,7 +11,7 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
-    "lint": "eslint scripts/*.js",
+    "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test:js && npm run test:py",

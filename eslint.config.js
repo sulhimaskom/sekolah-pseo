@@ -2,8 +2,8 @@ const globals = require('globals');
 
 module.exports = [
   {
-    files: ['scripts/**/*.js'],
-    ignores: ['dist/**', 'node_modules/**'],
+    files: ['scripts/**/*.js', 'src/**/*.js'],
+    ignores: ['dist/**', 'node_modules/**', '**/*.test.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: 'commonjs',
