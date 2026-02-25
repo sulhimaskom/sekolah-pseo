@@ -31,7 +31,7 @@ function buildSchoolPageData(school) {
 
   return {
     relativePath,
-    content: generateSchoolPageHtml(school)
+    content: generateSchoolPageHtml(school, relativePath)
   };
 }
 
