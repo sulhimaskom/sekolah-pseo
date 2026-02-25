@@ -9,6 +9,7 @@
 ## Operating Framework
 
 ### Strict Phases
+
 1. **INITIATE** - Check for existing PRs/issues with label "technical-writer"
 2. **PLAN** - Analyze documentation gaps and plan improvements
 3. **IMPLEMENT** - Make targeted documentation changes
@@ -18,6 +19,7 @@
 7. **DELIVER** - Create PR with label "technical-writer"
 
 ### PR Requirements
+
 - Label: `technical-writer`
 - Linked to issue if any
 - Up to date with default branch
@@ -29,26 +31,28 @@
 ## Project Documentation Standards
 
 ### Documentation Language
+
 - Primary language: **English**
 - Exception: README.md is in Indonesian (project-specific decision)
 - All other documentation should be in English
 
 ### Existing Documentation Files
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Project overview (Indonesian) |
-| `docs/blueprint.md` | Architecture blueprint, tech stack, patterns |
-| `docs/api.md` | Complete API documentation for all modules |
-| `docs/testing.md` | Testing guide, test structure, troubleshooting |
-| `docs/roadmap.md` | Project roadmap with phases and milestones |
-| `docs/feature.md` | Feature specifications template |
-| `docs/task.md` | Completed task backlog with detailed entries |
-| `LICENSE` | ISC license |
+| File                | Purpose                                        |
+| ------------------- | ---------------------------------------------- |
+| `README.md`         | Project overview (Indonesian)                  |
+| `docs/blueprint.md` | Architecture blueprint, tech stack, patterns   |
+| `docs/api.md`       | Complete API documentation for all modules     |
+| `docs/testing.md`   | Testing guide, test structure, troubleshooting |
+| `docs/roadmap.md`   | Project roadmap with phases and milestones     |
+| `docs/feature.md`   | Feature specifications template                |
+| `docs/task.md`      | Completed task backlog with detailed entries   |
+| `LICENSE`           | ISC license                                    |
 
 ### Documentation Patterns
 
 #### API Documentation (docs/api.md)
+
 - Module organization with directory structure
 - Purpose statement for each module
 - Complete export lists
@@ -62,6 +66,7 @@
 - Module dependency graph
 
 #### Task Documentation (docs/task.md)
+
 - Task ID format: `[TASK-XXX]`
 - Structure:
   - Status (Complete/In Progress/Draft)
@@ -74,6 +79,7 @@
   - Success Criteria
 
 #### Blueprint Documentation (docs/blueprint.md)
+
 - Tech stack table
 - Project structure tree
 - Core components section
@@ -84,6 +90,7 @@
 ## Improvement Guidelines
 
 ### Always Do
+
 - Check for existing technical-writer PRs/issues first
 - Make small, atomic changes
 - Verify build/lint/test passes
@@ -91,6 +98,7 @@
 - Update this memory file with learnings
 
 ### Never Do
+
 - Refactor unrelated modules
 - Introduce unnecessary abstraction
 - Make large sweeping changes
@@ -99,6 +107,12 @@
 ## Areas for Documentation Improvement
 
 ### Potential Improvements (Backlog)
+
+- ~~CONTRIBUTING.md file for contribution guidelines~~ - DONE: Created CONTRIBUTING.md with setup, scripts, code style, and testing guidelines
+- ~~Environment setup guide~~ - DONE: Created docs/setup.md with prerequisites, installation, configuration, and troubleshooting
+- Deployment documentation
+- Performance tuning guide
+- Security disclosure policy
 - ~~CONTRIBUTING.md file for contribution guidelines~~ - DONE: Created CONTRIBUTING.md with setup, scripts, code style, and testing guidelines
 - Environment setup guide
 - Deployment documentation
