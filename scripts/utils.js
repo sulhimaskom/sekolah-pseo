@@ -196,20 +196,57 @@ async function writeCsv(data, outputPath) {
   const batchSize = 1000;
   for (let i = 0; i < data.length; i += batchSize) {
     const batch = data.slice(i, i + batchSize);
-    const batchLines = batch.map(rec => header.map(h => rec[h] || '').join(','));
+    const batchLines = batch.map(rec => header.map(h => escapeCsvField(rec[h] || '')).join(','));
     lines.push(...batchLines);
   }
 
   await safeWriteFile(outputPath, lines.join('\n'));
 }
 
+/**
+ * Escape a CSV field value according to RFC 4180.
+ * Fields containing commas, quotes, or newlines must be enclosed in double quotes.
+ * Double quotes within the field must be escaped by doubling them.
+ *
+ * @param {string} value - The field value to escape
+ * @returns {string} - The escaped field value
+ */
+function escapeCsvField(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  
+  const str = String(value);
+  
+  // Check if the field needs quoting
+  const needsQuoting = str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r');
+  
+  if (needsQuoting) {
+    // Escape double quotes by doubling them
+    const escaped = str.replace(/"/g, '""');
+    return `"${escaped}"`;
+  }
+  
+  return str;
+}
+
 module.exports = {
   parseCsv,
   addNumbers,
   escapeHtml,
+  escapeCsvField,
   walkDirectory,
   writeCsv,
   formatStatus,
   formatEmptyValue,
   hasCoordinateData
 };
+  parseCsv,
+  addNumbers,
+  escapeHtml,
+  escapeCsvField,
+  walkDirectory,
+  writeCsv,
+  formatStatus,
+  formatEmptyValue,
+  hasCoordinateData
