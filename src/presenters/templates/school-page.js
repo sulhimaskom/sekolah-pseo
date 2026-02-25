@@ -58,6 +58,8 @@ function generateSchoolPageHtml(school, relativePath) {
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <title>${escapeHtml(school.nama)}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
   <link rel="stylesheet" href="/styles.css">
   

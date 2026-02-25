@@ -31,6 +31,16 @@ This is a **static site generator** for Indonesian schools (Sekolah PSEO). The p
 
 ## Past Improvements
 
+### Favicon Support (2026-02-25)
+
+Added SVG favicon to improve brand recognition and user experience:
+
+1. **Created favicon.svg** - Scalable vector favicon with "S" letter for Sekolah
+2. **Added favicon link** - Added `<link rel="icon" type="image/svg+xml" href="/favicon.svg" />` to school page template
+3. **Applied to all pages** - Favicon now appears on all 3474+ generated school pages
+
+### SEO Enhancement (2026-02-25)
+
 ### SEO Enhancement (2026-02-25)
 
 Added critical SEO meta tags to generated pages:
