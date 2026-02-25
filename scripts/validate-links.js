@@ -14,7 +14,7 @@ const { RateLimiter } = require('./rate-limiter');
 // Export functions for testing
 module.exports = {
   extractLinks,
-  validateLinksInFile
+  validateLinksInFile,
 };
 
 function extractLinks(html) {
@@ -72,42 +72,45 @@ async function validateLinksInFile(file, links, distDir) {
 
 async function validateLinks() {
   const distDir = CONFIG.DIST_DIR;
-  
+
   try {
     await safeAccess(distDir);
   } catch {
     console.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
     return true;
   }
-  
-  const htmlFiles = await walkDirectory(distDir, (fullPath) => fullPath);
-  
+
+  const htmlFiles = await walkDirectory(distDir, fullPath => fullPath);
+
   console.log(`Found ${htmlFiles.length} HTML files to validate`);
-  
+
   if (htmlFiles.length === 0) {
     console.log('No HTML files found to validate.');
     return true;
   }
-  
-  const limiter = new RateLimiter({ 
+
+  const limiter = new RateLimiter({
     maxConcurrent: CONFIG.VALIDATION_CONCURRENCY_LIMIT,
-    queueTimeoutMs: 30000
+    queueTimeoutMs: 30000,
   });
-  
+
   const broken = [];
   let processed = 0;
-   
-  const validatePromises = htmlFiles.map(file => 
-    limiter.execute(async () => {
-      try {
-        const content = await safeReadFile(file);
-        const links = extractLinks(content);
-        return await validateLinksInFile(file, links, distDir);
-      } catch (error) {
-        console.warn(`Failed to read file ${file}: ${error.message}`);
-        return [];
-      }
-    }, `validateLinks-${path.basename(file)}`)
+
+  const validatePromises = htmlFiles.map(file =>
+    limiter.execute(
+      async () => {
+        try {
+          const content = await safeReadFile(file);
+          const links = extractLinks(content);
+          return await validateLinksInFile(file, links, distDir);
+        } catch (error) {
+          console.warn(`Failed to read file ${file}: ${error.message}`);
+          return [];
+        }
+      },
+      `validateLinks-${path.basename(file)}`
+    )
   );
 
   const results = await Promise.all(validatePromises);
@@ -121,7 +124,7 @@ async function validateLinks() {
     total: metrics.total,
     completed: metrics.completed,
     failed: metrics.failed,
-    throughput: metrics.throughput
+    throughput: metrics.throughput,
   });
 
   if (broken.length > 0) {

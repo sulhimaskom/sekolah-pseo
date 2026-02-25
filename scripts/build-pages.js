@@ -24,7 +24,7 @@ module.exports = {
   writeSchoolPagesConcurrently,
   ensureDistDir,
   loadSchools,
-  generateExternalStyles
+  generateExternalStyles,
 };
 
 // Ensure dist directory exists
@@ -73,16 +73,16 @@ async function writeSchoolPage(school) {
  */
 async function preCreateDirectories(schools) {
   const uniqueDirs = getUniqueDirectories(schools);
-  
+
   console.log(`Creating ${uniqueDirs.length} unique directories...`);
-  
+
   const dirPromises = uniqueDirs.map(dir => {
     const fullPath = path.join(distDir, dir);
     return safeMkdir(fullPath).catch(err => {
       console.error(`Failed to create directory ${fullPath}: ${err.message}`);
     });
   });
-  
+
   await Promise.all(dirPromises);
 }
 
@@ -102,46 +102,49 @@ async function generateExternalStyles() {
  * @param {Array<Object>} schools
  * @param {number} concurrencyLimit
  */
-async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT) {
+async function writeSchoolPagesConcurrently(
+  schools,
+  concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT
+) {
   await preCreateDirectories(schools);
-  
-  const limiter = new RateLimiter({ 
+
+  const limiter = new RateLimiter({
     maxConcurrent: concurrencyLimit,
-    queueTimeoutMs: 30000
+    queueTimeoutMs: 30000,
   });
-  
+
   let processed = 0;
   const results = [];
-  
-  const writePromises = schools.map(school => 
+
+  const writePromises = schools.map(school =>
     limiter.execute(async () => {
       await writeSchoolPage(school);
       processed++;
-      
+
       if (processed % 100 === 0 || processed === schools.length) {
         console.log(`Processed ${processed} of ${schools.length} school pages`);
       }
     }, `writeSchoolPage-${school.npsn}`)
   );
-  
+
   const writeResults = await Promise.allSettled(writePromises);
   results.push(...writeResults);
-  
+
   const metrics = limiter.getMetrics();
   console.log('Build metrics:', {
     total: metrics.total,
     completed: metrics.completed,
     failed: metrics.failed,
-    throughput: metrics.throughput
+    throughput: metrics.throughput,
   });
-  
+
   const successful = results.filter(result => result.status === 'fulfilled').length;
   const failed = results.filter(result => result.status === 'rejected').length;
-  
+
   if (failed > 0) {
     console.warn(`Warning: ${failed} school pages failed to generate`);
   }
-  
+
   return { successful, failed };
 }
 
@@ -156,12 +159,12 @@ async function writeSchoolPagesConcurrently(schools, concurrencyLimit = CONFIG.B
  */
 async function build() {
   await ensureDistDir();
-  
+
   await generateExternalStyles();
-  
+
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
-  
+
   const { successful, failed } = await writeSchoolPagesConcurrently(schools);
   console.log(`Generated ${successful} school pages (${failed} failed)`);
 }

@@ -46,7 +46,7 @@ describe('RateLimiter', () => {
       const results = await Promise.all([
         limiter.execute(async () => 'a'),
         limiter.execute(async () => 'b'),
-        limiter.execute(async () => 'c')
+        limiter.execute(async () => 'c'),
       ]);
       assert.deepStrictEqual(results, ['a', 'b', 'c']);
       const metrics = limiter.getMetrics();
@@ -61,7 +61,7 @@ describe('RateLimiter', () => {
         maxActive = Math.max(maxActive, slowLimiter.getMetrics().active);
       };
 
-      const operations = Array.from({ length: 5 }, () => 
+      const operations = Array.from({ length: 5 }, () =>
         slowLimiter.execute(async () => {
           checkActive();
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -80,7 +80,10 @@ describe('RateLimiter', () => {
     it('should handle failed operations', async () => {
       const error = new Error('Operation failed');
       await assert.rejects(
-        () => limiter.execute(async () => { throw error; }),
+        () =>
+          limiter.execute(async () => {
+            throw error;
+          }),
         error
       );
       const metrics = limiter.getMetrics();
@@ -90,7 +93,7 @@ describe('RateLimiter', () => {
     it('should reject queued operations after timeout', async () => {
       const slowLimiter = new RateLimiter({
         maxConcurrent: 1,
-        queueTimeoutMs: 100
+        queueTimeoutMs: 100,
       });
 
       const slowOp = slowLimiter.execute(async () => {
@@ -100,9 +103,8 @@ describe('RateLimiter', () => {
 
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      const fastOps = Array.from({ length: 5 }, (_, i) => 
-        slowLimiter.execute(async () => i)
-          .catch(err => err)
+      const fastOps = Array.from({ length: 5 }, (_, i) =>
+        slowLimiter.execute(async () => i).catch(err => err)
       );
 
       const results = await Promise.all([slowOp, ...fastOps]);
@@ -119,7 +121,7 @@ describe('RateLimiter', () => {
     it('should execute queued operations after active ones complete', async () => {
       const executionOrder = [];
 
-      const ops = Array.from({ length: 4 }, (_, i) => 
+      const ops = Array.from({ length: 4 }, (_, i) =>
         limiter.execute(async () => {
           executionOrder.push(i);
           await new Promise(resolve => setTimeout(resolve, 20));
@@ -151,8 +153,16 @@ describe('RateLimiter', () => {
     });
 
     it('should track failed operations', async () => {
-      await limiter.execute(async () => { throw new Error('fail'); }).catch(() => {});
-      await limiter.execute(async () => { throw new Error('fail'); }).catch(() => {});
+      await limiter
+        .execute(async () => {
+          throw new Error('fail');
+        })
+        .catch(() => {});
+      await limiter
+        .execute(async () => {
+          throw new Error('fail');
+        })
+        .catch(() => {});
 
       const metrics = limiter.getMetrics();
       assert.strictEqual(metrics.failed, 2);
@@ -161,7 +171,7 @@ describe('RateLimiter', () => {
     it('should track rejected operations', async () => {
       const testLimiter = new RateLimiter({
         maxConcurrent: 1,
-        queueTimeoutMs: 50
+        queueTimeoutMs: 50,
       });
 
       const slowOp = testLimiter.execute(async () => {
@@ -185,16 +195,14 @@ describe('RateLimiter', () => {
 
     it('should track queued operations', async () => {
       let block = true;
-      
+
       limiter.execute(async () => {
         while (block) await new Promise(resolve => setTimeout(resolve, 10));
       });
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const queuedOps = Array.from({ length: 5 }, (_, i) =>
-        limiter.execute(async () => i)
-      );
+      const queuedOps = Array.from({ length: 5 }, (_, i) => limiter.execute(async () => i));
 
       const metrics = limiter.getMetrics();
       assert.ok(metrics.queued > 0);
@@ -216,9 +224,7 @@ describe('RateLimiter', () => {
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const queuedOps = Array.from({ length: 10 }, () =>
-        limiter.execute(async () => 'done')
-      );
+      const queuedOps = Array.from({ length: 10 }, () => limiter.execute(async () => 'done'));
 
       block = false;
       await Promise.all(queuedOps);
@@ -258,9 +264,7 @@ describe('RateLimiter', () => {
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const queuedOps = Array.from({ length: 5 }, () =>
-        limiter.execute(async () => 'done')
-      );
+      const queuedOps = Array.from({ length: 5 }, () => limiter.execute(async () => 'done'));
 
       const metrics = limiter.getMetrics();
       assert.ok(metrics.queueLength > 0);
@@ -282,7 +286,11 @@ describe('RateLimiter', () => {
     it('should calculate success rate', async () => {
       await limiter.execute(async () => 'done');
       await limiter.execute(async () => 'done');
-      await limiter.execute(async () => { throw new Error('fail'); }).catch(() => {});
+      await limiter
+        .execute(async () => {
+          throw new Error('fail');
+        })
+        .catch(() => {});
 
       const metrics = limiter.getMetrics();
       assert.strictEqual(parseFloat(metrics.successRate), 66.67);
@@ -337,7 +345,7 @@ describe('RateLimiter', () => {
   describe('operationName', () => {
     it('should use provided operation name', async () => {
       await limiter.execute(async () => 'done', 'testOperation');
-      
+
       const metrics = limiter.getMetrics();
       assert.ok(metrics);
     });
@@ -345,13 +353,11 @@ describe('RateLimiter', () => {
 
   describe('edge cases', () => {
     it('should handle rapid succession of operations', async () => {
-      const ops = Array.from({ length: 100 }, (_, i) =>
-        limiter.execute(async () => i)
-      );
+      const ops = Array.from({ length: 100 }, (_, i) => limiter.execute(async () => i));
 
       const results = await Promise.all(ops);
       assert.strictEqual(results.length, 100);
-      
+
       const metrics = limiter.getMetrics();
       assert.strictEqual(metrics.completed, 100);
       assert.strictEqual(metrics.failed, 0);

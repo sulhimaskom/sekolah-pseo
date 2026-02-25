@@ -132,6 +132,7 @@ describe('withTimeout', () => {
       return true;
     });
   });
+  });
 
   test('handles zero timeout', async () => {
     const promise = new Promise(() => {});
@@ -161,6 +162,8 @@ describe('withTimeout', () => {
   test('handles promise that resolves immediately', async () => {
     const result = await withTimeout(Promise.resolve('immediate'), 1000);
     assert.strictEqual(result, 'immediate');
+=======
+>>>>>>> ec8eba9 (style: fix Prettier formatting in scripts/ directory)
   });
 });
 

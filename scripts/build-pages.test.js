@@ -4,7 +4,12 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
 
-const { writeSchoolPage, writeSchoolPagesConcurrently, loadSchools, generateExternalStyles } = require('./build-pages');
+const {
+  writeSchoolPage,
+  writeSchoolPagesConcurrently,
+  loadSchools,
+  generateExternalStyles,
+} = require('./build-pages');
 const CONFIG = require('./config');
 const slugify = require('./slugify');
 
@@ -24,43 +29,50 @@ test.after(async () => {
 });
 
 test('writeSchoolPage validates required school fields - null input', async () => {
-  await assert.rejects(
-    async () => await writeSchoolPage(null),
-    /Invalid school object provided/
-  );
+  await assert.rejects(async () => await writeSchoolPage(null), /Invalid school object provided/);
 });
 
 test('writeSchoolPage validates required school fields - missing nama', async () => {
   await assert.rejects(
-    async () => await writeSchoolPage({ provinsi: 'Prov', kab_kota: 'Kab', kecamatan: 'Kec', npsn: '12345' }),
+    async () =>
+      await writeSchoolPage({ provinsi: 'Prov', kab_kota: 'Kab', kecamatan: 'Kec', npsn: '12345' }),
     /School object missing required fields/
   );
 });
 
 test('writeSchoolPage validates required school fields - missing npsn', async () => {
   await assert.rejects(
-    async () => await writeSchoolPage({ provinsi: 'Prov', kab_kota: 'Kab', kecamatan: 'Kec', nama: 'School' }),
+    async () =>
+      await writeSchoolPage({
+        provinsi: 'Prov',
+        kab_kota: 'Kab',
+        kecamatan: 'Kec',
+        nama: 'School',
+      }),
     /School object missing required fields/
   );
 });
 
 test('writeSchoolPage validates required school fields - missing provinsi', async () => {
   await assert.rejects(
-    async () => await writeSchoolPage({ kab_kota: 'Kab', kecamatan: 'Kec', npsn: '12345', nama: 'School' }),
+    async () =>
+      await writeSchoolPage({ kab_kota: 'Kab', kecamatan: 'Kec', npsn: '12345', nama: 'School' }),
     /School object missing required fields/
   );
 });
 
 test('writeSchoolPage validates required school fields - missing kab_kota', async () => {
   await assert.rejects(
-    async () => await writeSchoolPage({ provinsi: 'Prov', kecamatan: 'Kec', npsn: '12345', nama: 'School' }),
+    async () =>
+      await writeSchoolPage({ provinsi: 'Prov', kecamatan: 'Kec', npsn: '12345', nama: 'School' }),
     /School object missing required fields/
   );
 });
 
 test('writeSchoolPage validates required school fields - missing kecamatan', async () => {
   await assert.rejects(
-    async () => await writeSchoolPage({ provinsi: 'Prov', kab_kota: 'Kab', npsn: '12345', nama: 'School' }),
+    async () =>
+      await writeSchoolPage({ provinsi: 'Prov', kab_kota: 'Kab', npsn: '12345', nama: 'School' }),
     /School object missing required fields/
   );
 });
@@ -80,14 +92,14 @@ test('writeSchoolPagesConcurrently handles partial failures', async () => {
       nama: 'Valid School',
       alamat: 'Alamat',
       bentuk_pendidikan: 'SMA',
-      status: 'Negeri'
+      status: 'Negeri',
     },
     {
       provinsi: 'Jawa Barat',
       kab_kota: 'Bandung',
       npsn: '20002',
-      nama: 'Invalid School'
-    }
+      nama: 'Invalid School',
+    },
   ];
 
   const result = await writeSchoolPagesConcurrently(schools, 2);
@@ -101,14 +113,14 @@ test('writeSchoolPagesConcurrently handles all failures', async () => {
       provinsi: 'Jawa Barat',
       kab_kota: 'Bandung',
       npsn: '30001',
-      nama: 'Invalid School 1'
+      nama: 'Invalid School 1',
     },
     {
       provinsi: 'Jawa Barat',
       kab_kota: 'Bandung',
       npsn: '30002',
-      nama: 'Invalid School 2'
-    }
+      nama: 'Invalid School 2',
+    },
   ];
 
   const result = await writeSchoolPagesConcurrently(schools, 2);
@@ -164,7 +176,10 @@ test('generateExternalStyles creates external CSS file', async () => {
   await generateExternalStyles();
 
   const stylesPath = path.join(CONFIG.DIST_DIR, 'styles.css');
-  const exists = await fs.access(stylesPath).then(() => true).catch(() => false);
+  const exists = await fs
+    .access(stylesPath)
+    .then(() => true)
+    .catch(() => false);
   assert.ok(exists, 'styles.css should be created');
 
   const cssContent = await fs.readFile(stylesPath, 'utf-8');

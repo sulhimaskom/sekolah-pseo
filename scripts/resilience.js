@@ -15,7 +15,7 @@ class IntegrationError extends Error {
       message: this.message,
       code: this.code,
       details: this.details,
-      timestamp: this.timestamp
+      timestamp: this.timestamp,
     };
   }
 }
@@ -27,7 +27,7 @@ const ERROR_CODES = {
   FILE_READ_ERROR: 'FILE_READ_ERROR',
   FILE_WRITE_ERROR: 'FILE_WRITE_ERROR',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
-  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR'
+  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
 };
 
 const TRANSIENT_ERROR_CODES = ['EAGAIN', 'EIO', 'ENOSPC', 'EBUSY', 'ETIMEDOUT'];
@@ -36,26 +36,30 @@ function isTransientError(error) {
   if (!error) return false;
   if (TRANSIENT_ERROR_CODES.includes(error.code)) return true;
   if (error.message && typeof error.message === 'string') {
-    return error.message.includes('timeout') ||
-           error.message.includes('ECONNRESET') ||
-           error.message.includes('EAGAIN') ||
-           error.message.includes('EIO') ||
-           error.message.includes('ENOSPC') ||
-           error.message.includes('EBUSY');
+    return (
+      error.message.includes('timeout') ||
+      error.message.includes('ECONNRESET') ||
+      error.message.includes('EAGAIN') ||
+      error.message.includes('EIO') ||
+      error.message.includes('ENOSPC') ||
+      error.message.includes('EBUSY')
+    );
   }
   return false;
 }
 
 async function withTimeout(promise, timeoutMs, operationName = 'operation') {
   let timeoutHandle;
-  
+
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => {
-      reject(new IntegrationError(
-        `${operationName} timed out after ${timeoutMs}ms`,
-        ERROR_CODES.TIMEOUT,
-        { timeoutMs, operationName }
-      ));
+      reject(
+        new IntegrationError(
+          `${operationName} timed out after ${timeoutMs}ms`,
+          ERROR_CODES.TIMEOUT,
+          { timeoutMs, operationName }
+        )
+      );
     }, timeoutMs);
   });
 
@@ -75,39 +79,36 @@ async function retry(fn, options = {}) {
     initialDelayMs = 100,
     maxDelayMs = 10000,
     backoffMultiplier = 2,
-    shouldRetry = isTransientError
+    shouldRetry = isTransientError,
   } = options;
 
   let lastError;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error;
-      
+
       if (attempt === maxAttempts || !shouldRetry(error)) {
         throw new IntegrationError(
           `Operation failed after ${attempt} attempt(s)`,
           ERROR_CODES.RETRY_EXHAUSTED,
-          { 
+          {
             attempts: attempt,
             maxAttempts,
             lastError: lastError.message,
-            lastErrorCode: lastError.code
+            lastErrorCode: lastError.code,
           }
         );
       }
-      
-      const delay = Math.min(
-        initialDelayMs * Math.pow(backoffMultiplier, attempt - 1),
-        maxDelayMs
-      );
-      
+
+      const delay = Math.min(initialDelayMs * Math.pow(backoffMultiplier, attempt - 1), maxDelayMs);
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError;
 }
 
@@ -116,7 +117,7 @@ class CircuitBreaker {
     this.failureThreshold = options.failureThreshold || 5;
     this.resetTimeoutMs = options.resetTimeoutMs || 60000;
     this.monitoringPeriodMs = options.monitoringPeriodMs || 10000;
-    
+
     this.failureCount = 0;
     this.lastFailureTime = null;
     this.state = 'CLOSED';
@@ -133,10 +134,10 @@ class CircuitBreaker {
         throw new IntegrationError(
           `Circuit breaker is OPEN for ${operationName}`,
           ERROR_CODES.CIRCUIT_BREAKER_OPEN,
-          { 
+          {
             failureCount: this.failureCount,
             lastFailureTime: this.lastFailureTime,
-            resetTimeoutMs: this.resetTimeoutMs
+            resetTimeoutMs: this.resetTimeoutMs,
           }
         );
       }
@@ -154,7 +155,7 @@ class CircuitBreaker {
 
   onSuccess() {
     this.failureCount = 0;
-    
+
     if (this.state === 'HALF_OPEN') {
       this.state = 'CLOSED';
       this.eventEmitter.emit('stateChange', { from: 'HALF_OPEN', to: 'CLOSED' });
@@ -164,7 +165,7 @@ class CircuitBreaker {
   onFailure() {
     this.failureCount++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.state === 'HALF_OPEN') {
       this.state = 'OPEN';
       this.eventEmitter.emit('stateChange', { from: 'HALF_OPEN', to: 'OPEN' });
@@ -175,15 +176,14 @@ class CircuitBreaker {
   }
 
   shouldAttemptReset() {
-    return this.lastFailureTime && 
-           (Date.now() - this.lastFailureTime) > this.resetTimeoutMs;
+    return this.lastFailureTime && Date.now() - this.lastFailureTime > this.resetTimeoutMs;
   }
 
   getState() {
     return {
       state: this.state,
       failureCount: this.failureCount,
-      lastFailureTime: this.lastFailureTime
+      lastFailureTime: this.lastFailureTime,
     };
   }
 
@@ -205,5 +205,5 @@ module.exports = {
   isTransientError,
   withTimeout,
   retry,
-  CircuitBreaker
+  CircuitBreaker,
 };

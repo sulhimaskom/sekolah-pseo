@@ -1,6 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { parseCsv, addNumbers, formatStatus, formatEmptyValue, hasCoordinateData } = require('../scripts/utils');
+const {
+  parseCsv,
+  addNumbers,
+  formatStatus,
+  formatEmptyValue,
+  hasCoordinateData,
+} = require('../scripts/utils');
 
 test('parseCsv handles empty data', () => {
   assert.deepStrictEqual(parseCsv(''), []);
