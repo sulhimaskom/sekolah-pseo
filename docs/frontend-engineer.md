@@ -15,13 +15,14 @@ This is a **static site generator** for Indonesian schools (Sekolah PSEO). The p
 
 ### Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/presenters/design-system.js` | Design tokens (colors, spacing, typography) |
-| `src/presenters/styles.js` | CSS generation for all pages |
-| `src/presenters/templates/school-page.js` | HTML template for school pages |
-| `src/services/PageBuilder.js` | Page data building service |
-| `scripts/build-pages.js` | Build orchestration |
+| File                                      | Purpose                                     |
+| ----------------------------------------- | ------------------------------------------- |
+| `src/presenters/design-system.js`         | Design tokens (colors, spacing, typography) |
+| `src/presenters/styles.js`                | CSS generation for all pages                |
+| `src/presenters/templates/school-page.js` | HTML template for school pages              |
+| `src/services/PageBuilder.js`             | Page data building service                  |
+| `scripts/build-pages.js`                  | Build orchestration                         |
+| `public/404.html`                         | Custom error page                           |
 
 ### Generated Output
 
@@ -30,6 +31,14 @@ This is a **static site generator** for Indonesian schools (Sekolah PSEO). The p
 - 3474+ school pages generated
 
 ## Past Improvements
+
+### Dynamic Year in 404 Page (2026-02-25)
+
+Fixed hardcoded year in 404.html for consistency with other pages:
+
+1. **Changed hardcoded "2026"** - Replaced with `<script>document.write(new Date().getFullYear())</script>`
+2. **Consistent with school-page.js** - Both pages now use dynamic year rendering
+3. **Maintenance improvement** - No need to manually update year each year
 
 ### Custom 404 Error Page (2026-02-25)
 
@@ -41,12 +50,11 @@ Added a custom 404.html error page to improve user experience when navigating to
    - ARIA landmarks (header, main, footer)
    - Navigation links to homepage and sitemap
    - Consistent styling using design tokens from design-system
+   - Dynamic year rendering
 
 2. **Updated build script** - Added `cp -r public/* dist/` to copy static files during build
 
 3. **SEO optimized** - Added robots noindex tag to prevent indexing of error pages
-
-### Favicon Support (2026-02-25)
 
 ### Favicon Support (2026-02-25)
 
@@ -55,8 +63,6 @@ Added SVG favicon to improve brand recognition and user experience:
 1. **Created favicon.svg** - Scalable vector favicon with "S" letter for Sekolah
 2. **Added favicon link** - Added `<link rel="icon" type="image/svg+xml" href="/favicon.svg" />` to school page template
 3. **Applied to all pages** - Favicon now appears on all 3474+ generated school pages
-
-### SEO Enhancement (2026-02-25)
 
 ### SEO Enhancement (2026-02-25)
 
