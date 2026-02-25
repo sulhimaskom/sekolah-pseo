@@ -9,6 +9,7 @@ Static site generator for Indonesian school pages.
 - `src/presenters/design-system.js` - Design tokens (colors, typography, spacing, shadows)
 - `src/presenters/styles.js` - CSS generation for school pages
 - `src/presenters/templates/school-page.js` - HTML template for school pages
+- `src/presenters/templates/homepage.js` - Homepage template with province listing
 
 ## Current State (as of Feb 2026)
 
@@ -27,6 +28,7 @@ Static site generator for Indonesian school pages.
 - Dark mode support via prefers-color-scheme
 - Focus-visible styles for keyboard navigation
 - Print styles for better printing experience
+- Homepage-specific styles (hero, stats, province list)
 
 ### HTML Templates
 
@@ -37,23 +39,31 @@ Static site generator for Indonesian school pages.
 
 ## Completed Improvements (Feb 2026)
 
-### 1. Dark Mode Support ✅
+### 1. Homepage/Index Page ✅
+
+- Created homepage template with province listing
+- Shows total schools and province count
+- Provides clear navigation to provinces
+- Responsive design with mobile support
+- Dark mode support
+
+Dark Mode Support ✅### 2.
 
 - Added prefers-color-scheme media query
 - Added dark mode color tokens in design-system.js
 - Complete dark mode CSS in styles.js
 
-### 2. Badge Colors ✅
+### 3. Badge Colors ✅
 
 - Lines 170-188 in styles.js use CSS variables
 - Consistent with design tokens
 
-### 3. Focus-Visible Styles ✅
+### 4. Focus-Visible Styles ✅
 
 - Lines 91-103 implement proper :focus-visible
 - Keyboard accessible navigation
 
-### 4. Print Styles ✅
+### 5. Print Styles ✅
 
 - Added @media print for better printing
 - Hides navigation, optimizes layout for print
