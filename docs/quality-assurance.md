@@ -10,7 +10,7 @@
 
 | Metric           | Status                 |
 | ---------------- | ---------------------- |
-| JavaScript Tests | ✅ PASSING (320 tests) |
+| JavaScript Tests | ✅ PASSING (403 tests) |
 | Python Tests     | ✅ PASSING (18 tests)  |
 | ESLint           | ✅ PASSING (no errors) |
 | npm audit        | ✅ 0 vulnerabilities   |
@@ -102,6 +102,12 @@ npm audit fix        # Auto-fix vulnerabilities
 ---
 
 ## Notes
+
+- ESLint requires `npm install` before first run
+- All tests use Node.js native test runner (`node --test`)
+- Python tests use custom test runner in `tests/run_tests.py`
+- Prettier is used for code formatting - run `npm run format` to fix formatting issues
+- Format check: `npm run format:check`
 
 - ESLint requires `npm install` before first run
 - All tests use Node.js native test runner (`node --test`)
