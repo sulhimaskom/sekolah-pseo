@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Halaman tidak ditemukan - Sekolah PSEO" />
+    <meta name="robots" content="noindex, follow" />
+    <title>Halaman Tidak Ditemukan - Sekolah PSEO</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="/404.html" />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .error-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        text-align: center;
+        padding: var(--spacing-xl) var(--spacing-lg);
+      }
+      .error-code {
+        font-size: 6rem;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-primary);
+        line-height: 1;
+        margin: 0;
+      }
+      .error-title {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary);
+        margin: var(--spacing-lg) 0 var(--spacing-md);
+      }
+      .error-message {
+        font-size: var(--font-size-lg);
+        color: var(--color-text-secondary);
+        max-width: 500px;
+        margin: 0 0 var(--spacing-xl);
+      }
+      .error-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--spacing-sm) var(--spacing-lg);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        text-decoration: none;
+        transition: all var(--transition-fast) ease;
+        cursor: pointer;
+        border: none;
+      }
+      .btn-primary {
+        background-color: var(--color-primary);
+        color: white;
+      }
+      .btn-primary:hover {
+        background-color: var(--color-primary-hover);
+      }
+      .btn-primary:focus {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+      .btn-secondary {
+        background-color: var(--color-bg-accent);
+        color: var(--color-text-primary);
+      }
+      .btn-secondary:hover {
+        background-color: var(--color-border);
+      }
+      .btn-secondary:focus {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+
+    <header role="banner">
+      <nav aria-label="Navigasi utama">
+        <a href="/">Beranda</a>
+      </nav>
+    </header>
+
+    <main id="main-content" role="main">
+      <div class="error-container">
+        <p class="error-code" aria-hidden="true">404</p>
+        <h1 class="error-title">Halaman Tidak Ditemukan</h1>
+        <p class="error-message">
+          Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan. Silakan pilih salah satu
+          opsi di bawah untuk melanjutkan.
+        </p>
+        <div class="error-actions">
+          <a href="/" class="btn btn-primary">Kembali ke Beranda</a>
+          <a href="/sitemap-index.xml" class="btn btn-secondary">Lihat Peta Situs</a>
+        </div>
+      </div>
+    </main>
+
+    <footer role="contentinfo">
+      <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    </footer>
+  </body>
+</html>

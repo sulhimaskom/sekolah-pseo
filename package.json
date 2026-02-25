@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "npm run lint && npm run test:js",
-    "build": "node scripts/build-pages.js",
+    "build": "node scripts/build-pages.js && cp -r public/* dist/",
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
