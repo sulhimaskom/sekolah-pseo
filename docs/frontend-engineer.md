@@ -20,6 +20,7 @@ This is a **static site generator** for Indonesian schools (Sekolah PSEO). The p
 | `src/presenters/design-system.js`         | Design tokens (colors, spacing, typography) |
 | `src/presenters/styles.js`                | CSS generation for all pages                |
 | `src/presenters/templates/school-page.js` | HTML template for school pages              |
+| `src/presenters/templates/homepage.js`    | Homepage template                           |
 | `src/services/PageBuilder.js`             | Page data building service                  |
 | `scripts/build-pages.js`                  | Build orchestration                         |
 | `public/404.html`                         | Custom error page                           |
@@ -31,6 +32,14 @@ This is a **static site generator** for Indonesian schools (Sekolah PSEO). The p
 - 3474+ school pages generated
 
 ## Past Improvements
+
+### Remove Duplicate Require Statements (2026-02-25)
+
+Fixed code quality issue in homepage.js by removing duplicate require statements:
+
+1. **Removed redundant imports** - The `slugify` module was required 3 times unnecessarily
+2. **Code cleanup** - Reduced from 3 require statements to 1
+3. **Maintenance improvement** - Cleaner codebase, easier to maintain
 
 ### Dynamic Year in 404 Page (2026-02-25)
 
@@ -79,3 +88,4 @@ Added critical SEO meta tags to generated pages:
 - Mobile-responsive with CSS breakpoints
 - Security headers in CSP
 - Schema.org structured data (JSON-LD)
+- No duplicate code or imports
