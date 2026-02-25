@@ -1,5 +1,9 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
+
+/**
+const slugify = require('../../../scripts/slugify');
+const slugify = require('../../../scripts/slugify');
 const CONFIG = require('../../../scripts/config');
 
 /**
