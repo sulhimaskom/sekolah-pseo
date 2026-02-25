@@ -36,3 +36,9 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Added `.editorconfig` file for IDE/editor consistency
 - Configured settings to match existing Prettier configuration
 - Build and tests pass
+### PR #124: style: fix Prettier formatting in scripts/ directory
+- Applied consistent Prettier code style to 18 script files
+- Follows project's .prettierrc configuration (semi, singleQuote, tabWidth: 2)
+- All tests pass after formatting changes
+
+
