@@ -85,6 +85,6 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 2. Add integration tests for the full ETL pipeline
 3. Add performance benchmarks for page building
 
-1. Add more edge case tests for resilience.js
-2. Add integration tests for the full ETL pipeline
-3. Add performance benchmarks for page building
+4. Add more edge case tests for resilience.js
+5. Add integration tests for the full ETL pipeline
+6. Add performance benchmarks for page building
