@@ -22,6 +22,10 @@ function filterSchoolsByProvince(schools, provinceName) {
  * @returns {Array<Object>} - Array of kabupaten objects with school count
  */
 function aggregateByKabupaten(schools) {
+  if (!Array.isArray(schools)) {
+    return [];
+  }
+
   const kabupatenMap = new Map();
 
   for (const school of schools) {
