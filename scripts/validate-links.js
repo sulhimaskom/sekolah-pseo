@@ -113,7 +113,8 @@ async function validateLinks() {
     )
   );
 
-  const results = await Promise.all(validatePromises);
+  const settledResults = await Promise.allSettled(validatePromises);
+  const results = settledResults.filter(r => r.status === 'fulfilled').map(r => r.value);
   results.flat().forEach(brokenLink => broken.push(brokenLink));
   processed = results.length;
 
