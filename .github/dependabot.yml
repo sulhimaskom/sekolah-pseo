@@ -1,0 +1,41 @@
+# Dependabot configuration for automated dependency updates
+# https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Enable npm package updates
+  - package-ecosystem: 'npm'
+    # Directory where package.json is located
+    directory: '/'
+    # Check for updates weekly
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    # Open PRs for version updates
+    open-pull-requests-limit: 10
+    # Group minor and patch updates together
+    versioning-strategy: increase
+    # Labels for Dependabot PRs
+    labels:
+      - 'dependencies'
+      - 'DX-engineer'
+    # Commit message preferences
+    commit-message:
+      prefix: 'deps'
+      include: 'scope'
+
+  # Enable GitHub Actions updates
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    labels:
+      - 'dependencies'
+      - 'DX-engineer'
+    commit-message:
+      prefix: 'ci'
