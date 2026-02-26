@@ -1,5 +1,17 @@
 {
-	"features": {
-		"ghcr.io/danzilberdan/devcontainers/opencode:0": {}
-	}
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "features": {
+    "ghcr.io/danzilberdan/devcontainers/opencode:0": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  },
+  "postCreateCommand": "npm install",
+  "forwardPorts": [3000, 8080],
+  "portsAttributes": {
+    "3000": { "label": "Application" },
+    "8080": { "label": "Preview" }
+  }
 }
