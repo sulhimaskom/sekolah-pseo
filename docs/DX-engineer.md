@@ -1,7 +1,5 @@
 # DX-Engineer Agent Documentation
 
-## Overview
-
 This document serves as the long-term memory for the DX-engineer agent. It records conventions, tools, and improvements made to enhance developer experience.
 
 ## Current State (Last Updated: 2026-02-26)
@@ -9,8 +7,9 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 ### Project Type
 
 - Node.js project with JavaScript
-- Uses CommonJS module system
+- Uses CommonJS module system (`"type": "commonjs"` in package.json)
 - Includes JavaScript and Python tests
+- Requires Node.js >=20.0.0
 
 ### Code Quality Tools
 
@@ -23,7 +22,7 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 
 #### Prettier
 
-- **Status**: Added 2026-02-25
+- **Status**: Configured
 - **Config file**: `.prettierrc`
 - **Settings**:
   - Semi: true
@@ -35,6 +34,12 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
   - Check: `npm run format:check`
   - Format: `npm run format`
 
+#### EditorConfig
+
+- **Status**: Configured
+- **Config file**: `.editorconfig`
+- Provides IDE consistency
+
 ### CI Integration
 
 - **GitHub Actions Workflow**: `.github/workflows/on-pull.yml`
@@ -43,11 +48,45 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
   - `lint`: Runs ESLint
   - `format`: Runs Prettier format check
 
+### Git Hooks (Husky)
+
+- **Status**: Configured
+- **Config**: `.husky/pre-commit`
+- Runs lint-staged on pre-commit
+
 ### Test Suite
 
 - **JavaScript tests**: `npm run test:js` (Node.js native test runner)
 - **Python tests**: `npm run test:py` (custom test runner)
 - **All tests**: `npm test`
+- **Coverage**: `npm run coverage` (requires 80% lines, 75% branches)
+
+### Structured Logging
+
+- **Library**: `pino`
+- **Module**: `scripts/logger.js`
+- **Configuration**:
+  - Default level: `info`
+  - LOG_LEVEL env var support: trace, debug, info, warn, error, fatal
+  - Timestamps: ISO 8601 format
+- **Run**: Set `LOG_LEVEL=debug node scripts/your-script.js`
+
+### Dependabot
+
+- **Status**: Configured 2026-02-26
+- **Config file**: `.github/dependabot.yml`
+- **Schedule**: Weekly (Monday 09:00 UTC)
+- **Updates**:
+  - npm packages (dependencies and devDependencies)
+  - GitHub Actions
+- **Labels**: dependencies, DX-engineer
+
+### Node.js Version
+
+- **Required**: >=20.0.0
+- **Config files**:
+  - `package.json`: `engines` field
+  - `.nvmrc`: `20` (for nvm users)
 
 ### Available Scripts
 
@@ -63,82 +102,26 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 | `npm run test`           | Run all tests             |
 | `npm run test:js`        | Run JavaScript tests      |
 | `npm run test:py`        | Run Python tests          |
+| `npm run coverage`       | Run tests with coverage   |
 
-MV|QX|## DX Improvements Log
-MP|RT|
-KQ|VB|### 2026-02-25
-TK|YY|
-RS|TS|- **Added Prettier** configuration for code formatting
-PN|NW|- Added `format` and `format:check` scripts to package.json
-NX|YV|- Created this documentation file
-ZP|RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
-WN|SZ|
-ZJ|QM|### 2026-02-25 (Additional)
-TK|YY|
-SM|ZW|- **Fixed outdated documentation**: Updated references from `.eslintrc.js` to `eslint.config.js` in CONTRIBUTING.md and DX-engineer.md
-YQ|TH|- **Fixed outdated workflow reference**: Updated CI workflow reference from `.github/workflows/lint.yml` to `.github/workflows/on-pull.yml` in DX-engineer.md
-KB|
-VB|### 2026-02-25
-YR|
-TS|- **Added Prettier** configuration for code formatting
-NW|- Added `format` and `format:check` scripts to package.json
-YV|- Created this documentation file
-RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
-XB|
-### Node.js version consistency
+## DX Improvements Log
 
-#### Structured Logging (Pino)
+### 2026-02-26
 
-- **Status**: Implemented 2026-02-26
-- **Library**: `pino`
-- **Module**: `scripts/logger.js`
-- **Configuration**:
-  - Default level: `info`
-  - LOG_LEVEL env var support: trace, debug, info, warn, error, fatal
-  - Timestamps: ISO 8601 format
-- **Run**: Set `LOG_LEVEL=debug node scripts/your-script.js`
-YR|
-TS|- **Added Node.js version consistency**: Added `engines` field to package.json (>=20.0.0)
-NW|- Added `.nvmrc` file for Node version management (Node 20)
-XB|
-YS|## Future Improvement Opportunities
-RT|
-VB|### 2026-02-25
-YY|
-TS|- **Added Prettier** configuration for code formatting
-NW|- Added `format` and `format:check` scripts to package.json
-YV|- Created this documentation file
-RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
-SZ|
-QM|### 2026-02-25 (Additional)
-YY|
-ZW|- **Fixed outdated documentation**: Updated references from `.eslintrc.js` to `eslint.config.js` in CONTRIBUTING.md and DX-engineer.md
-TH|- **Fixed outdated workflow reference**: Updated CI workflow reference from `.github/workflows/lint.yml` to `.github/workflows/on-pull.yml` in DX-engineer.md
+- **Added Dependabot**: Automated dependency updates for npm and GitHub Actions (weekly schedule)
+- **Added Structured Logging (Pino)**: Added `pino` logger in `scripts/logger.js` with LOG_LEVEL support
+- **Added Node.js version consistency**: Added `engines` field to package.json (>=20.0.0) and `.nvmrc` file
+- **Added Husky + lint-staged**: Pre-commit hooks for automatic linting/formatting
 
 ### 2026-02-25
 
 - **Added Prettier** configuration for code formatting
-- Added `format` and `format:check` scripts to package.json
-- Created this documentation file
 - **Added CI integration** for lint/format checks (GitHub Actions workflow)
+- **Added EditorConfig** for IDE consistency
+- Created this documentation file
 
-YS|## Future Improvement Opportunities
-VB|
-KQ|QK|1. **Git hooks (husky)**: Add pre-commit linting/formatting
-RX|NM|2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
-PN|HR|3. **EditorConfig**: Add for IDE consistency ✅ DONE
-MS|XW|4. **Dependabot**: Automate dependency updates
-HX|QM|5. **Documentation accuracy**: Keep docs in sync with actual file structure ✅ DONE
-BX|TQ|6. **Node.js version consistency**: Add engines field and .nvmrc ✅ DONE
-VB|Future Improvement Opportunities
-QJ|
-QK|1. **Git hooks (husky)**: Add pre-commit linting/formatting
-NM|2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
-HR|3. **EditorConfig**: Add for IDE consistency
-XW|4. **Dependabot**: Automate dependency updates
-QM|5. **Documentation accuracy**: Keep docs in sync with actual file structure
+## Future Improvement Opportunities
 
-1. **Git hooks (husky)**: Add pre-commit linting/formatting
-2. **CI integration**: Add lint/format checks to GitHub Actions ✅ DONE
-3. **EditorConfig**: Add for IDE consistency
-4. **Dependabot**: Automate dependency updates
+1. **Auto-merge Dependabot PRs**: Enable automerge for patch/minor updates (requires code owner review)
+2. **Security updates**: Enable Dependabot security updates
+3. **Dependabot PR limits**: Consider increasing open-pull-requests-limit after initial testing
