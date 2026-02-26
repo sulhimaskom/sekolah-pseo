@@ -23,6 +23,14 @@ Coverage is enforced in CI via the `test` job in `on-pull.yml`. The workflow run
 
 | Metric           | Status                 |
 | ---------------- | ---------------------- |
+| JavaScript Tests | ✅ PASSING (467 tests) |
+| Python Tests     | ✅ PASSING (18 tests)  |
+| ESLint           | ✅ PASSING (no errors) |
+| npm audit        | ✅ 0 vulnerabilities   |
+| Coverage         | ✅ Lines: 92.62%, Branches: 92.36%, Functions: 91.11%
+
+| Metric           | Status                 |
+| ---------------- | ---------------------- |
 | JavaScript Tests | ✅ PASSING (443 tests) |
 | Python Tests     | ✅ PASSING (18 tests)  |
 | ESLint           | ✅ PASSING (no errors) |
