@@ -88,6 +88,27 @@ sekolah-pseo/
 └── docs/             # Documentation
 ```
 
+## Architecture Decision Records (ADR)
+
+For significant architectural decisions, we use ADRs to document the context, decision, and consequences. See [docs/adr/README.md](../docs/adr/README.md) for details.
+
+### When to Create an ADR
+
+Consider creating an ADR when a decision:
+
+- Affects project structure or architecture
+- Introduces new technologies or patterns
+- Changes existing patterns or conventions
+- Has long-term implications for the project
+
+### ADR Process
+
+1. Copy the ADR template from `docs/adr/0000-template.md`
+2. Fill in the context, decision, and consequences
+3. Set status to "Proposed"
+4. Submit for review alongside code changes
+5. Update status to "Accepted" once merged
+
 ## Submitting Changes
 
 1. Create a branch for your feature or fix
