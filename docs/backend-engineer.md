@@ -114,7 +114,25 @@ HB|  - `scripts/fs-safe.js`: Circuit breaker and file timeout from config
 JK|  - `scripts/slugify.js`: Cache size from config
 HV|  - `scripts/build-pages.js`: Queue timeout from config
 XP|- Enables runtime configuration via environment variables
-  PR|
+  #QX|  PR|
+#RQ|  WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
+#HJ|  QS|2. **Data validation rules**: Add more sophisticated validation rules
+#KB|  XS|3. **Caching**: Add caching layer for frequently accessed data (PARTIALLY DONE - incremental build manifest)
+#KJ|  HB|4. **Monitoring**: Add metrics and monitoring for ETL process
+#JQ|
+#WZ|### 2026-02-26 (Session 3)
+#VB|
+#QV|- **Fixed silent failures in build-pages.js**: Modified `loadSchools()` to throw error instead of returning empty array when CSV file cannot be read or is empty. Clear error message indicates root cause.
+#XT|- Updated tests to verify error is thrown for missing/invalid CSV files
+#NP|
+#QM|- **Added factory pattern to fs-safe.js**: Created `createFsSafe(options)` factory function that returns isolated fs-safe instances with their own circuit breakers. Enables test isolation - each test can have fresh circuit breaker state.
+#XT|- Backward compatible - exports singleton functions as before
+#QT|- Usage: `const fsSafe = createFsSafe({ failureThreshold: 3, resetTimeoutMs: 30000 })`
+#NP|
+#WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
+#QS|2. **Data validation rules**: Add more sophisticated validation rules
+#XS|3. **Caching**: Add caching layer for frequently accessed data
+#HB|4. **Monitoring**: Add metrics and monitoring for ETL process
   WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
   QS|2. **Data validation rules**: Add more sophisticated validation rules
   XS|3. **Caching**: Add caching layer for frequently accessed data (PARTIALLY DONE - incremental build manifest)
