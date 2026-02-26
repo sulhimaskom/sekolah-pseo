@@ -1,0 +1,29 @@
+# Code Owners for Sekolah PSEO
+# https://help.github.com/articles/about-codeowners/
+
+# Default owner for all files
+* @sulhimaskom
+
+# Scripts and build tooling
+/scripts/ @sulhimaskom
+*.js @sulhimaskom
+
+# Documentation
+/docs/ @sulhimaskom
+*.md @sulhimaskom
+
+# GitHub workflows
+/.github/workflows/ @sulhimaskom
+
+# Configuration files
+/.github/ @sulhimaskom
+*.json @sulhimaskom
+*.yml @sulhimaskom
+*.yaml @sulhimaskom
+
+# Tests
+/tests/ @sulhimaskom
+*.test.js @sulhimaskom
+
+# Source code
+/src/ @sulhimaskom
