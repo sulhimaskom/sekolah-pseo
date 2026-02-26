@@ -27,3 +27,19 @@ test('slugify handles non-string input', () => {
   assert.strictEqual(slugify(undefined), '');
   assert.strictEqual(slugify(123), '');
 });
+
+test('slugify returns untitled for special characters only', () => {
+  assert.strictEqual(slugify('!@#$%'), 'untitled');
+  assert.strictEqual(slugify('!!!'), 'untitled');
+  assert.strictEqual(slugify('---'), 'untitled');
+});
+
+test('slugify handles numbers only', () => {
+  assert.strictEqual(slugify('123'), '123');
+  assert.strictEqual(slugify('456 789'), '456-789');
+});
+
+test('slugify handles whitespace-only input', () => {
+  assert.strictEqual(slugify('   '), '');
+  assert.strictEqual(slugify('\t\n'), '');
+});
