@@ -141,6 +141,13 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 ## Future Improvement Ideas
 
 1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
+2. ~~Fail build when no schools loaded from CSV~~ (Done: PR #207)
+3. Add integration tests for the full ETL pipeline
+4. Add performance benchmarks for page building
+5. Add npm audit to CI pipeline (Issue #130)
+6. Add broken link checking to CI (Issue #146)
+
+1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
 2. Add integration tests for the full ETL pipeline
 3. Add performance benchmarks for page building
 4. Add npm audit to CI pipeline (Issue #130)
