@@ -1329,7 +1329,183 @@ const html = generateSchoolPageHtml(school);
 // Returns: '<!DOCTYPE html>\n<html lang="id">...'
 ```
 
----
+#JM|---
+
+#KV|## Homepage Template Module (`src/presenters/templates/homepage.js`)
+#ZP|
+#XJ|### Purpose
+#SM|
+#NK|Presentation layer for homepage HTML generation with search, filtering, and province navigation.
+#YK|
+#ZB|### Exports
+#ZT|
+XH|```javascript
+#RZ|module.exports = {
+#NX|  generateHomepageHtml: function,
+#VM|  aggregateByProvince: function
+#NT|};```
+
+#XZ|### Functions
+
+#VR|#### `generateHomepageHtml(schools)`
+
+#KX|Generates complete HTML homepage with search, filtering, and province navigation.
+
+#RH|**Parameters:**
+
+#VB|- `schools` (Array<Object>): Array of school data objects
+
+#BR|**Returns:** `string` - Complete HTML document
+
+#VM|**Features:**
+
+#KV|- Client-side search with debouncing
+#HB|- Province and education type filtering
+#MT|- Responsive design with mobile support
+#KV|- Keyboard navigation (/ to focus search, Escape to clear)
+#MT|- Back-to-top button
+#YJ|- Embedded school data in JSON format for search
+#KV|- Accessibility: skip links, ARIA labels, screen reader support
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { generateHomepageHtml } = require('./templates/homepage');
+#RN|#const html = generateHomepageHtml(schools);
+#MT|#// Returns: '<!DOCTYPE html>\n<html lang="id">...'`
+
+#HT|---
+
+#VR|#### `aggregateByProvince(schools)`
+
+#KX|Aggregates school data by province for navigation.
+
+#RH|**Parameters:**
+
+#VB|- `schools` (Array<Object>): Array of school data objects
+
+#BR|**Returns:** `Array<Object>` - Array of province objects with school count
+
+#QW|```javascript
+#VB|[
+#RN|  { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
+#TV|  { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 }
+#HV|]```
+
+#TB|**Sorting:** Provinces are sorted alphabetically by Indonesian locale.
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { aggregateByProvince } = require('./templates/homepage');
+#RN|#const provinces = aggregateByProvince(schools);
+#MT|#provinces.forEach(p => console.log(`${p.name}: ${p.count}`));```
+
+#KP|---
+
+#KV|## Province Page Template Module (`src/presenters/templates/province-page.js`)
+#ZP|
+#XJ|### Purpose
+#SM|
+#NK|Presentation layer for province-level page HTML generation with kabupaten/kota navigation.
+#YK|
+#ZB|### Exports
+#ZT|
+XH|```javascript
+#RZ|module.exports = {
+#NX|  generateProvincePageHtml: function,
+#VM|  filterSchoolsByProvince: function,
+#YJ|  aggregateByKabupaten: function
+#NT|};```
+
+#XZ|### Functions
+
+#VR|#### `generateProvincePageHtml(provinceName, schools)`
+
+#KX|Generates complete HTML page for a specific province with kabupaten/kota navigation.
+
+#RH|**Parameters:**
+
+#VB|- `provinceName` (string): Province name to generate page for
+#JX|- `schools` (Array<Object>): Array of all school data objects
+
+#BR|**Returns:** `string` - Complete HTML document
+
+#VM|**Features:**
+
+#KV|- Lists all kabupaten/kota in the province
+#HB|- Shows school count per kabupaten/kota
+#MT|- Breadcrumb navigation
+#KV|- Responsive design with mobile support
+#MT|- Back-to-top button
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { generateProvincePageHtml } = require('./templates/province-page');
+#RN|#const html = generateProvincePageHtml('DKI Jakarta', schools);
+#MT|#// Returns: '<!DOCTYPE html>\n<html lang="id">...'`
+
+#HT|---
+
+#VR|#### `filterSchoolsByProvince(schools, provinceName)`
+
+#KX|Filters schools by province name.
+
+#RH|**Parameters:**
+
+#VB|- `schools` (Array<Object>): Array of school data objects
+#JX|- `provinceName` (string): Province name to filter by
+
+#BR|**Returns:** `Array<Object>` - Filtered schools for the province
+
+#TB|**Exact Match:** Uses strict equality (`===`) for province matching.
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { filterSchoolsByProvince } = require('./templates/province-page');
+#RN|#const jakartaSchools = filterSchoolsByProvince(schools, 'DKI Jakarta');
+#MT|#console.log(`Found ${jakartaSchools.length} schools`);```
+
+#HT|---
+
+#VR|#### `aggregateByKabupaten(schools)`
+
+#KX|Aggregates school data by kabupaten/kota within a province.
+
+#RH|**Parameters:**
+
+#VB|- `schools` (Array<Object>): Array of school data objects (should be filtered by province)
+
+#BR|**Returns:** `Array<Object>` - Array of kabupaten objects with school count
+
+#QW|```javascript
+#VB|[
+#RN|  { name: 'Jakarta Pusat', slug: 'jakarta-pusat', count: 150 },
+#TV|  { name: 'Jakarta Selatan', slug: 'jakarta-selatan', count: 200 }
+#HV|]```
+
+#TB|**Sorting:** Kabupaten are sorted alphabetically by Indonesian locale.
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { aggregateByKabupaten } = require('./templates/province-page');
+#RN|#const kabupatens = aggregateByKabupaten(jakartaSchools);
+#MT|#kabupatens.forEach(k => console.log(`${k.name}: ${k.count}`));```
+
+#KV|---
+
+#KV|### Path Format
+
+#XZ|Province pages are generated at:
+
+#HB|```
+#MT|/provinsi/{provinceSlug}/index.html
+#KV|```
+
+#XZ|Example: `/provinsi/dki-jakarta/index.html`
 
 ## Build Pages Controller (`scripts/build-pages.js`)
 
@@ -2338,8 +2514,232 @@ Set log level dynamically.
 logger.setLevel('debug'); // Enable debug logging
 ```
 
----
+#YS|
+## Data Freshness Module (`scripts/check-freshness.js`)
+#ZP|
+#XJ|### Purpose
+#SM|
+#NK|Checks the freshness of school data and generates quality metrics reports. Can be run locally or in CI/CD pipelines to ensure data is up-to-date.
+#YK|
+#ZB|### Exports
+#ZT|
+XH|```javascript
+#RZ|module.exports = {
+#NX|  getDataFreshness: function,
+#VM|  getDataQualityMetrics: function
+#NT|};```
 
+#XZ|### Constants
+
+#HZ|- `DEFAULT_MAX_AGE_DAYS`: Maximum acceptable age of data in days (default: 7)
+
+#XZ|### Functions
+
+#VR|#### `getDataFreshness()`
+
+#KX|Jets the most recent update date from schools.csv and determines if data is fresh.
+
+#JR|**Returns:** `Object` - Freshness information
+
+#QW|```javascript
+#VB|{
+#RN|  exists: boolean,      // Whether schools.csv exists
+#TV|  date: string|null,  // ISO date string or null
+#MW|  daysAgo: number|null, // Days since last update or null
+#HV|  recordCount: number, // Total number of school records
+#HB|  isFresh: boolean    // true if data is within DEFAULT_MAX_AGE_DAYS
+#KV|}```
+
+#TB|**Freshness Threshold:** Data is considered fresh if `daysAgo <= 7` (DEFAULT_MAX_AGE_DAYS)
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { getDataFreshness } = require('./check-freshness');
+#RN|const freshness = getDataFreshness();
+#KV|#
+#KV|# If freshness.isFresh is false, data needs updating
+#HB|if (!freshness.isFresh) {
+#MT|  console.log(`Data is ${freshness.daysAgo} days old - consider refreshing`);
+#KV|}```
+
+#HT|---
+
+#VR|#### `getDataQualityMetrics()`
+
+#KX|Calculates data quality metrics from schools.csv.
+
+#JR|**Returns:** `Object|null` - Quality metrics or null if file doesn't exist
+
+#QW|```javascript
+#VB|{
+#RN|  totalRecords: number,
+#MW|  metrics: {
+#HB|    coordinates: { count: number, percentage: string },
+#MT|    address: { count: number, percentage: string },
+#KV|    npsn: { count: number, percentage: string },
+#YJ|    province: { count: number, percentage: string }
+#KV|  }
+#KV|}```
+
+#TB|**Quality Metrics:**
+
+#HB|- **coordinates**: Records with valid lat/lon values
+#MT|- **address**: Records with non-empty address fields
+#KV|- **npsn**: Records with valid NPSN (numeric)
+#YJ|- **province**: Records with province information
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { getDataQualityMetrics } = require('./check-freshness');
+#RN|#const quality = getDataQualityMetrics();
+#KV|#if (quality) {
+#MT|#  console.log(`Records with coordinates: ${quality.metrics.coordinates.percentage}%`);
+#KV|#}```
+
+#HT|---
+
+#KV|### CLI Usage
+
+#XZ|The module can be run directly from the command line:
+
+#HB|```bash
+#MT|# Basic check
+#KV|node scripts/check-freshness.js
+#KV|#
+#KV|# JSON output
+#MT|node scripts/check-freshness.js --json
+#KV|#
+#KV|# Verbose output with quality metrics
+#MT|node scripts/check-freshness.js --verbose
+#KV|```
+
+#KV|Exit Codes:
+#HB|- `0`: Data is fresh
+#MT|- `1`: Data is stale or error occurred
+
+#KV|---
+
+#KV|## Fetch Data Module (`scripts/fetch-data.js`)
+#ZP|
+#XJ|### Purpose
+#SM|
+#NK|Fetches the latest school data from external GitHub repositories. Supports cloning or updating external data sources.
+#YK|
+#ZB|### Exports
+#ZT|
+XH|```javascript
+#RZ|module.exports = {
+#NX|  fetchFromGitHub: function,
+#VM|  findCsvFiles: function,
+#YJ|  copyToRaw: function
+#NT|};```
+
+#XZ|### Constants
+
+#HZ|- `DEFAULT_SOURCE_REPO`: Default GitHub repository URL
+#HB|- `DEFAULT_BRANCH`: Default branch name (default: 'main')
+#KV|- `EXTERNAL_DATA_DIR`: Directory for cloned external data
+
+#XZ|### Functions
+
+#VR|#### `fetchFromGitHub(repoUrl, branch)`
+
+#KX|Clones or updates the external data repository and finds the best CSV file.
+
+#RH|**Parameters:**
+
+#VB|- `repoUrl` (string, optional): Git repository URL
+#JX|- `branch` (string, optional): Branch name
+
+#BR|**Returns:** `string|null` - Path to CSV file or null if failed
+
+#VM|**Behavior:**
+
+#KV|- Clones repository if not exists
+#HB|- Updates existing repository if already cloned
+#MT|- Searches for CSV files with preferred names: sekolah.csv, data.csv, schools.csv, daftarsekolah.csv
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { fetchFromGitHub } = require('./fetch-data');
+#RN|#const csvPath = await fetchFromGitHub();
+#KV|#if (csvPath) {
+#MT|#  console.log(`Using: ${csvPath}`);
+#KV|#}```
+
+#HT|---
+
+#VR|#### `findCsvFiles(dir)`
+
+#KX|Recursively finds all CSV files in a directory.
+
+#RH|**Parameters:**
+
+#VB|- `dir` (string): Directory path to search
+
+#BR|**Returns:** `string[]` - Array of CSV file paths
+
+#VM|**Behavior:**
+
+#KV|- Recursively traverses directory tree
+#HB|- Only includes .csv files
+#MT|- Excludes hidden directories (starting with '.')
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { findCsvFiles } = require('./fetch-data');
+#RN|#const files = findCsvFiles('/path/to/data');
+#MT|#console.log(`Found ${files.length} CSV files`);```
+
+#HT|---
+
+#VR|#### `copyToRaw(sourcePath, destPath)`
+
+#KX|Copies external CSV file to raw data location.
+
+#RH|**Parameters:**
+
+#VB|- `sourcePath` (string): Source CSV file path
+#JX|- `destPath` (string): Destination path
+
+#BR|**Returns:** `boolean` - Success status
+
+#VM|**Behavior:**
+
+#KV|- Creates destination directory if needed
+#HB|- Uses fs.copyFileSync for reliable copying
+
+#TQ|**Usage:**
+
+#XH|```javascript
+#VB|const { copyToRaw } = require('./fetch-data');
+#RN|#const success = copyToRaw('/source/data.csv', '/path/to/raw.csv');
+#MT|#if (success) {
+#KV|#  console.log('File copied successfully');
+#KV|#}```
+
+#HT|---
+
+#KV|### CLI Usage
+
+#XZ|The module can be run directly from the command line:
+
+#HB|```bash
+#MT|# Default fetch
+#KV|node scripts/fetch-data.js
+#KV|#
+#KV|# Specify output path
+#MT|node scripts/fetch-data.js --output custom/path.csv
+#KV|#
+#KV|# Specify source repository
+#MT|node scripts/fetch-data.js --source https://github.com/user/repo.git
+#KV|```
+
+#HT|---
 ## Build Manifest Module (`scripts/manifest.js`)
 
 ### Purpose
