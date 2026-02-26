@@ -31,10 +31,10 @@ Product-Architect is an autonomous agent focused on delivering small, safe, meas
 - Data: `schools.csv` with Indonesian school data
 
 ## Improvements Log
+
+- 2026-02-26: Reviewed and verified PR #162 (interactive CLI menu) - ready for merge
+- 2026-02-25: Added interactive CLI menu with inquirer for common build tasks (PR #162, Issue #150)
 - 2026-02-25: Added test coverage reporting with c8 and thresholds (PR #155)
-- 2026-02-25: Fixed ESLint broken state (missing globals dependency)
+- 2026-02-25: Fixed ESLint broken state (missing globals dependency) (PR #97)
 - 2026-02-25: Installed devDependencies to fix broken linting infrastructure (PR #116)
-- 2026-02-25: Fixed ESLint broken state (missing globals dependency)
-- 2026-02-25: Fixed ESLint broken state (missing globals dependency)
-- 2026-02-25: Installed devDependencies to fix broken linting infrastructure (PR #116)
-- 2026-02-25: Fixed ESLint broken state (missing globals dependency)
+
