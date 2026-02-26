@@ -116,7 +116,7 @@ async function writeSchoolPagesConcurrently(
 
   const limiter = new RateLimiter({
     maxConcurrent: concurrencyLimit,
-    queueTimeoutMs: 30000,
+    queueTimeoutMs: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
   });
 
   let processed = 0;

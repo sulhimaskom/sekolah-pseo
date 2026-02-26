@@ -1,10 +1,12 @@
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+const CONFIG = require('./config');
 
 class RateLimiter {
   constructor(options = {}) {
-    this.maxConcurrent = options.maxConcurrent || 100;
-    this.rateLimitMs = options.rateLimitMs || 10;
-    this.queueTimeoutMs = options.queueTimeoutMs || 30000;
+    const defaults = CONFIG.RATE_LIMITER_DEFAULTS;
+    this.maxConcurrent = options.maxConcurrent || defaults.MAX_CONCURRENT;
+    this.rateLimitMs = options.rateLimitMs || defaults.RATE_LIMIT_MS;
+    this.queueTimeoutMs = options.queueTimeoutMs || defaults.QUEUE_TIMEOUT_MS;
 
     this.activeCount = 0;
     this.queue = [];

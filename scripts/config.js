@@ -52,6 +52,35 @@ const CONFIG = {
     Math.max(1, parseInt(process.env.MAX_URLS_PER_SITEMAP) || 50000)
   ),
 
+  // Indonesia geographic bounds for coordinate validation
+  INDONESIA_BOUNDS: {
+    LAT_MIN: -11,
+    LAT_MAX: 6,
+    LON_MIN: 95,
+    LON_MAX: 141,
+  },
+
+  // Rate limiter defaults
+  RATE_LIMITER_DEFAULTS: {
+    MAX_CONCURRENT: 100,
+    RATE_LIMIT_MS: 10,
+    QUEUE_TIMEOUT_MS: 30000,
+  },
+
+  // Circuit breaker defaults for file operations
+  CIRCUIT_BREAKER_DEFAULTS: {
+    FAILURE_THRESHOLD: 5,
+    RESET_TIMEOUT_MS: 60000,
+  },
+
+  // Cache defaults
+  CACHE_DEFAULTS: {
+    MAX_CACHE_SIZE: 10000,
+  },
+
+  // File operation timeouts
+  FILE_TIMEOUT_MS: 30000,
+
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,

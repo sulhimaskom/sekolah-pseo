@@ -5,8 +5,9 @@
  * from npm.
  */
 
+const CONFIG = require('./config');
 const slugCache = new Map();
-const MAX_CACHE_SIZE = 10000;
+const MAX_CACHE_SIZE = CONFIG.CACHE_DEFAULTS.MAX_CACHE_SIZE;
 
 /**
  * Convert a string into a slug suitable for use in URLs. Steps:

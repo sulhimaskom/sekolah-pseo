@@ -6,17 +6,20 @@ const {
   ERROR_CODES,
   CircuitBreaker,
 } = require('./resilience');
+const CONFIG = require('./config');
 
-const DEFAULT_FILE_TIMEOUT_MS = 30000;
+const DEFAULT_FILE_TIMEOUT_MS = CONFIG.FILE_TIMEOUT_MS;
+
+const { FAILURE_THRESHOLD, RESET_TIMEOUT_MS } = CONFIG.CIRCUIT_BREAKER_DEFAULTS;
 
 const fileReadCircuitBreaker = new CircuitBreaker({
-  failureThreshold: 5,
-  resetTimeoutMs: 60000,
+  failureThreshold: FAILURE_THRESHOLD,
+  resetTimeoutMs: RESET_TIMEOUT_MS,
 });
 
 const fileWriteCircuitBreaker = new CircuitBreaker({
-  failureThreshold: 5,
-  resetTimeoutMs: 60000,
+  failureThreshold: FAILURE_THRESHOLD,
+  resetTimeoutMs: RESET_TIMEOUT_MS,
 });
 
 // Reset function to clear circuit breaker state (useful for testing to avoid pollution)
