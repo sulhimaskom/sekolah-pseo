@@ -6,6 +6,23 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ## Completed Improvements
 
+### 2026-02-26: Add security-audit.yml workflow (Issue #233)
+
+- **Issue**: #233
+- **Summary**: Create security-audit.yml workflow for npm vulnerability scanning
+- **Status**: File created locally but cannot be pushed due to GitHub App permission restrictions
+- **Changes**:
+  - Created `.github/workflows/security-audit.yml` with:
+    - Runs on push to main, PRs, and weekly schedule
+    - Uses `npm audit --audit-level=moderate`
+    - Fails CI on moderate or higher vulnerabilities
+- **Verification**:
+  - npm audit passes locally with 0 vulnerabilities
+- **Blocker**: GitHub App lacks "workflows" permission - workflow file changes require manual push
+- **Note**: Commented on issue #233 with the full file content for manual application
+
+## Completed Improvements
+
 ### 2026-02-26: Verify slugify caching tests
 
 - **PR**: #228
@@ -172,9 +189,22 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ## Future Improvement Ideas
 
+1. ~~Add npm audit to CI pipeline~~ (Done: Issue #233 - file created, manual push required)
+2. Add broken link checking to CI (Issue #146)
+3. Add integration tests for the full ETL pipeline
+4. Add performance benchmarks for page building
+
+(End of file)
+
+1. ~~Add npm audit to CI pipeline~~ (Done: Issue #233 - file created, manual push required)
+2. Add broken link checking to CI (Issue #146)
+3. Add integration tests for the full ETL pipeline
+4. Add performance benchmarks for page building
+
 1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
 2. ~~Fail build when no schools loaded from CSV~~ (Done: PR #207)
-3. Add integration tests for the full ETL pipeline
+3. ~~Add npm audit to CI pipeline~~ (Done: Issue #233 - file created, manual push required)
+4. Add broken link checking to CI (Issue #146)
 4. Add performance benchmarks for page building
 5. Add npm audit to CI pipeline (Issue #130)
 6. Add broken link checking to CI (Issue #146)
