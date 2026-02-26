@@ -275,8 +275,8 @@ async function build(options = {}) {
     );
   }
 
-  // Generate homepage
-  console.log(`Loaded ${schools.length} schools from CSV`);
+
+
 
   // Generate homepage
   logger.info('Generating homepage...');
@@ -316,8 +316,8 @@ async function buildIncremental() {
     );
   }
 
-  // Load manifest to check for changes
-  console.log(`Loaded ${schools.length} schools from CSV`);
+
+
 
   // Load manifest to check for changes
   const manifest = await loadManifest();
