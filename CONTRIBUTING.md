@@ -21,7 +21,22 @@ cd sekolah-pseo
 npm install
 ```
 
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to enforce code quality. After installing dependencies, set up the hooks:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install git hook scripts
+pre-commit install
+```
+
+The hooks will automatically run ESLint and Prettier on staged files before each commit.
+
 ## Available Scripts
+
 
 | Command                  | Description                             |
 | ------------------------ | --------------------------------------- |
