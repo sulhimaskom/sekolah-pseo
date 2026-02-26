@@ -6,6 +6,27 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ## Completed Improvements
 
+### 2026-02-26: Verify pre-commit hooks PR #163
+
+- **PR**: #163
+- **Branch**: `rnd/pre-commit-hooks`
+- **Changes**:
+  - Verified branch is up to date with main (no conflicts)
+  - Verified tests pass (403/403)
+  - Verified husky and lint-staged configuration is correct
+  - Added verification comment to PR
+- **Issue**: Resolves #145
+- **Results**:
+  - PR ready to merge
+
+### 2026-02-26: Investigate Issue #131 (Secret Key Confusion)
+
+- **Issue**: Line 28 in on-push.yml incorrectly references `secrets.VITE_SUPABASE_KEY` instead of `secrets.VITE_SUPABASE_ANON_KEY`
+- **Root Cause Found**: Security misconfiguration - copy-paste error
+- **Fix Identified**: Change line 28 from `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}` to `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}`
+- **Blocker**: GitHub App permission restriction - cannot push workflow file changes
+- **Note**: This is a known limitation - workflow file updates require user-level permissions or manual fix
+
 ### 2026-02-25: Add .gitignore verification documentation
 
 - **PR**: #156
@@ -14,7 +35,7 @@ This document serves as the long-term memory for the RnD agent, tracking improve
   - Documented .gitignore setup in README:
     - Environment files (.env, .env.local)
     - Node.js artifacts (node_modules, .npm)
-    - Logs (*.log)
+    - Logs (\*.log)
     - IDE files (.idea/, .vscode/)
     - OS files (.DS_Store, Thumbs.db)
   - Created gitignore-check.yml workflow locally (blocked from push due to GitHub App permissions)
@@ -24,25 +45,21 @@ This document serves as the long-term memory for the RnD agent, tracking improve
   - Lint: Zero warnings
 
 ### 2026-02-25: Improve .gitignore with proper exclusions
-#XW|
-#QT|### 2026-02-25: Improve .gitignore with proper exclusions
-#SK|
-#HY|- **PR**: #141
-#TT|- **Branch**: `rnd/improve-gitignore`
-#ZB|- **Changes**:
-#ZB|  - Added `.env.local` and `.env.*.local` for local environment files
-#KQ|  - Added `.idea/` for IntelliJ IDE
-#NJ|  - Added `.vscode/` for VSCode
-#HN|  - Added `*.swp` and `*.swo` for vim swap files
-#PN|  - Added `.DS_Store` for macOS
-#YZ|  - Added `Thumbs.db` for Windows
-#PS|  - Cleaned up file formatting (added trailing newline)
-#BT|- **Issue**: Fixes #134
-#RK|- **Results**:
-#RH|  - All 403 tests passing
-#YM|  - No false positives (only .gitignore changed)
-#TQ|
-#QT|### 2026-02-25: Edge Case Tests for resilience.js
+
+- **PR**: #141
+- **Branch**: `rnd/improve-gitignore`
+- **Changes**:
+  - Added `.env.local` and `.env.*.local` for local environment files
+  - Added `.idea/` for IntelliJ IDE
+  - Added `.vscode/` for VSCode
+  - Added `*.swp` and `*.swo` for vim swap files
+  - Added `.DS_Store` for macOS
+  - Added `Thumbs.db` for Windows
+  - Cleaned up file formatting (added trailing newline)
+- **Issue**: Fixes #134
+- **Results**:
+  - All 403 tests passing
+  - No false positives (only .gitignore changed)
 
 ### 2026-02-25: Edge Case Tests for resilience.js
 
@@ -81,8 +98,6 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ### 2026-02-25: Test Coverage for fs-safe.js and config.js
 
-### 2026-02-25: Test Coverage for fs-safe.js and config.js
-
 - **PR**: #115
 - **Branch**: `rnd/test-coverage-fs-safe-config`
 - **Changes**:
@@ -117,12 +132,16 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 - Always remove unused imports to avoid lint errors
 - Check with `npm run lint` before committing
 
+### GitHub App Limitations
+
+- Workflow file changes cannot be pushed by GitHub Actions bot
+- Requires user-level permissions or manual intervention
+- Workaround: Document findings in issues and note in RnD.md
+
 ## Future Improvement Ideas
 
 1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
 2. Add integration tests for the full ETL pipeline
 3. Add performance benchmarks for page building
-
-4. Add more edge case tests for resilience.js
-5. Add integration tests for the full ETL pipeline
-6. Add performance benchmarks for page building
+4. Add npm audit to CI pipeline (Issue #130)
+5. Add broken link checking to CI (Issue #146)
