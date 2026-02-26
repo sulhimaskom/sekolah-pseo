@@ -46,6 +46,8 @@ Located in `scripts/*.test.js`:
 - `PageBuilder.test.js` - Page builder tests
 - `build-pages.test.js` - Build process tests
 - `etl.test.js` - ETL pipeline tests
+- `config.test.js` - Configuration validation tests
+- `fs-safe.test.js` - Resilient file system wrapper tests
 - `sitemap.test.js` - Sitemap generation tests
 - `styles.test.js` - CSS/style generation tests
 - `design-system.test.js` - Design system tests
@@ -180,7 +182,7 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 ### Test Coverage
 
 Current test coverage:
-- JavaScript: 12 test files, 100+ test cases
+- JavaScript: 14 test files, 110+ test cases
 - Python: 18 test cases (standalone runner)
 - Total: 100% pass rate
 

@@ -101,6 +101,7 @@ All internal modules have documented API contracts in `docs/api.md`:
 | RAW_DATA_PATH | Raw CSV location | external/raw.csv |
 | VALIDATION_CONCURRENCY_LIMIT | Link validation concurrency | 50 |
 | BUILD_CONCURRENCY_LIMIT | Page build concurrency | 100 |
+| MAX_URLS_PER_SITEMAP | Max URLs per sitemap file | 50000 |
 
 ### Data Schema
 - Province
