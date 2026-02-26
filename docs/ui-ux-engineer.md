@@ -95,7 +95,18 @@ PQ|- Changed from inline onclick to proper addEventListener with window.matchMed
 PV|- Uses 'auto' behavior when user prefers reduced motion, 'smooth' otherwise
 VN|- Applied to both school-page.js and homepage.js templates
 XH|- Completes the accessibility support that CSS transitions already had
-MX|JQ|
+JW|XH|- Completes the accessibility support that CSS transitions already had
+WQ|MX|JQ|
+
+### 9. Province Listing Pages ✅
+
+- Identified broken navigation: homepage linked to /provinsi/{slug}/ but pages didn't exist
+- Created province-page.js template with kabupaten/kota listing
+- Added province page generation to PageBuilder.js and build-pages.js
+- Pages now generate at /provinsi/{slug}/index.html during build
+- Provides intermediate navigation layer: province → kabupaten → school
+
+## Testing
 
 ## Testing
 
