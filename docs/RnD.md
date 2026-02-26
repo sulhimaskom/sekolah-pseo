@@ -5,6 +5,23 @@
 This document serves as the long-term memory for the RnD agent, tracking improvements, patterns, and learnings.
 
 ## Completed Improvements
+
+### 2026-02-26: Verify slugify caching tests
+
+- **PR**: #228
+- **Branch**: `rnd/slugify-cache-verification-tests`
+- **Summary**: Added tests to verify slugify caching is working correctly
+- **Changes**:
+  - Added 3 new tests in `scripts/slugify.test.js`:
+    - `slugify caching - repeated calls return cached results`
+    - `slugify caching - many unique values`
+    - `slugify caching - repeated values across schools`
+- **Issue**: Resolves #226 (caching verification)
+- **Results**:
+  - Tests: 470 passing (was 467, +3 new tests)
+- **Note**: Caching is already implemented in `scripts/slugify.js` with `MAX_CACHE_SIZE=10000`, which efficiently handles ~3500 schools within a single build run.
+
+
 ## Completed Improvements
 
 ### 2026-02-26: Add npm audit to CI pipeline
