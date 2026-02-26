@@ -3,6 +3,33 @@ const slugify = require('../../scripts/slugify');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 
+// Simple memoization cache for slugify to avoid repeated computation
+const slugCache = new Map();
+
+/**
+ * Cached version of slugify to avoid repeated computation for the same input
+ * @param {string} text - Text to convert to slug
+ * @returns {string} - Slugified text
+ */
+function cachedSlugify(text) {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+
+  if (!slugCache.has(text)) {
+    slugCache.set(text, slugify(text));
+  }
+
+  return slugCache.get(text);
+}
+
+/**
+ * Clear the slug cache (useful for testing)
+ */
+function clearSlugCache() {
+  slugCache.clear();
+}
+
 function buildSchoolPageData(school) {
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
@@ -15,10 +42,10 @@ function buildSchoolPageData(school) {
     throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
   }
 
-  const provinsiSlug = slugify(school.provinsi);
-  const kabKotaSlug = slugify(school.kab_kota);
-  const kecamatanSlug = slugify(school.kecamatan);
-  const namaSlug = slugify(school.nama);
+  const provinsiSlug = cachedSlugify(school.provinsi);
+  const kabKotaSlug = cachedSlugify(school.kab_kota);
+  const kecamatanSlug = cachedSlugify(school.kecamatan);
+  const namaSlug = cachedSlugify(school.nama);
 
   const relativePath = path.join(
     'provinsi',
@@ -44,9 +71,9 @@ function getUniqueDirectories(schools) {
   const uniqueDirs = new Set();
 
   for (const school of schools) {
-    const provinsiSlug = slugify(school.provinsi);
-    const kabKotaSlug = slugify(school.kab_kota);
-    const kecamatanSlug = slugify(school.kecamatan);
+    const provinsiSlug = cachedSlugify(school.provinsi);
+    const kabKotaSlug = cachedSlugify(school.kab_kota);
+    const kecamatanSlug = cachedSlugify(school.kecamatan);
 
     const dirPath = path.join(
       'provinsi',
@@ -82,7 +109,7 @@ function getUniqueProvinces(schools) {
     if (!provinceMap.has(provinsiName)) {
       provinceMap.set(provinsiName, {
         name: provinsiName,
-        slug: slugify(provinsiName),
+        slug: cachedSlugify(provinsiName),
         count: 0,
       });
     }
@@ -109,7 +136,7 @@ function buildProvincePageData(provinceName, schools) {
     throw new Error('schools must be an array');
   }
 
-  const provinceSlug = slugify(provinceName);
+  const provinceSlug = cachedSlugify(provinceName);
   const relativePath = path.join('provinsi', provinceSlug, 'index.html');
 
   return {
@@ -123,4 +150,5 @@ module.exports = {
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
+  clearSlugCache,
 };
