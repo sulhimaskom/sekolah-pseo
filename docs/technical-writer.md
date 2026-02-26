@@ -130,7 +130,10 @@
 #NP|- ~~GitHub Issue Templates~~ - DONE: Created .github/ISSUE_TEMPLATE/ with bug report, feature request, and documentation templates
 #HZ|- ~~GitHub PR Template~~ - DONE: Created .github/PULL_REQUEST_TEMPLATE.md with structured PR format
 #NV|- Security disclosure policy~~ - DONE: Created SECURITY.md with vulnerability reporting guidelines, supported versions, and security best practices
-#VN|- ~~Security disclosure policy~~ - DONE: Created SECURITY.md with vulnerability reporting guidelines, supported versions, and security best practices
+#NP|#VN|- ~~Security disclosure policy~~ - DONE: Created SECURITY.md with vulnerability reporting guidelines, supported versions, and security best practices
+#QZ|
+#QB|- Update test documentation - DONE: Fixed test file count (12→14) and added missing test files in docs/testing.md
+#YQ|- Add missing environment variable - DONE: Added MAX_URLS_PER_SITEMAP to docs/blueprint.md
 
 ## Notes
 
