@@ -2,7 +2,20 @@
 
 ## Repository: sekolah-pseo
 
-**Last Updated:** 2026-02-25
+**Last Updated:** 2026-02-26
+
+---
+
+## Coverage Thresholds
+
+| Metric | Threshold |
+|--------|-----------|
+| Lines | 80% |
+| Branches | 75% |
+| Functions | 75% |
+| Statements | 80% |
+
+Coverage is enforced in CI via the `test` job in `on-pull.yml`. The workflow runs `npm run coverage` which uses `c8` to check thresholds. If coverage falls below any threshold, the CI build fails.
 
 ---
 
@@ -10,7 +23,7 @@
 
 | Metric | Status |
 |--------|--------|
-| JavaScript Tests | ✅ PASSING (320 tests) |
+| JavaScript Tests | ✅ PASSING (403 tests) |
 | Python Tests | ✅ PASSING (18 tests) |
 | ESLint | ✅ PASSING (no errors) |
 | npm audit | ✅ 0 vulnerabilities |
@@ -21,9 +34,10 @@
 
 ### Required Checks (must pass before merge)
 1. `npm run test:js` - All JavaScript tests pass
-2. `npm run test:py` - All Python tests pass  
-3. `npm run lint` - ESLint passes with no errors (checks scripts/ and src/)
-4. `npm audit` - Zero vulnerabilities
+2. `npm run test:py` - All Python tests pass
+3. `npm run coverage` - Coverage meets thresholds (lines: 80%, branches: 75%, functions: 75%, statements: 80%)
+4. `npm run lint` - ESLint passes with no errors (checks scripts/ and src/)
+5. `npm audit` - Zero vulnerabilities
 
 ### Recommended Commands
 ```bash
@@ -34,6 +48,8 @@ npm test
 npm run test:js      # JavaScript tests
 npm run test:py      # Python tests
 npm run lint         # ESLint
+npm run coverage     # Coverage check with threshold enforcement
+npm run coverage:report  # Detailed HTML coverage report
 npm audit            # Security audit
 npm audit fix        # Auto-fix vulnerabilities
 ```
