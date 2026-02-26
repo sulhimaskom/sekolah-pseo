@@ -23,6 +23,14 @@ Coverage is enforced in CI via the `test` job in `on-pull.yml`. The workflow run
 
 | Metric           | Status                 |
 | ---------------- | ---------------------- |
+| JavaScript Tests | ✅ PASSING (443 tests) |
+| Python Tests     | ✅ PASSING (18 tests)  |
+| ESLint           | ✅ PASSING (no errors) |
+| npm audit        | ✅ 0 vulnerabilities   |
+| Coverage         | ✅ Lines: 87%, Branches: 93%
+
+| Metric           | Status                 |
+| ---------------- | ---------------------- |
 | JavaScript Tests | ✅ PASSING (403 tests) |
 | Python Tests     | ✅ PASSING (18 tests)  |
 | ESLint           | ✅ PASSING (no errors) |
@@ -61,6 +69,19 @@ npm audit fix        # Auto-fix vulnerabilities
 ## Known Issues & Resolutions
 
 ### Resolved Issues
+
+1. **Vulnerability: ajv <6.14.0 (moderate)**
+   - Issue: ReDoS when using `$data` option
+   - Resolution: `npm audit fix`
+
+2. **Vulnerability: minimatch <3.1.3 (high)**
+   - Issue: ReDoS via repeated wildcards
+   - Resolution: `npm audit fix`
+
+3. **Test Pollution: Global circuit breaker state in fs-safe.js (Issue #194)**
+   - Issue: Circuit breaker instances shared across tests could cause test pollution
+   - Resolution: Added `resetCircuitBreakers()` function to clear state between tests
+   - Usage: Import and call `resetCircuitBreakers()` in test setup if needed
 
 1. **Vulnerability: ajv <6.14.0 (moderate)**
    - Issue: ReDoS when using `$data` option

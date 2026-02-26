@@ -19,6 +19,12 @@ const fileWriteCircuitBreaker = new CircuitBreaker({
   resetTimeoutMs: 60000,
 });
 
+// Reset function to clear circuit breaker state (useful for testing to avoid pollution)
+function resetCircuitBreakers() {
+  fileReadCircuitBreaker.reset();
+  fileWriteCircuitBreaker.reset();
+}
+
 function safeReadFile(filePath, options = {}) {
   return fileReadCircuitBreaker
     .execute(
@@ -131,4 +137,5 @@ module.exports = {
   DEFAULT_FILE_TIMEOUT_MS,
   fileReadCircuitBreaker,
   fileWriteCircuitBreaker,
+  resetCircuitBreakers,
 };
