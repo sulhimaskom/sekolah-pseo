@@ -60,13 +60,14 @@ async function ensureDistDir() {
  * Load the processed schools CSV into an array of objects.
  */
 async function loadSchools() {
-  try {
-    const text = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
-    return parseCsv(text);
-  } catch (error) {
-    logger.error(`Failed to load schools from ${CONFIG.SCHOOLS_CSV_PATH}: ${error.message}`);
-    return [];
+  const text = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
+  const schools = parseCsv(text);
+  
+  if (schools.length === 0) {
+    throw new Error(`No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`);
   }
+  
+  return schools;
 }
 
 /**
