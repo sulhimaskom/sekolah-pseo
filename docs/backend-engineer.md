@@ -14,16 +14,16 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 
 SQ|### Backend Components
 VP|
-WN|| Component                   | Description                                        |
+WN|| Component | Description |
 SB|| --------------------------- | -------------------------------------------------- |
-PH|| `scripts/etl.js`            | ETL process - normalizes and validates school data |
-WN|| `scripts/build-pages.js`    | Static page generation with concurrency control    |
-NX|| `scripts/sitemap.js`        | Sitemap generation                                 |
-ZN|| `scripts/validate-links.js` | Link validation                                    |
-XY|| `scripts/utils.js`          | Shared utilities (CSV parsing, escaping)           |
-NQ|| `scripts/rate-limiter.js`   | Concurrency control                                |
-SJ|| `scripts/resilience.js`     | Error handling patterns                            |
-HK|| `scripts/manifest.js`       | Build manifest for incremental builds              |
+PH|| `scripts/etl.js` | ETL process - normalizes and validates school data |
+WN|| `scripts/build-pages.js` | Static page generation with concurrency control |
+NX|| `scripts/sitemap.js` | Sitemap generation |
+ZN|| `scripts/validate-links.js` | Link validation |
+XY|| `scripts/utils.js` | Shared utilities (CSV parsing, escaping) |
+NQ|| `scripts/rate-limiter.js` | Concurrency control |
+SJ|| `scripts/resilience.js` | Error handling patterns |
+HK|| `scripts/manifest.js` | Build manifest for incremental builds |
 
 | Component                   | Description                                        |
 | --------------------------- | -------------------------------------------------- |
@@ -91,17 +91,18 @@ VB|- Usage: `node scripts/build-pages.js --incremental`
 - PR #125: https://github.com/sulhimaskom/sekolah-pseo/pull/125
 
 YS|## Future Improvement Opportunities
+
 ### 2026-02-26
 
 - **Fixed async/sync blocking**: Replaced `fs.unlinkSync()` with `await fs.promises.unlink()` in `scripts/manifest.js` to avoid blocking the event loop
 - **Improved error resilience**: Changed `Promise.all()` to `Promise.allSettled()` in `scripts/validate-links.js` to handle partial failures gracefully
 - **Added ETL error isolation**: Added try/catch inside the record processing loop in `scripts/etl.js` to prevent single bad records from crashing the entire ETL process
 - PR #187: https://github.com/sulhimaskom/sekolah-pseo/pull/187
-PR|
-WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
-QS|2. **Data validation rules**: Add more sophisticated validation rules
-XS|3. **Caching**: Add caching layer for frequently accessed data (PARTIALLY DONE - incremental build manifest)
-HB|4. **Monitoring**: Add metrics and monitoring for ETL process
+  PR|
+  WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
+  QS|2. **Data validation rules**: Add more sophisticated validation rules
+  XS|3. **Caching**: Add caching layer for frequently accessed data (PARTIALLY DONE - incremental build manifest)
+  HB|4. **Monitoring**: Add metrics and monitoring for ETL process
 
 1. **Streaming CSV processing**: Process large CSV files in streaming fashion
 2. **Data validation rules**: Add more sophisticated validation rules
