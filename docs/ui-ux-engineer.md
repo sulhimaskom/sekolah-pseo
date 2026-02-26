@@ -77,8 +77,9 @@ Dark Mode Support ✅### 2.
 - Full accessibility: ARIA labels, focus-visible styles, keyboard accessible
 - Dark mode support via prefers-color-scheme
 - Respects prefers-reduced-motion for accessibility
-RJ|- Mobile responsive sizing (48px desktop, 40px mobile)
-JQ|
+  RJ|- Mobile responsive sizing (48px desktop, 40px mobile)
+  JQ|
+
 ### 7. Fix Duplicate HTML Structure ✅
 
 JS|- Found and fixed duplicate HTML closing tags in both school-page.js and homepage.js
@@ -86,6 +87,7 @@ PQ|- Removed duplicated footer and body/html closing tags
 PQ|- Bug caused invalid HTML output
 XH|- All tests pass after fix
 JQ|
+
 ## Testing
 
 - Added @media print for better printing
