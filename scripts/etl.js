@@ -139,12 +139,7 @@ function validateLatLon(lat, lon) {
 
   const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
 
-  return (
-    latNum >= LAT_MIN &&
-    latNum <= LAT_MAX &&
-    lonNum >= LON_MIN &&
-    lonNum <= LON_MAX
-  );
+  return latNum >= LAT_MIN && latNum <= LAT_MAX && lonNum >= LON_MIN && lonNum <= LON_MAX;
 }
 
 /**
@@ -199,6 +194,8 @@ function checkNpsnUniqueness(records) {
  */
 function generateDataQualityReport(records) {
   const totalRecords = records.length;
+
+  // Initialize metrics - all computed in single pass
   const metrics = {
     totalRecords,
     fieldCompleteness: {},
@@ -210,6 +207,7 @@ function generateDataQualityReport(records) {
     uniqueness: {
       uniqueNpsn: 0,
       duplicateNpsn: 0,
+      duplicates: [],
     },
     categoricalDistribution: {},
   };
@@ -228,16 +226,24 @@ function generateDataQualityReport(records) {
     'lon',
   ];
 
+  // Initialize field completeness counters
+  const fieldCounts = {};
   for (const field of fields) {
-    const filledCount = records.filter(r => r[field] && r[field].trim() !== '').length;
-    metrics.fieldCompleteness[field] = {
-      filled: filledCount,
-      missing: totalRecords - filledCount,
-      percentage: ((filledCount / totalRecords) * 100).toFixed(2),
-    };
+    fieldCounts[field] = 0;
   }
 
+  // Single-pass: compute all metrics simultaneously
+  const npsnMap = new Map();
+
   for (const record of records) {
+    // Field completeness - count non-empty fields
+    for (const field of fields) {
+      if (record[field] && record[field].trim() !== '') {
+        fieldCounts[field]++;
+      }
+    }
+
+    // Coordinate stats
     if (record.lat && record.lon) {
       if (validateLatLon(record.lat, record.lon)) {
         metrics.coordinateStats.validCoordinates++;
@@ -248,6 +254,7 @@ function generateDataQualityReport(records) {
       metrics.coordinateStats.missingCoordinates++;
     }
 
+    // Categorical distribution - status
     if (record.status) {
       metrics.categoricalDistribution.status = metrics.categoricalDistribution.status || {};
       const status = record.status;
@@ -255,6 +262,7 @@ function generateDataQualityReport(records) {
         (metrics.categoricalDistribution.status[status] || 0) + 1;
     }
 
+    // Categorical distribution - bentuk_pendidikan
     if (record.bentuk_pendidikan) {
       metrics.categoricalDistribution.bentuk_pendidikan =
         metrics.categoricalDistribution.bentuk_pendidikan || {};
@@ -262,12 +270,33 @@ function generateDataQualityReport(records) {
       metrics.categoricalDistribution.bentuk_pendidikan[bentuk] =
         (metrics.categoricalDistribution.bentuk_pendidikan[bentuk] || 0) + 1;
     }
+
+    // NPSN uniqueness check
+    const npsn = record.npsn;
+    if (npsn) {
+      if (npsnMap.has(npsn)) {
+        if (!metrics.uniqueness.duplicates.includes(npsn)) {
+          metrics.uniqueness.duplicates.push(npsn);
+        }
+      } else {
+        npsnMap.set(npsn, true);
+      }
+    }
   }
 
-  const npsnCheck = checkNpsnUniqueness(records);
-  metrics.uniqueness.uniqueNpsn = totalRecords - npsnCheck.duplicates.length;
-  metrics.uniqueness.duplicateNpsn = npsnCheck.duplicates.length;
-  metrics.uniqueness.duplicates = npsnCheck.duplicates;
+  // Finalize field completeness percentages
+  for (const field of fields) {
+    const filled = fieldCounts[field];
+    metrics.fieldCompleteness[field] = {
+      filled,
+      missing: totalRecords - filled,
+      percentage: ((filled / totalRecords) * 100).toFixed(2),
+    };
+  }
+
+  // Finalize uniqueness metrics
+  metrics.uniqueness.uniqueNpsn = totalRecords - metrics.uniqueness.duplicates.length;
+  metrics.uniqueness.duplicateNpsn = metrics.uniqueness.duplicates.length;
 
   return metrics;
 }
