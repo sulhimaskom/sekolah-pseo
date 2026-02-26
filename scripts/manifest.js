@@ -20,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const CONFIG = require('./config');
+const logger = require('./logger');
 const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
 
 const MANIFEST_FILE = '.build-manifest.json';
@@ -50,7 +51,7 @@ async function loadManifest() {
 
     // Validate manifest version
     if (manifest.version !== MANIFEST_VERSION) {
-      console.log(
+      logger.info(
         `Manifest version mismatch (${manifest.version} vs ${MANIFEST_VERSION}), starting fresh`
       );
       return null;
@@ -73,7 +74,7 @@ async function saveManifest(manifest) {
   try {
     await safeWriteFile(manifestPath, JSON.stringify(manifest, null, 2));
   } catch (error) {
-    console.error(`Failed to save manifest: ${error.message}`);
+    logger.error(`Failed to save manifest: ${error.message}`);
     throw error;
   }
 }
@@ -160,7 +161,7 @@ async function clearManifest() {
   try {
     await safeAccess(manifestPath);
     await fs.promises.unlink(manifestPath);
-    console.log('Build manifest cleared');
+    logger.info('Build manifest cleared');
   } catch {
     // File doesn't exist - that's fine
   }

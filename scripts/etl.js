@@ -20,6 +20,7 @@
  */
 
 const { parseCsv, writeCsv } = require('./utils');
+const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess } = require('./fs-safe');
 
@@ -283,8 +284,8 @@ async function run() {
   try {
     await safeAccess(rawPath);
   } catch (error) {
-    console.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
-    console.error(`Error details: ${error.message}`);
+    logger.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
+    logger.error(`Error details: ${error.message}`);
     process.exit(1);
   }
 
@@ -292,7 +293,7 @@ async function run() {
     const rawCsv = await safeReadFile(rawPath);
     const rawRecords = parseCsv(rawCsv);
 
-    console.log(`Loaded ${rawRecords.length} raw records`);
+    logger.info(`Loaded ${rawRecords.length} raw records`);
 
     const processed = [];
     const rejected = [];
@@ -315,43 +316,43 @@ async function run() {
       }
     }
 
-    console.log(`Processed ${processed.length} valid records`);
-    console.log(`Rejected ${rejected.length} invalid records`);
+    logger.info(`Processed ${processed.length} valid records`);
+    logger.info(`Rejected ${rejected.length} invalid records`);
 
     if (processed.length === 0) {
-      console.error('No valid records found after processing');
+      logger.error('No valid records found after processing');
       process.exit(1);
     }
 
     const qualityReport = generateDataQualityReport(processed);
 
-    console.log('\n=== Data Quality Report ===');
-    console.log(`Total records: ${qualityReport.totalRecords}`);
-    console.log(`Valid coordinates: ${qualityReport.coordinateStats.validCoordinates}`);
-    console.log(`Missing coordinates: ${qualityReport.coordinateStats.missingCoordinates}`);
-    console.log(`Invalid coordinates: ${qualityReport.coordinateStats.invalidCoordinates}`);
-    console.log(`Unique NPSN: ${qualityReport.uniqueness.uniqueNpsn}`);
-    console.log(`Duplicate NPSN: ${qualityReport.uniqueness.duplicateNpsn}`);
+    logger.info('\n=== Data Quality Report ===');
+    logger.info(`Total records: ${qualityReport.totalRecords}`);
+    logger.info(`Valid coordinates: ${qualityReport.coordinateStats.validCoordinates}`);
+    logger.info(`Missing coordinates: ${qualityReport.coordinateStats.missingCoordinates}`);
+    logger.info(`Invalid coordinates: ${qualityReport.coordinateStats.invalidCoordinates}`);
+    logger.info(`Unique NPSN: ${qualityReport.uniqueness.uniqueNpsn}`);
+    logger.info(`Duplicate NPSN: ${qualityReport.uniqueness.duplicateNpsn}`);
 
     if (qualityReport.uniqueness.duplicateNpsn > 0) {
-      console.warn(
+      logger.warn(
         `\nWarning: Found ${qualityReport.uniqueness.duplicateNpsn} duplicate NPSN values:`
       );
-      qualityReport.uniqueness.duplicates.forEach(npsn => console.warn(`  ${npsn}`));
+      qualityReport.uniqueness.duplicates.forEach(npsn => logger.warn(`  ${npsn}`));
     }
 
-    console.log('\n=== Field Completeness ===');
+    logger.info('\n=== Field Completeness ===');
     for (const [field, stats] of Object.entries(qualityReport.fieldCompleteness)) {
-      console.log(`${field}: ${stats.percentage}% (${stats.filled}/${qualityReport.totalRecords})`);
+      logger.info(`${field}: ${stats.percentage}% (${stats.filled}/${qualityReport.totalRecords})`);
     }
 
     await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);
-    console.log(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
+    logger.info(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {
-      console.error(`Integration error: ${error.code} - ${error.message}`);
+      logger.error(`Integration error: ${error.code} - ${error.message}`);
     } else {
-      console.error(`ETL process failed: ${error.message}`);
+      logger.error(`ETL process failed: ${error.message}`);
     }
     process.exit(1);
   }
@@ -359,7 +360,7 @@ async function run() {
 
 if (require.main === module) {
   run().catch(error => {
-    console.error('ETL process failed:', error);
+    logger.error('ETL process failed:', error);
     process.exit(1);
   });
 }

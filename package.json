@@ -50,9 +50,9 @@
     "c8": "^11.0.0",
     "eslint": "9.39.2",
     "globals": "^17.3.0",
-    "prettier": "^3.4.2",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7"
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.4.2"
   },
   "c8": {
     "reporter": [
@@ -68,5 +68,8 @@
     "lines": 80,
     "functions": 75,
     "statements": 80
+  },
+  "dependencies": {
+    "pino": "^10.3.1"
   }
 }
