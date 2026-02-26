@@ -164,9 +164,6 @@ function generateSchoolPageHtml(school, relativePath) {
     })();
   </script>
 </body>
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
-  </footer>
-</body>
 </html>`;
 }
 
