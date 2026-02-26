@@ -89,3 +89,17 @@ Added critical SEO meta tags to generated pages:
 - Security headers in CSP
 - Schema.org structured data (JSON-LD)
 - No duplicate code or imports
+
+
+## Past Improvements (Continued)
+
+### Fix Orphaned CSS Rules (2026-02-26)
+
+Fixed CSS syntax error in `styles.js` that caused invalid CSS in the generated output:
+
+1. **Identified the bug** - Orphaned CSS rules were present outside the `@media (prefers-reduced-motion: reduce)` block
+2. **Removed invalid syntax** - Deleted 3 orphaned lines (extra closing braces)
+3. **Proper rule placement** - Ensured `.back-to-top:hover` is inside the reduced motion media query
+4. **CSS file size reduced** - Generated CSS went from 1045 lines to 1042 lines
+
+This fix ensures proper CSS parsing across all browsers and correct behavior for users with reduced motion preferences.
