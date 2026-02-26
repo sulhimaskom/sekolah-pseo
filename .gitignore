@@ -234,3 +234,6 @@ Thumbs.db
 
 # dist directory
 dist/
+
+# Build manifest
+.build-manifest.json
