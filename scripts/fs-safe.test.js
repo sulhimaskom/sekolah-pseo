@@ -12,6 +12,7 @@ const {
   safeReaddir,
   safeStat,
   DEFAULT_FILE_TIMEOUT_MS,
+  resetCircuitBreakers,
 } = require('./fs-safe');
 
 describe('fs-safe', () => {
@@ -22,6 +23,9 @@ describe('fs-safe', () => {
 
   // Setup before all tests
   before(async () => {
+    // Reset circuit breakers to avoid test pollution
+    resetCircuitBreakers();
+
     testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'fs-safe-test-'));
     testFile = path.join(testDir, 'test-file.txt');
     testSubdir = path.join(testDir, 'test-subdir');
