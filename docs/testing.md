@@ -46,6 +46,8 @@ Located in `scripts/*.test.js`:
 - `PageBuilder.test.js` - Page builder tests
 - `build-pages.test.js` - Build process tests
 - `etl.test.js` - ETL pipeline tests
+- `config.test.js` - Configuration validation tests
+- `fs-safe.test.js` - Resilient file system wrapper tests
 - `sitemap.test.js` - Sitemap generation tests
 - `styles.test.js` - CSS/style generation tests
 - `design-system.test.js` - Design system tests
@@ -64,20 +66,24 @@ Located in `tests/`:
 ## Test Categories
 
 ### Project Structure Tests
+
 - Verify required files and directories exist
 - Validate package.json structure
 - Check documentation completeness
 
 ### Configuration Tests
+
 - Environment configuration validation
 - GitHub Actions workflow checks
 
 ### Data Validation Tests
+
 - Schools.csv structure validation
 - Required column checks
 - Data integrity verification
 
 ### JavaScript Unit Tests
+
 - Individual function testing
 - Error handling validation
 - Edge case coverage
@@ -98,6 +104,7 @@ python3 tests/run_tests.py --json
 ```
 
 ### Features
+
 - No external dependencies (uses only Python standard library)
 - Works in any environment
 - Supports verbose and JSON output modes
@@ -158,6 +165,7 @@ def test_my_feature():
 ## Continuous Integration
 
 Tests run automatically on:
+
 - Every push to main branch
 - Every pull request
 
@@ -180,13 +188,15 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 ### Test Coverage
 
 Current test coverage:
-- JavaScript: 12 test files, 100+ test cases
+
+- JavaScript: 14 test files, 110+ test cases
 - Python: 18 test cases (standalone runner)
 - Total: 100% pass rate
 
 ## Test Output Examples
 
 ### JavaScript Success
+
 ```
 ✓ buildSchoolPageData (29 subtests)
 ✓ getUniqueDirectories (18 subtests)
@@ -195,6 +205,7 @@ Current test coverage:
 ```
 
 ### Python Success
+
 ```
 ✓ PASS package.json exists and is valid
 ✓ PASS Directory exists: src/
