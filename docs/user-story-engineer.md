@@ -65,3 +65,19 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Add input validation to aggregateByKabupaten (fixes inconsistency with aggregateByProvince)
 - All 506 JS tests pass, zero lint warnings
 - Small atomic diff (475 lines added, 4 lines modified)
+
+### PR #245: perf: add slugify caching to PageBuilder for build performance
+
+- Add memoization cache for slugify to avoid repeated computation (issue #226)
+- Cache slugified values within a single build run
+- Reduces redundant slugify calls for same province/kabupaten/kecamatan values
+- Added `cachedSlugify` wrapper function with Map-based caching
+- Added `clearSlugCache` function for testing purposes
+- All 526 JS tests pass, zero lint warnings
+- Small atomic diff (37 lines added, 9 lines modified)
+
+- Add comprehensive test coverage for `src/presenters/templates/province-page.js` (39 tests)
+- Tests cover: filterSchoolsByProvince, aggregateByKabupaten, generateProvincePageHtml
+- Add input validation to aggregateByKabupaten (fixes inconsistency with aggregateByProvince)
+- All 506 JS tests pass, zero lint warnings
+- Small atomic diff (475 lines added, 4 lines modified)
