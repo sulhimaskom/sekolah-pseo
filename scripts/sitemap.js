@@ -7,6 +7,7 @@
 
 const path = require('path');
 const CONFIG = require('./config');
+const logger = require('./logger');
 const { safeWriteFile } = require('./fs-safe');
 const { walkDirectory } = require('./utils');
 
@@ -78,12 +79,12 @@ async function generateSitemaps() {
   const urls = await collectUrls(distDir, baseUrl);
   const sitemapFiles = await writeSitemapFiles(urls, outDir);
   await writeSitemapIndex(sitemapFiles, outDir, baseUrl);
-  console.log(`Generated ${sitemapFiles.length} sitemap files with ${urls.length} URLs total`);
+  logger.info(`Generated ${sitemapFiles.length} sitemap files with ${urls.length} URLs total`);
 }
 
 if (require.main === module) {
   generateSitemaps().catch(error => {
-    console.error('Sitemap generation failed:', error);
+    logger.error('Sitemap generation failed:', error);
     process.exit(1);
   });
 }

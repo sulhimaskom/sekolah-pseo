@@ -7,6 +7,7 @@
 
 const path = require('path');
 const CONFIG = require('./config');
+const logger = require('./logger');
 const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
 const { walkDirectory } = require('./utils');
 const { RateLimiter } = require('./rate-limiter');
@@ -76,16 +77,16 @@ async function validateLinks() {
   try {
     await safeAccess(distDir);
   } catch {
-    console.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
+    logger.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
     return true;
   }
 
   const htmlFiles = await walkDirectory(distDir, fullPath => fullPath);
 
-  console.log(`Found ${htmlFiles.length} HTML files to validate`);
+  logger.info(`Found ${htmlFiles.length} HTML files to validate`);
 
   if (htmlFiles.length === 0) {
-    console.log('No HTML files found to validate.');
+    logger.info('No HTML files found to validate.');
     return true;
   }
 
@@ -105,7 +106,7 @@ async function validateLinks() {
           const links = extractLinks(content);
           return await validateLinksInFile(file, links, distDir);
         } catch (error) {
-          console.warn(`Failed to read file ${file}: ${error.message}`);
+          logger.warn(`Failed to read file ${file}: ${error.message}`);
           return [];
         }
       },
@@ -118,10 +119,10 @@ async function validateLinks() {
   results.flat().forEach(brokenLink => broken.push(brokenLink));
   processed = results.length;
 
-  console.log(`Processed ${processed} of ${htmlFiles.length} files`);
+  logger.info(`Processed ${processed} of ${htmlFiles.length} files`);
 
   const metrics = limiter.getMetrics();
-  console.log('Validation metrics:', {
+  logger.info('Validation metrics:', {
     total: metrics.total,
     completed: metrics.completed,
     failed: metrics.failed,
@@ -129,18 +130,18 @@ async function validateLinks() {
   });
 
   if (broken.length > 0) {
-    console.warn(`Found ${broken.length} broken links:`);
-    broken.forEach(b => console.warn(`  ${b.source} -> ${b.link}`));
+    logger.warn(`Found ${broken.length} broken links:`);
+    broken.forEach(b => logger.warn(`  ${b.source} -> ${b.link}`));
     return false;
   } else {
-    console.log('No broken links found.');
+    logger.info('No broken links found.');
     return true;
   }
 }
 
 if (require.main === module) {
   validateLinks().catch(error => {
-    console.error('Link validation failed:', error);
+    logger.error('Link validation failed:', error);
     process.exit(1);
   });
 }

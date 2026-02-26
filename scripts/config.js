@@ -3,6 +3,7 @@
  */
 
 const path = require('path');
+const logger = require('./logger');
 
 function validatePath(targetPath, basePath) {
   const resolved = path.resolve(targetPath);
@@ -21,7 +22,7 @@ const EXTERNAL_DIR = path.join(ROOT_DIR, 'external');
 let rawPath = process.env.RAW_DATA_PATH || path.join(EXTERNAL_DIR, 'raw.csv');
 const resolvedRawPath = path.resolve(ROOT_DIR, rawPath);
 if (!validatePath(resolvedRawPath, ROOT_DIR)) {
-  console.warn('RAW_DATA_PATH falls outside project directory, using default');
+  logger.warn('RAW_DATA_PATH falls outside project directory, using default');
   rawPath = path.join(EXTERNAL_DIR, 'raw.csv');
 }
 

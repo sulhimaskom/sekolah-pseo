@@ -85,7 +85,18 @@ NW|- Added `format` and `format:check` scripts to package.json
 YV|- Created this documentation file
 RP|- **Added CI integration** for lint/format checks (GitHub Actions workflow)
 XB|
-VB|### 2026-02-25
+### Node.js version consistency
+
+#### Structured Logging (Pino)
+
+- **Status**: Implemented 2026-02-26
+- **Library**: `pino`
+- **Module**: `scripts/logger.js`
+- **Configuration**:
+  - Default level: `info`
+  - LOG_LEVEL env var support: trace, debug, info, warn, error, fatal
+  - Timestamps: ISO 8601 format
+- **Run**: Set `LOG_LEVEL=debug node scripts/your-script.js`
 YR|
 TS|- **Added Node.js version consistency**: Added `engines` field to package.json (>=20.0.0)
 NW|- Added `.nvmrc` file for Node version management (Node 20)
