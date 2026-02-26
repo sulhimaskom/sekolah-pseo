@@ -18,6 +18,7 @@ const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/P
 const { writeExternalStylesFile } = require('../src/presenters/styles');
 const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 const { RateLimiter } = require('./rate-limiter');
+const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 
 // Export functions for testing
 module.exports = {
@@ -26,6 +27,9 @@ module.exports = {
   ensureDistDir,
   loadSchools,
   generateExternalStyles,
+  build,
+  buildIncremental,
+  computeSchoolHash,
 };
 
 // Ensure dist directory exists
@@ -150,6 +154,32 @@ async function writeSchoolPagesConcurrently(
 }
 
 /**
+ * Create manifest object from schools.
+ * @param {Array<Object>} schools - School records
+ */
+function createManifestFromSchools(schools) {
+  const manifest = {
+    version: 1,
+    lastBuild: new Date().toISOString(),
+    schools: {},
+  };
+
+  for (const school of schools) {
+    const npsn = school.npsn;
+    const hash = computeSchoolHash(school);
+    const pageData = buildSchoolPageData(school);
+
+    manifest.schools[npsn] = {
+      hash,
+      builtAt: new Date().toISOString(),
+      path: pageData.relativePath,
+    };
+  }
+
+  return manifest;
+}
+
+/**
  * Main build function. Orchestrates the build process by:
  * 1. Ensuring dist directory exists
  * 2. Loading school data
@@ -157,9 +187,16 @@ async function writeSchoolPagesConcurrently(
  * 4. Generating homepage
  * 5. Generating and writing pages
  *
- * You can add flags to limit by region to adhere to the monthly build cap.
+ * Supports --incremental flag for faster rebuilds
+ * Usage: node build-pages.js --incremental
  */
-async function build() {
+async function build(options = {}) {
+  const incremental = options.incremental || process.argv.includes('--incremental');
+
+  if (incremental) {
+    return buildIncremental();
+  }
+
   await ensureDistDir();
 
   await generateExternalStyles();
@@ -175,6 +212,53 @@ async function build() {
 
   const { successful, failed } = await writeSchoolPagesConcurrently(schools);
   console.log(`Generated ${successful} school pages (${failed} failed)`);
+
+  // Save manifest for incremental builds
+  await saveManifest(createManifestFromSchools(schools));
+  console.log('Build manifest saved');
+}
+
+/**
+ * Incremental build - only rebuilds pages that have changed.
+ * Uses a manifest file to track built files and their content hashes.
+ */
+async function buildIncremental() {
+  await ensureDistDir();
+
+  await generateExternalStyles();
+
+  const schools = await loadSchools();
+  console.log(`Loaded ${schools.length} schools from CSV`);
+
+  // Load manifest to check for changes
+  const manifest = await loadManifest();
+
+  let schoolsToBuild = schools;
+
+  if (manifest) {
+    const { changed, unchanged } = getChangedSchools(schools, manifest);
+    console.log(`Incremental build: ${unchanged.length} unchanged, ${changed.length} changed`);
+    schoolsToBuild = changed;
+  } else {
+    console.log('No manifest found, performing full build');
+  }
+
+  // Generate homepage (always regenerate as it lists all schools)
+  console.log('Generating homepage...');
+  const homepageHtml = generateHomepageHtml(schools);
+  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
+  console.log('Generated homepage (index.html)');
+
+  if (schoolsToBuild.length === 0) {
+    console.log('No pages to rebuild');
+  } else {
+    const { successful, failed } = await writeSchoolPagesConcurrently(schoolsToBuild);
+    console.log(`Generated ${successful} school pages (${failed} failed)`);
+  }
+
+  // Save manifest for future incremental builds
+  await saveManifest(createManifestFromSchools(schools));
+  console.log('Build manifest saved');
 }
 
 if (require.main === module) {
