@@ -1,0 +1,24 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # Prettier - Code formatter
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.4.2
+    hooks:
+      - id: prettier
+        types: [javascript]
+        files: \.(js|json|yaml|md)$
+        exclude: ^(dist|node_modules|coverage)/
+
+  # ESLint - JavaScript linter
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0
+    hooks:
+      - id: eslint
+        types: [javascript]
+        files: \.(js)$
+        exclude: ^(dist|node_modules|coverage)/
+        args: [--config, eslint.config.js]
+        additional_dependencies:
+          - eslint@9.39.2
+          - globals@17.3.0

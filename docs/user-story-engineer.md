@@ -36,3 +36,8 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Added `.editorconfig` file for IDE/editor consistency
 - Configured settings to match existing Prettier configuration
 - Build and tests pass
+### PR #xxx: feat: add pre-commit hooks for lint and format enforcement
+- Added `.pre-commit-config.yaml` with ESLint and Prettier hooks
+- Added pre-commit setup instructions to CONTRIBUTING.md
+- Hooks run automatically on staged files before each commit
+- All tests and lint pass
