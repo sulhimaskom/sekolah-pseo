@@ -20,6 +20,7 @@ const {
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
+  precomputeSlugCache,
 } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
 const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
@@ -265,6 +266,9 @@ async function build(options = {}) {
   const schools = await loadSchools();
   logger.info(`Loaded ${schools.length} schools from CSV`);
 
+  // Pre-compute slug cache for performance optimization
+  precomputeSlugCache(schools);
+
   if (schools.length === 0) {
     throw new Error(
       'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
@@ -302,6 +306,9 @@ async function buildIncremental() {
 
   const schools = await loadSchools();
   logger.info(`Loaded ${schools.length} schools from CSV`);
+
+  // Pre-compute slug cache for performance optimization
+  precomputeSlugCache(schools);
 
   if (schools.length === 0) {
     throw new Error(
