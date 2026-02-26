@@ -56,3 +56,12 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Added `resetCircuitBreakers()` call in the test `before` hook
 - All 24 fs-safe tests pass, zero lint warnings
 - Small atomic change (4 lines added)
+
+
+### PR #234: test: add test coverage for province-page module
+
+- Add comprehensive test coverage for `src/presenters/templates/province-page.js` (39 tests)
+- Tests cover: filterSchoolsByProvince, aggregateByKabupaten, generateProvincePageHtml
+- Add input validation to aggregateByKabupaten (fixes inconsistency with aggregateByProvince)
+- All 506 JS tests pass, zero lint warnings
+- Small atomic diff (475 lines added, 4 lines modified)
