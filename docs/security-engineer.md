@@ -19,6 +19,17 @@ This document serves as the security reference for the Sekolah PSEO project.
 - **Template**: `src/presenters/templates/school-page.js` - uses `escapeHtml()` on all school data fields
 
 #### 2. Security Headers
+- **Location**: `src/presenters/templates/school-page.js`, `homepage.js`, `province-page.js`
+- **Headers Applied**:
+  - Content-Security-Policy (CSP)
+  - X-Content-Type-Options: nosniff
+  - X-Frame-Options: SAMEORIGIN
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - X-XSS-Protection: 1; mode=block
+  - Strict-Transport-Security (HSTS): max-age=31536000; includeSubDomains
+  - Permissions-Policy: Disables accelerometer, camera, geolocation, gyroscope, magnetometer, microphone, payment, usb
+  - Cross-Origin-Opener-Policy (COOP): same-origin
+  - Cross-Origin-Resource-Policy (CORP): same-origin
 - **Location**: `src/presenters/templates/school-page.js`
 - **Headers Applied**:
   - Content-Security-Policy (CSP)
@@ -82,6 +93,15 @@ This document serves as the security reference for the Sekolah PSEO project.
 | globals | ^17.0.0 | dev | ESLint globals |
 
 ### Future Security Considerations
+
+1. ~~**Security.txt**~~: Add `public/security.txt` for security researcher coordination ✅ (Done)
+2. ~~**npm audit**~~: Add to CI pipeline ✅ (Done)
+3. ~~**Modern Security Headers**~~: Add Permissions-Policy, COOP, CORP headers ✅ (Done)
+4. **Subresource Integrity**: Add SRI hashes if external resources are added
+
+### Contact
+
+For security issues, please contact the project maintainers through GitHub issues with "security" label.
 
 1. ~~**Security.txt**~~: Add `public/security.txt` for security researcher coordination ✅ (Done)
 2. ~~**npm audit**~~: Add to CI pipeline ✅ (Done)
