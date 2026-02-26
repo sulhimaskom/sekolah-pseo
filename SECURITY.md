@@ -67,3 +67,26 @@ This project follows these security practices:
 
 - Standardized error format to prevent information leakage
 - No stack traces exposed in production output
+
+## CI/CD Secrets
+
+This project is a static site generator that does **not require any external API secrets**.
+
+### GitHub Actions
+
+The following secrets are used by CI workflows:
+
+| Secret | Purpose | Required |
+|--------|---------|----------|
+| `GITHUB_TOKEN` | Automatically provided by GitHub Actions for repository operations | Yes (automatic) |
+
+### No External Secrets Required
+
+This project does NOT require:
+- Supabase credentials
+- Cloudflare credentials
+- Gemini/AI API keys
+- IFlow API keys
+- Any other external service credentials
+
+The static site generation process reads from local data files (`data/schools.csv`) and generates HTML output. No external APIs are called during build or deployment.
