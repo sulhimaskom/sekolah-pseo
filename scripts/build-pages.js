@@ -204,6 +204,13 @@ async function build(options = {}) {
   const schools = await loadSchools();
   console.log(`Loaded ${schools.length} schools from CSV`);
 
+  if (schools.length === 0) {
+    throw new Error('No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.');
+  }
+
+  // Generate homepage
+  console.log(`Loaded ${schools.length} schools from CSV`);
+
   // Generate homepage
   console.log('Generating homepage...');
   const homepageHtml = generateHomepageHtml(schools);
@@ -228,6 +235,13 @@ async function buildIncremental() {
   await generateExternalStyles();
 
   const schools = await loadSchools();
+  console.log(`Loaded ${schools.length} schools from CSV`);
+
+  if (schools.length === 0) {
+    throw new Error('No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.');
+  }
+
+  // Load manifest to check for changes
   console.log(`Loaded ${schools.length} schools from CSV`);
 
   // Load manifest to check for changes
