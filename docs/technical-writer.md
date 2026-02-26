@@ -135,7 +135,12 @@
   #QB|- Update test documentation - DONE: Fixed test file count (12→14) and added missing test files in docs/testing.md
   #YQ|- Add missing environment variable - DONE: Added MAX_URLS_PER_SITEMAP to docs/blueprint.md
   QS|
-  SR|- Fix blueprint-implementation mismatch - DONE: Updated docs/blueprint.md to reflect Node.js (custom) instead of Astro, updated decision log, added docs sync reminder
+  #MT|  SR|- Fix blueprint-implementation mismatch - DONE: Updated docs/blueprint.md to reflect Node.js (custom) instead of Astro, updated decision log, added docs sync reminder
+#QR|- Add undocumented API modules - DONE: Added documentation for 4 missing modules:
+#QR|  - scripts/check-freshness.js (data freshness checking)
+#QR|  - scripts/fetch-data.js (external data fetching)
+#QR|  - src/presenters/templates/homepage.js (homepage generation)
+#QR|  - src/presenters/templates/province-page.js (province page generation)
 
 ## Notes
 
