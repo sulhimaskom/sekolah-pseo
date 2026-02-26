@@ -6,6 +6,51 @@
 
 ---
 
+## Current QA Status (2026-02-26)
+
+| Metric           | Status                                                                    |
+| ---------------- | ------------------------------------------------------------------------- |
+| JavaScript Tests | ✅ PASSING (526 tests)                                                    |
+| Python Tests     | ✅ PASSING (18 tests)                                                     |
+| ESLint           | ✅ PASSING (no errors)                                                    |
+| npm audit        | ✅ 0 vulnerabilities                                                      |
+| Coverage         | ✅ Lines: 93.88%, Branches: 90.47%, Functions: 96.07%, Statements: 93.88% |
+
+---
+
+## Historical Status
+
+### 2026-02-26 (Before Dependencies)
+
+| Metric           | Status                                                |
+| ---------------- | ----------------------------------------------------- |
+| JavaScript Tests | ✅ PASSING (467 tests)                                |
+| Python Tests     | ✅ PASSING (18 tests)                                 |
+| ESLint           | ✅ PASSING (no errors)                                |
+| npm audit        | ✅ 0 vulnerabilities                                  |
+| Coverage         | ✅ Lines: 92.62%, Branches: 92.36%, Functions: 91.11% |
+
+### 2026-02-25
+
+| Metric           | Status                       |
+| ---------------- | ---------------------------- |
+| JavaScript Tests | ✅ PASSING (443 tests)       |
+| Python Tests     | ✅ PASSING (18 tests)        |
+| ESLint           | ✅ PASSING (no errors)       |
+| npm audit        | ✅ 0 vulnerabilities         |
+| Coverage         | ✅ Lines: 87%, Branches: 93% |
+
+### 2026-02-24
+
+| Metric           | Status                 |
+| ---------------- | ---------------------- |
+| JavaScript Tests | ✅ PASSING (403 tests) |
+| Python Tests     | ✅ PASSING (18 tests)  |
+| ESLint           | ✅ PASSING (no errors) |
+| npm audit        | ✅ 0 vulnerabilities   |
+
+---
+
 ## Coverage Thresholds
 
 | Metric     | Threshold |
@@ -16,33 +61,6 @@
 | Statements | 80%       |
 
 Coverage is enforced in CI via the `test` job in `on-pull.yml`. The workflow runs `npm run coverage` which uses `c8` to check thresholds. If coverage falls below any threshold, the CI build fails.
-
----
-
-## Current Status
-
-| Metric           | Status                 |
-| ---------------- | ---------------------- |
-| JavaScript Tests | ✅ PASSING (467 tests) |
-| Python Tests     | ✅ PASSING (18 tests)  |
-| ESLint           | ✅ PASSING (no errors) |
-| npm audit        | ✅ 0 vulnerabilities   |
-| Coverage         | ✅ Lines: 92.62%, Branches: 92.36%, Functions: 91.11%
-
-| Metric           | Status                 |
-| ---------------- | ---------------------- |
-| JavaScript Tests | ✅ PASSING (443 tests) |
-| Python Tests     | ✅ PASSING (18 tests)  |
-| ESLint           | ✅ PASSING (no errors) |
-| npm audit        | ✅ 0 vulnerabilities   |
-| Coverage         | ✅ Lines: 87%, Branches: 93%
-
-| Metric           | Status                 |
-| ---------------- | ---------------------- |
-| JavaScript Tests | ✅ PASSING (403 tests) |
-| Python Tests     | ✅ PASSING (18 tests)  |
-| ESLint           | ✅ PASSING (no errors) |
-| npm audit        | ✅ 0 vulnerabilities   |
 
 ---
 
@@ -90,14 +108,6 @@ npm audit fix        # Auto-fix vulnerabilities
    - Issue: Circuit breaker instances shared across tests could cause test pollution
    - Resolution: Added `resetCircuitBreakers()` function to clear state between tests
    - Usage: Import and call `resetCircuitBreakers()` in test setup if needed
-
-1. **Vulnerability: ajv <6.14.0 (moderate)**
-   - Issue: ReDoS when using `$data` option
-   - Resolution: `npm audit fix`
-
-2. **Vulnerability: minimatch <3.1.3 (high)**
-   - Issue: ReDoS via repeated wildcards
-   - Resolution: `npm audit fix`
 
 ---
 
