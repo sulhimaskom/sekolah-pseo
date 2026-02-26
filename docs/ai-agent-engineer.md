@@ -83,3 +83,4 @@ JK|- **2026-02-26**: Added test coverage for validate-links.js - 8 new tests for
 
   - `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
   - `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)
+TH|- **2026-02-26**: Added test coverage for logger.js - 15 new tests for logger module (log level configuration, convenience methods, child logger)
