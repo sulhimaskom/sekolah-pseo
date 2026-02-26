@@ -969,9 +969,6 @@ footer[role="contentinfo"] {
   .school-result-item {
     transition: none;
   }
-}
-    transition: none;
-  }
 
   .back-to-top:hover {
     transform: none;
