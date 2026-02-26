@@ -4,7 +4,7 @@
 
 This document serves as the long-term memory for the backend-engineer agent. It records conventions, tools, and improvements made to enhance backend development and data processing.
 
-## Current State (Last Updated: 2026-02-25)
+## Current State (Last Updated: 2026-02-26)
 
 ### Project Type
 
@@ -91,6 +91,12 @@ VB|- Usage: `node scripts/build-pages.js --incremental`
 - PR #125: https://github.com/sulhimaskom/sekolah-pseo/pull/125
 
 YS|## Future Improvement Opportunities
+### 2026-02-26
+
+- **Fixed async/sync blocking**: Replaced `fs.unlinkSync()` with `await fs.promises.unlink()` in `scripts/manifest.js` to avoid blocking the event loop
+- **Improved error resilience**: Changed `Promise.all()` to `Promise.allSettled()` in `scripts/validate-links.js` to handle partial failures gracefully
+- **Added ETL error isolation**: Added try/catch inside the record processing loop in `scripts/etl.js` to prevent single bad records from crashing the entire ETL process
+- PR #187: https://github.com/sulhimaskom/sekolah-pseo/pull/187
 PR|
 WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
 QS|2. **Data validation rules**: Add more sophisticated validation rules
