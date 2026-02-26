@@ -2,30 +2,46 @@
 
 ## Repository: sekolah-pseo
 
-**Last Updated:** 2026-02-25
+**Last Updated:** 2026-02-26
+
+---
+
+## Coverage Thresholds
+
+| Metric     | Threshold |
+| ---------- | --------- |
+| Lines      | 80%       |
+| Branches   | 75%       |
+| Functions  | 75%       |
+| Statements | 80%       |
+
+Coverage is enforced in CI via the `test` job in `on-pull.yml`. The workflow runs `npm run coverage` which uses `c8` to check thresholds. If coverage falls below any threshold, the CI build fails.
 
 ---
 
 ## Current Status
 
-| Metric | Status |
-|--------|--------|
-| JavaScript Tests | ✅ PASSING (320 tests) |
-| Python Tests | ✅ PASSING (18 tests) |
-| ESLint | ✅ PASSING (no errors) |
-| npm audit | ✅ 0 vulnerabilities |
+| Metric           | Status                 |
+| ---------------- | ---------------------- |
+| JavaScript Tests | ✅ PASSING (403 tests) |
+| Python Tests     | ✅ PASSING (18 tests)  |
+| ESLint           | ✅ PASSING (no errors) |
+| npm audit        | ✅ 0 vulnerabilities   |
 
 ---
 
 ## Quality Gates
 
 ### Required Checks (must pass before merge)
+
 1. `npm run test:js` - All JavaScript tests pass
-2. `npm run test:py` - All Python tests pass  
-3. `npm run lint` - ESLint passes with no errors (checks scripts/ and src/)
-4. `npm audit` - Zero vulnerabilities
+2. `npm run test:py` - All Python tests pass
+3. `npm run coverage` - Coverage meets thresholds (lines: 80%, branches: 75%, functions: 75%, statements: 80%)
+4. `npm run lint` - ESLint passes with no errors (checks scripts/ and src/)
+5. `npm audit` - Zero vulnerabilities
 
 ### Recommended Commands
+
 ```bash
 # Full test suite
 npm test
@@ -34,6 +50,8 @@ npm test
 npm run test:js      # JavaScript tests
 npm run test:py      # Python tests
 npm run lint         # ESLint
+npm run coverage     # Coverage check with threshold enforcement
+npm run coverage:report  # Detailed HTML coverage report
 npm audit            # Security audit
 npm audit fix        # Auto-fix vulnerabilities
 ```
@@ -56,7 +74,8 @@ npm audit fix        # Auto-fix vulnerabilities
 
 ## Test Coverage Areas
 
-### JavaScript Tests (scripts/*.test.js)
+### JavaScript Tests (scripts/\*.test.js)
+
 - `build-pages.test.js` - Page generation logic
 - `school-page.test.js` - School page HTML generation
 - `etl.test.js` - ETL pipeline
@@ -70,6 +89,7 @@ npm audit fix        # Auto-fix vulnerabilities
 - `validate-links.test.js` - Link validation
 
 ### Python Tests (tests/)
+
 - Project structure validation
 - Configuration validation
 - JavaScript tests check
@@ -81,15 +101,18 @@ npm audit fix        # Auto-fix vulnerabilities
 ## Dependencies
 
 ### Dev Dependencies
+
 - `eslint: 9.39.2`
 - `globals: ^17.0.0`
 
 ### ESLint Configuration
+
 - Checks: `scripts/**/*.js` and `src/**/*.js`
 - Ignores: `dist/**`, `node_modules/**`, `**/*.test.js`, `eslint.config.js`
 - Rules: Error prevention (no-unused-vars, no-undef), Style (semi, quotes, no-var, prefer-const), Security (no-eval, no-implied-eval, no-new-func, no-script-url, no-throw-literal, no-proto, no-param-reassign)
 
 ### Key Runtime Dependencies
+
 - Node.js built-in modules (fs, path, crypto, etc.)
 
 ---
