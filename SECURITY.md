@@ -76,13 +76,14 @@ This project is a static site generator that does **not require any external API
 
 The following secrets are used by CI workflows:
 
-| Secret | Purpose | Required |
-|--------|---------|----------|
+| Secret         | Purpose                                                            | Required        |
+| -------------- | ------------------------------------------------------------------ | --------------- |
 | `GITHUB_TOKEN` | Automatically provided by GitHub Actions for repository operations | Yes (automatic) |
 
 ### No External Secrets Required
 
 This project does NOT require:
+
 - Supabase credentials
 - Cloudflare credentials
 - Gemini/AI API keys
