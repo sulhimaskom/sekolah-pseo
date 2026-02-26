@@ -159,7 +159,7 @@ async function clearManifest() {
 
   try {
     await safeAccess(manifestPath);
-    fs.unlinkSync(manifestPath);
+    await fs.promises.unlink(manifestPath);
     console.log('Build manifest cleared');
   } catch {
     // File doesn't exist - that's fine

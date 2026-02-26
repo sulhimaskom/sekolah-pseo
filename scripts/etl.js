@@ -297,13 +297,20 @@ async function run() {
     const processed = [];
     const rejected = [];
     for (const record of rawRecords) {
-      const normalized = normaliseRecord(record);
-      if (validateRecord(normalized)) {
-        processed.push(normalized);
-      } else {
+      try {
+        const normalized = normaliseRecord(record);
+        if (validateRecord(normalized)) {
+          processed.push(normalized);
+        } else {
+          rejected.push({
+            npsn: normalized.npsn || 'N/A',
+            reason: 'Missing required fields or invalid NPSN',
+          });
+        }
+      } catch (recordError) {
         rejected.push({
-          npsn: normalized.npsn || 'N/A',
-          reason: 'Missing required fields or invalid NPSN',
+          npsn: record.npsn || record.NPSN || 'N/A',
+          reason: `Processing error: ${recordError.message}`,
         });
       }
     }
