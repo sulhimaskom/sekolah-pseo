@@ -5,6 +5,23 @@
 This document serves as the long-term memory for the RnD agent, tracking improvements, patterns, and learnings.
 
 ## Completed Improvements
+## Completed Improvements
+
+### 2026-02-26: Add npm audit to CI pipeline
+
+- **Issue**: #130
+- **Branch**: `rnd/npm-audit-ci`
+- **Summary**: Add npm audit to CI pipeline for dependency vulnerability scanning
+- **Status**: PR created with manual apply instructions for workflow changes
+- **Changes proposed**:
+  - Add `npm ci` step to install dependencies
+  - Add `npm audit --audit-level=moderate` step to detect vulnerabilities
+  - Fails on high/critical vulnerabilities
+- **Verification**:
+  - npm audit passes locally with 0 vulnerabilities
+- **Blocker**: GitHub App permission restriction - workflow file changes require manual apply
+- **Note**: Following the same pattern as PR #185
+
 
 ### 2026-02-26: Verify pre-commit hooks PR #163
 
