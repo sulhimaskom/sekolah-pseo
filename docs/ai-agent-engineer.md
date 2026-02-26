@@ -74,3 +74,7 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 - **2026-02-25**: Fixed Prettier formatting in scripts/*.js (8 test files) - added missing newlines at EOF, reformatted import statements
 
 - **2026-02-26**: Added trailing newline to config.js - follows POSIX standard for text files
+
+- **2026-02-26**: Added test coverage for two previously untested modules:
+  - `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
+  - `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)
