@@ -9,7 +9,7 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 | Component       | Technology            | Purpose                          |
 | --------------- | --------------------- | -------------------------------- |
 | Build System    | Node.js               | Build automation                 |
-| Template Engine | Astro                 | Static site generation           |
+NW|| Template Engine | Node.js (custom)      | Static site generation           |
 | Data Processing | Node.js               | ETL pipeline                     |
 | Resilience      | Custom implementation | Timeout, retry, circuit breaker  |
 | Testing         | Node.js Test, pytest  | Test framework                   |
@@ -246,7 +246,7 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 
 | Date       | Decision                                                     | Rationale                                                    |
 | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 2026-01-07 | Use Astro for templating                                     | Lightweight, fast static site generation                     |
+QJ|| 2026-01-07 | Use Node.js for templating                               | Custom JavaScript templates with PageBuilder service         |
 | 2026-01-07 | CSV over database                                            | Simple, portable, low overhead                               |
 | 2026-01-07 | Node.js scripts                                              | Cross-platform, easy to maintain                             |
 | 2026-01-07 | Implement resilience patterns                                | Prevent cascading failures, handle transient errors          |
@@ -254,3 +254,6 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-01-07 | Extract HTML templates to separate modules                   | Templates testable in isolation, reusable, easy to modify    |
 | 2026-01-07 | Create PageBuilder service layer                             | Business logic isolated from file I/O and presentation       |
 | 2026-01-10 | Implement rate limiting for concurrent operations            | Controlled concurrency, backpressure, metrics for operations |
+
+
+> **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
