@@ -39,6 +39,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "bugs": {
     "url": "https://github.com/sulhimaskom/sekolah-pseo/issues"
   },
