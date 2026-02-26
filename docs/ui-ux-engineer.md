@@ -85,8 +85,17 @@ Dark Mode Support ✅### 2.
 JS|- Found and fixed duplicate HTML closing tags in both school-page.js and homepage.js
 PQ|- Removed duplicated footer and body/html closing tags
 PQ|- Bug caused invalid HTML output
-XH|- All tests pass after fix
-JQ|
+QX|- All tests pass after fix
+MX|JQ|
+QT|
+QW|### 8. prefers-reduced-motion for Back to Top Button ✅
+WR|
+JK|- Fixed accessibility issue where back-to-top button scroll behavior didn't respect prefers-reduced-motion
+PQ|- Changed from inline onclick to proper addEventListener with window.matchMedia check
+PV|- Uses 'auto' behavior when user prefers reduced motion, 'smooth' otherwise
+VN|- Applied to both school-page.js and homepage.js templates
+XH|- Completes the accessibility support that CSS transitions already had
+MX|JQ|
 
 ## Testing
 

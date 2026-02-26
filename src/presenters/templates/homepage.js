@@ -120,7 +120,7 @@ function generateHomepageHtml(schools) {
     <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
-  <button class="back-to-top" aria-label="Kembali ke atas" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+  <button class="back-to-top" aria-label="Kembali ke atas">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"></polyline>
     </svg>
@@ -138,6 +138,13 @@ function generateHomepageHtml(schools) {
           backToTop.classList.remove('visible');
         }
       }
+      
+      function scrollToTop() {
+        var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+        window.scrollTo({ top: 0, behavior: behavior });
+      }
+      
+      backToTop.addEventListener('click', scrollToTop);
       
       window.addEventListener('scroll', handleScroll, { passive: true });
       handleScroll();
