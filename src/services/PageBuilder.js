@@ -1,6 +1,7 @@
 const path = require('path');
 const slugify = require('../../scripts/slugify');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
+const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 
 function buildSchoolPageData(school) {
   if (!school || typeof school !== 'object') {
@@ -62,7 +63,64 @@ function getUniqueDirectories(schools) {
   return Array.from(uniqueDirs);
 }
 
+/**
+ * Get unique provinces from schools list
+ * @param {Array<Object>} schools - Array of school data objects
+ * @returns {Array<Object>} - Array of province objects with name, slug, and school count
+ */
+function getUniqueProvinces(schools) {
+  if (!Array.isArray(schools)) {
+    throw new Error('schools must be an array');
+  }
+
+  const provinceMap = new Map();
+
+  for (const school of schools) {
+    if (!school.provinsi) continue;
+
+    const provinsiName = school.provinsi;
+    if (!provinceMap.has(provinsiName)) {
+      provinceMap.set(provinsiName, {
+        name: provinsiName,
+        slug: slugify(provinsiName),
+        count: 0,
+      });
+    }
+
+    const province = provinceMap.get(provinsiName);
+    province.count++;
+  }
+
+  return Array.from(provinceMap.values());
+}
+
+/**
+ * Build province page data
+ * @param {string} provinceName - Province name
+ * @param {Array<Object>} schools - Array of all school data objects
+ * @returns {Object} - Province page data with relativePath and content
+ */
+function buildProvincePageData(provinceName, schools) {
+  if (!provinceName || typeof provinceName !== 'string') {
+    throw new Error('Invalid province name provided');
+  }
+
+  if (!Array.isArray(schools)) {
+    throw new Error('schools must be an array');
+  }
+
+  const provinceSlug = slugify(provinceName);
+  const relativePath = path.join('provinsi', provinceSlug, 'index.html');
+
+  return {
+    relativePath,
+    content: generateProvincePageHtml(provinceName, schools),
+  };
+}
+
 module.exports = {
   buildSchoolPageData,
   getUniqueDirectories,
+  getUniqueProvinces,
+  buildProvincePageData,
 };

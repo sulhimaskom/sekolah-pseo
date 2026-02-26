@@ -15,7 +15,12 @@ const { parseCsv } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
-const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
+const {
+  buildSchoolPageData,
+  getUniqueDirectories,
+  getUniqueProvinces,
+  buildProvincePageData,
+} = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
 const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 const { RateLimiter } = require('./rate-limiter');
@@ -28,6 +33,8 @@ module.exports = {
   ensureDistDir,
   loadSchools,
   generateExternalStyles,
+  generateProvincePages,
+  preCreateProvinceDirectories,
   build,
   buildIncremental,
   computeSchoolHash,
@@ -90,6 +97,56 @@ async function preCreateDirectories(schools) {
   });
 
   await Promise.all(dirPromises);
+}
+
+/**
+ * Pre-create all unique province directories.
+ *
+ * @param {Array<Object>} schools
+ */
+async function preCreateProvinceDirectories(schools) {
+  const provinces = getUniqueProvinces(schools);
+
+  logger.info(`Creating ${provinces.length} province directories...`);
+
+  const dirPromises = provinces.map(province => {
+    const fullPath = path.join(distDir, 'provinsi', province.slug);
+    return safeMkdir(fullPath).catch(err => {
+      logger.error(`Failed to create province directory ${fullPath}: ${err.message}`);
+    });
+  });
+
+  await Promise.all(dirPromises);
+}
+
+/**
+ * Generate all province pages.
+ *
+ * @param {Array<Object>} schools
+ */
+async function generateProvincePages(schools) {
+  const provinces = getUniqueProvinces(schools);
+  await preCreateProvinceDirectories(schools);
+
+  logger.info(`Generating ${provinces.length} province pages...`);
+
+  let successful = 0;
+  let failed = 0;
+
+  for (const province of provinces) {
+    try {
+      const pageData = buildProvincePageData(province.name, schools);
+      const outputPath = path.join(distDir, pageData.relativePath);
+      await safeWriteFile(outputPath, pageData.content);
+      successful++;
+    } catch (err) {
+      logger.error(`Failed to generate province page for ${province.name}: ${err.message}`);
+      failed++;
+    }
+  }
+
+  logger.info(`Generated ${successful} province pages (${failed} failed)`);
+  return { successful, failed };
 }
 
 /**
@@ -186,7 +243,8 @@ function createManifestFromSchools(schools) {
  * 2. Loading school data
  * 3. Generating external CSS file
  * 4. Generating homepage
- * 5. Generating and writing pages
+ * 5. Generating province pages
+ * 6. Generating and writing pages
  *
  * Supports --incremental flag for faster rebuilds
  * Usage: node build-pages.js --incremental
@@ -206,7 +264,9 @@ async function build(options = {}) {
   logger.info(`Loaded ${schools.length} schools from CSV`);
 
   if (schools.length === 0) {
-    throw new Error('No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.');
+    throw new Error(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
+    );
   }
 
   // Generate homepage
@@ -217,6 +277,9 @@ async function build(options = {}) {
   const homepageHtml = generateHomepageHtml(schools);
   await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
   logger.info('Generated homepage (index.html)');
+
+  // Generate province pages
+  await generateProvincePages(schools);
 
   const { successful, failed } = await writeSchoolPagesConcurrently(schools);
   logger.info(`Generated ${successful} school pages (${failed} failed)`);
@@ -239,7 +302,9 @@ async function buildIncremental() {
   logger.info(`Loaded ${schools.length} schools from CSV`);
 
   if (schools.length === 0) {
-    throw new Error('No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.');
+    throw new Error(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
+    );
   }
 
   // Load manifest to check for changes
@@ -263,6 +328,9 @@ async function buildIncremental() {
   const homepageHtml = generateHomepageHtml(schools);
   await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
   logger.info('Generated homepage (index.html)');
+
+  // Generate province pages (always regenerate)
+  await generateProvincePages(schools);
 
   if (schoolsToBuild.length === 0) {
     logger.info('No pages to rebuild');
