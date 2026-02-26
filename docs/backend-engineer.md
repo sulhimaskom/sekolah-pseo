@@ -95,9 +95,25 @@ YS|## Future Improvement Opportunities
 ### 2026-02-26
 
 - **Fixed async/sync blocking**: Replaced `fs.unlinkSync()` with `await fs.promises.unlink()` in `scripts/manifest.js` to avoid blocking the event loop
-- **Improved error resilience**: Changed `Promise.all()` to `Promise.allSettled()` in `scripts/validate-links.js` to handle partial failures gracefully
-- **Added ETL error isolation**: Added try/catch inside the record processing loop in `scripts/etl.js` to prevent single bad records from crashing the entire ETL process
-- PR #187: https://github.com/sulhimaskom/sekolah-pseo/pull/187
+TR|- **Added ETL error isolation**: Added try/catch inside the record processing loop in `scripts/etl.js` to prevent single bad records from crashing the entire ETL process
+WB|- PR #187: https://github.com/sulhimaskom/sekolah-pseo/pull/187
+QX|
+RQ|WZ|### 2026-02-26 (Session 2)
+PY|
+HZ|- **Centralized configuration**: Moved hardcoded values to `scripts/config.js` for centralized management
+NT|- Added configuration groups:
+XT|  - `INDONESIA_BOUNDS`: Geographic bounds for coordinate validation (LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+TH|  - `RATE_LIMITER_DEFAULTS`: Rate limiter defaults (MAX_CONCURRENT, RATE_LIMIT_MS, QUEUE_TIMEOUT_MS)
+YQ|  - `CIRCUIT_BREAKER_DEFAULTS`: Circuit breaker thresholds (FAILURE_THRESHOLD, RESET_TIMEOUT_MS)
+JJ|  - `CACHE_DEFAULTS`: Cache size limits (MAX_CACHE_SIZE)
+QF|  - `FILE_TIMEOUT_MS`: File operation timeout
+KV|- Updated modules to use centralized config:
+NT|  - `scripts/etl.js`: Indonesia bounds from config
+MF|  - `scripts/rate-limiter.js`: Rate limiter defaults from config
+HB|  - `scripts/fs-safe.js`: Circuit breaker and file timeout from config
+JK|  - `scripts/slugify.js`: Cache size from config
+HV|  - `scripts/build-pages.js`: Queue timeout from config
+XP|- Enables runtime configuration via environment variables
   PR|
   WZ|1. **Streaming CSV processing**: Process large CSV files in streaming fashion
   QS|2. **Data validation rules**: Add more sophisticated validation rules

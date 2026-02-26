@@ -136,16 +136,13 @@ function validateLatLon(lat, lon) {
     return false;
   }
 
-  const INDONESIA_LAT_MIN = -11;
-  const INDONESIA_LAT_MAX = 6;
-  const INDONESIA_LON_MIN = 95;
-  const INDONESIA_LON_MAX = 141;
+  const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
 
   return (
-    latNum >= INDONESIA_LAT_MIN &&
-    latNum <= INDONESIA_LAT_MAX &&
-    lonNum >= INDONESIA_LON_MIN &&
-    lonNum <= INDONESIA_LON_MAX
+    latNum >= LAT_MIN &&
+    latNum <= LAT_MAX &&
+    lonNum >= LON_MIN &&
+    lonNum <= LON_MAX
   );
 }
 
