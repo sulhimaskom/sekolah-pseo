@@ -21,7 +21,6 @@ This document serves as the long-term memory for the RnD agent, tracking improve
   - Tests: 470 passing (was 467, +3 new tests)
 - **Note**: Caching is already implemented in `scripts/slugify.js` with `MAX_CACHE_SIZE=10000`, which efficiently handles ~3500 schools within a single build run.
 
-
 ## Completed Improvements
 
 ### 2026-02-26: Add npm audit to CI pipeline
@@ -38,7 +37,6 @@ This document serves as the long-term memory for the RnD agent, tracking improve
   - npm audit passes locally with 0 vulnerabilities
 - **Blocker**: GitHub App permission restriction - workflow file changes require manual apply
 - **Note**: Following the same pattern as PR #185
-
 
 ### 2026-02-26: Verify pre-commit hooks PR #163
 
@@ -181,8 +179,8 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 5. Add npm audit to CI pipeline (Issue #130)
 6. Add broken link checking to CI (Issue #146)
 
-1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
-2. Add integration tests for the full ETL pipeline
-3. Add performance benchmarks for page building
-4. Add npm audit to CI pipeline (Issue #130)
-5. Add broken link checking to CI (Issue #146)
+7. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
+8. Add integration tests for the full ETL pipeline
+9. Add performance benchmarks for page building
+10. Add npm audit to CI pipeline (Issue #130)
+11. Add broken link checking to CI (Issue #146)
