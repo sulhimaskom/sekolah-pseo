@@ -3,6 +3,76 @@ const slugify = require('../../scripts/slugify');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 
+/**
+ * Module-level cache for slugified values.
+ * Pre-computes slugs to avoid repeated slugify calls across school processing.
+ * This addresses the issue where the same province/kabupaten/kecamatan
+ * values are repeated across multiple schools.
+ */
+const slugCache = new Map();
+
+/**
+ * Cached slugify function that uses module-level cache for O(1) lookups.
+ * @param {string} input - String to slugify
+ * @returns {string} - Slugified string
+ */
+function cachedSlugify(input) {
+  if (typeof input !== 'string') {
+    return '';
+  }
+
+  if (slugCache.has(input)) {
+    return slugCache.get(input);
+  }
+
+  const slug = slugify(input);
+  slugCache.set(input, slug);
+  return slug;
+}
+
+/**
+ * Pre-compute slugs for all unique location values in the schools array.
+ * Call this once before processing schools to populate the cache.
+ * @param {Array<Object>} schools - Array of school data objects
+ */
+function precomputeSlugCache(schools) {
+  if (!Array.isArray(schools)) {
+    return;
+  }
+
+  const uniqueValues = new Set();
+
+  for (const school of schools) {
+    if (school.provinsi) uniqueValues.add(school.provinsi);
+    if (school.kab_kota) uniqueValues.add(school.kab_kota);
+    if (school.kecamatan) uniqueValues.add(school.kecamatan);
+    if (school.nama) uniqueValues.add(school.nama);
+  }
+
+  for (const value of uniqueValues) {
+    if (!slugCache.has(value)) {
+      slugCache.set(value, slugify(value));
+    }
+  }
+}
+
+/**
+ * Clear the slug cache. Useful for testing or between build runs.
+ */
+function clearSlugCache() {
+  slugCache.clear();
+}
+
+/**
+ * Get cache statistics for monitoring.
+ * @returns {Object} - Cache stats (size, hit rate, etc.)
+ */
+function getSlugCacheStats() {
+  return {
+    size: slugCache.size,
+  };
+}
+
 function buildSchoolPageData(school) {
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
@@ -15,10 +85,10 @@ function buildSchoolPageData(school) {
     throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
   }
 
-  const provinsiSlug = slugify(school.provinsi);
-  const kabKotaSlug = slugify(school.kab_kota);
-  const kecamatanSlug = slugify(school.kecamatan);
-  const namaSlug = slugify(school.nama);
+  const provinsiSlug = cachedSlugify(school.provinsi);
+  const kabKotaSlug = cachedSlugify(school.kab_kota);
+  const kecamatanSlug = cachedSlugify(school.kecamatan);
+  const namaSlug = cachedSlugify(school.nama);
 
   const relativePath = path.join(
     'provinsi',
@@ -44,9 +114,9 @@ function getUniqueDirectories(schools) {
   const uniqueDirs = new Set();
 
   for (const school of schools) {
-    const provinsiSlug = slugify(school.provinsi);
-    const kabKotaSlug = slugify(school.kab_kota);
-    const kecamatanSlug = slugify(school.kecamatan);
+    const provinsiSlug = cachedSlugify(school.provinsi);
+    const kabKotaSlug = cachedSlugify(school.kab_kota);
+    const kecamatanSlug = cachedSlugify(school.kecamatan);
 
     const dirPath = path.join(
       'provinsi',
@@ -82,7 +152,7 @@ function getUniqueProvinces(schools) {
     if (!provinceMap.has(provinsiName)) {
       provinceMap.set(provinsiName, {
         name: provinsiName,
-        slug: slugify(provinsiName),
+        slug: cachedSlugify(provinsiName),
         count: 0,
       });
     }
@@ -109,7 +179,7 @@ function buildProvincePageData(provinceName, schools) {
     throw new Error('schools must be an array');
   }
 
-  const provinceSlug = slugify(provinceName);
+  const provinceSlug = cachedSlugify(provinceName);
   const relativePath = path.join('provinsi', provinceSlug, 'index.html');
 
   return {
@@ -123,4 +193,8 @@ module.exports = {
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
+  // New caching utilities
+  precomputeSlugCache,
+  clearSlugCache,
+  getSlugCacheStats,
 };
