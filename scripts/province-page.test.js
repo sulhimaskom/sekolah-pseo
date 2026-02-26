@@ -393,8 +393,7 @@ test('generateProvincePageHtml includes meta description', () => {
 
   assert.ok(html.includes('meta name="description"'));
   assert.ok(html.includes('Jawa Barat'));
-  });
-
+});
 
 test('generateProvincePageHtml includes theme-color meta tags', () => {
   const schools = [
