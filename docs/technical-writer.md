@@ -134,6 +134,8 @@
   #QZ|
   #QB|- Update test documentation - DONE: Fixed test file count (12→14) and added missing test files in docs/testing.md
   #YQ|- Add missing environment variable - DONE: Added MAX_URLS_PER_SITEMAP to docs/blueprint.md
+QS|
+SR|- Fix blueprint-implementation mismatch - DONE: Updated docs/blueprint.md to reflect Node.js (custom) instead of Astro, updated decision log, added docs sync reminder
 
 ## Notes
 
