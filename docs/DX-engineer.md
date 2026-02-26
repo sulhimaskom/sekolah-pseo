@@ -88,6 +88,15 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
   - `package.json`: `engines` field
   - `.nvmrc`: `20` (for nvm users)
 
+### Devcontainer
+
+- **Status**: Configured
+- **Config file**: `.devcontainer/devcontainer.json`
+- **Base image**: `mcr.microsoft.com/devcontainers/javascript-node:20`
+- **Features**: OpenCode integration
+- **Extensions**: ESLint, Prettier
+- **Post-create**: Runs `npm install` automatically
+- **Ports**: 3000 (Application), 8080 (Preview)
 ### Available Scripts
 
 | Script                   | Description               |
@@ -112,6 +121,7 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 - **Added Structured Logging (Pino)**: Added `pino` logger in `scripts/logger.js` with LOG_LEVEL support
 - **Added Node.js version consistency**: Added `engines` field to package.json (>=20.0.0) and `.nvmrc` file
 - **Added Husky + lint-staged**: Pre-commit hooks for automatic linting/formatting
+- **Improved Devcontainer**: Enhanced `.devcontainer/devcontainer.json` with Node.js 20 image, VSCode extensions (ESLint, Prettier), automatic `npm install`, and port forwarding (3000, 8080)
 
 ### 2026-02-25
 
