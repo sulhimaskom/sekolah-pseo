@@ -75,6 +75,11 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 
 - **2026-02-26**: Added trailing newline to config.js - follows POSIX standard for text files
 
-- **2026-02-26**: Added test coverage for two previously untested modules:
+JB|- **2026-02-26**: Added test coverage for two previously untested modules:
+TH|  - `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
+BP|  - `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)
+KQ|
+JK|- **2026-02-26**: Added test coverage for validate-links.js - 8 new tests for validateLinksInFile function
+
   - `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
   - `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)

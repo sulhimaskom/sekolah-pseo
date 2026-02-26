@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { extractLinks } = require('./validate-links');
+const { extractLinks, validateLinksInFile } = require('./validate-links');
 
 test('extractLinks extracts relative links from HTML', () => {
   const html = '<a href="page.html">Link</a>';
@@ -92,4 +92,71 @@ test('extractLinks handles undefined input', () => {
 test('extractLinks handles non-string input', () => {
   const result = extractLinks(123);
   assert.deepStrictEqual(result, []);
+});
+
+test('validateLinksInFile skips hash-only links', async () => {
+  const file = '/dist/index.html';
+  const links = ['#', '#section'];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.deepStrictEqual(result, []);
+});
+
+test('validateLinksInFile skips external http links', async () => {
+  const file = '/dist/index.html';
+  const links = ['http://example.com/page.html', 'https://other.com/test'];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.deepStrictEqual(result, []);
+});
+
+test('validateLinksInFile handles absolute paths starting with /', async () => {
+  const file = '/dist/index.html';
+  const links = ['/about.html'];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.ok(Array.isArray(result));
+});
+
+test('validateLinksInFile handles relative paths', async () => {
+  const file = '/dist/schools/jakarta/index.html';
+  const links = ['../schools.html'];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.ok(Array.isArray(result));
+});
+
+test('validateLinksInFile strips query parameters from links', async () => {
+  const file = '/dist/index.html';
+  const links = ['page.html?param=value'];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.ok(Array.isArray(result));
+});
+
+test('validateLinksInFile strips hash fragments from links', async () => {
+  const file = '/dist/index.html';
+  const links = ['page.html#section'];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.ok(Array.isArray(result));
+});
+
+test('validateLinksInFile handles empty links array', async () => {
+  const file = '/dist/index.html';
+  const links = [];
+  const distDir = '/dist';
+  const result = await validateLinksInFile(file, links, distDir);
+  assert.deepStrictEqual(result, []);
+});
+
+test('validateLinksInFile handles null/undefined links', async () => {
+  const file = '/dist/index.html';
+  const distDir = '/dist';
+
+  const result1 = await validateLinksInFile(file, [null], distDir);
+  assert.deepStrictEqual(result1, []);
+
+  const result2 = await validateLinksInFile(file, [undefined], distDir);
+  assert.deepStrictEqual(result2, []);
 });
