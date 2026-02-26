@@ -138,7 +138,11 @@ XP|- Enables runtime configuration via environment variables
   XS|3. **Caching**: Add caching layer for frequently accessed data (PARTIALLY DONE - incremental build manifest)
   HB|4. **Monitoring**: Add metrics and monitoring for ETL process
 
-1. **Streaming CSV processing**: Process large CSV files in streaming fashion
+#WQ|### 2026-02-26 (Session 4)
+#KT|
+#QX|- **Removed duplicate console.log**: Eliminated duplicate `console.log` statements in `scripts/build-pages.js` that were printing the same message as `logger.info` already outputs. The message "Loaded X schools from CSV" was logged twice - once via console.log and once via logger.info.
+#JM|- This improves consistency by using the centralized logger throughout the build process
+
 2. **Data validation rules**: Add more sophisticated validation rules
 3. **Caching**: Add caching layer for frequently accessed data
 4. **Monitoring**: Add metrics and monitoring for ETL process
