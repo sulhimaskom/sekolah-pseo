@@ -42,7 +42,6 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/sulhimaskom/sekolah-pseo/issues"
   },
