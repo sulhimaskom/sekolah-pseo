@@ -139,6 +139,33 @@ function generateSchoolPageHtml(school, relativePath) {
   <footer role="contentinfo">
     <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
+  
+  <button class="back-to-top" aria-label="Kembali ke atas" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
+  
+  <script>
+    (function() {
+      var backToTop = document.querySelector('.back-to-top');
+      if (!backToTop) return;
+      
+      function handleScroll() {
+        if (window.scrollY > 300) {
+          backToTop.classList.add('visible');
+        } else {
+          backToTop.classList.remove('visible');
+        }
+      }
+      
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll();
+    })();
+  </script>
+</body>
+    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+  </footer>
 </body>
 </html>`;
 }
