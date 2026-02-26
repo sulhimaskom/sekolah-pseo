@@ -16,6 +16,7 @@ const { RateLimiter } = require('./rate-limiter');
 module.exports = {
   extractLinks,
   validateLinksInFile,
+  validateLinks,
 };
 
 function extractLinks(html) {

@@ -302,3 +302,126 @@ test('MANIFEST_FILE constant is defined', () => {
 
   assert.strictEqual(MANIFEST_FILE, '.build-manifest.json');
 });
+test('MANIFEST_FILE constant is defined', () => {
+  const { MANIFEST_FILE } = require('./manifest');
+
+  assert.strictEqual(MANIFEST_FILE, '.build-manifest.json');
+});
+
+test('loadManifest returns null when manifest does not exist', async () => {
+  const { loadManifest } = require('./manifest');
+
+  // Use a non-existent path by temporarily changing ROOT_DIR
+  const originalRoot = CONFIG.ROOT_DIR;
+  const testDir = path.join(os.tmpdir(), 'nonexistent-manifest-test-' + Date.now());
+  CONFIG.ROOT_DIR = testDir;
+
+  try {
+    const result = await loadManifest();
+    assert.strictEqual(result, null);
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});
+
+test('loadManifest returns null when manifest version mismatches', async () => {
+  const { loadManifest, saveManifest } = require('./manifest');
+
+  const testDir = process.env.TEST_TEMP_DIR;
+  const originalRoot = CONFIG.ROOT_DIR;
+  CONFIG.ROOT_DIR = testDir;
+
+  try {
+    // Save manifest with wrong version
+    const wrongVersionManifest = {
+      version: 999, // Wrong version
+      lastBuild: new Date().toISOString(),
+      schools: {},
+    };
+    await saveManifest(wrongVersionManifest);
+
+    // loadManifest should return null due to version mismatch
+    const result = await loadManifest();
+    assert.strictEqual(result, null);
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});
+
+test('saveManifest and loadManifest work correctly', async () => {
+  const { saveManifest, loadManifest } = require('./manifest');
+
+  const testDir = process.env.TEST_TEMP_DIR;
+  const originalRoot = CONFIG.ROOT_DIR;
+  CONFIG.ROOT_DIR = testDir;
+
+  try {
+    const testManifest = {
+      version: 1,
+      lastBuild: new Date().toISOString(),
+      schools: {
+        '12345': {
+          hash: 'abc123',
+          builtAt: new Date().toISOString(),
+          path: '/schools/12345.html',
+        },
+      },
+    };
+
+    await saveManifest(testManifest);
+    const loaded = await loadManifest();
+
+    assert.ok(loaded, 'manifest should be loaded');
+    assert.strictEqual(loaded.version, 1);
+    assert.ok(loaded.schools['12345']);
+    assert.strictEqual(loaded.schools['12345'].hash, 'abc123');
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});
+
+test('clearManifest removes manifest file', async () => {
+  const { saveManifest, loadManifest, clearManifest } = require('./manifest');
+
+  const testDir = process.env.TEST_TEMP_DIR;
+  const originalRoot = CONFIG.ROOT_DIR;
+  CONFIG.ROOT_DIR = testDir;
+
+  try {
+    // First create a manifest
+    const testManifest = {
+      version: 1,
+      lastBuild: new Date().toISOString(),
+      schools: {},
+    };
+    await saveManifest(testManifest);
+
+    // Verify it exists
+    let loaded = await loadManifest();
+    assert.ok(loaded, 'manifest should exist before clear');
+
+    // Clear it
+    await clearManifest();
+
+    // Verify it's gone
+    loaded = await loadManifest();
+    assert.strictEqual(loaded, null, 'manifest should be null after clear');
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});
+
+test('clearManifest handles non-existent file gracefully', async () => {
+  const { clearManifest } = require('./manifest');
+
+  const testDir = path.join(os.tmpdir(), 'nonexistent-clear-test-' + Date.now());
+  const originalRoot = CONFIG.ROOT_DIR;
+  CONFIG.ROOT_DIR = testDir;
+
+  try {
+    // Should not throw - just handles missing file
+    await clearManifest();
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});

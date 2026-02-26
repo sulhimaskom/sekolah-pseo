@@ -31,6 +31,7 @@ module.exports = {
   build,
   buildIncremental,
   computeSchoolHash,
+  createManifestFromSchools,
 };
 
 // Ensure dist directory exists
@@ -206,7 +207,9 @@ async function build(options = {}) {
   logger.info(`Loaded ${schools.length} schools from CSV`);
 
   if (schools.length === 0) {
-    throw new Error('No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.');
+    throw new Error(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
+    );
   }
 
   // Generate homepage
@@ -239,7 +242,9 @@ async function buildIncremental() {
   logger.info(`Loaded ${schools.length} schools from CSV`);
 
   if (schools.length === 0) {
-    throw new Error('No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.');
+    throw new Error(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
+    );
   }
 
   // Load manifest to check for changes

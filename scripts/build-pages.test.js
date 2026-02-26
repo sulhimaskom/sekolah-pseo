@@ -9,6 +9,9 @@ const {
   writeSchoolPagesConcurrently,
   loadSchools,
   generateExternalStyles,
+  build,
+  buildIncremental,
+  createManifestFromSchools,
 } = require('./build-pages');
 const CONFIG = require('./config');
 const slugify = require('./slugify');
@@ -186,4 +189,108 @@ test('generateExternalStyles creates external CSS file', async () => {
   assert.ok(cssContent.includes(':root'), 'CSS should contain :root selector');
   assert.ok(cssContent.includes('--color-primary'), 'CSS should contain CSS variables');
   assert.ok(cssContent.includes('.skip-link'), 'CSS should contain skip link styles');
+});
+
+test('createManifestFromSchools creates valid manifest structure', () => {
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA Negeri 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Merdeka',
+      kelurahan: 'Coblong',
+      lat: '-6.1234',
+      lon: '106.5678',
+    },
+    {
+      npsn: '10002',
+      nama: 'SMA Negeri 2',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Bandung Wetan',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Sudirman',
+      lat: '-6.2345',
+      lon: '106.6789',
+    },
+  ];
+
+  const manifest = createManifestFromSchools(schools);
+
+  assert.ok(manifest, 'manifest should be created');
+  assert.strictEqual(manifest.version, 1, 'manifest version should be 1');
+  assert.ok(manifest.lastBuild, 'manifest should have lastBuild timestamp');
+  assert.ok(manifest.schools, 'manifest should have schools object');
+  assert.strictEqual(Object.keys(manifest.schools).length, 2, 'manifest should have 2 schools');
+
+  // Check first school
+  assert.ok(manifest.schools['10001'], 'school 10001 should exist');
+  assert.ok(manifest.schools['10001'].hash, 'school should have hash');
+  assert.ok(manifest.schools['10001'].builtAt, 'school should have builtAt');
+  assert.ok(manifest.schools['10001'].path, 'school should have path');
+
+  // Check second school (missing optional fields)
+  assert.ok(manifest.schools['10002'], 'school 10002 should exist');
+  assert.ok(
+    manifest.schools['10002'].hash,
+    'school should have hash even with missing optional fields'
+  );
+});
+
+test('createManifestFromSchools handles empty array', () => {
+  const manifest = createManifestFromSchools([]);
+
+  assert.ok(manifest, 'manifest should be created');
+  assert.strictEqual(manifest.version, 1, 'manifest version should be 1');
+  assert.ok(manifest.lastBuild, 'manifest should have lastBuild timestamp');
+  assert.deepStrictEqual(manifest.schools, {}, 'schools should be empty object');
+});
+
+test('build creates dist directory and generates files', async () => {
+  // Run build to test it
+  await build();
+
+  // Verify dist directory exists
+  const distExists = await fs
+    .access(CONFIG.DIST_DIR)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(distExists, 'dist directory should exist');
+
+  // Verify index.html was created
+  const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
+  const indexExists = await fs
+    .access(indexPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(indexExists, 'index.html should be created');
+
+  // Verify manifest was created
+  const manifestPath = path.join(CONFIG.ROOT_DIR, '.build-manifest.json');
+  const manifestExists = await fs
+    .access(manifestPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(manifestExists, 'manifest should be created');
+});
+
+test('buildIncremental runs without error when manifest exists', async () => {
+  // First run full build to create manifest
+  await build();
+
+  // Then run incremental build
+  await buildIncremental();
+
+  // Verify index.html still exists
+  const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
+  const indexExists = await fs
+    .access(indexPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(indexExists, 'index.html should exist after incremental build');
 });
