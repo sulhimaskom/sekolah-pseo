@@ -139,12 +139,7 @@ function validateLatLon(lat, lon) {
 
   const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
 
-  return (
-    latNum >= LAT_MIN &&
-    latNum <= LAT_MAX &&
-    lonNum >= LON_MIN &&
-    lonNum <= LON_MAX
-  );
+  return latNum >= LAT_MIN && latNum <= LAT_MAX && lonNum >= LON_MIN && lonNum <= LON_MAX;
 }
 
 /**

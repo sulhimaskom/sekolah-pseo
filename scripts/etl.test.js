@@ -274,7 +274,7 @@ test('generateDataQualityReport benchmark - single-pass optimization', () => {
   // Generate 10k test records
   const recordCount = 10000;
   const records = [];
-  
+
   for (let i = 0; i < recordCount; i++) {
     records.push({
       npsn: String(100000 + i),
@@ -307,7 +307,7 @@ test('generateDataQualityReport benchmark - single-pass optimization', () => {
 
   // Log performance (this is the key metric for the optimization)
   console.log(`Data quality report benchmark: ${recordCount} records in ${elapsed.toFixed(2)}ms`);
-  
+
   // Single-pass optimization should handle 10k records in under 500ms
   // Previous 3-pass approach would take ~800-1000ms
   assert.ok(elapsed < 500, `Expected < 500ms, got ${elapsed.toFixed(2)}ms`);
