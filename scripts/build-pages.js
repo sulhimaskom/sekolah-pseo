@@ -133,20 +133,36 @@ async function generateProvincePages(schools) {
 
   logger.info(`Generating ${provinces.length} province pages...`);
 
-  let successful = 0;
-  let failed = 0;
+  const limiter = new RateLimiter({
+    maxConcurrent: CONFIG.BUILD_CONCURRENCY_LIMIT,
+    queueTimeoutMs: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
+  });
 
-  for (const province of provinces) {
-    try {
-      const pageData = buildProvincePageData(province.name, schools);
-      const outputPath = path.join(distDir, pageData.relativePath);
-      await safeWriteFile(outputPath, pageData.content);
-      successful++;
-    } catch (err) {
-      logger.error(`Failed to generate province page for ${province.name}: ${err.message}`);
-      failed++;
-    }
-  }
+  const writePromises = provinces.map(province =>
+    limiter.execute(async () => {
+      try {
+        const pageData = buildProvincePageData(province.name, schools);
+        const outputPath = path.join(distDir, pageData.relativePath);
+        await safeWriteFile(outputPath, pageData.content);
+        return { success: true, name: province.name };
+      } catch (err) {
+        logger.error(`Failed to generate province page for ${province.name}: ${err.message}`);
+        return { success: false, name: province.name };
+      }
+    }, `generateProvincePage-${province.name}`)
+  );
+
+  const results = await Promise.allSettled(writePromises);
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const failed = results.filter(r => r.status === 'rejected' || !r.value.success).length;
+
+  const metrics = limiter.getMetrics();
+  logger.info('Province build metrics:', {
+    total: metrics.total,
+    completed: metrics.completed,
+    failed: metrics.failed,
+    throughput: metrics.throughput,
+  });
 
   logger.info(`Generated ${successful} province pages (${failed} failed)`);
   return { successful, failed };
