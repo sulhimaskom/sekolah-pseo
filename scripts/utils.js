@@ -231,7 +231,7 @@ function escapeCsvField(value) {
     firstChar === '@' ||
     firstChar === '\t'
   ) {
-    return '\'' + str;
+    return `${String.fromCharCode(39)}${str}`;
   }
 
   // Check if the field needs quoting
