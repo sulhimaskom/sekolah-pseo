@@ -32,6 +32,16 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 
 ## Improvements Delivered
 
+### PR #306: docs: add validateRepoUrl to fetch-data API documentation
+
+- Added missing `validateRepoUrl` function to API documentation (issue #292)
+- Documented security validation: protocol check, hostname requirement, .git extension
+- Included usage examples with valid and invalid URL validation cases
+- All tests pass
+
+
+## Improvements Delivered
+
 ### PR #94: fix: resolve npm security vulnerabilities (ajv, minimatch)
 
 - Fixed 2 npm security vulnerabilities
