@@ -276,8 +276,6 @@ async function build(options = {}) {
   }
 
 
-
-
   // Generate homepage
   logger.info('Generating homepage...');
   const homepageHtml = generateHomepageHtml(schools);
@@ -315,9 +313,6 @@ async function buildIncremental() {
       'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
     );
   }
-
-
-
 
   // Load manifest to check for changes
   const manifest = await loadManifest();
