@@ -72,36 +72,34 @@ The ai-agent-engineer domain focuses on improving the automation and agent infra
 
 - This repository uses a sophisticated multi-phase agent system (00-11 flows)
 - The agent should focus on infrastructure/improvement tasks, not new features
-  #QQ|- Always sync with default branch before creating PR
+- Always sync with default branch before creating PR
 
 ## Recent Improvements
 
-- **2026-02-25**: Fixed Prettier formatting in scripts/\*.js (8 test files) - added missing newlines at EOF, reformatted import statements
+- **2026-02-27**: Fixed lint error in scripts/utils.js - fixed singlequote requirement in escapeCsvField function
+  - All 558 JavaScript tests + 18 Python tests pass
+  - Lint passes clean
+  - PR #303
 
-- **2026-02-26**: Added trailing newline to config.js - follows POSIX standard for text files
+- **2026-02-27**: Fixed Prettier formatting in 4 scripts files - build-pages.js, manifest.test.js, utils.js, validate-links.test.js
+  - Removed trailing whitespace, fixed inconsistent line breaks
+  - All 558 JavaScript tests pass
 
-JB|- **2026-02-26**: Added test coverage for two previously untested modules:
-TH| - `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
-BP| - `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)
-KQ|
-JK|- **2026-02-26**: Added test coverage for validate-links.js - 8 new tests for validateLinksInFile function
-
-- `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
-- `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)
-  TH|- **2026-02-26**: Added test coverage for logger.js - 15 new tests for logger module (log level configuration, convenience methods, child logger)
-- **2026-02-26**: Added test coverage for logger.js - 15 new tests for logger module (log level configuration, convenience methods, child logger)
+- **2026-02-27**: Added test coverage for validate-links.js - 3 new tests for validateLinks main function
+  - Improved coverage from 67.63% to 93.64% (+26%)
+  - Tests cover broken link detection, valid link validation, and error handling paths
 
 - **2026-02-26**: Added test coverage for two previously untested modules:
   - `scripts/check-freshness.test.js` - Tests for data freshness check module (getDataFreshness, getDataQualityMetrics)
   - `scripts/fetch-data.test.js` - Tests for external data fetch module (findCsvFiles, copyToRaw)
 
-- **2026-02-27**: Added test coverage for validate-links.js - 3 new tests for validateLinks main function
-  - Improved coverage from 67.63% to 93.64% (+26%)
-  - Tests cover broken link detection, valid link validation, and error handling paths
-  - `scripts/check-freshness.test.js` - Tests for data freshness check module (getDataFreshness, getDataQualityMetrics)
-  - `scripts/fetch-data.test.js` - Tests for external data fetch module (findCsvFiles, copyToRaw)
+- **2026-02-26**: Added test coverage for logger.js - 15 new tests for logger module
+  - Tests cover log level configuration, convenience methods, child logger
 
+- **2026-02-26**: Added test coverage for two previously untested modules:
+  - `scripts/manifest.test.js` - Tests for build manifest module (computeSchoolHash, getChangedSchools, getUnchangedSchools)
+  - `scripts/homepage.test.js` - Tests for homepage HTML generation (aggregateByProvince, generateHomepageHtml)
 
-- **2026-02-27**: Fixed Prettier formatting in 4 scripts files - build-pages.js, manifest.test.js, utils.js, validate-links.test.js
-  - Removed trailing whitespace, fixed inconsistent line breaks
-  - All 558 JavaScript tests pass
+- **2026-02-26**: Added trailing newline to config.js - follows POSIX standard for text files
+
+- **2026-02-25**: Fixed Prettier formatting in scripts/\*.js (8 test files) - added missing newlines at EOF, reformatted import statements
