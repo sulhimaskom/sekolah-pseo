@@ -112,10 +112,14 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 | `npm run test:js`        | Run JavaScript tests      |
 | `npm run test:py`        | Run Python tests          |
 | `npm run coverage`       | Run tests with coverage   |
-
-## DX Improvements Log
-
-### 2026-02-26
+#PV|
+#QX|## DX Improvements Log
+#BQ|
+#ZQ|### 2026-02-27
+#YR|
+#PQ|- **Added schools.csv to .gitignore**: Reduces repo bloat by ~539KB for future clones. File remains available locally for build process.
+#BQ|
+#ZQ|### 2026-02-26
 
 - **Added Dependabot**: Automated dependency updates for npm and GitHub Actions (weekly schedule)
 - **Added Structured Logging (Pino)**: Added `pino` logger in `scripts/logger.js` with LOG_LEVEL support
