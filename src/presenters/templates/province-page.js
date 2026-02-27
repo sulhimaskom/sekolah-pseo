@@ -99,7 +99,6 @@ function generateProvincePageHtml(provinceName, schools) {
 #QH|  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
 #QV|  <title>Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO</title>
 #VP|  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
   <link rel="stylesheet" href="/styles.css">
 </head>

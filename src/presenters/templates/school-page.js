@@ -61,7 +61,6 @@ function generateSchoolPageHtml(school, relativePath) {
   NZ|  <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin">
 #YV|  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
 #VK|  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
   <title>${escapeHtml(school.nama)}</title>
