@@ -108,6 +108,41 @@ Consider creating an ADR when a decision:
 4. Submit for review alongside code changes
 5. Update status to "Accepted" once merged
 
+## Using VS Code Dev Containers
+
+This project supports [VS Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers) for a consistent development environment.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [VS Code](https://code.visualstudio.com/)
+- [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+### Getting Started
+
+1. Open the project in VS Code
+2. Install the Dev Containers extension
+3. Click "Reopen in Container" when prompted
+
+The container will automatically:
+- Install Node.js dependencies
+- Set up ESLint and Prettier
+- Configure port forwarding for ports 3000 and 8080
+
+### Recommended Extensions
+
+The devcontainer includes these extensions:
+- **ESLint** (`dbaeumer.vscode-eslint`) - JavaScript linting
+- **Prettier** (`esbenp.prettier-vscode`) - Code formatting
+
+### Port Forwarding
+
+The following ports are forwarded:
+- `3000` - Application
+- `8080` - Preview
+
+---
+
 ## Submitting Changes
 
 1. Create a branch for your feature or fix
