@@ -115,6 +115,12 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 
 ## DX Improvements Log
 
+### 2026-02-27
+
+- **Fixed schools.csv gitignore**: Added `schools.csv` to `.gitignore`, removed from git tracking (~539KB reduction for future clones)
+
+### 2026-02-26
+
 ### 2026-02-26
 
 - **Added Dependabot**: Automated dependency updates for npm and GitHub Actions (weekly schedule)
