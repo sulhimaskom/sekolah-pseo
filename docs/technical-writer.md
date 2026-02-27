@@ -156,7 +156,14 @@
 #VB|#QR|- Add missing npm scripts to docs/setup.md - DONE: Added documentation for 8 missing npm scripts:
 #HQ|#QR|  - npm run dev, test:js:coverage, test:js:coverage:report, test:py:pytest
 #HQ|#QR|  - npm run test:ci, test:all, coverage, coverage:report
-#VB|#QR|  PR: https://github.com/sulhimaskom/sekolah-pseo/pull/271
+#HH|#VB|PR: https://github.com/sulhimaskom/sekolah-pseo/pull/271
+#ZB|- Fix Module Organization section in docs/api.md - DONE: Added 4 missing modules to the module organization tree:
+#HB|  - fetch-data.js (external data fetch from GitHub)
+#JB|  - check-freshness.js (data freshness check)
+#RB|  - homepage.js (homepage HTML template)
+#JB|  - province-page.js (province page HTML template)
+#JB|  - Note: logger.js and manifest.js were already listed but not properly organized
+#BQ|  PR: (to be created)
 
 ## Notes
 

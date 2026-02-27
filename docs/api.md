@@ -17,9 +17,11 @@ scripts/           # Controllers and utilities
 ├── etl.js         # ETL operations
 ├── build-pages.js # Page build controller
 ├── sitemap.js     # Sitemap generator
-RZ|├── validate-links.js # Link validation
-#NM|├── logger.js       # Pino-based logging
-#QJ|└── manifest.js     # Build manifest for incremental builds
+├── validate-links.js # Link validation
+├── logger.js       # Pino-based logging
+├── fetch-data.js   # External data fetch from GitHub
+├── check-freshness.js # Data freshness check
+└── manifest.js     # Build manifest for incremental builds
 
 src/
 ├── services/
@@ -28,7 +30,9 @@ src/
     ├── design-system.js   # Design tokens
     ├── styles.js         # CSS generator
     └── templates/
-        └── school-page.js  # HTML template generation
+        ├── school-page.js    # School page HTML template
+        ├── homepage.js       # Homepage HTML template
+        └── province-page.js  # Province page HTML template
 ```
 
 ## Configuration Module (`scripts/config.js`)
