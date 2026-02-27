@@ -65,3 +65,12 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Add input validation to aggregateByKabupaten (fixes inconsistency with aggregateByProvince)
 - All 506 JS tests pass, zero lint warnings
 - Small atomic diff (475 lines added, 4 lines modified)
+### PR #267: feat: add graceful degradation for link validation (issue #227)
+
+- Implemented graceful degradation for link validation
+- Internal link failures fail build (CRITICAL)
+- External link failures warn but continue (WARNING)
+- Added --strict flag to treat external link failures as errors
+- Added validation report generation
+- Added JSDoc documentation to core functions
+- All 557 tests pass, zero lint warnings
