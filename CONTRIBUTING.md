@@ -37,7 +37,6 @@ The hooks will automatically run ESLint and Prettier on staged files before each
 
 ## Available Scripts
 
-
 | Command                  | Description                             |
 | ------------------------ | --------------------------------------- |
 | `npm run etl`            | Run ETL pipeline to process school data |
