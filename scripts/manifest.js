@@ -88,18 +88,18 @@ async function saveManifest(manifest) {
  */
 function computeSchoolHash(school) {
   // Fields that affect the generated page content
+  // NOTE: excluded fields that don't affect output:
+  //   - kelurahan: not displayed in school page template
+  //   - lat/lon: not displayed in school page template
   const relevantFields = [
     school.npsn,
     school.nama,
     school.bentuk_pendidikan,
     school.status,
     school.alamat,
-    school.kelurahan,
     school.kecamatan,
     school.kab_kota,
     school.provinsi,
-    school.lat,
-    school.lon,
   ]
     .filter(Boolean)
     .join('|');
