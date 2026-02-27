@@ -23,19 +23,61 @@ const DEFAULT_BRANCH = 'main';
 const EXTERNAL_DATA_DIR = path.join(process.cwd(), 'external-data');
 
 /**
+ * Validates and sanitizes a Git repository URL to prevent command injection.
+ * @param {string} url - The repository URL to validate
+ * @returns {string} The sanitized URL
+ * @throws {Error} If URL is invalid or not a safe Git repository URL
+ */
+function validateRepoUrl(url) {
+  // Only allow http and https protocols
+  const allowedProtocols = ['http:', 'https:'];
+
+  try {
+    const parsed = new URL(url);
+
+    // Check protocol is allowed
+    if (!allowedProtocols.includes(parsed.protocol)) {
+      throw new Error(`Invalid protocol: ${parsed.protocol}. Only http and https are allowed.`);
+    }
+
+    // Ensure hostname is present
+    if (!parsed.hostname) {
+      throw new Error('URL must have a hostname.');
+    }
+
+    // Reconstruct URL to ensure it's clean (removes any injected characters)
+    const sanitizedUrl = `${parsed.protocol}//${parsed.hostname}${parsed.pathname}`;
+
+    // Validate it ends with .git (common for git repos)
+    if (!sanitizedUrl.endsWith('.git')) {
+      throw new Error('Repository URL must end with .git');
+    }
+
+    return sanitizedUrl;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('Invalid URL format.');
+    }
+    throw error;
+  }
+}
+
+/**
  * Clone or update the external data repository
  * @param {string} repoUrl - Git repository URL
  * @param {string} branch - Branch name
  * @returns {string|null} Path to CSV file or null if failed
  */
 function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH) {
-  logger.info(`Fetching data from: ${repoUrl}`);
+  // Validate and sanitize the repo URL to prevent command injection
+  const safeRepoUrl = validateRepoUrl(repoUrl);
+  logger.info(`Fetching data from: ${safeRepoUrl}`);
 
   try {
     // Create external data directory if it doesn't exist
     if (!fs.existsSync(EXTERNAL_DATA_DIR)) {
       logger.info('Cloning external data repository...');
-      execSync(`git clone --depth 1 ${repoUrl} ${EXTERNAL_DATA_DIR}`, {
+      execSync(`git clone --depth 1 ${safeRepoUrl} ${EXTERNAL_DATA_DIR}`, {
         stdio: 'inherit',
         cwd: process.cwd(),
       });
@@ -166,6 +208,7 @@ module.exports = {
   fetchFromGitHub,
   findCsvFiles,
   copyToRaw,
+  validateRepoUrl,
 };
 
 if (require.main === module) {
