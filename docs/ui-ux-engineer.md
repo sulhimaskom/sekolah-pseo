@@ -105,16 +105,26 @@ WQ|MX|JQ|
 - Added province page generation to PageBuilder.js and build-pages.js
 - Pages now generate at /provinsi/{slug}/index.html during build
 YQ|
-#QT|
+WM|#QT|
 #WK|### 10. Remove Duplicate Meta Tags ✅
-#QM|
-#WR|- Fixed duplicate meta tags in all three HTML templates
-#HQ|- Removed duplicate theme-color, X-XSS-Protection, and title tags
-#BV|- homepage.js: Removed duplicate theme-color (light mode) and duplicate meta block
-#QM|- school-page.js: Removed duplicate theme-color (light mode)
-#TH|- province-page.js: Removed duplicate entire meta tags block
-#QQ|- Improves HTML output cleanliness and follows HTML best practices
-#YQ|
+#SV|
+#QM|- Fixed duplicate meta tags in all three HTML templates
+#KY|- Removed duplicate theme-color, X-XSS-Protection, and title tags
+#VS|- homepage.js: Removed duplicate theme-color (light mode) and duplicate meta block
+#KB|- school-page.js: Removed duplicate theme-color (light mode)
+#QM|- province-page.js: Removed duplicate entire meta tags block
+#VQ|- Improves HTML output cleanliness and follows HTML best practices
+#WT|
+#BQ|
+#WK|### 11. 404 Page UI/UX Improvements ✅
+#SV|
+#QM|- Added dark mode support using CSS variables and prefers-color-scheme media query
+#KY|- Added prefers-reduced-motion support to disable transitions for accessibility
+#VS|- Added back-to-top button for consistency with other pages (homepage, school page, province page)
+#KB|- Updated inline styles to use CSS variables for better maintainability
+#QM|- 404 page now matches the accessibility features of other pages
+#WT|
+#BQ|#NX|## Testing
 #NX|## Testing
 ## Testing
 
