@@ -94,3 +94,9 @@ JK|- **2026-02-26**: Added test coverage for validate-links.js - 8 new tests for
 - **2026-02-26**: Added test coverage for two previously untested modules:
   - `scripts/check-freshness.test.js` - Tests for data freshness check module (getDataFreshness, getDataQualityMetrics)
   - `scripts/fetch-data.test.js` - Tests for external data fetch module (findCsvFiles, copyToRaw)
+
+- **2026-02-27**: Added test coverage for validate-links.js - 3 new tests for validateLinks main function
+  - Improved coverage from 67.63% to 93.64% (+26%)
+  - Tests cover broken link detection, valid link validation, and error handling paths
+  - `scripts/check-freshness.test.js` - Tests for data freshness check module (getDataFreshness, getDataQualityMetrics)
+  - `scripts/fetch-data.test.js` - Tests for external data fetch module (findCsvFiles, copyToRaw)
