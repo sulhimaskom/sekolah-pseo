@@ -5,6 +5,25 @@
 This document serves as the long-term memory for the RnD agent, tracking improvements, patterns, and learnings.
 
 ## Completed Improvements
+### 2026-02-27: Add VS Code Dev Containers documentation (Issue #300)
+
+- **Issue**: #300
+- **PR**: #319
+- **Branch**: `rnd/devcontainer-docs`
+- **Summary**: Add comprehensive devcontainer documentation to CONTRIBUTING.md
+- **Status**: PR created with RnD label
+- **Changes**:
+  - Added new section "Using VS Code Dev Containers" to CONTRIBUTING.md
+  - Documented prerequisites (Docker Desktop, VS Code, Dev Containers extension)
+  - Documented getting started steps
+  - Documented included extensions (ESLint, Prettier)
+  - Documented port forwarding configuration (ports 3000 and 8080)
+- **Verification**:
+  - Only CONTRIBUTING.md changed
+  - No test/lint infrastructure impacted
+  - Pre-existing test failures unrelated to this change
+
+
 ### 2026-02-27: Fix duplicate Improvements Log section (Issue #298)
 
 - **Issue**: #298
