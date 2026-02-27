@@ -116,13 +116,26 @@ npm run validate-links
 
 ### Individual Commands
 
-| Command                  | Description                                   |
-| ------------------------ | --------------------------------------------- |
-| `npm run etl`            | Process raw CSV data into cleaned school data |
-| `npm run build`          | Generate static HTML pages for all schools    |
-| `npm run sitemap`        | Generate XML sitemap files                    |
-| `npm run validate-links` | Validate internal hyperlinks                  |
-
+| Command                       | Description                                                           |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `npm run dev`                 | Run lint and JavaScript tests (development workflow)                 |
+| `npm run etl`                 | Process raw CSV data into cleaned school data                        |
+| `npm run build`               | Generate static HTML pages for all schools                            |
+| `npm run sitemap`             | Generate XML sitemap files                                           |
+| `npm run validate-links`      | Validate internal hyperlinks                                         |
+| `npm run lint`                | Lint JavaScript code with ESLint                                     |
+| `npm run format`              | Format code with Prettier                                            |
+| `npm run format:check`        | Check formatting without modifying files                             |
+| `npm run test`                | Run all tests (JavaScript + Python)                                  |
+| `npm run test:js`             | Run JavaScript tests only                                            |
+| `npm run test:js:coverage`    | Run JS tests with coverage check (fails if below threshold)         |
+| `npm run test:js:coverage:report` | Generate HTML coverage report                                      |
+| `npm run test:py`             | Run Python tests only                                                 |
+| `npm run test:py:pytest`      | Run Python tests with pytest (verbose output)                        |
+| `npm run test:ci`             | Run tests in CI mode (JSON output for Python)                       |
+| `npm run test:all`            | Run all tests with pytest verbose mode                               |
+| `npm run coverage`            | Run coverage check (shorthand for test:js:coverage)                 |
+| `npm run coverage:report`     | Generate coverage report (shorthand for test:js:coverage:report)    |
 ### Testing
 
 ```bash
