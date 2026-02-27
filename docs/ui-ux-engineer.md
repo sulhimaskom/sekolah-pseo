@@ -137,6 +137,15 @@ Static site generator for Indonesian school pages.
 - Now includes: provinceSlug, kabKotaSlug, kecamatanSlug, namaSlug, and schoolUrl
 - Search results now link directly to school pages: `/provinsi/{prov}/kabupaten/{kab}/kecamatan/{kec}/{npsn}-{slug}.html`
 
+### 14. Fix Duplicate HTML in Kabupaten Page Template ✅
+
+- Found duplicate HTML meta tags in `kabupaten-page.js` (lines 110-114)
+- Issue: `<link rel="icon">`, `<link rel="canonical">`, and `<link rel="stylesheet">` were duplicated
+- Similar to issue #10 fix but this file was missed
+- Removed duplicate lines to ensure valid HTML output
+- Improves SEO by eliminating duplicate content in page headers
+- All tests pass after fix
+
 ## Testing
 
 - `npm run test:js` runs comprehensive tests for styles and design-system

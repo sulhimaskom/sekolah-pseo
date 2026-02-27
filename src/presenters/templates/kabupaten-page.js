@@ -107,11 +107,6 @@ function generateKabupatenPageHtml(provinceName, kabKotaName, schools) {
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
   <link rel="stylesheet" href="/styles.css">
 </head>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
-  <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/styles.css">
-</head>
 <body>
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
   
