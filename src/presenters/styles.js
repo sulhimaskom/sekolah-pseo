@@ -572,13 +572,7 @@ footer[role="contentinfo"] {
   gap: var(--spacing-xs);
   flex-wrap: wrap;
   align-items: center;
-}
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  background-color: var(--color-bg-accent);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
-}
+
 
 @media (max-width: ${DESIGN_TOKENS.breakpoints.sm}) {
   .homepage-hero {

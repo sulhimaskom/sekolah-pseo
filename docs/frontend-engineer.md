@@ -129,3 +129,17 @@ Moved inline CSS from 404.html to centralized styles.css:
 3. **Consistent with other pages** - Now follows same pattern as homepage, school-page, and province-page templates
 
 4. **Uses design tokens** - All styling uses CSS custom properties from design-system for consistency
+#JH|4. **Uses design tokens** - All styling uses CSS custom properties from design-system for consistency
+#WZ|
+#QX|
+#BT|### Remove Orphaned CSS Rules and Duplicate Fields (2026-02-27)
+#QS|
+#WZ|Fixed code quality issues in the frontend templates:
+#QR|
+#XB|1. **Removed orphaned CSS in styles.js** - 6 lines of invalid CSS properties (font-size, color, background-color, padding, border-radius) were outside any CSS selector, causing parsing issues
+#WX|
+#BV|2. **Removed duplicate provinceSlug** - The `provinceSlug` field was defined twice in `prepareSchoolDataForSearch` function
+#RS|
+#XM|3. **Removed unused slug fields** - Removed `kabKotaSlug`, `kecamatanSlug`, and `namaSlug` fields that were never used in the JavaScript code, reducing unnecessary data processing
+#VM|
+#PR|4. **Tests verified** - All 558 tests pass, ESLint clean

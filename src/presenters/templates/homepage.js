@@ -45,11 +45,7 @@ function prepareSchoolDataForSearch(schools) {
     kab_kota: school.kab_kota || '',
     provinsi: school.provinsi || '',
     slug: slugify(school.nama || ''),
-    provinceSlug: slugify(school.provinsi || ''),
-    provinceSlug: slugify(school.provinsi || ''),
-    kabKotaSlug: slugify(school.kab_kota || ''),
-    kecamatanSlug: slugify(school.kecamatan || ''),
-    namaSlug: slugify(school.nama || ''),
+
     schoolUrl: `/provinsi/${slugify(school.provinsi || '')}/kabupaten/${slugify(school.kab_kota || '')}/kecamatan/${slugify(school.kecamatan || '')}/${school.npsn || ''}-${slugify(school.nama || '')}.html`,
   }));
 }
