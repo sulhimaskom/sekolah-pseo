@@ -49,7 +49,7 @@ function aggregateByKecamatan(schools) {
 
   // Sort by kecamatan name
   const kecamatanList = Array.from(kecamatanMap.values());
-  kecamatanList.sort((a, b) => a.name.localeCompare(a.name, 'id'));
+  kecamatanList.sort((a, b) => a.name.localeCompare(b.name, 'id'));
 
   return kecamatanList;
 }
