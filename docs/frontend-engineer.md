@@ -90,7 +90,6 @@ Added critical SEO meta tags to generated pages:
 - Schema.org structured data (JSON-LD)
 - No duplicate code or imports
 
-
 ## Past Improvements (Continued)
 
 ### Fix Orphaned CSS Rules (2026-02-26)

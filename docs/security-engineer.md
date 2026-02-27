@@ -80,8 +80,9 @@ This document serves as the security reference for the Sekolah PSEO project.
   - Validates hostname is present
   - Reconstructs URL to remove any injected characters
   - Validates URL ends with .git for git repositories
-HV|- **Exports**: `validateRepoUrl` function for testing
-WR|
+    HV|- **Exports**: `validateRepoUrl` function for testing
+    WR|
+
 #### 11. CSV Formula Injection Protection
 
 YB|- **Location**: `scripts/utils.js` - `escapeCsvField()` function
@@ -94,19 +95,19 @@ BT|- **Coverage**: All CSV exports use this function
 VX|- **Location**: `.github/workflows/*.yml`
 YX|- **Implementation**: Permissions reduced to minimum required for each workflow
 BT|- **Changes**:
-SP|  - Removed unnecessary `id-token: write` permissions
-SQ|  - Removed unnecessary `actions: write` permissions
-WS|  - Workflows only request what's needed (contents, issues, pull-requests)
+SP| - Removed unnecessary `id-token: write` permissions
+SQ| - Removed unnecessary `actions: write` permissions
+WS| - Workflows only request what's needed (contents, issues, pull-requests)
 
 #### 13. Self-Hosted Runner Security
 
 YN|- **Location**: `orchestrator.yml`, `architect-agent.yml`
 VK|- **Status**: Uses self-hosted runners for AI agent execution
 KQ|- **Security Requirements**:
-TM|  - Runner must be on isolated network segment
-TB|  - Runner must have no persistent storage of secrets
-XW|  - Runner credentials must rotate regularly
-YJ|  - Runner should be ephemeral where possible
+TM| - Runner must be on isolated network segment
+TB| - Runner must have no persistent storage of secrets
+XW| - Runner credentials must rotate regularly
+YJ| - Runner should be ephemeral where possible
 ZJ|- **Alternative**: Consider GitHub-hosted runners for production
 
 #### 14. AI Agent Secret Handling
@@ -114,9 +115,9 @@ ZJ|- **Alternative**: Consider GitHub-hosted runners for production
 BQ|- **Design Decision**: Workflows pass secrets to AI agents via environment variables
 VR|- **Rationale**: AI agents (OpenCode) require API keys to execute tasks
 JM|- **Risk Mitigation**:
-PQ|  - Secrets limited to specific workflow steps where needed
-XZ|  - Runner isolation prevents secret exfiltration
-RB|  - Regular secret rotation recommended
+PQ| - Secrets limited to specific workflow steps where needed
+XZ| - Runner isolation prevents secret exfiltration
+RB| - Regular secret rotation recommended
 JB|- **Future**: Consider ephemeral credential pools for AI operations
 WR|
 

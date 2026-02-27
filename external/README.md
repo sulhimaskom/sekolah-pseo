@@ -16,6 +16,7 @@ npsn,nama,bentuk_pendidikan,status,provinsi,kab_kota,kecamatan,alamat,lat,lon
 ```
 
 ### Required Fields:
+
 - `npsn` - National School ID (numeric)
 - `nama` - School name
 - `provinsi` - Province
@@ -23,6 +24,7 @@ npsn,nama,bentuk_pendidikan,status,provinsi,kab_kota,kecamatan,alamat,lat,lon
 - `kecamatan` - District
 
 ### Optional Fields:
+
 - `bentuk_pendidikan` - School type (SD, SMP, SMA, SMK, etc.)
 - `status` - School status (Negeri, Swasta)
 - `alamat` - Street address
