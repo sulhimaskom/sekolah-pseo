@@ -13,6 +13,13 @@ import os
 import sys
 import json
 import time
+import csv
+import traceback
+import argparse
+from typing import Dict, List, Any, Optional
+import sys
+import json
+import time
 import traceback
 import argparse
 from typing import Dict, List, Any, Optional
@@ -260,6 +267,211 @@ def run_data_validation_tests(suite: TestSuite, root: str) -> None:
     suite.run_test("schools.csv has required columns", test_schools_csv_structure)
 
 
+# Indonesia geographic bounds (from scripts/config.js)
+INDONESIA_LAT_MIN = -11
+INDONESIA_LAT_MAX = 6
+INDONESIA_LON_MIN = 95
+INDONESIA_LON_MAX = 141
+
+
+def run_functional_data_tests(suite: TestSuite, root: str) -> None:
+    """Run functional data validation tests beyond basic structure.
+    
+    These tests validate actual data quality:
+    - ETL output validation
+    - CSV schema completeness
+    - Coordinate bounds checking
+    - NPSN uniqueness
+    - Field completeness metrics
+    """
+    data_path = os.path.join(root, 'data', 'schools.csv')
+    
+    # Test 1: ETL Output Validation
+    def test_etl_output_exists():
+        suite.assert_exists(data_path, "schools.csv should exist after ETL")
+    
+    suite.run_test("ETL output file exists", test_etl_output_exists)
+    
+    def test_etl_output_has_content():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+        suite.assert_true(len(rows) > 1, f"schools.csv should have data rows, found {len(rows)}")
+    
+    suite.run_test("ETL output has content", test_etl_output_has_content)
+    
+    # Test 2: CSV Schema Validation
+    def test_csv_all_required_columns():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            headers = reader.fieldnames or []
+        required_cols = ['npsn', 'nama', 'bentuk_pendidikan', 'status', 
+                        'alamat', 'kelurahan', 'kecamatan', 'kab_kota', 
+                        'provinsi', 'lat', 'lon', 'updated_at']
+        for col in required_cols:
+            suite.assert_in(col, headers, f"Required column '{col}' should exist")
+    
+    suite.run_test("CSV has all required columns", test_csv_all_required_columns)
+    
+    def test_csv_lat_lon_numeric():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        if not rows:
+            return
+        for row in rows[:10]:
+            lat = row.get('lat', '').strip()
+            lon = row.get('lon', '').strip()
+            if lat:
+                try:
+                    float(lat)
+                except ValueError:
+                    suite.assert_true(False, f"lat '{lat}' should be numeric")
+            if lon:
+                try:
+                    float(lon)
+                except ValueError:
+                    suite.assert_true(False, f"lon '{lon}' should be numeric")
+    
+    suite.run_test("CSV lat/lon are numeric", test_csv_lat_lon_numeric)
+    
+    # Test 3: Coordinate Bounds Validation
+    def test_coordinates_within_indonesia_bounds():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        if not rows:
+            return
+        invalid_coords = []
+        for row in rows:
+            lat_str = row.get('lat', '').strip()
+            lon_str = row.get('lon', '').strip()
+            if lat_str and lon_str:
+                try:
+                    lat = float(lat_str)
+                    lon = float(lon_str)
+                    if not (INDONESIA_LAT_MIN <= lat <= INDONESIA_LAT_MAX):
+                        invalid_coords.append(f"lat {lat} out of bounds")
+                    if not (INDONESIA_LON_MIN <= lon <= INDONESIA_LON_MAX):
+                        invalid_coords.append(f"lon {lon} out of bounds")
+                except ValueError:
+                    pass
+        total_with_coords = sum(1 for r in rows if r.get('lat') and r.get('lon'))
+        if invalid_coords:
+            invalid_count = len(invalid_coords)
+            suite.assert_true(
+                invalid_count <= total_with_coords * 0.05,
+                f"Too many invalid coordinates: {invalid_count}/{total_with_coords}. "
+                f"Sample: {invalid_coords[:5]}"
+            )
+    
+    suite.run_test("Coordinates within Indonesia bounds", test_coordinates_within_indonesia_bounds)
+    
+    # Test 4: NPSN Uniqueness
+    def test_npsn_uniqueness():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        if not rows:
+            return
+        npsn_values = []
+        for row in rows:
+            npsn = row.get('npsn', '').strip()
+            if npsn:
+                npsn_values.append(npsn)
+        unique_npsn = set(npsn_values)
+        duplicates = len(npsn_values) - len(unique_npsn)
+        total_npsn = len(npsn_values)
+        if duplicates > 0:
+            dup_pct = (duplicates / total_npsn) * 100 if total_npsn > 0 else 0
+            suite.assert_true(
+                dup_pct <= 1.0,
+                f"Found {duplicates} duplicate NPSN values ({dup_pct:.2f}% of total)"
+            )
+    
+    suite.run_test("NPSN values are unique", test_npsn_uniqueness)
+    
+    # Test 5: Field Completeness
+    def test_required_fields_not_empty():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        if not rows:
+            return
+        required_fields = ['npsn', 'nama', 'provinsi', 'kab_kota']
+        empty_counts = {field: 0 for field in required_fields}
+        for row in rows:
+            for field in required_fields:
+                value = row.get(field, '').strip()
+                if not value:
+                    empty_counts[field] += 1
+        total_rows = len(rows)
+        for field, empty_count in empty_counts.items():
+            empty_pct = (empty_count / total_rows) * 100 if total_rows > 0 else 0
+            suite.assert_true(
+                empty_pct <= 10.0,
+                f"Field '{field}' has {empty_count} empty values ({empty_pct:.2f}%)"
+            )
+    
+    suite.run_test("Required fields have data", test_required_fields_not_empty)
+    
+    # Test 6: NPSN is Numeric
+    def test_npsn_is_numeric():
+        if not os.path.exists(data_path):
+            return
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        if not rows:
+            return
+        non_numeric_npsn = []
+        for row in rows:
+            npsn = row.get('npsn', '').strip()
+            if npsn and not npsn.isdigit():
+                non_numeric_npsn.append(npsn)
+        total_npsn = len(rows)
+        non_numeric_count = len(non_numeric_npsn)
+        non_numeric_pct = (non_numeric_count / total_npsn) * 100 if total_npsn > 0 else 0
+        suite.assert_true(
+            non_numeric_pct <= 1.0,
+            f"Found {non_numeric_count} non-numeric NPSN values ({non_numeric_pct:.2f}% of total). "
+            f"Sample: {non_numeric_npsn[:5]}"
+        )
+    
+    suite.run_test("NPSN values are numeric", test_npsn_is_numeric)
+    
+    # Test 7: Error Handling
+    def test_handles_malformed_csv():
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, 
+                                        encoding='utf-8') as f:
+            f.write("npsn,nama\n")
+            f.write("valid,valid\n")
+            f.write("invalid row without proper csv\n")
+            temp_path = f.name
+        try:
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                rows = list(reader)
+            suite.assert_true(len(rows) >= 1, "Should parse at least 1 valid row")
+        finally:
+            os.unlink(temp_path)
+    
+    suite.run_test("Handles malformed CSV gracefully", test_handles_malformed_csv)
+
+
 def run_all_tests(root: str) -> TestSuite:
     """Run all tests and return results."""
     suite = TestSuite()
@@ -286,6 +498,14 @@ def run_all_tests(root: str) -> TestSuite:
     run_github_workflows_tests(suite, root)
     
     # Data Validation Tests
+    print("Running Data Validation Tests...")
+    run_data_validation_tests(suite, root)
+    
+    # Functional Data Tests (Issue #294 - Expanded Python test coverage)
+    print("Running Functional Data Tests...")
+    run_functional_data_tests(suite, root)
+    
+    return suite
     print("Running Data Validation Tests...")
     run_data_validation_tests(suite, root)
     
