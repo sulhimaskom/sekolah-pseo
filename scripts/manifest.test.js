@@ -360,7 +360,7 @@ test('saveManifest and loadManifest work correctly', async () => {
       version: 1,
       lastBuild: new Date().toISOString(),
       schools: {
-        '12345': {
+        12345: {
           hash: 'abc123',
           builtAt: new Date().toISOString(),
           path: '/schools/12345.html',

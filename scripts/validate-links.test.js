@@ -209,7 +209,7 @@ test('validateLinksInFile handles non-directory target as broken link', async ()
   const file = '/dist/index.html';
   const links = ['file.txt'];
   const distDir = '/dist';
-  
+
   const result = await validateLinksInFile(file, links, distDir);
   // The result should contain broken links since file.txt doesn't exist
   assert.ok(Array.isArray(result));
@@ -220,17 +220,17 @@ test('validateLinks processes HTML files with links and returns false on broken 
   const os = require('os');
   const fs = require('fs');
   const path = require('path');
-  
+
   // Create a temp directory with HTML file containing broken link
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-test-' + Date.now()));
-  
+
   // Create an HTML file with a broken link
   const htmlFile = path.join(tempDir, 'index.html');
   fs.writeFileSync(htmlFile, '<a href="nonexistent.html">Broken</a>');
-  
+
   const originalDistDir = CONFIG.DIST_DIR;
   CONFIG.DIST_DIR = tempDir;
-  
+
   try {
     const result = await validateLinks();
     // Should return false because broken link exists
@@ -246,20 +246,20 @@ test('validateLinks processes HTML files with valid links and returns true', asy
   const os = require('os');
   const fs = require('fs');
   const path = require('path');
-  
+
   // Create a temp directory with valid HTML structure
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-valid-' + Date.now()));
-  
+
   // Create an HTML file with valid internal link
   const htmlFile = path.join(tempDir, 'index.html');
   fs.writeFileSync(htmlFile, '<a href="about.html">About</a>');
-  
+
   // Create the target file that the link points to
   fs.writeFileSync(path.join(tempDir, 'about.html'), '<html><body>About</body></html>');
-  
+
   const originalDistDir = CONFIG.DIST_DIR;
   CONFIG.DIST_DIR = tempDir;
-  
+
   try {
     const result = await validateLinks();
     // Should return true because all links are valid

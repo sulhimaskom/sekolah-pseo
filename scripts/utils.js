@@ -224,8 +224,14 @@ function escapeCsvField(value) {
   // This prevents spreadsheet applications from interpreting cells as formulas
   // Dangerous characters: =, +, -, @, tab (\t)
   const firstChar = str.charAt(0);
-  if (firstChar === '=' || firstChar === '+' || firstChar === '-' || firstChar === '@' || firstChar === '\t') {
-    return '\'' + str;
+  if (
+    firstChar === '=' ||
+    firstChar === '+' ||
+    firstChar === '-' ||
+    firstChar === '@' ||
+    firstChar === '\t'
+  ) {
+    return "'" + str;
   }
 
   // Check if the field needs quoting

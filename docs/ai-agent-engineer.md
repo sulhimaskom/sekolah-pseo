@@ -100,3 +100,8 @@ JK|- **2026-02-26**: Added test coverage for validate-links.js - 8 new tests for
   - Tests cover broken link detection, valid link validation, and error handling paths
   - `scripts/check-freshness.test.js` - Tests for data freshness check module (getDataFreshness, getDataQualityMetrics)
   - `scripts/fetch-data.test.js` - Tests for external data fetch module (findCsvFiles, copyToRaw)
+
+
+- **2026-02-27**: Fixed Prettier formatting in 4 scripts files - build-pages.js, manifest.test.js, utils.js, validate-links.test.js
+  - Removed trailing whitespace, fixed inconsistent line breaks
+  - All 558 JavaScript tests pass

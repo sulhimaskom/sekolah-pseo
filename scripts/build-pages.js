@@ -63,11 +63,11 @@ async function ensureDistDir() {
 async function loadSchools() {
   const text = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
   const schools = parseCsv(text);
-  
+
   if (schools.length === 0) {
     throw new Error(`No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`);
   }
-  
+
   return schools;
 }
 
@@ -290,7 +290,6 @@ async function build(options = {}) {
       'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
     );
   }
-
 
   // Generate homepage
   logger.info('Generating homepage...');
