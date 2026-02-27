@@ -6,6 +6,28 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 
 ## Completed Improvements
 
+### 2026-02-27: CSV Formula Injection Protection (Issue #254)
+
+- **Issue**: #254
+- **PR**: #266
+- **Branch**: `rnd/csv-formula-injection-fix`
+- **Summary**: Add formula injection protection to escapeCsvField() function
+- **Status**: PR created with RnD label
+- **Changes**:
+  - Modified `scripts/utils.js`: Added formula injection protection by prefixing dangerous characters (`=`, `+`, `-`, `@`, `\t`) with single quote
+  - Added 8 new test cases in `scripts/utils.test.js` covering:
+    - Equal sign (=) - `=SUM(1,2)`, `=CMD|'/C calc`, `=DDE("cmd"/c calc")`
+    - Plus sign (+) - `+1+1`, `+SUM(A1:B1)`
+    - Minus sign (-) - `-1-1`, `-2*3`
+    - At sign (@) - `@CONCATENATE(A1,B1)`
+    - Tab character - `\tdata`
+    - Combined formula + comma handling
+    - Non-formula strings (ensuring they aren't affected)
+- **Verification**:
+  - Tests: 555 passing (was 470, +85 new tests)
+  - All tests pass with `npm run test:js`
+- **Security Impact**: P1 - Prevents potential code execution when CSV exports are opened in spreadsheet applications
+
 ### 2026-02-26: Add security-audit.yml workflow (Issue #233)
 
 - **Issue**: #233
@@ -21,8 +43,6 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 - **Blocker**: GitHub App lacks "workflows" permission - workflow file changes require manual push
 - **Note**: Commented on issue #233 with the full file content for manual application
 
-## Completed Improvements
-
 ### 2026-02-26: Verify slugify caching tests
 
 - **PR**: #228
@@ -37,8 +57,6 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 - **Results**:
   - Tests: 470 passing (was 467, +3 new tests)
 - **Note**: Caching is already implemented in `scripts/slugify.js` with `MAX_CACHE_SIZE=10000`, which efficiently handles ~3500 schools within a single build run.
-
-## Completed Improvements
 
 ### 2026-02-26: Add npm audit to CI pipeline
 
@@ -193,24 +211,3 @@ This document serves as the long-term memory for the RnD agent, tracking improve
 2. Add broken link checking to CI (Issue #146)
 3. Add integration tests for the full ETL pipeline
 4. Add performance benchmarks for page building
-
-(End of file)
-
-1. ~~Add npm audit to CI pipeline~~ (Done: Issue #233 - file created, manual push required)
-2. Add broken link checking to CI (Issue #146)
-3. Add integration tests for the full ETL pipeline
-4. Add performance benchmarks for page building
-
-1. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
-2. ~~Fail build when no schools loaded from CSV~~ (Done: PR #207)
-3. ~~Add npm audit to CI pipeline~~ (Done: Issue #233 - file created, manual push required)
-4. Add broken link checking to CI (Issue #146)
-4. Add performance benchmarks for page building
-5. Add npm audit to CI pipeline (Issue #130)
-6. Add broken link checking to CI (Issue #146)
-
-7. ~~Add more edge case tests for resilience.js~~ (Done: PR #128)
-8. Add integration tests for the full ETL pipeline
-9. Add performance benchmarks for page building
-10. Add npm audit to CI pipeline (Issue #130)
-11. Add broken link checking to CI (Issue #146)

@@ -207,6 +207,8 @@ async function writeCsv(data, outputPath) {
  * Escape a CSV field value according to RFC 4180.
  * Fields containing commas, quotes, or newlines must be enclosed in double quotes.
  * Double quotes within the field must be escaped by doubling them.
+ * Additionally, formula injection protection is applied by prefixing dangerous
+ * characters (=, +, -, @, tab) with a single quote to prevent spreadsheet formula execution.
  *
  * @param {string} value - The field value to escape
  * @returns {string} - The escaped field value
@@ -217,6 +219,14 @@ function escapeCsvField(value) {
   }
 
   const str = String(value);
+
+  // Formula injection protection: prefix dangerous characters with single quote
+  // This prevents spreadsheet applications from interpreting cells as formulas
+  // Dangerous characters: =, +, -, @, tab (\t)
+  const firstChar = str.charAt(0);
+  if (firstChar === '=' || firstChar === '+' || firstChar === '-' || firstChar === '@' || firstChar === '\t') {
+    return '\'' + str;
+  }
 
   // Check if the field needs quoting
   const needsQuoting =
@@ -230,7 +240,6 @@ function escapeCsvField(value) {
 
   return str;
 }
-
 module.exports = {
   parseCsv,
   addNumbers,
