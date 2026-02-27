@@ -145,7 +145,18 @@
 #QR|#QR|  - check-freshness.test.js (Data freshness tests)
 #QR|#QR|  - manifest.test.js (Build manifest tests)
 #QR|#QR|  - province-page.test.js (Province page template tests)
-#QR|  PR: https://github.com/sulhimaskom/sekolah-pseo/pull/263
+#QB|- Fix outdated test count in docs/testing.md - DONE: Updated test file count (14→20) and added 6 missing test files:
+#BV|#QR|#QR|  - homepage.test.js (Homepage template tests)
+#VZ|#QR|#QR|  - logger.test.js (Logger tests)
+#HX|#QR|#QR|  - fetch-data.test.js (Data fetching tests)
+#XX|#QR|#QR|  - check-freshness.test.js (Data freshness tests)
+#XQ|#QR|#QR|  - manifest.test.js (Build manifest tests)
+#NV|#QR|#QR|  - province-page.test.js (Province page template tests)
+#HR|#QR|  PR: https://github.com/sulhimaskom/sekolah-pseo/pull/263
+#VB|#QR|- Add missing npm scripts to docs/setup.md - DONE: Added documentation for 8 missing npm scripts:
+#HQ|#QR|  - npm run dev, test:js:coverage, test:js:coverage:report, test:py:pytest
+#HQ|#QR|  - npm run test:ci, test:all, coverage, coverage:report
+#VB|#QR|  PR: https://github.com/sulhimaskom/sekolah-pseo/pull/271
 
 ## Notes
 
