@@ -1343,11 +1343,11 @@ const html = generateSchoolPageHtml(school);
 #YK|
 #ZB|### Exports
 #ZT|
-XH|```javascript
+XH|`javascript
 #RZ|module.exports = {
 #NX|  generateHomepageHtml: function,
 #VM|  aggregateByProvince: function
-#NT|};```
+#NT|};`
 
 #XZ|### Functions
 
@@ -1390,20 +1390,20 @@ XH|```javascript
 
 #BR|**Returns:** `Array<Object>` - Array of province objects with school count
 
-#QW|```javascript
+#QW|`javascript
 #VB|[
 #RN|  { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
 #TV|  { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 }
-#HV|]```
+#HV|]`
 
 #TB|**Sorting:** Provinces are sorted alphabetically by Indonesian locale.
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { aggregateByProvince } = require('./templates/homepage');
 #RN|#const provinces = aggregateByProvince(schools);
-#MT|#provinces.forEach(p => console.log(`${p.name}: ${p.count}`));```
+#MT|#provinces.forEach(p => console.log(`${p.name}: ${p.count}`));``
 
 #KP|---
 
@@ -1415,12 +1415,12 @@ XH|```javascript
 #YK|
 #ZB|### Exports
 #ZT|
-XH|```javascript
+XH|`javascript
 #RZ|module.exports = {
 #NX|  generateProvincePageHtml: function,
 #VM|  filterSchoolsByProvince: function,
 #YJ|  aggregateByKabupaten: function
-#NT|};```
+#NT|};`
 
 #XZ|### Functions
 
@@ -1467,10 +1467,10 @@ XH|```javascript
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { filterSchoolsByProvince } = require('./templates/province-page');
 #RN|#const jakartaSchools = filterSchoolsByProvince(schools, 'DKI Jakarta');
-#MT|#console.log(`Found ${jakartaSchools.length} schools`);```
+#MT|#console.log(`Found ${jakartaSchools.length} schools`);``
 
 #HT|---
 
@@ -1484,20 +1484,20 @@ XH|```javascript
 
 #BR|**Returns:** `Array<Object>` - Array of kabupaten objects with school count
 
-#QW|```javascript
+#QW|`javascript
 #VB|[
 #RN|  { name: 'Jakarta Pusat', slug: 'jakarta-pusat', count: 150 },
 #TV|  { name: 'Jakarta Selatan', slug: 'jakarta-selatan', count: 200 }
-#HV|]```
+#HV|]`
 
 #TB|**Sorting:** Kabupaten are sorted alphabetically by Indonesian locale.
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { aggregateByKabupaten } = require('./templates/province-page');
 #RN|#const kabupatens = aggregateByKabupaten(jakartaSchools);
-#MT|#kabupatens.forEach(k => console.log(`${k.name}: ${k.count}`));```
+#MT|#kabupatens.forEach(k => console.log(`${k.name}: ${k.count}`));``
 
 #KV|---
 
@@ -1505,9 +1505,9 @@ XH|```javascript
 
 #XZ|Province pages are generated at:
 
-#HB|```
+#HB|`
 #MT|/provinsi/{provinceSlug}/index.html
-#KV|```
+#KV|`
 
 #XZ|Example: `/provinsi/dki-jakarta/index.html`
 
@@ -2519,7 +2519,9 @@ logger.setLevel('debug'); // Enable debug logging
 ```
 
 #YS|
+
 ## Data Freshness Module (`scripts/check-freshness.js`)
+
 #ZP|
 #XJ|### Purpose
 #SM|
@@ -2527,11 +2529,11 @@ logger.setLevel('debug'); // Enable debug logging
 #YK|
 #ZB|### Exports
 #ZT|
-XH|```javascript
+XH|`javascript
 #RZ|module.exports = {
 #NX|  getDataFreshness: function,
 #VM|  getDataQualityMetrics: function
-#NT|};```
+#NT|};`
 
 #XZ|### Constants
 
@@ -2545,27 +2547,27 @@ XH|```javascript
 
 #JR|**Returns:** `Object` - Freshness information
 
-#QW|```javascript
+#QW|`javascript
 #VB|{
 #RN|  exists: boolean,      // Whether schools.csv exists
 #TV|  date: string|null,  // ISO date string or null
 #MW|  daysAgo: number|null, // Days since last update or null
 #HV|  recordCount: number, // Total number of school records
 #HB|  isFresh: boolean    // true if data is within DEFAULT_MAX_AGE_DAYS
-#KV|}```
+#KV|}`
 
 #TB|**Freshness Threshold:** Data is considered fresh if `daysAgo <= 7` (DEFAULT_MAX_AGE_DAYS)
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { getDataFreshness } = require('./check-freshness');
 #RN|const freshness = getDataFreshness();
 #KV|#
 #KV|# If freshness.isFresh is false, data needs updating
 #HB|if (!freshness.isFresh) {
 #MT|  console.log(`Data is ${freshness.daysAgo} days old - consider refreshing`);
-#KV|}```
+#KV|}``
 
 #HT|---
 
@@ -2575,7 +2577,7 @@ XH|```javascript
 
 #JR|**Returns:** `Object|null` - Quality metrics or null if file doesn't exist
 
-#QW|```javascript
+#QW|`javascript
 #VB|{
 #RN|  totalRecords: number,
 #MW|  metrics: {
@@ -2584,7 +2586,7 @@ XH|```javascript
 #KV|    npsn: { count: number, percentage: string },
 #YJ|    province: { count: number, percentage: string }
 #KV|  }
-#KV|}```
+#KV|}`
 
 #TB|**Quality Metrics:**
 
@@ -2595,12 +2597,12 @@ XH|```javascript
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { getDataQualityMetrics } = require('./check-freshness');
 #RN|#const quality = getDataQualityMetrics();
 #KV|#if (quality) {
 #MT|#  console.log(`Records with coordinates: ${quality.metrics.coordinates.percentage}%`);
-#KV|#}```
+#KV|#}``
 
 #HT|---
 
@@ -2608,7 +2610,7 @@ XH|```javascript
 
 #XZ|The module can be run directly from the command line:
 
-#HB|```bash
+#HB|`bash
 #MT|# Basic check
 #KV|node scripts/check-freshness.js
 #KV|#
@@ -2617,7 +2619,7 @@ XH|```javascript
 #KV|#
 #KV|# Verbose output with quality metrics
 #MT|node scripts/check-freshness.js --verbose
-#KV|```
+#KV|`
 
 #KV|Exit Codes:
 #HB|- `0`: Data is fresh
@@ -2634,10 +2636,10 @@ XH|```javascript
 #ZB|### Exports
 #ZT|
 module.exports = {
-  fetchFromGitHub: function,
-  findCsvFiles: function,
-  copyToRaw: function,
-  validateRepoUrl: function
+fetchFromGitHub: function,
+findCsvFiles: function,
+copyToRaw: function,
+validateRepoUrl: function
 };
 
 #XZ|### Constants
@@ -2667,12 +2669,12 @@ module.exports = {
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { fetchFromGitHub } = require('./fetch-data');
 #RN|#const csvPath = await fetchFromGitHub();
 #KV|#if (csvPath) {
 #MT|#  console.log(`Using: ${csvPath}`);
-#KV|#}```
+#KV|#}``
 
 #HT|---
 
@@ -2694,10 +2696,10 @@ module.exports = {
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|``javascript
 #VB|const { findCsvFiles } = require('./fetch-data');
 #RN|#const files = findCsvFiles('/path/to/data');
-#MT|#console.log(`Found ${files.length} CSV files`);```
+#MT|#console.log(`Found ${files.length} CSV files`);``
 
 #HT|---
 
@@ -2719,12 +2721,13 @@ module.exports = {
 
 #TQ|**Usage:**
 
-#XH|```javascript
+#XH|`javascript
 #VB|const { copyToRaw } = require('./fetch-data');
 #RN|#const success = copyToRaw('/source/data.csv', '/path/to/raw.csv');
 #MT|#if (success) {
 #KV|#  console.log('File copied successfully');
-#KV|#}```
+#KV|#}`
+
 ---
 
 #### `validateRepoUrl(url)`
@@ -2764,7 +2767,7 @@ validateRepoUrl('https://evil.com'); // Error: must end with .git
 
 #XZ|The module can be run directly from the command line:
 
-#HB|```bash
+#HB|`bash
 #MT|# Default fetch
 #KV|node scripts/fetch-data.js
 #KV|#
@@ -2773,9 +2776,10 @@ validateRepoUrl('https://evil.com'); // Error: must end with .git
 #KV|#
 #KV|# Specify source repository
 #MT|node scripts/fetch-data.js --source https://github.com/user/repo.git
-#KV|```
+#KV|`
 
 #HT|---
+
 ## Build Manifest Module (`scripts/manifest.js`)
 
 ### Purpose

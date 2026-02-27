@@ -39,7 +39,6 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Included usage examples with valid and invalid URL validation cases
 - All tests pass
 
-
 ## Improvements Delivered
 
 ### PR #94: fix: resolve npm security vulnerabilities (ajv, minimatch)
@@ -60,13 +59,13 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Tests cover: special characters only (returns 'untitled'), numbers only, whitespace-only
 - Increases test coverage for the slugify utility
 - All tests pass, zero lint warnings
+
 ### PR #211: fix(test): reset circuit breakers before fs-safe tests to prevent test pollution
 
 - Fixed issue #194: Global circuit breaker state causes test pollution
 - Added `resetCircuitBreakers()` call in the test `before` hook
 - All 24 fs-safe tests pass, zero lint warnings
 - Small atomic change (4 lines added)
-
 
 ### PR #234: test: add test coverage for province-page module
 

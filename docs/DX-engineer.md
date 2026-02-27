@@ -97,6 +97,7 @@ This document serves as the long-term memory for the DX-engineer agent. It recor
 - **Extensions**: ESLint, Prettier
 - **Post-create**: Runs `npm install` automatically
 - **Ports**: 3000 (Application), 8080 (Preview)
+
 ### Available Scripts
 
 | Script                   | Description               |

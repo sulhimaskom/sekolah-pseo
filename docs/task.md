@@ -14,63 +14,66 @@ Implemented comprehensive rate limiting system for concurrent operations to prov
 ### Actions Taken
 
 1. **Created `scripts/rate-limiter.js`** with RateLimiter class:
-    - Configurable max concurrent operations
-    - Queue management with timeout protection
-    - Comprehensive metrics tracking (total, completed, failed, rejected, throughput, success rate)
-    - Backpressure handling (queues operations when limit exceeded)
-    - Integration with existing IntegrationError and ERROR_CODES
-    - Queue timeout prevents operations from waiting indefinitely
+   - Configurable max concurrent operations
+   - Queue management with timeout protection
+   - Comprehensive metrics tracking (total, completed, failed, rejected, throughput, success rate)
+   - Backpressure handling (queues operations when limit exceeded)
+   - Integration with existing IntegrationError and ERROR_CODES
+   - Queue timeout prevents operations from waiting indefinitely
 
 2. **Integrated rate limiter into `scripts/build-pages.js`**:
-    - Replaced batch-based concurrency with rate limiter
-    - Controlled page generation with BUILD_CONCURRENCY_LIMIT (default: 100)
-    - Added progress logging every 100 pages
-    - Added build metrics output after completion
-    - Individual operation naming for better tracking (writeSchoolPage-{npsn})
+   - Replaced batch-based concurrency with rate limiter
+   - Controlled page generation with BUILD_CONCURRENCY_LIMIT (default: 100)
+   - Added progress logging every 100 pages
+   - Added build metrics output after completion
+   - Individual operation naming for better tracking (writeSchoolPage-{npsn})
 
 3. **Integrated rate limiter into `scripts/validate-links.js`**:
-    - Replaced batch-based concurrency with rate limiter
-    - Controlled link validation with VALIDATION_CONCURRENCY_LIMIT (default: 50)
-    - Added progress logging for validation
-    - Added validation metrics output after completion
-    - Individual operation naming for better tracking (validateLinks-{filename})
+   - Replaced batch-based concurrency with rate limiter
+   - Controlled link validation with VALIDATION_CONCURRENCY_LIMIT (default: 50)
+   - Added progress logging for validation
+   - Added validation metrics output after completion
+   - Individual operation naming for better tracking (validateLinks-{filename})
 
 4. **Created comprehensive test suite** (`scripts/rate-limiter.test.js`):
-    - 25 tests covering all rate limiter functionality
-    - Constructor tests (default and custom options)
-    - Execute operation tests (single, multiple, concurrent, failed, timeout)
-    - Metrics tests (total, completed, failed, rejected, queued, active, throughput, success rate)
-    - Reset tests
-    - Edge case tests (rapid succession, empty results)
-    - All tests pass (25/25)
+   - 25 tests covering all rate limiter functionality
+   - Constructor tests (default and custom options)
+   - Execute operation tests (single, multiple, concurrent, failed, timeout)
+   - Metrics tests (total, completed, failed, rejected, queued, active, throughput, success rate)
+   - Reset tests
+   - Edge case tests (rapid succession, empty results)
+   - All tests pass (25/25)
 
 5. **Updated API documentation** (`docs/api.md`):
-    - Added RateLimiter class documentation with full API contract
-    - Added execute() method documentation with usage examples
-    - Added getMetrics() method documentation with all metrics explained
-    - Added reset() method documentation
-    - Updated module organization to include rate-limiter.js
-    - Updated dependency graph to show rate limiter dependencies
-    - Added best practice #8: Use Rate Limiters for Concurrent Operations
+   - Added RateLimiter class documentation with full API contract
+   - Added execute() method documentation with usage examples
+   - Added getMetrics() method documentation with all metrics explained
+   - Added reset() method documentation
+   - Updated module organization to include rate-limiter.js
+   - Updated dependency graph to show rate limiter dependencies
+   - Added best practice #8: Use Rate Limiters for Concurrent Operations
 
 6. **Updated blueprint.md**:
-    - Added rate-limiter.js to project structure
-    - Added Rate Limiting section to resilience patterns
-    - Added decision log entry for rate limiter implementation
+   - Added rate-limiter.js to project structure
+   - Added Rate Limiting section to resilience patterns
+   - Added decision log entry for rate limiter implementation
 
 ### Rate Limiter Features
 
 **Concurrency Control:**
+
 - Configurable max concurrent operations
 - Queue management when limit exceeded
 - Automatic backpressure handling
 
 **Timeout Protection:**
+
 - Queue timeout (default: 30 seconds)
 - Operations rejected after timeout with IntegrationError
 - Prevents indefinite waiting
 
 **Metrics and Observability:**
+
 - Total operations submitted
 - Completed, failed, rejected counts
 - Currently active operations
@@ -80,6 +83,7 @@ Implemented comprehensive rate limiting system for concurrent operations to prov
 - Success rate (percentage)
 
 **Integration:**
+
 - Uses existing IntegrationError class
 - Uses ERROR_CODES.RETRY_EXHAUSTED for queue timeouts
 - Compatible with existing resilience patterns
@@ -95,12 +99,14 @@ Implemented comprehensive rate limiting system for concurrent operations to prov
 ### Performance Impact
 
 **Before:**
+
 - Batch-based concurrency processing
 - No metrics or observability
 - Fixed batch sizes
 - No backpressure handling
 
 **After:**
+
 - Controlled concurrency with rate limiter
 - Comprehensive metrics on operations
 - Dynamic queue management
@@ -134,23 +140,27 @@ Implemented comprehensive rate limiting system for concurrent operations to prov
 ### Impact
 
 **Concurrency Control:**
+
 - Controlled concurrency prevents resource exhaustion
 - Backpressure handling when system is overloaded
 - Queue timeout prevents indefinite waiting
 
 **Observability:**
+
 - Comprehensive metrics on all operations
 - Throughput tracking for performance monitoring
 - Success rate metrics for reliability tracking
 - Queue statistics for capacity planning
 
 **Maintainability:**
+
 - Centralized concurrency control
 - Consistent patterns across operations
 - Easier to adjust limits via configuration
 - Better debugging with operation names
 
 **User Experience:**
+
 - More predictable resource usage
 - Better error messages for timeouts
 - Metrics provide insights into system performance
@@ -229,6 +239,7 @@ Enhanced the ETL data validation system with comprehensive data integrity checks
 ### Validation Rules Implemented
 
 **Required Fields Validation**:
+
 - npsn: non-empty, numeric string
 - nama: non-empty string
 - bentuk_pendidikan: non-empty string
@@ -237,16 +248,19 @@ Enhanced the ETL data validation system with comprehensive data integrity checks
 - kecamatan: non-empty string
 
 **Coordinate Validation**:
+
 - Latitude range: -11 to 6 (Indonesia bounds)
 - Longitude range: 95 to 141 (Indonesia bounds)
 - Format: valid decimal number
 - Graceful handling of missing values
 
 **Categorical Field Validation**:
+
 - status: N (Negeri) or S (Swasta)
 - bentuk_pendidikan: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB
 
 **Data Integrity Checks**:
+
 - NPSN uniqueness across dataset
 - Field completeness tracking
 - Coordinate validity tracking
@@ -262,6 +276,7 @@ Enhanced the ETL data validation system with comprehensive data integrity checks
 ### Data Quality Metrics on Current Dataset (3474 records)
 
 **Field Completeness**:
+
 - npsn: 100% (3474/3474) - complete
 - nama: 100% (3474/3474) - complete
 - bentuk_pendidikan: 100% (3474/3474) - complete
@@ -275,15 +290,18 @@ Enhanced the ETL data validation system with comprehensive data integrity checks
 - lon: 99.68% (3463/3474) - 11 missing (0.32%)
 
 **Coordinate Statistics**:
+
 - Valid coordinates: 3463 (99.68%)
 - Missing coordinates: 11 (0.32%)
 - Invalid coordinates: 0 (0%)
 
 **NPSN Uniqueness**:
+
 - Unique NPSN: 3474 (100%)
 - Duplicate NPSN: 0 (0%)
 
 **Categorical Distribution**:
+
 - status: N (Negeri/Public) = 1654 (47.62%), S (Swasta/Private) = 1820 (52.38%)
 - bentuk_pendidikan: SD=1878 (54.06%), SMP=743 (21.39%), SMA=321 (9.24%), SMK=458 (13.18%), SLB=67 (1.93%), others=7 (0.20%)
 
@@ -309,21 +327,25 @@ Enhanced the ETL data validation system with comprehensive data integrity checks
 ### Impact
 
 **Data Integrity**:
+
 - All required fields now validated before data is accepted
 - NPSN uniqueness enforced (prevents duplicate school entries)
 - Coordinate data validated for geographic accuracy
 
 **Data Quality Monitoring**:
+
 - Comprehensive quality metrics generated on every ETL run
 - Actionable insights for data improvement
 - Early detection of data quality issues
 
 **Maintainability**:
+
 - Modular validation functions easy to extend
 - Clear validation rules documented
 - Test coverage ensures reliability
 
 **User Experience**:
+
 - Better quality data in generated school pages
 - Reduced risk of broken pages due to invalid data
 - Transparent data quality reporting
@@ -378,12 +400,14 @@ Extracted inline CSS from all HTML pages into a single external stylesheet (`dis
 ### Performance Results
 
 **Before Optimization:**
+
 - Total HTML lines: ~1,230,000 (354 lines × 3474 pages)
 - Dist directory size: 40M
 - CSS written: 3474 times (once per page)
 - Lines of inline CSS: 310 lines per page × 3474 = 1,076,940 duplicate lines
 
 **After Optimization:**
+
 - Total HTML lines: 21,584 (6 lines average × 3474 pages)
 - Dist directory size: 14M (65% reduction)
 - CSS written: 1 time (single external file)
@@ -391,6 +415,7 @@ Extracted inline CSS from all HTML pages into a single external stylesheet (`dis
 - Browser caching: CSS now cached across all pages
 
 **Metrics:**
+
 - Dist size reduction: 40M → 14M (65% reduction, 26M saved)
 - HTML lines reduction: ~1,230,000 → 21,584 (98% reduction)
 - File I/O reduction: Write CSS once instead of 3474 times
@@ -427,26 +452,31 @@ Extracted inline CSS from all HTML pages into a single external stylesheet (`dis
 ### Impact
 
 **Storage Efficiency:**
+
 - 65% reduction in dist directory size (40M → 14M)
 - 26M disk space saved
 - Scalable improvement: Grows with number of pages
 
 **File I/O Efficiency:**
+
 - CSS written once instead of 3474 times
 - Reduced disk write operations
 - Faster page generation (no inline CSS insertion)
 
 **Browser Caching:**
+
 - CSS file cached on first page load
 - Subsequent page loads use cached CSS
 - Improved perceived performance for users
 
 **Maintainability:**
+
 - CSS changes only need to update one file
 - No need to rebuild all pages for CSS updates
 - Easier to debug and test CSS
 
 **User Experience:**
+
 - Faster page loads (CSS cached)
 - Reduced bandwidth usage
 - Better browser caching strategy
@@ -527,6 +557,7 @@ Created comprehensive API documentation for all internal modules in the Sekolah 
 ### API Documentation Structure
 
 **Module Organization:**
+
 ```
 scripts/           # Controllers and utilities
 ├── config.js      # Configuration module
@@ -548,6 +579,7 @@ src/
 ```
 
 **Standardized Error Format:**
+
 ```javascript
 {
   name: 'IntegrationError',
@@ -559,6 +591,7 @@ src/
 ```
 
 **Error Codes:**
+
 - `TIMEOUT`: Operation exceeded time limit
 - `RETRY_EXHAUSTED`: All retry attempts failed
 - `CIRCUIT_BREAKER_OPEN`: Circuit breaker is blocking
@@ -595,6 +628,7 @@ src/
 **Modules Documented:** 8 modules
 
 **Functions Documented:**
+
 - config.js: 1 function (validatePath)
 - utils.js: 3 functions (parseCsv, escapeHtml, addNumbers)
 - resilience.js: 5 exports (IntegrationError, ERROR_CODES, isTransientError, withTimeout, retry, CircuitBreaker)
@@ -607,6 +641,7 @@ src/
 **Total Functions Documented:** 23 functions
 
 **Documentation Sections:**
+
 - Module purpose and overview
 - Complete export lists
 - Detailed function documentation (23 functions)
@@ -621,21 +656,25 @@ src/
 ### Impact
 
 **Consistency:**
+
 - All modules now have standardized documentation
 - Clear contracts for all function inputs/outputs
 - Consistent error handling patterns
 
 **Maintainability:**
+
 - New developers can quickly understand module APIs
 - Clear dependency relationships documented
 - Best practices codified for future development
 
 **Testability:**
+
 - Clear contracts make testing easier
 - Expected inputs/outputs documented
 - Error conditions explicitly defined
 
 **Integration:**
+
 - Module interfaces clearly defined
 - Error handling patterns standardized
 - Integration points documented
@@ -652,13 +691,12 @@ src/
 - [x] Documentation updated (blueprint.md, task.md)
 - [x] Backward compatible (no code changes, only documentation)
 
-
-
 ### [TASK-010] Security Review - Comprehensive Security Audit
 
 **Status**: Complete
 
 **Description**:
+
 - Conducted comprehensive security audit of the codebase
 - Verified dependency health (vulnerabilities, outdated packages, deprecated deps)
 - Scanned for hardcoded secrets and security misconfigurations
@@ -668,6 +706,7 @@ src/
 **Audit Results**:
 
 **Dependency Health**:
+
 - ✅ npm audit: 0 vulnerabilities found
 - ✅ npm outdated: No outdated packages
 - ✅ Dependencies: 2 devDependencies (eslint, globals) - minimal and up to date
@@ -675,6 +714,7 @@ src/
 - ✅ No unused dependencies
 
 **Secrets Management**:
+
 - ✅ .env properly gitignored (.gitignore line 97)
 - ✅ .env.example exists with documented variables (no real secrets)
 - ✅ .env file does not exist locally (properly excluded)
@@ -682,6 +722,7 @@ src/
 - ✅ No API keys, passwords, or tokens committed
 
 **Input Validation & Sanitization**:
+
 - ✅ `escapeHtml()` function in scripts/utils.js (lines 101-112)
   - Escapes HTML special characters: & < > " '
   - Used throughout template generation to prevent XSS
@@ -704,6 +745,7 @@ src/
   - MAX_URLS_PER_SITEMAP: min 1, max 50000
 
 **Security Headers** (src/presenters/templates/school-page.js lines 20-24):
+
 - ✅ Content-Security-Policy: Restricts resources to same origin
 - ✅ X-Content-Type-Options: nosniff - Prevents MIME type sniffing
 - ✅ X-Frame-Options: SAMEORIGIN - Prevents clickjacking
@@ -711,6 +753,7 @@ src/
 - ✅ X-XSS-Protection: 1; mode=block - Enables XSS filtering
 
 **Code Quality & Testing**:
+
 - ✅ All 186 tests pass (comprehensive security test coverage)
 - ✅ Lint checks pass: 0 errors
 - ✅ Build succeeds: 3474 pages generated
@@ -718,6 +761,7 @@ src/
 - ✅ Input validation tested across multiple test files
 
 **Security Best Practices Verified**:
+
 - ✅ Zero Trust: ALL input validated and sanitized
 - ✅ Least Privilege: Minimal dependencies, scoped access
 - ✅ Defense in Depth: Multiple security layers (headers, validation, escaping)
@@ -727,6 +771,7 @@ src/
 - ✅ Dependencies are Attack Surface: Minimal, up-to-date deps
 
 **Anti-Patterns Check**:
+
 - ✅ No committed secrets/API keys
 - ✅ No untrusted user input (all validated)
 - ✅ No SQL injection risks (no database, CSV-based)
@@ -736,6 +781,7 @@ src/
 - ✅ No deprecated or unmaintained packages
 
 **Action Items**:
+
 - No critical vulnerabilities found
 - No high-priority security issues detected
 - All security best practices already implemented
@@ -743,6 +789,7 @@ src/
 - No immediate action required
 
 **Acceptance Criteria**:
+
 - [x] Dependency audit completed (0 vulnerabilities)
 - [x] Deprecated packages checked (none found)
 - [x] Hardcoded secrets scanned (none found)
@@ -756,12 +803,14 @@ src/
 **Security Score**: ⭐⭐⭐⭐⭐ (5/5) - Excellent security posture
 
 **Recommendations**:
+
 - Continue regular dependency audits (npm audit)
 - Keep dependencies updated
 - Monitor for new security advisories
 - Consider adding automated security scanning in CI/CD
 
 **Files Reviewed**:
+
 - package.json - Dependencies analysis
 - .gitignore - Secrets protection
 - .env.example - Environment variable documentation
@@ -772,6 +821,7 @@ src/
 - All test files - Security test coverage
 
 **Success Criteria**:
+
 - [x] Dependency health verified (0 vulnerabilities, no outdated packages)
 - [x] Secrets properly managed (gitignored, .env.example, no hardcoded secrets)
 - [x] Input validation comprehensive (path, data, bounds checking)
@@ -780,18 +830,19 @@ src/
 - [x] Security best practices followed
 - [x] Documentation updated (task.md)
 
-
 ### [TASK-009] Critical Path Testing - New Architecture Test Coverage
 
 **Status**: Complete
 
 **Description**:
+
 - Added comprehensive tests for previously untested architecture layers (TASK-007)
 - Created tests for `src/presenters/templates/school-page.js` (HTML template generation)
 - Created tests for `src/services/PageBuilder.js` (business logic layer)
 - These modules were created in TASK-007 but had ZERO test coverage
 
 **Actions Taken**:
+
 1. Created `scripts/school-page.test.js` with 50 tests covering:
    - HTML generation for valid school objects
    - Required field validation (null, undefined, empty string)
@@ -823,6 +874,7 @@ src/
      - Efficient processing (tested with 100 schools)
 
 **Test Results**:
+
 - New tests created: 86 (50 + 36)
 - Total tests: 186 (increased from 88)
 - All tests pass: 186/186 ✓
@@ -832,6 +884,7 @@ src/
 **Test Coverage Summary**:
 
 **Template Layer (school-page.js) - 50 tests:**
+
 - HTML structure and completeness (3 tests)
 - School data inclusion (1 test)
 - Input validation (null/undefined) (2 tests)
@@ -856,6 +909,7 @@ src/
 - Navigation (2 tests)
 
 **Service Layer (PageBuilder.js) - 36 tests:**
+
 - Return structure validation (2 tests)
 - Path generation (1 test)
 - HTML content generation (1 test)
@@ -885,6 +939,7 @@ src/
 - Large dataset efficiency (1 test)
 
 **Critical Path Coverage Achieved:**
+
 - ✅ HTML template generation fully tested (50 tests)
 - ✅ Page builder business logic fully tested (36 tests)
 - ✅ Input validation for all edge cases
@@ -895,6 +950,7 @@ src/
 - ✅ Error paths and edge cases tested
 
 **Acceptance Criteria**:
+
 - [x] Critical paths covered (template layer, service layer)
 - [x] All tests pass consistently (186/186 passing)
 - [x] Edge cases tested (null/undefined inputs, empty arrays, malformed data, XSS attempts)
@@ -904,20 +960,24 @@ src/
 - [x] No regressions introduced
 
 **Files Created**:
+
 - scripts/school-page.test.js (50 tests) - Template layer test suite
 - scripts/PageBuilder.test.js (36 tests) - Service layer test suite
 
 **Files Tested (Previously Untested)**:
+
 - src/presenters/templates/school-page.js (135 lines) - 0 → 50 tests
 - src/services/PageBuilder.js (69 lines) - 0 → 36 tests
 
 **Test Statistics**:
+
 - Lines of production code tested: 204 lines
 - Lines of test code added: ~860 lines
 - Test-to-code ratio: ~4.2:1 (comprehensive coverage)
 - Tests per module: ~2.4 tests per line of production code
 
 **Impact**:
+
 - Architecture layers now fully testable in isolation
 - Future changes to templates or business logic will be caught by tests
 - Security features (XSS prevention) validated
@@ -926,6 +986,7 @@ src/
 - Zero regressions introduced
 
 **Success Criteria**:
+
 - [x] Critical paths covered (HTML generation, page building logic)
 - [x] All tests pass (186/186)
 - [x] Edge cases tested (input validation, error paths, XSS attempts)
@@ -935,12 +996,12 @@ src/
 - [x] Zero regressions (all existing tests still pass)
 - [x] Documentation updated (task.md)
 
-
 ### [TASK-008] Code Cleanup - Dead Code Removal & Lint Fix
 
 **Status**: Complete
 
 **Description**:
+
 - Removed unused import `buildSchoolPagesData` from build-pages.js
 - Removed unused `buildSchoolPagesData` function from PageBuilder.js
 - Removed unused Astro template directory (src/templates/)
@@ -949,6 +1010,7 @@ src/
   - generator/generator.astro (placeholder with TODO comment)
 
 **Actions Taken**:
+
 1. Fixed lint error by removing unused `buildSchoolPagesData` import from scripts/build-pages.js
 2. Removed unused `buildSchoolPagesData` function from src/services/PageBuilder.js
    - Function was defined but never used anywhere in the codebase
@@ -959,6 +1021,7 @@ src/
    - No references found anywhere in the codebase
 
 **Impact**:
+
 - Lines removed: ~60 lines of dead code
 - Files removed: 3 unused template files + 1 function
 - Lint errors: 0 (was 1)
@@ -967,6 +1030,7 @@ src/
 - Zero regressions
 
 **Acceptance Criteria**:
+
 - [x] Build passes (3474 pages generated)
 - [x] Lint errors resolved (0 errors)
 - [x] Dead code removed (unused import, unused function, unused templates)
@@ -975,17 +1039,20 @@ src/
 - [x] Documentation updated (blueprint.md)
 
 **Files Modified**:
+
 - scripts/build-pages.js (removed unused import)
 - src/services/PageBuilder.js (removed unused function)
 - docs/blueprint.md (removed templates directory from structure)
 - docs/task.md (this entry)
 
 **Files Deleted**:
+
 - src/templates/index/index.astro
 - src/templates/profil/profile.astro
 - src/templates/generator/generator.astro
 
 **Success Criteria**:
+
 - [x] Build passes
 - [x] Lint errors resolved (0 errors)
 - [x] Dead/duplicate code removed
@@ -996,6 +1063,7 @@ src/
 **Status**: Complete
 
 **Description**:
+
 - Implemented comprehensive resilience patterns for file system operations
 - Added timeout support to prevent indefinite blocking
 - Implemented retry logic with exponential backoff for transient errors
@@ -1003,6 +1071,7 @@ src/
 - Standardized error format across all scripts
 
 **Actions Taken**:
+
 1. Created `scripts/resilience.js` with:
    - `IntegrationError` class for consistent error handling
    - `withTimeout()` function for promise timeout enforcement
@@ -1060,6 +1129,7 @@ src/
    - Timestamped errors for debugging
 
 **Test Results**:
+
 - Total tests: 88 (increased from 65)
 - All tests pass: ✓
 - No test failures or skipped tests
@@ -1067,6 +1137,7 @@ src/
 - Zero regressions introduced
 
 **Acceptance Criteria**:
+
 - [x] Timeout support for all file operations (read/write/mkdir/access/readdir/stat)
 - [x] Retry logic with exponential backoff implemented
 - [x] Circuit breaker pattern prevents cascade failures
@@ -1077,11 +1148,13 @@ src/
 - [x] No breaking changes introduced
 
 **Files Created**:
+
 - scripts/resilience.js (203 lines) - Core resilience patterns
 - scripts/fs-safe.js (102 lines) - Resilient file system wrappers
 - scripts/resilience.test.js (319 lines) - Comprehensive test suite
 
 **Files Modified**:
+
 - scripts/etl.js - Updated to use safeReadFile, safeWriteFile, safeAccess
 - scripts/build-pages.js - Updated to use safeReadFile, safeWriteFile, safeMkdir
 - scripts/validate-links.js - Updated to use safeReadFile, safeAccess, safeReaddir, safeStat
@@ -1089,6 +1162,7 @@ src/
 - docs/blueprint.md - Added resilience patterns documentation
 
 **Resilience Impact**:
+
 - Timeout protection: All file operations have enforced timeouts
 - Retry capability: Transient errors automatically retried with backoff
 - Failure isolation: Circuit breakers prevent cascade failures
@@ -1096,6 +1170,7 @@ src/
 - Monitoring: Circuit breakers expose state for monitoring and debugging
 
 **Performance Impact**:
+
 - Minimal overhead (only adds timeout/retry logic)
 - Faster recovery from transient errors
 - Prevents resource exhaustion from hanging operations
@@ -1106,12 +1181,14 @@ src/
 **Status**: Complete
 
 **Description**:
+
 - Added comprehensive tests for previously untested critical business logic
 - Created tests for `validate-links.js` (extractLinks function)
 - Created tests for `build-pages.js` (writeSchoolPage, writeSchoolPagesConcurrently, loadSchools)
 - Created tests for `sitemap.js` (collectUrls, writeSitemapFiles, writeSitemapIndex)
 
 **Actions Taken**:
+
 1. Modified validate-links.js to export extractLinks function for testing
 2. Created validate-links.test.js with 16 tests covering:
    - Link extraction from HTML
@@ -1132,12 +1209,14 @@ src/
    - End-to-end integration test
 
 **Test Results**:
+
 - Total tests: 65 (increased from 23)
 - All tests pass: ✓
 - No test failures or skipped tests
 - All lint checks pass
 
 **Acceptance Criteria**:
+
 - [x] Critical paths covered (validate-links, build-pages, sitemap)
 - [x] All tests pass consistently (65/65 passing)
 - [x] Edge cases tested (null/undefined inputs, empty arrays, malformed data)
@@ -1146,11 +1225,13 @@ src/
 - [x] Lint errors resolved (0 errors)
 
 **Files Modified**:
+
 - scripts/validate-links.js (added exports)
 - scripts/build-pages.js (added exports)
 - scripts/sitemap.js (added exports)
 
 **Files Created**:
+
 - scripts/validate-links.test.js (16 tests)
 - scripts/build-pages.test.js (14 tests)
 - scripts/sitemap.test.js (12 tests)
@@ -1160,12 +1241,14 @@ src/
 **Status**: Complete
 
 **Description**:
+
 - Set up ESLint configuration for JavaScript code quality
 - Fixed 3 lint errors (unused variables in error catch blocks)
 - Added .env.example file for environment variable documentation
 - Extracted hardcoded MAX_URLS_PER_SITEMAP to configuration
 
 **Actions Taken**:
+
 1. Installed ESLint and globals packages
 2. Created eslint.config.js with recommended rules
 3. Fixed unused variables in scripts/etl.js and scripts/validate-links.js
@@ -1173,6 +1256,7 @@ src/
 5. Moved MAX_URLS_PER_SITEMAP constant from scripts/sitemap.js to scripts/config.js
 
 **Acceptance Criteria**:
+
 - [x] Build passes
 - [x] Lint errors resolved (0 errors)
 - [x] Tests pass (23 tests)
@@ -1184,6 +1268,7 @@ src/
 **Status**: Complete
 
 **Description**:
+
 - Implemented comprehensive security measures to prevent XSS vulnerabilities and directory traversal attacks
 - Added HTML escaping utility function and applied it to all user-generated content output
 - Enhanced path validation to prevent directory traversal vulnerabilities
@@ -1191,6 +1276,7 @@ src/
 - Added security headers to generated HTML pages (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
 
 **Actions Taken**:
+
 1. Added `escapeHtml` function to scripts/utils.js to sanitize HTML output
 2. Updated scripts/build-pages.js to use `escapeHtml` for all school data fields
 3. Added security headers to HTML templates:
@@ -1208,6 +1294,7 @@ src/
 7. Updated .env.example to document the new bounds for concurrency limits
 
 **Security Audit Results**:
+
 - ✅ No vulnerabilities found (npm audit)
 - ✅ No outdated dependencies
 - ✅ No hardcoded secrets detected
@@ -1217,6 +1304,7 @@ src/
 - ✅ All tests pass (65/65 passing)
 
 **Security Improvements**:
+
 - XSS Prevention: All user data is HTML-escaped before output
 - Path Traversal Protection: All paths are validated against project root
 - Input Validation: Environment variables have explicit bounds
@@ -1224,6 +1312,7 @@ src/
 - Fail Secure: Invalid configurations fall back to safe defaults
 
 **Acceptance Criteria**:
+
 - [x] XSS vulnerabilities remediated (HTML escaping implemented)
 - [x] Path traversal protection added (validatePath function)
 - [x] Input validation for environment variables (bounds checking)
@@ -1234,12 +1323,14 @@ src/
 - [x] Security best practices documented
 
 **Files Modified**:
+
 - scripts/utils.js (added escapeHtml function)
 - scripts/build-pages.js (use escapeHtml, added security headers)
 - scripts/config.js (added validatePath, bounds checking for env vars)
 - .env.example (documented bounds for concurrency limits)
 
 **Security Impact**:
+
 - Critical XSS vulnerabilities in HTML generation have been fixed
 - Directory traversal attack vectors eliminated
 - Denial of service risks through excessive concurrency mitigated
@@ -1250,11 +1341,13 @@ src/
 **Status**: Complete
 
 **Description**:
+
 - Optimized build performance by eliminating redundant file system operations
 - Implemented slugify result caching to avoid repeated computations
 - Pre-create unique directories instead of creating them for each school page
 
 **Baseline Performance**:
+
 - Build time: 1.06 seconds for 3474 school pages
 - Slugify calls: 4 per school (13,896 total)
 - Directory creation calls: 3,474 (one per school)
@@ -1272,11 +1365,13 @@ src/
    - Removed fs.mkdir from writeSchoolPage() since directories are pre-created
 
 **Performance Results**:
+
 - Build time: 0.42 seconds for 3474 school pages (60% improvement)
 - Directory operations: 28 unique directory creations vs 3,474 previous
 - Cache hit rate: High for geographic data (many schools share same provinces/districts)
 
 **Validation**:
+
 - All 65 tests pass (0 failures)
 - Lint checks pass (0 errors)
 - Sitemap generation works correctly
@@ -1284,6 +1379,7 @@ src/
 - No broken links detected
 
 **Acceptance Criteria**:
+
 - [x] Bottleneck measurably improved (60% faster build time)
 - [x] User experience faster (0.42s vs 1.06s build)
 - [x] Improvement sustainable (algorithmic optimization, not micro-optimization)
@@ -1291,10 +1387,12 @@ src/
 - [x] Zero regressions (all functionality verified)
 
 **Files Modified**:
+
 - scripts/slugify.js (added Map-based cache)
 - scripts/build-pages.js (added preCreateDirectories, optimized directory handling)
 
 **Performance Impact**:
+
 - Build process: 60% faster (1.06s → 0.42s)
 - Memory impact: Minimal (10,000 entry cache limit)
 - Scalability: Improvement scales with dataset size (more schools = more duplicate geographic data)
@@ -1304,6 +1402,7 @@ src/
 **Status**: Complete
 
 **Description**:
+
 - Implemented comprehensive accessibility features for all school profile pages
 - Added viewport meta tag for mobile responsiveness
 - Implemented semantic HTML structure (header, nav, main, article, section, footer)
@@ -1314,6 +1413,7 @@ src/
 - Added inline CSS for accessible skip link focus state
 
 **Actions Taken**:
+
 1. Updated `writeSchoolPage()` function in scripts/build-pages.js:
    - Added `<meta name="viewport">` tag for responsive design
    - Implemented semantic HTML5 structure
@@ -1333,6 +1433,7 @@ src/
    - Footer with role="contentinfo": Proper landmark for content information
 
 **Validation Results**:
+
 - All tests pass: 88/88 ✓
 - All lint checks pass: 0 errors ✓
 - Build successful: 3474 pages generated ✓
@@ -1375,6 +1476,7 @@ src/
    - Address includes streetAddress, addressLocality, addressRegion, addressCountry
 
 **Acceptance Criteria**:
+
 - [x] Keyboard navigation enabled (skip link, tab order)
 - [x] Visible focus indicators (skip link focus state)
 - [x] Meaningful HTML structure (semantic elements)
@@ -1387,9 +1489,11 @@ src/
 - [x] Documentation updated (task.md)
 
 **Files Modified**:
+
 - scripts/build-pages.js (writeSchoolPage function - accessibility enhancements)
 
 **Impact**:
+
 - Accessibility: WCAG 2.1 Level A compliant (keyboard navigation, landmarks)
 - Mobile Responsive: Viewport meta tag enables proper mobile scaling
 - Screen Reader: Proper ARIA labels and semantic structure for assistive technologies
@@ -1398,6 +1502,7 @@ src/
 - Semantic: Proper HTML5 structure improves code maintainability
 
 **Technical Details**:
+
 - Viewport: width=device-width, initial-scale=1.0
 - Skip link: position:absolute, top:-40px, appears on :focus at top:0
 - Definition list: grid layout with auto 1fr columns
@@ -1462,20 +1567,24 @@ Implemented comprehensive UI/UX improvements for the school directory pages, inc
 ### Design System Tokens
 
 **Colors:**
+
 - Primary: #2563eb (blue)
 - Text: Primary (#111827), Secondary (#4b5563), Light (#6b7280)
 - Background: Primary (#ffffff), Secondary (#f9fafb), Accent (#f3f4f6)
 - Border: #d1d5db
 
 **Spacing:**
+
 - xs: 0.25rem, sm: 0.5rem, md: 1rem, lg: 1.5rem, xl: 2rem, 2xl: 3rem
 
 **Typography:**
+
 - Font sizes: xs (0.75rem) to 4xl (2.25rem)
 - Font weights: normal (400) to bold (700)
 - Line heights: tight (1.25), normal (1.5), relaxed (1.75)
 
 **Breakpoints:**
+
 - sm: 640px (mobile landscape)
 - md: 768px (tablet)
 - lg: 1024px (desktop)
@@ -1484,16 +1593,19 @@ Implemented comprehensive UI/UX improvements for the school directory pages, inc
 ### Responsive Enhancements
 
 **Mobile (< 640px):**
+
 - Single column layout for school details
 - Smaller padding and font sizes
 - Stack navigation on small screens
 
 **Tablet (640px - 1024px):**
+
 - Two-column grid for school details
 - Medium padding and font sizes
 - Sticky header for navigation
 
 **Desktop (> 1024px):**
+
 - Full grid layout with minmax columns
 - Maximum content width (64rem)
 - Enhanced spacing and typography
@@ -1501,22 +1613,26 @@ Implemented comprehensive UI/UX improvements for the school directory pages, inc
 ### Accessibility Improvements
 
 **Enhanced Focus States:**
+
 - Focus ring with blue color (#2563eb)
 - 3px outline with box-shadow
 - Outline offset for better visibility
 - High contrast mode support (thicker outlines)
 
 **Hover States:**
+
 - Navigation links change color on hover
 - Background color change for feedback
 - Smooth transitions for all hover effects
 
 **Reduced Motion Support:**
+
 - Detects user's reduced motion preference
 - Disables animations when preferred
 - Maintains instant feedback
 
 **High Contrast Support:**
+
 - Bold labels in high contrast mode
 - Thicker focus indicators
 - Enhanced visual distinction
@@ -1556,22 +1672,26 @@ Implemented comprehensive UI/UX improvements for the school directory pages, inc
 ### Impact
 
 **Design Consistency:**
+
 - Centralized design tokens ensure consistent styling
 - CSS variables enable easy theme customization
 - Scalable design system for future pages
 
 **Responsiveness:**
+
 - Works seamlessly across all device sizes
 - Mobile-first approach with progressive enhancement
 - Optimal reading experience on any device
 
 **Accessibility:**
+
 - WCAG 2.1 Level AA compliant focus indicators
 - Support for reduced motion preferences
 - Support for high contrast mode
 - Enhanced keyboard navigation
 
 **User Experience:**
+
 - Smooth transitions provide polished feel
 - Hover states give clear feedback
 - Improved visual hierarchy with typography
@@ -1588,7 +1708,6 @@ Implemented comprehensive UI/UX improvements for the school directory pages, inc
 - [x] Lint checks pass (0 errors)
 - [x] Zero regressions
 - [x] Documentation updated (blueprint.md, task.md)
-
 
 ### [TASK-013] Getting Started Documentation - README Enhancement
 
@@ -1662,33 +1781,42 @@ Completely rewrote README.md to provide comprehensive, user-friendly documentati
 ### Documentation Improvements
 
 **Before (Indonesian, 38 lines)**:
+
 ```markdown
 # Sekolah PSEO
 
 Ini adalah dokumentasi untuk proyek Sekolah PSEO.
 
 ## Struktur Direktori
+
 - `src/` - Kode sumber
-...
+  ...
 ```
 
 **After (English, 220+ lines)**:
-```markdown
+
+````markdown
 # Sekolah PSEO
 
 A static site generator for Indonesian school directory data...
 
 ## What and Why
+
 Sekolah PSEO processes Indonesian school data...
 
 ## Quick Start
+
 Get started in under 5 minutes with these steps...
 
 ### 1. Clone and Install
+
 ```bash
 git clone ...
 ```
+````
+
 ...
+
 ```
 
 ### Key Enhancements
@@ -1762,25 +1890,27 @@ git clone ...
 ### Documentation Structure
 
 ```
+
 README.md
-├── What and Why              # Project overview and value proposition
-├── Quick Start              # 5-minute getting started guide
-│   ├── Clone and Install
-│   ├── Prepare Your Data
-│   ├── Process Data (ETL)
-│   ├── Build Pages
-│   ├── Generate Sitemap
-│   └── Validate Links
-├── Configuration             # Environment variables reference
-├── Available Scripts         # Command reference table
-├── Project Structure        # Directory tree with explanations
-├── Development               # Testing and code quality
-├── Data Format              # CSV field specification
-├── Troubleshooting          # Common problems and solutions
-├── Architecture             # High-level overview
-├── API Documentation         # Link to detailed docs
-├── Contributing             # Contribution guidelines
-└── License                  # License information
+├── What and Why # Project overview and value proposition
+├── Quick Start # 5-minute getting started guide
+│ ├── Clone and Install
+│ ├── Prepare Your Data
+│ ├── Process Data (ETL)
+│ ├── Build Pages
+│ ├── Generate Sitemap
+│ └── Validate Links
+├── Configuration # Environment variables reference
+├── Available Scripts # Command reference table
+├── Project Structure # Directory tree with explanations
+├── Development # Testing and code quality
+├── Data Format # CSV field specification
+├── Troubleshooting # Common problems and solutions
+├── Architecture # High-level overview
+├── API Documentation # Link to detailed docs
+├── Contributing # Contribution guidelines
+└── License # License information
+
 ```
 
 ### Success Criteria
@@ -1848,16 +1978,19 @@ This refactoring addresses architectural anti-pattern:
 
 **Before**:
 ```
+
 build-pages.js (297 lines)
 ├── CSV parsing (data access)
 ├── HTML template (presentation)
 ├── Path construction (business logic)
 ├── File writing (I/O)
 └── Concurrency control (orchestration)
+
 ```
 
 **After**:
 ```
+
 build-pages.js (controller - ~200 lines)
 ├── Data loading (calls loadSchools)
 ├── Page building (delegates to PageBuilder)
@@ -1871,7 +2004,8 @@ PageBuilder.js (service - ~60 lines)
 
 school-page.js (template - ~70 lines)
 └── generateSchoolPageHtml (template only)
-```
+
+````
 
 ### Benefits Achieved
 
@@ -2157,12 +2291,13 @@ try {
 } catch {
   // error handling
 }
-```
+````
 
 **After (Consistent):**
+
 ```javascript
 try {
-  await safeAccess(targetPath);  // Has timeout, retry, circuit breaker
+  await safeAccess(targetPath); // Has timeout, retry, circuit breaker
 } catch (error) {
   if (error.name === 'IntegrationError') {
     // error handling
@@ -2197,18 +2332,21 @@ try {
 ### Impact
 
 **Resilience:**
+
 - All file operations in validate-links.js now use resilient wrappers
 - Timeout protection: 30 second default timeout
 - Retry capability: Transient errors automatically retried
 - Circuit breaker: Prevents cascade failures after repeated failures
 
 **Consistency:**
+
 - validate-links.js now follows the same resilience pattern as:
   - scripts/etl.js (safeReadFile, safeWriteFile)
   - scripts/build-pages.js (safeReadFile, safeWriteFile, safeMkdir)
   - scripts/sitemap.js (safeWriteFile, safeReaddir, safeStat)
 
 **Error Handling:**
+
 - Proper IntegrationError detection and handling
 - Consistent error format across all operations
 - Better debugging with detailed error context
@@ -2255,6 +2393,7 @@ Extracted duplicated recursive directory walking logic from validate-links.js an
 **Before (Duplicated in both files):**
 
 validate-links.js:
+
 ```javascript
 async function collectHtmlFiles(dir) {
   const files = [];
@@ -2276,6 +2415,7 @@ async function collectHtmlFiles(dir) {
 ```
 
 sitemap.js:
+
 ```javascript
 async function collectUrls(dir, baseUrl) {
   const urls = [];
@@ -2300,6 +2440,7 @@ async function collectUrls(dir, baseUrl) {
 **After (Single shared utility):**
 
 scripts/utils.js:
+
 ```javascript
 async function walkDirectory(dir, callback) {
   const results = [];
@@ -2309,7 +2450,7 @@ async function walkDirectory(dir, callback) {
       const fullPath = path.join(current, entry);
       const relPath = path.join(relative, entry);
       const stat = await safeStat(fullPath);
-      
+
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
       } else if (entry.endsWith('.html') && typeof callback === 'function') {
@@ -2326,11 +2467,13 @@ async function walkDirectory(dir, callback) {
 ```
 
 validate-links.js:
+
 ```javascript
-const htmlFiles = await walkDirectory(distDir, (fullPath) => fullPath);
+const htmlFiles = await walkDirectory(distDir, fullPath => fullPath);
 ```
 
 sitemap.js:
+
 ```javascript
 async function collectUrls(dir, baseUrl) {
   return await walkDirectory(dir, (fullPath, relativePath) => {
@@ -2371,20 +2514,24 @@ async function collectUrls(dir, baseUrl) {
 ### Impact
 
 **Code Quality:**
+
 - Eliminated 35+ lines of duplicated code
 - Single source of truth for directory walking logic
 - Easier to maintain (changes in one place)
 
 **Reusability:**
+
 - Generic callback design allows flexible processing
 - Can be reused by other scripts that need directory walking
 - Type-safe callback signature
 
 **Resilience:**
+
 - Maintains timeout, retry, and circuit breaker protection
 - Uses safeReaddir and safeStat consistently
 
 **Flexibility:**
+
 - Callback can return any value, or undefined to skip
 - Supports both file paths and URL generation
 - Easy to extend for new use cases
@@ -2430,17 +2577,17 @@ Extracted complex nested link validation logic from validate-links.js batch proc
 **Before (Complex Nested Logic):**
 
 ```javascript
-const batchPromises = batch.map(async (file) => {
+const batchPromises = batch.map(async file => {
   try {
     const content = await safeReadFile(file);
     const links = extractLinks(content);
     const brokenInFile = [];
-    
+
     for (const link of links) {
       if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
         continue;
       }
-      
+
       const clean = link.split(/[?#]/)[0];
       const targetPath = path.join(path.dirname(file), clean);
       try {
@@ -2460,7 +2607,7 @@ const batchPromises = batch.map(async (file) => {
         }
       }
     }
-    
+
     return brokenInFile;
   } catch (error) {
     console.warn(`Failed to read file ${file}: ${error.message}`);
@@ -2474,15 +2621,15 @@ const batchPromises = batch.map(async (file) => {
 ```javascript
 async function validateLinksInFile(file, links) {
   const brokenInFile = [];
-  
+
   for (const link of links) {
     if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
       continue;
     }
-    
+
     const clean = link.split(/[?#]/)[0];
     const targetPath = path.join(path.dirname(file), clean);
-    
+
     try {
       await safeAccess(targetPath);
     } catch (error) {
@@ -2500,12 +2647,12 @@ async function validateLinksInFile(file, links) {
       }
     }
   }
-  
+
   return brokenInFile;
 }
 
 // In validateLinks():
-const batchPromises = batch.map(async (file) => {
+const batchPromises = batch.map(async file => {
   try {
     const content = await safeReadFile(file);
     const links = extractLinks(content);
@@ -2546,21 +2693,25 @@ const batchPromises = batch.map(async (file) => {
 ### Impact
 
 **Code Readability:**
+
 - Reduced nesting from 3 levels to 1 level in batch processing
 - Clear separation of concerns (file reading vs link validation)
 - Easier to understand the flow of operations
 
 **Testability:**
+
 - `validateLinksInFile` can be tested in isolation
 - No need to mock file I/O for testing link validation
 - Easier to add unit tests for specific scenarios
 
 **Maintainability:**
+
 - Changes to link validation logic affect only one function
 - Easier to debug and trace issues
 - Clear single responsibility
 
 **Cognitive Complexity:**
+
 - Main function complexity: Reduced significantly
 - Link validation complexity: Contained in dedicated function
 - Easier to reason about each component
@@ -2679,21 +2830,25 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 ### Impact
 
 **Code Reusability:**
+
 - CSV writing logic can now be reused by other scripts
 - Single source of truth for CSV serialization
 - Easy to extend with features like quoting, escaping
 
 **Separation of Concerns:**
+
 - ETL orchestration separated from CSV serialization
 - Each module has single, well-defined responsibility
 - Easier to test CSV writing in isolation
 
 **Maintainability:**
+
 - Changes to CSV serialization affect only utility
 - Easier to debug CSV output issues
 - Clear API contract for CSV writing
 
 **Resilience:**
+
 - Maintains timeout, retry, and circuit breaker protection
 - Consistent file I/O pattern across all scripts
 
@@ -2805,6 +2960,7 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - [x] README with quick start guide
 
 **Impact**:
+
 - Complete documentation enables new developers to understand the project quickly
 - Clear architecture documentation supports maintenance and extension
 - Roadmap provides strategic direction for future development

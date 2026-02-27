@@ -7,7 +7,7 @@ name: oc - orchestrator
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Daily at 00:00 UTC
+    - cron: '0 0 * * *' # Daily at 00:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -33,11 +33,11 @@ jobs:
       pull-requests: write
       issues: write
       actions: write
-      
+
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -209,11 +209,13 @@ jobs:
 ## Labels and Categories:
 
 The agent will use these standard labels:
+
 - **Issue Types**: bug, enhancement, documentation, question, wontfix
 - **Priorities**: high, medium, low
 - **Complexity**: simple, medium, complex
 - **PR Types**: feature, fix, docs, refactor, test, chore
 
 ## Workflow Triggers:
+
 - **Scheduled**: Daily at 00:00 UTC
 - **Manual**: Can be triggered via GitHub Actions UI
