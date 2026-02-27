@@ -4,6 +4,7 @@
 
 const path = require('path');
 const { safeReaddir, safeStat } = require('./fs-safe');
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 /**
  * Recursively walk a directory tree and process each file with a callback.
@@ -131,7 +132,7 @@ function parseCsvLine(line) {
  */
 function addNumbers(a, b) {
   if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new Error('Both parameters must be finite numbers');
+    throw new IntegrationError('Both parameters must be finite numbers', ERROR_CODES.INVALID_INPUT, { reason: 'non_finite_number' });
   }
   return a + b;
 }
@@ -185,7 +186,7 @@ function hasCoordinateData(school) {
  */
 async function writeCsv(data, outputPath) {
   if (!Array.isArray(data) || data.length === 0) {
-    throw new Error('Data must be a non-empty array');
+    throw new IntegrationError('Data must be a non-empty array', ERROR_CODES.INVALID_INPUT, { reason: 'empty_array' });
   }
 
   const { safeWriteFile } = require('./fs-safe');
