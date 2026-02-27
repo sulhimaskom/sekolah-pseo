@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 // Default external data configuration
 const DEFAULT_SOURCE_REPO = 'https://github.com/玩家们/daftar-sekolah-indonesia.git';
@@ -37,12 +38,12 @@ function validateRepoUrl(url) {
 
     // Check protocol is allowed
     if (!allowedProtocols.includes(parsed.protocol)) {
-      throw new Error(`Invalid protocol: ${parsed.protocol}. Only http and https are allowed.`);
+      throw new IntegrationError(`Invalid protocol: ${parsed.protocol}. Only http and https are allowed.`, ERROR_CODES.INVALID_URL, { protocol: parsed.protocol });
     }
 
     // Ensure hostname is present
     if (!parsed.hostname) {
-      throw new Error('URL must have a hostname.');
+      throw new IntegrationError('URL must have a hostname.', ERROR_CODES.INVALID_URL, { reason: 'missing_hostname' });
     }
 
     // Reconstruct URL to ensure it's clean (removes any injected characters)
@@ -50,13 +51,13 @@ function validateRepoUrl(url) {
 
     // Validate it ends with .git (common for git repos)
     if (!sanitizedUrl.endsWith('.git')) {
-      throw new Error('Repository URL must end with .git');
+      throw new IntegrationError('Repository URL must end with .git', ERROR_CODES.INVALID_URL, { reason: 'missing_git_extension' });
     }
 
     return sanitizedUrl;
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error('Invalid URL format.');
+      throw new IntegrationError('Invalid URL format.', ERROR_CODES.INVALID_URL, { reason: 'parse_error' });
     }
     throw error;
   }

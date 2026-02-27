@@ -35,6 +35,29 @@ if (!validatePath(resolvedRawPath, ROOT_DIR)) {
   rawPath = path.join(EXTERNAL_DIR, 'raw.csv');
 }
 
+// Error codes for IntegrationError (consistent across modules)
+const ERROR_CODES = {
+  // File operation errors
+  FILE_READ_ERROR: 'FILE_READ_ERROR',
+  FILE_WRITE_ERROR: 'FILE_WRITE_ERROR',
+  FILE_EMPTY: 'FILE_EMPTY',
+
+  // Validation errors
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INVALID_URL: 'INVALID_URL',
+  INVALID_COORDINATES: 'INVALID_COORDINATES',
+  INVALID_INPUT: 'INVALID_INPUT',
+
+  // Configuration errors
+  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
+  MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
+
+  // System errors
+  TIMEOUT: 'TIMEOUT',
+  RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
+  CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
+};
+
 // Environment variables with defaults
 const CONFIG = {
   // File paths
@@ -99,4 +122,10 @@ const CONFIG = {
   validatePath,
 };
 
+// Attach ERROR_CODES to CONFIG for backward compatibility
+CONFIG.ERROR_CODES = ERROR_CODES;
+
+// Also export ERROR_CODES directly for convenience
 module.exports = CONFIG;
+module.exports.ERROR_CODES = ERROR_CODES;
+module.exports.validatePath = validatePath;

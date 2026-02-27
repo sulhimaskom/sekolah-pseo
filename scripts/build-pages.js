@@ -14,6 +14,8 @@ const path = require('path');
 const { parseCsv } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
+const { ERROR_CODES } = CONFIG;
+const { IntegrationError } = require('./resilience');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const {
   buildSchoolPageData,
@@ -65,7 +67,11 @@ async function loadSchools() {
   const schools = parseCsv(text);
 
   if (schools.length === 0) {
-    throw new Error(`No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`);
+    throw new IntegrationError(
+          `No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`,
+          ERROR_CODES.FILE_EMPTY,
+          { path: CONFIG.SCHOOLS_CSV_PATH }
+        );
   }
 
   return schools;
@@ -286,10 +292,12 @@ async function build(options = {}) {
   precomputeSlugCache(schools);
 
   if (schools.length === 0) {
-    throw new Error(
-      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
-    );
-  }
+      throw new IntegrationError(
+        'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+        ERROR_CODES.FILE_EMPTY,
+        { path: CONFIG.SCHOOLS_CSV_PATH }
+      );
+    }
 
   // Generate homepage
   logger.info('Generating homepage...');
@@ -324,10 +332,12 @@ async function buildIncremental() {
   precomputeSlugCache(schools);
 
   if (schools.length === 0) {
-    throw new Error(
-      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.'
-    );
-  }
+      throw new IntegrationError(
+        'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+        ERROR_CODES.FILE_EMPTY,
+        { path: CONFIG.SCHOOLS_CSV_PATH }
+      );
+    }
 
   // Load manifest to check for changes
   const manifest = await loadManifest();
