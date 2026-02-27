@@ -135,38 +135,39 @@
   #QB|- Update test documentation - DONE: Fixed test file count (12→14) and added missing test files in docs/testing.md
   #YQ|- Add missing environment variable - DONE: Added MAX_URLS_PER_SITEMAP to docs/blueprint.md
   QS|
-  #MT| SR|- Fix blueprint-implementation mismatch - DONE: Updated docs/blueprint.md to reflect Node.js (custom) instead of Astro, updated decision log, added docs sync reminder
-  #QR|- Add undocumented API modules - DONE: Added documentation for 4 missing modules:
-  #VQ|#QR| - src/presenters/templates/province-page.js (province page generation)
-  #HF|#QR|- Fix outdated test count in docs/testing.md - DONE: Updated test file count (14→20) and added 6 missing test files:
-  #QR|#QR| - homepage.test.js (Homepage template tests)
-  #QR|#QR| - logger.test.js (Logger tests)
-  #QR|#QR| - fetch-data.test.js (Data fetching tests)
-  #QR|#QR| - check-freshness.test.js (Data freshness tests)
-  #QR|#QR| - manifest.test.js (Build manifest tests)
-  #QR|#QR| - province-page.test.js (Province page template tests)
-  #QB|- Fix outdated test count in docs/testing.md - DONE: Updated test file count (14→20) and added 6 missing test files:
-  #BV|#QR|#QR| - homepage.test.js (Homepage template tests)
-  #VZ|#QR|#QR| - logger.test.js (Logger tests)
-  #HX|#QR|#QR| - fetch-data.test.js (Data fetching tests)
-  #XX|#QR|#QR| - check-freshness.test.js (Data freshness tests)
-  #XQ|#QR|#QR| - manifest.test.js (Build manifest tests)
-  #NV|#QR|#QR| - province-page.test.js (Province page template tests)
-  #HR|#QR| PR: https://github.com/sulhimaskom/sekolah-pseo/pull/263
-  #VB|#QR|- Add missing npm scripts to docs/setup.md - DONE: Added documentation for 8 missing npm scripts:
-  #HQ|#QR| - npm run dev, test:js:coverage, test:js:coverage:report, test:py:pytest
-  #HQ|#QR| - npm run test:ci, test:all, coverage, coverage:report
-  #HH|#VB|PR: https://github.com/sulhimaskom/sekolah-pseo/pull/271
-  #ZB|- Fix Module Organization section in docs/api.md - DONE: Added 4 missing modules to the module organization tree:
-  #HB| - fetch-data.js (external data fetch from GitHub)
-  #JB| - check-freshness.js (data freshness check)
-  #RB| - homepage.js (homepage HTML template)
-  #JB| - province-page.js (province page HTML template)
-  #JB| - Note: logger.js and manifest.js were already listed but not properly organized
-  #BQ| PR: (to be created)
-  #MM|#ZB|- Fix duplicate Improvements Log section in Product-Architect.md - DONE: Removed duplicate section header, unified all improvement entries under single section
-  #RX|#BQ| PR: https://github.com/sulhimaskom/sekolah-pseo/pull/302
-  #QZ|
+#PT|  #QZ|
+#VZ|  #MT| SR|- Fix blueprint-implementation mismatch - DONE: Updated docs/blueprint.md to reflect Node.js (custom) instead of Astro, updated decision log, added docs sync reminder
+#MP|  #QR|- Add undocumented API modules - DONE: Added documentation for 4 missing modules:
+#KW|  #VQ|#QR| - src/presenters/templates/province-page.js (province page generation)
+#QB|  #HF|#QR|- Fix outdated test count in docs/testing.md - DONE: Updated test file count (14→20) and added 6 missing test files:
+#BV|  #QR|#QR| - homepage.test.js (Homepage template tests)
+#VZ|  #QR|#QR| - logger.test.js (Logger tests)
+#HX|  #QR|#QR| - fetch-data.test.js (Data fetching tests)
+#XX|  #QR|#QR| - check-freshness.test.js (Data freshness tests)
+#XQ|  #QR|#QR| - manifest.test.js (Build manifest tests)
+#NV|  #QR|#QR| - province-page.test.js (Province page template tests)
+#WS|  #HR|#QR| PR: https://github.com/sulhimaskom/sekolah-pseo/pull/263
+#YK|  #VB|#QR|- Add missing npm scripts to docs/setup.md - DONE: Added documentation for 8 missing npm scripts:
+#PX|  #HQ|#QR| - npm run dev, test:js:coverage, test:js:coverage:report, test:py:pytest
+#MW|  #HQ|#QR| - npm run test:ci, test:all, coverage, coverage:report
+#JX|  #HH|#VB|PR: https://github.com/sulhimaskom/sekolah-pseo/pull/271
+#MM|  #ZB|- Fix Module Organization section in docs/api.md - DONE: Added 4 missing modules to the module organization tree:
+#WM|  #HB| - fetch-data.js (external data fetch from GitHub)
+#MZ|  #JB| - check-freshness.js (data freshness check)
+#QS|  #RB| - homepage.js (homepage HTML template)
+#YT|  #JB| - province-page.js (province page HTML template)
+#BK|  #JB| - Note: logger.js and manifest.js were already listed but not properly organized
+#RX|  #BQ| PR: (to be created)
+#ZM|  #MM|#ZB|- Fix duplicate Improvements Log section in Product-Architect.md - DONE: Removed duplicate section header, unified all improvement entries under single section
+#YM|  #RX|#BQ| PR: https://github.com/sulhimaskom/sekolah-pseo/pull/302
+#PT|  #QZ|
+#TT|HM|#QW|- Verify issue #292 status - DONE: Modules (logger, fetch-data, check-freshness, manifest) are already documented in docs/api.md
+#BR|HM|#HB| The issue is stale/open but the work is already complete - all 4 modules have full API documentation
+#NQ|HM|#QZ|
+#WP|HQ|#QW|- Fix Node.js version inconsistency between blueprint.md and setup.md - DONE: Updated blueprint.md to specify 'Latest LTS (v20+)'
+#QQ|HQ|#HB| to match setup.md
+#YR|HM|#QZ| PR: https://github.com/sulhimaskom/sekolah-pseo/pull/311
+#YQ|#QZ|
 
 ## Notes
 
