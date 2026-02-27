@@ -158,6 +158,11 @@ function generateHomepageHtml(schools) {
   <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="/" />
+  <meta property="og:title" content="Sekolah PSEO - Direktori Sekolah Indonesia" />
+  <meta property="og:description" content="Direktori lengkap sekolah-sekolah di Indonesia. Temukan informasi NPSN, alamat, jenjang, dan status sekolah di seluruh Indonesia." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/" />
+
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
