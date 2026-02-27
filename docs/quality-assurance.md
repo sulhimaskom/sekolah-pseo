@@ -10,11 +10,11 @@
 
 | Metric           | Status                                                                    |
 | ---------------- | ------------------------------------------------------------------------- |
-| JavaScript Tests | ✅ PASSING (547 tests)                                                    |
+| JavaScript Tests | ✅ PASSING (555 tests)                                                    |
 | Python Tests     | ✅ PASSING (18 tests)                                                     |
 | ESLint           | ✅ PASSING (no errors)                                                    |
 | npm audit        | ✅ 0 vulnerabilities                                                      |
-| Coverage         | ✅ Lines: 90.83%, Branches: 89.58%, Functions: 92.03%, Statements: 90.83% |
+| Coverage         | ✅ Lines: 91.64%, Branches: 89.89%, Functions: 92.92%, Statements: 91.64% |
 
 ---
 
@@ -108,6 +108,10 @@ npm audit fix        # Auto-fix vulnerabilities
    - Issue: Circuit breaker instances shared across tests could cause test pollution
    - Resolution: Added `resetCircuitBreakers()` function to clear state between tests
    - Usage: Import and call `resetCircuitBreakers()` in test setup if needed
+
+4. **Inconsistent Logging: console.log in check-freshness.js (PR #270)**
+   - Issue: Used `console.log` instead of project's pino logger
+   - Resolution: Replaced `console.log` with `logger.info` for consistency
 
 ---
 
