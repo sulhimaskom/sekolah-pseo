@@ -346,26 +346,61 @@ function generateHomepageHtml(schools) {
         });
       }
       
-      // Generate school result item HTML
-      function generateSchoolResultHtml(school) {
+      // Generate DOM element for school result (safe alternative to innerHTML)
+      function createSchoolResultElement(school) {
         var statusLabel = school.status === 'S' ? 'Swasta' : 'Negeri';
         var statusClass = school.status === 'S' ? 'badge-s' : 'badge-n';
         
-        return '<li class="school-result-item">' +
-          '<a href="/provinsi/' + escapeHtml(school.provinceSlug) + '/" class="school-result-link">' +
-            '<div class="school-result-header">' +
-              '<span class="school-result-name">' + escapeHtml(school.nama) + '</span>' +
-              '<span class="badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span>' +
-            '</div>' +
-            '<div class="school-result-details">' +
-              '<span class="school-result-npsn">NPSN: ' + escapeHtml(school.npsn) + '</span>' +
-              '<span class="school-result-type badge badge-education">' + escapeHtml(school.bentuk) + '</span>' +
-            '</div>' +
-            '<div class="school-result-location">' +
-              '<span>' + escapeHtml(school.kab_kota) + ', ' + escapeHtml(school.kecamatan) + '</span>' +
-            '</div>' +
-          '</a>' +
-        '</li>';
+        // Create container elements using DOM APIs (textContent escapes HTML)
+        var li = document.createElement('li');
+        li.className = 'school-result-item';
+        
+        var a = document.createElement('a');
+        a.href = '/provinsi/' + school.provinceSlug + '/';
+        a.className = 'school-result-link';
+        
+        var header = document.createElement('div');
+        header.className = 'school-result-header';
+        
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'school-result-name';
+        nameSpan.textContent = school.nama; // textContent escapes HTML
+        
+        var statusSpan = document.createElement('span');
+        statusSpan.className = 'badge ' + statusClass;
+        statusSpan.textContent = statusLabel;
+        
+        header.appendChild(nameSpan);
+        header.appendChild(statusSpan);
+        
+        var details = document.createElement('div');
+        details.className = 'school-result-details';
+        
+        var npsnSpan = document.createElement('span');
+        npsnSpan.className = 'school-result-npsn';
+        npsnSpan.textContent = 'NPSN: ' + school.npsn;
+        
+        var typeSpan = document.createElement('span');
+        typeSpan.className = 'school-result-type badge badge-education';
+        typeSpan.textContent = school.bentuk;
+        
+        details.appendChild(npsnSpan);
+        details.appendChild(typeSpan);
+        
+        var location = document.createElement('div');
+        location.className = 'school-result-location';
+        
+        var locationSpan = document.createElement('span');
+        locationSpan.textContent = school.kab_kota + ', ' + school.kecamatan;
+        
+        location.appendChild(locationSpan);
+        
+        a.appendChild(header);
+        a.appendChild(details);
+        a.appendChild(location);
+        li.appendChild(a);
+        
+        return li;
       }
       
       // Update search results display
@@ -377,7 +412,11 @@ function generateHomepageHtml(schools) {
           resultCountEl.textContent = 'Menampilkan ' + count.toLocaleString('id-ID') + ' dari ' + total.toLocaleString('id-ID') + ' sekolah';
           
           if (count > 0) {
-            searchResultsListEl.innerHTML = results.map(generateSchoolResultHtml).join('');
+            // Use DOM API instead of innerHTML for safer rendering
+            searchResultsListEl.innerHTML = '';
+            results.forEach(function(school) {
+              searchResultsListEl.appendChild(createSchoolResultElement(school));
+            });
             searchResultsEl.hidden = false;
             noResultsEl.hidden = true;
             provinceListEl.hidden = true;

@@ -103,3 +103,18 @@ Fixed CSS syntax error in `styles.js` that caused invalid CSS in the generated o
 4. **CSS file size reduced** - Generated CSS went from 1045 lines to 1042 lines
 
 This fix ensures proper CSS parsing across all browsers and correct behavior for users with reduced motion preferences.
+
+### XSS Security Fix - Replace innerHTML with DOM APIs (2026-02-27)
+
+Fixed security vulnerability in homepage.js search functionality:
+
+1. **Replaced innerHTML with DOM APIs** - The search results were previously rendered using `innerHTML` which is vulnerable to XSS attacks. Now using `document.createElement()` and `textContent` which automatically escape HTML.
+
+2. **Created safe createSchoolResultElement function** - New function uses DOM APIs:
+   - `document.createElement()` for element creation
+   - `textContent` property for setting text (automatically escapes HTML)
+   - `appendChild()` for building the DOM tree
+
+3. **Defense in depth** - Even if escapeHtml fails, the DOM API approach provides additional protection
+
+4. **All tests pass** - 547 tests pass including existing XSS escape tests
