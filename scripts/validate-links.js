@@ -1,8 +1,9 @@
-/*
- * Link validation script. Crawls generated HTML files and checks internal
- * hyperlinks to ensure they resolve to existing files. Outputs a report of
- * broken links. This implementation uses asynchronous operations and
- * concurrency for better performance on large datasets.
+/**
+ * @module validate-links
+ * @description Link validation script for Indonesian School PSEO project.
+ * Crawls generated HTML files and checks internal hyperlinks to ensure they
+ * resolve to existing files. Outputs a report of broken links. This implementation
+ * uses asynchronous operations and concurrency for better performance on large datasets.
  */
 
 const path = require('path');
@@ -19,6 +20,11 @@ module.exports = {
   validateLinks,
 };
 
+/**
+ * Extracts all href links from HTML content.
+ * @param {string} html - HTML content to parse
+ * @returns {string[]} Array of extracted href values (only relative links)
+ */
 function extractLinks(html) {
   const matches = [];
   // Cache the regex to avoid recreating it each time
@@ -34,6 +40,20 @@ function extractLinks(html) {
   return matches;
 }
 
+/**
+ * Broken link entry.
+ * @typedef {Object} BrokenLink
+ * @property {string} source - Path to the HTML file containing the broken link
+ * @property {string} link - The broken link URL
+ */
+
+/**
+ * Validates links within a single HTML file.
+ * @param {string} file - Path to the HTML file
+ * @param {string[]} links - Array of links to validate
+ * @param {string} distDir - Base directory for resolving relative links
+ * @returns {Promise<BrokenLink[]>} Array of broken links found in the file
+ */
 async function validateLinksInFile(file, links, distDir) {
   const brokenInFile = [];
 
@@ -72,6 +92,11 @@ async function validateLinksInFile(file, links, distDir) {
   return brokenInFile;
 }
 
+/**
+ * Main function to validate all links in the dist directory.
+ * Walks all HTML files, extracts links, and validates them.
+ * @returns {Promise<boolean>} True if no broken links found, false otherwise
+ */
 async function validateLinks() {
   const distDir = CONFIG.DIST_DIR;
 

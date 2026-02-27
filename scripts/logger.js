@@ -1,3 +1,10 @@
+/**
+ * @module logger
+ * @description Logging utility for the Indonesian School PSEO project.
+ * Uses pino for structured logging with convenience methods matching console.* API.
+ * Log level can be configured via LOG_LEVEL environment variable.
+ */
+
 'use strict';
 
 const pino = require('pino');
