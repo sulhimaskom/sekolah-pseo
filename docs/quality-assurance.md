@@ -10,7 +10,7 @@
 
 | Metric           | Status                                                                    |
 | ---------------- | ------------------------------------------------------------------------- |
-| JavaScript Tests | ✅ PASSING (558 tests)                                                    |
+| JavaScript Tests | ✅ PASSING (589 tests - +31 from new kabupaten-page.test.js)                                                    |
 | Python Tests     | ✅ PASSING (27 tests) - Expanded functional coverage                      |
 | ESLint           | ✅ PASSING (no errors)                                                    |
 | npm audit        | ✅ 0 vulnerabilities                                                      |
@@ -137,7 +137,16 @@ npm audit fix        # Auto-fix vulnerabilities
 - `design-system.test.js` - Design tokens
 - `rate-limiter.test.js` - Rate limiting
 - `resilience.test.js` - Error handling & retries
-- `validate-links.test.js` - Link validation
+140#JJ|- `validate-links.test.js` - Link validation
+#KM|- `kabupaten-page.test.js` - Kabupaten page template (NEW)
+#PQ|- `homepage.test.js` - Homepage template
+#PB|- `province-page.test.js` - Province page template
+#QW|- `PageBuilder.test.js` - Page builder service
+#MM|- `check-freshness.test.js` - Data freshness check
+#SB|- `config.test.js` - Configuration
+#RX|- `logger.test.js` - Logging
+#HM|- `manifest.test.js` - Build manifest
+#BC|- `fetch-data.test.js` - Data fetching
 
 ### Python Tests (tests/)
 
