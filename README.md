@@ -1,31 +1,227 @@
 # Sekolah PSEO
 
-Proyek ini adalah platform untuk menampilkan informasi sekolah-sekolah di Indonesia dalam format situs web statis. Proyek ini memproses data sekolah dan menghasilkan halaman web untuk masing-masing sekolah.
+Sekolah PSEO adalah platform untuk menampilkan informasi sekolah-sekolah di Indonesia dalam format situs web statis. Proyek ini memproses data sekolah dan menghasilkan halaman web untuk masing-masing sekolah.
 
-## Struktur Direktori
+## Fitur Utama
 
-- `src/` - Kode sumber template
-- `scripts/` - Script pemrosesan data dan utilitas
-- `data/` - File data sekolah (schools.csv)
-- `dist/` - Output halaman HTML yang dihasilkan
-- `external/` - Data mentah dalam format CSV
+### 1. ETL (Extract, Transform, Load)
+
+Proses ETL mengekstrak data dari sumber eksternal (CSV), mentransformasi format data, dan memuat ke file `schools.csv` yang terstruktur.
+
+### 2. Pembuatan Halaman Sekolah
+
+Membuat halaman HTML statis untuk setiap sekolah dengan informasi lengkap meliputi:
+
+- Identitas sekolah (nama, NPSN, bentuk pendidikan, status)
+- Lokasi (alamat, kelurahan, kecamatan, kabupaten/kota, provinsi)
+- Koordinat geografis (latitude, longitude)
+
+### 3. Halaman Provinsi
+
+Membuat halaman indeks per provinsi yang menampilkan semua kabupaten/kota dalam provinsi tersebut beserta jumlah sekolah.
+
+### 4. Halaman Utama
+
+Halaman utama dengan fungsionalitas:
+
+- Pencarian sekolah berdasarkan nama
+- Filter berdasarkan provinsi
+- Filter berdasarkan jenis pendidikan
+- Navigasi cepat ke halaman provinsi
+
+### 5. Peta Situs (Sitemap)
+
+Menghasilkan sitemap XML yang memenuhi standar Google (maksimum 50.000 URL per file).
+
+### 6. Validasi Tautan
+
+Memvalidasi semua tautan internal dalam file HTML yang dihasilkan untuk memastikan tidak ada tautan rusak.
+
+### 7. Build Inkremental
+
+Mendukung build inkremental menggunakan manifest untuk跳过 halaman yang tidak berubah sejak build terakhir.
+
+### 8. Pengecekkan Kesegaran Data
+
+Memeriksa usia data sekolah dan menghasilkan laporan kualitas data.
+
+## Alur Data
+
+```
+external/raw.csv → ETL Process → data/schools.csv → Build Process → dist/
+                                                                   ├── index.html (Homepage)
+                                                                   ├── Provinsi/
+                                                                   │   └── {province}/index.html
+                                                                   └── {path}/{npsn}-{slug}.html (School pages)
+```
+
+## npm Scripts
+
+| Command                           | Description                                    |
+| --------------------------------- | ---------------------------------------------- |
+| `npm run dev`                     | Jalankan lint dan test JavaScript              |
+| `npm run build`                   | Bangun semua halaman sekolah                   |
+| `npm run etl`                     | Jalankan proses ETL (ekstrak, transform, load) |
+| `npm run sitemap`                 | Hasilkan file sitemap XML                      |
+| `npm run validate-links`          | Validasi semua tautan internal                 |
+| `npm run lint`                    | Jalankan ESLint untuk kode                     |
+| `npm run format`                  | Format kode dengan Prettier                    |
+| `npm run format:check`            | Periksa format kode tanpa mengubah             |
+| `npm run test`                    | Jalankan semua test (JS + Python)              |
+| `npm run test:js`                 | Jalankan test JavaScript                       |
+| `npm run test:js:coverage`        | Jalankan test dengan coverage check            |
+| `npm run test:js:coverage:report` | Hasilkan laporan coverage HTML                 |
+| `npm run test:py`                 | Jalankan test Python                           |
+| `npm run test:ci`                 | Jalankan test untuk CI pipeline                |
+| `npm run coverage`                | Cek coverage (minimum 80% lines, 75% branches) |
+| `npm run coverage:report`         | Hasilkan laporan coverage detail               |
 
 ## Panduan Pengembangan
 
-1. Kloning repositori
-2. Instal dependensi: `npm install`
-3. Jalankan proses ETL: `npm run etl`
-4. Bangun halaman: `npm run build`
-5. Hasilkan sitemap: `npm run sitemap`
-6. Validasi tautan: `npm run validate-links`
+### Persiapan
+
+1. Kloning repositori:
+
+   ```bash
+   git clone https://github.com/sulhimaskom/sekolah-pseo.git
+   cd sekolah-pseo
+   ```
+
+2. Instal dependensi:
+   ```bash
+   npm install
+   ```
+
+### Pengembangan Harian
+
+1. Jalankan proses ETL untuk memperbarui data:
+
+   ```bash
+   npm run etl
+   ```
+
+2. Bangun halaman:
+
+   ```bash
+   npm run build
+   ```
+
+3. Hasilkan sitemap:
+
+   ```bash
+   npm run sitemap
+   ```
+
+4. Validasi tautan:
+   ```bash
+   npm run validate-links
+   ```
+
+### Build Inkremental
+
+Untuk build inkremental (hanya halaman yang berubah), cukup jalankan:
+
+```bash
+npm run build
+```
+
+Sistem akan secara otomatis跳过 halaman yang tidak berubah sejak build terakhir menggunakan file manifest.
+
+### Pengecekkan Kesegaran Data
+
+Untuk memeriksa apakah data sudah segar:
+
+```bash
+node scripts/check-freshness.js
+```
+
+Untuk output JSON:
+
+```bash
+node scripts/check-freshness.js --json
+```
+
+Untuk verbose output dengan metrik kualitas:
+
+```bash
+node scripts/check-freshness.js --verbose
+```
+
+## Struktur Direktori
+
+```
+sekolah-pseo/
+├── .github/
+│   └── workflows/          # GitHub Actions workflows
+├── dist/                   # Output halaman HTML yang dihasilkan
+├── data/                   # File data sekolah (schools.csv)
+├── external/               # Data mentah dalam format CSV
+├── public/                # Asset statis (favicon, dll)
+├── scripts/               # Script pemrosesan data dan utilitas
+│   ├── build-pages.js     # Halaman pembangunan
+│   ├── check-freshness.js # Pengecekkan kesegaran data
+│   ├── config.js          # Konfigurasi
+│   ├── etl.js            # Proses ETL
+│   ├── fetch-data.js      # Pengambilan data eksternal
+│   ├── fs-safe.js        # File system wrapper aman
+│   ├── logger.js         # Logging
+│   ├── manifest.js       # Build manifest
+│   ├── rate-limiter.js   # Rate limiting
+│   ├── resilience.js     # Pola resilience
+│   ├── sitemap.js       # Peta situs
+│   ├── slugify.js       # URL slug
+│   ├── utils.js         # Utilitas
+│   └── validate-links.js # Validasi tautan
+├── src/
+│   ├── presenters/
+│   │   ├── design-system.js  # Design tokens
+│   │   ├── styles.js        # CSS generator
+│   │   └── templates/      # Template HTML
+│   │       ├── homepage.js
+│   │       ├── province-page.js
+│   │       └── school-page.js
+│   └── services/
+│       └── PageBuilder.js   # Halaman builder service
+├── tests/                 # Test Python
+├── docs/                  # Dokumentasi
+├── CONTRIBUTING.md       # Panduan kontribusi
+├── SECURITY.md           # Keamanan
+└── package.json
+```
 
 ## Pengujian
 
-Proyek ini mencakup fungsi pengujian sederhana untuk memverifikasi pipeline CI/CD:
+Proyek ini mencakup pengujian untuk memverifikasi pipeline CI/CD:
 
-- `addNumbers(a, b)` - Fungsi utilitas untuk menjumlahkan dua angka (terletak di `scripts/utils.js`)
+### Test JavaScript
 
-Jalankan pengujian dengan: `npm test`
+Jalankan test JavaScript:
+
+```bash
+npm run test:js
+```
+
+Dengan coverage:
+
+```bash
+npm run test:js:coverage
+```
+
+### Test Python
+
+Jalankan test Python:
+
+```bash
+npm run test:py
+```
+
+### Semua Test
+
+Jalankan semua test:
+
+```bash
+npm test
+```
 
 ## Konfigurasi Git
 
@@ -47,6 +243,13 @@ Setiap push ke branch `main` dan pull request yang mengubah `.gitignore` akan di
 1. Memastikan pola kritis ada di `.gitignore`
 2. Memeriksa pola file sensitif umum
 3. Memverifikasi tidak ada file rahasia yang akan ter-commit
+
+## Dokumentasi Lanjutan
+
+- [Dokumentasi API](docs/api.md) - Dokumentasi API lengkap untuk semua modul
+- [Panduan Kontribusi](CONTRIBUTING.md) - Cara berkontribusi pada proyek
+- [Keamanan](SECURITY.md) - Kebijakan keamanan
+- [Dokumentasi Deployment](docs/deployment.md) - Panduan deployment
 
 ## Lisensi
 

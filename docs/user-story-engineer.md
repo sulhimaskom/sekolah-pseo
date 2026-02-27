@@ -74,3 +74,13 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Add input validation to aggregateByKabupaten (fixes inconsistency with aggregateByProvince)
 - All 506 JS tests pass, zero lint warnings
 - Small atomic diff (475 lines added, 4 lines modified)
+
+### PR #XXX: docs: enhance README.md with complete feature documentation
+
+- Expanded README.md from 53 to 256 lines (issue #289)
+- Added complete feature documentation (ETL, page generation, sitemap, validation, incremental builds)
+- Documented all 17 npm scripts with purpose
+- Added data flow explanation (raw.csv → schools.csv → dist/)
+- Added links to detailed documentation (deployment.md, CONTRIBUTING.md, SECURITY.md)
+- All lint and tests pass
+- Zero warnings
