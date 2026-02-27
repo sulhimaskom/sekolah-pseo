@@ -5,6 +5,21 @@
 This document serves as the long-term memory for the RnD agent, tracking improvements, patterns, and learnings.
 
 ## Completed Improvements
+### 2026-02-27: Fix duplicate Improvements Log section (Issue #298)
+
+- **Issue**: #298
+- **PR**: #312
+- **Branch**: `rnd/fix-product-architect-improvements-log`
+- **Summary**: Clean up corrupted Improvements Log entries in Product-Architect.md
+- **Status**: PR created with RnD label
+- **Changes**:
+  - Removed garbled `#XX|` prefixes from all 8 Improvement Log entries
+  - Added proper blank lines after section headers for markdown readability
+  - Preserved all historical improvement entries
+- **Verification**:
+  - Only Product-Architect.md changed
+  - No test/lint infrastructure impacted
+
 
 ### 2026-02-27: CSV Formula Injection Protection (Issue #254)
 
