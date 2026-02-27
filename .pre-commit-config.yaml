@@ -20,5 +20,5 @@ repos:
         exclude: ^(dist|node_modules|coverage)/
         args: [--config, eslint.config.js]
         additional_dependencies:
-          - eslint@9.39.2
+          - eslint@10.0.2
           - globals@17.3.0
