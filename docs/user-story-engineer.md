@@ -65,3 +65,11 @@ The user-story-engineer domain focuses on delivering small, safe, measurable imp
 - Add input validation to aggregateByKabupaten (fixes inconsistency with aggregateByProvince)
 - All 506 JS tests pass, zero lint warnings
 - Small atomic diff (475 lines added, 4 lines modified)
+
+### PR #XXX: fix: add schools.csv to .gitignore to reduce repo bloat (issue #277)
+
+- Fixed issue #277: schools.csv (539KB) not gitignored causing unnecessary repo bloat
+- Removed data/schools.csv and schools.csv from git tracking (now ignored)
+- Added data/schools.csv and schools.csv to .gitignore
+- All 558 JS tests pass, zero lint warnings
+- Small atomic diff (4 lines added to .gitignore)
