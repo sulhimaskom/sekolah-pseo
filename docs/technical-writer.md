@@ -164,6 +164,9 @@
 #JB|  - province-page.js (province page HTML template)
 #JB|  - Note: logger.js and manifest.js were already listed but not properly organized
 #BQ|  PR: (to be created)
+#MM|#ZB|- Fix duplicate Improvements Log section in Product-Architect.md - DONE: Removed duplicate section header, unified all improvement entries under single section
+#RX|#BQ|  PR: https://github.com/sulhimaskom/sekolah-pseo/pull/302
+#QZ|
 
 ## Notes
 
