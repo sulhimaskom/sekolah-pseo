@@ -225,7 +225,7 @@ function escapeCsvField(value) {
   // Dangerous characters: =, +, -, @, tab (\t)
   const firstChar = str.charAt(0);
   if (firstChar === '=' || firstChar === '+' || firstChar === '-' || firstChar === '@' || firstChar === '\t') {
-    return "'" + str;
+    return '"' + str;
   }
 
   // Check if the field needs quoting
