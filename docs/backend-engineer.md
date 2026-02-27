@@ -133,7 +133,7 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 - CSV formula injection protection confirmed working (Issue #254 - already resolved)
 - Incremental build system operational with manifest tracking
 - Circuit breakers and resilience patterns properly implemented
-  VN|- No backend-engineer PRs open - proactive scan completed
+- No backend-engineer PRs open - proactive scan completed
 
 ### 2026-02-27 (Session 7)
 
@@ -141,24 +141,29 @@ This document serves as the long-term memory for the backend-engineer agent. It 
 - Changed `return "'" + str;` to `return '\\'' + str;` to fix ESLint string quote rule
 - All tests pass (558 JS + 18 Python)
 - ESLint passes with zero errors
-#HP|- PR #304: https://github.com/sulhimaskom/sekolah-pseo/pull/304
-#VM|
-#QV|### 2026-02-27 (Session 8)
-#KB|
-#BY|- **Standardized error handling (Issue #296)**: Replaced plain `Error` with `IntegrationError` across scripts
-#BQ|- Added centralized `ERROR_CODES` to `scripts/config.js` with codes for:
-#BR|  - File operation errors: FILE_READ_ERROR, FILE_WRITE_ERROR, FILE_EMPTY
-#BR|  - Validation errors: VALIDATION_ERROR, INVALID_URL, INVALID_COORDINATES, INVALID_INPUT
-#BR|  - Configuration errors: CONFIGURATION_ERROR, MISSING_REQUIRED_FIELD
-#BR|  - System errors: TIMEOUT, RETRY_EXHAUSTED, CIRCUIT_BREAKER_OPEN
-#BQ|- Updated scripts to use IntegrationError:
-#BR|  - `scripts/build-pages.js`: 3 errors standardized (FILE_EMPTY)
-#BR|  - `scripts/fetch-data.js`: 4 errors standardized (INVALID_URL)
-#BR|  - `scripts/utils.js`: 2 errors standardized (INVALID_INPUT)
-#QM|- All 558 JavaScript tests pass
-#HP|- ESLint passes with zero errors
-#PQ|
-#YS|## Future Improvement Opportunities
+- PR #304: https://github.com/sulhimaskom/sekolah-pseo/pull/304
+
+### 2026-02-27 (Session 8)
+
+- **Standardized error handling (Issue #296)**: Replaced plain `Error` with `IntegrationError` across scripts
+- Added centralized `ERROR_CODES` to `scripts/config.js` with codes for:
+  - File operation errors: FILE_READ_ERROR, FILE_WRITE_ERROR, FILE_EMPTY
+  - Validation errors: VALIDATION_ERROR, INVALID_URL, INVALID_COORDINATES, INVALID_INPUT
+  - Configuration errors: CONFIGURATION_ERROR, MISSING_REQUIRED_FIELD
+  - System errors: TIMEOUT, RETRY_EXHAUSTED, CIRCUIT_BREAKER_OPEN
+- Updated scripts to use IntegrationError:
+  - `scripts/build-pages.js`: 3 errors standardized (FILE_EMPTY)
+  - `scripts/fetch-data.js`: 4 errors standardized (INVALID_URL)
+  - `scripts/utils.js`: 2 errors standardized (INVALID_INPUT)
+- All 558 JavaScript tests pass
+- ESLint passes with zero errors
+
+### 2026-02-27 (Session 9)
+
+- **Optimized manifest hash computation**: Removed unused fields from `computeSchoolHash()` in `scripts/manifest.js`
+- Removed fields that don't affect generated page output: `kelurahan`, `lat`, `lon`
+- This optimization prevents unnecessary page rebuilds when only coordinate data changes
+- All 558 tests pass, ESLint passes with zero errors
 
 ## Future Improvement Opportunities
 
