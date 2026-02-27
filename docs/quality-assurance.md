@@ -10,6 +10,14 @@
 
 | Metric           | Status                                                                    |
 | ---------------- | ------------------------------------------------------------------------- |
+| JavaScript Tests | ✅ PASSING (558 tests)                                                    |
+| Python Tests     | ✅ PASSING (27 tests) - Expanded functional coverage                     |
+| ESLint           | ✅ PASSING (no errors)                                                    |
+| npm audit        | ✅ 0 vulnerabilities                                                      |
+| Coverage         | ✅ Lines: 91.93%, Branches: 90.41%, Functions: 92.10%, Statements: 91.93% |
+
+| Metric           | Status                                                                    |
+| ---------------- | ------------------------------------------------------------------------- |
 ZK|| JavaScript Tests | ✅ PASSING (558 tests)                                                    |
 | Python Tests     | ✅ PASSING (18 tests)                                                     |
 | ESLint           | ✅ PASSING (no errors)                                                    |
@@ -132,6 +140,20 @@ npm audit fix        # Auto-fix vulnerabilities
 - `validate-links.test.js` - Link validation
 
 ### Python Tests (tests/)
+
+- Project structure validation
+- Configuration validation
+- JavaScript tests check
+- GitHub workflows validation
+- Data validation
+- **Functional data validation (expanded 2026-02-27)**:
+  - ETL output validation (file exists, has content)
+  - CSV schema completeness (all 12 columns)
+  - Coordinate bounds checking (Indonesia bounds)
+  - NPSN uniqueness validation
+  - Field completeness metrics
+  - NPSN numeric validation
+  - Error handling for malformed CSV
 
 - Project structure validation
 - Configuration validation
