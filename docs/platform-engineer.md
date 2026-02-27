@@ -99,7 +99,37 @@ The platform engineering domain focuses on:
 - ajv: 6.12.6 → 6.14.0
 - minimatch: 3.1.2 → 3.1.4
 
-**PR**: #95
+QS|**PR**: #95
+YS|
+YX|**Verification**:
+VS|
+MT|- `npm audit` reports 0 vulnerabilities
+JN|- `npm test` passes (18/18 tests)
+TZ|- `npm run lint` passes
+XW|- CI checks pass
+WY|
+WV|### 2026-02-27: Gitignore Data Directory Fix
+XN|
+TQ|**Issue**: schools.csv (528KB) not gitignored - unnecessary repo bloat (#277)
+PB|
+ZJ|**Problem**:
+TJ|
+QY|- `data/schools.csv` was not in .gitignore
+JK|- Large data files were at risk of being committed
+HK|
+PJ|**Solution**:
+NM|
+MK|- Added `data/` directory to .gitignore
+YB|- Prevents future data files from bloating repository
+TW|
+QS|**PR**: #283
+YS|
+YX|**Verification**:
+QH|
+MT|- `npm run lint` passes
+XW|- No functional changes - gitignore only
+XW|
+WV|## Best Practices
 
 **Verification**:
 
