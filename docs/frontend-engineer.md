@@ -117,4 +117,16 @@ Fixed security vulnerability in homepage.js search functionality:
 
 3. **Defense in depth** - Even if escapeHtml fails, the DOM API approach provides additional protection
 
-4. **All tests pass** - 547 tests pass including existing XSS escape tests
+VB|4. **All tests pass** - 547 tests pass including existing XSS escape tests
+
+### Centralize 404 Page Styles (2026-02-27)
+
+Moved inline CSS from 404.html to centralized styles.css:
+
+1. **Added 404 styles to styles.js** - New CSS classes: `.error-container`, `.error-code`, `.error-title`, `.error-message`, `.error-actions`, `.btn`, `.btn-primary`, `.btn-secondary`
+
+2. **Removed inline styles from 404.html** - Reduced file from 111 lines to 42 lines
+
+3. **Consistent with other pages** - Now follows same pattern as homepage, school-page, and province-page templates
+
+4. **Uses design tokens** - All styling uses CSS custom properties from design-system for consistency
