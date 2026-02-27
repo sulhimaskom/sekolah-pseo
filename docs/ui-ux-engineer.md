@@ -115,7 +115,27 @@ Static site generator for Indonesian school pages.
 - Fixed corrupted edit tool markers (#QH|, #SN|, #VP|, #YV|, #VK|, etc.) appearing in generated HTML
 - Affected files: school-page.js, homepage.js, province-page.js
 - These markers were being output as literal text in the HTML
-- Build and tests pass after fix
+TQ|- Build and tests pass after fix
+YR|
+### 12. Fix Broken Navigation - Missing Kabupaten and Kecamatan Pages ✅
+
+- Identified critical UX bug: province pages linked to non-existent `/kabupaten/` pages
+- Province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no template existed
+- Also fixed: search results linked to province pages instead of school pages
+- Created `kabupaten-page.js` template for kabupaten/kota listing
+- Created `kecamatan-page.js` template for kecamatan listing with school links
+- Updated homepage.js to include full path data (kabKotaSlug, kecamatanSlug, schoolUrl)
+- Fixed search result links to point directly to school pages
+- Added CSS styles for `.school-link-badges` class
+- Navigation now works: Province → Kabupaten → Kecamatan → School
+
+### 13. Fix Search Results Linking ✅
+
+- Search results were linking to province pages instead of individual school pages
+- Updated `prepareSchoolDataForSearch()` to include full path information
+- Now includes: provinceSlug, kabKotaSlug, kecamatanSlug, namaSlug, and schoolUrl
+- Search results now link directly to school pages: `/provinsi/{prov}/kabupaten/{kab}/kecamatan/{kec}/{npsn}-{slug}.html`
+
 
 ## Testing
 
