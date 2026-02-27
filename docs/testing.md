@@ -54,6 +54,12 @@ Located in `scripts/*.test.js`:
 - `school-page.test.js` - School page template tests
 - `slugify.test.js` - URL slug generation tests
 - `validate-links.test.js` - Link validation tests
+- `homepage.test.js` - Homepage template tests
+- `logger.test.js` - Logger tests
+- `fetch-data.test.js` - Data fetching tests
+- `check-freshness.test.js` - Data freshness tests
+- `manifest.test.js` - Build manifest tests
+- `province-page.test.js` - Province page template tests
 
 ### Python Tests
 
@@ -189,7 +195,7 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 14 test files, 110+ test cases
+- JavaScript: 20 test files, 110+ test cases
 - Python: 18 test cases (standalone runner)
 - Total: 100% pass rate
 
