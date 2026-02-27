@@ -100,6 +100,11 @@ function generateKecamatanPageHtml(provinceName, kabKotaName, kecamatanName, sch
   <title>Daftar Sekolah di Kecamatan ${escapeHtml(kecamatanName)} - Sekolah PSEO</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
+  <meta property="og:title" content="Daftar Sekolah di Kecamatan ${escapeHtml(kecamatanName)} - Sekolah PSEO" />
+  <meta property="og:description" content="${escapeHtml(metaDescription)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>

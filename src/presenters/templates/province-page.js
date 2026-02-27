@@ -99,6 +99,11 @@ function generateProvincePageHtml(provinceName, schools) {
   <title>Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
+  <meta property="og:title" content="Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO" />
+  <meta property="og:description" content="${escapeHtml(metaDescription)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
