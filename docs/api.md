@@ -2633,12 +2633,12 @@ XH|```javascript
 #YK|
 #ZB|### Exports
 #ZT|
-XH|```javascript
-#RZ|module.exports = {
-#NX|  fetchFromGitHub: function,
-#VM|  findCsvFiles: function,
-#YJ|  copyToRaw: function
-#NT|};```
+module.exports = {
+  fetchFromGitHub: function,
+  findCsvFiles: function,
+  copyToRaw: function,
+  validateRepoUrl: function
+};
 
 #XZ|### Constants
 
@@ -2725,8 +2725,40 @@ XH|```javascript
 #MT|#if (success) {
 #KV|#  console.log('File copied successfully');
 #KV|#}```
+---
 
-#HT|---
+#### `validateRepoUrl(url)`
+
+Validates and sanitizes a Git repository URL to prevent command injection.
+
+**Parameters:**
+
+- `url` (string): The repository URL to validate
+
+**Returns:** `string` - Sanitized URL
+
+**Throws:** `Error` If URL is invalid or not a safe Git repository URL
+
+**Security Validation:**
+
+- Only allows http and https protocols
+- Requires hostname to be present
+- Must end with `.git`
+- Reconstructs URL to remove any injected characters
+
+**Usage:**
+
+```javascript
+const { validateRepoUrl } = require('./fetch-data');
+const safeUrl = validateRepoUrl('https://github.com/user/repo.git');
+// Returns: 'https://github.com/user/repo.git'
+
+// Throws for invalid URLs:
+validateRepoUrl('file:///etc/passwd'); // Error: Invalid protocol
+validateRepoUrl('https://evil.com'); // Error: must end with .git
+```
+
+---
 
 #KV|### CLI Usage
 
