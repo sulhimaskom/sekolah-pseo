@@ -156,10 +156,6 @@ function generateHomepageHtml(schools) {
 #QH|  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
 #SN|  <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
 #VP|  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
-  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="/" />
   <link rel="stylesheet" href="/styles.css">
 </head>
