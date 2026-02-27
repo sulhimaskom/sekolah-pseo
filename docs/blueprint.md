@@ -99,7 +99,7 @@ All internal modules have documented API contracts in `docs/api.md`:
 - **Error Consistency**: Standardized IntegrationError format
 - **Idempotency**: Safe operations produce same result
 - **Backward Compatibility**: No breaking changes without versioning
-- Node version: Latest LTS
+- Node version: Latest LTS (v20+)
 - No external build tools (pure Node.js)
 
 ### Environment Variables
