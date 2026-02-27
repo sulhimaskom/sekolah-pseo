@@ -237,3 +237,6 @@ dist/
 
 # Build manifest
 .build-manifest.json
+
+# Data files (generated/imported, not versioned)
+data/schools.csv
