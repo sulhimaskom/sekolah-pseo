@@ -47,7 +47,7 @@ Static site generator for Indonesian school pages.
 - Responsive design with mobile support
 - Dark mode support
 
-Dark Mode Support ✅### 2.
+### 2. Dark Mode Support ✅
 
 - Added prefers-color-scheme media query
 - Added dark mode color tokens in design-system.js
@@ -77,26 +77,22 @@ Dark Mode Support ✅### 2.
 - Full accessibility: ARIA labels, focus-visible styles, keyboard accessible
 - Dark mode support via prefers-color-scheme
 - Respects prefers-reduced-motion for accessibility
-  RJ|- Mobile responsive sizing (48px desktop, 40px mobile)
-  JQ|
+- Mobile responsive sizing (48px desktop, 40px mobile)
 
 ### 7. Fix Duplicate HTML Structure ✅
 
-JS|- Found and fixed duplicate HTML closing tags in both school-page.js and homepage.js
-PQ|- Removed duplicated footer and body/html closing tags
-PQ|- Bug caused invalid HTML output
-QX|- All tests pass after fix
-MX|JQ|
-QT|
-QW|### 8. prefers-reduced-motion for Back to Top Button ✅
-WR|
-JK|- Fixed accessibility issue where back-to-top button scroll behavior didn't respect prefers-reduced-motion
-PQ|- Changed from inline onclick to proper addEventListener with window.matchMedia check
-PV|- Uses 'auto' behavior when user prefers reduced motion, 'smooth' otherwise
-VN|- Applied to both school-page.js and homepage.js templates
-XH|- Completes the accessibility support that CSS transitions already had
-JW|XH|- Completes the accessibility support that CSS transitions already had
-WQ|MX|JQ|
+- Found and fixed duplicate HTML closing tags in both school-page.js and homepage.js
+- Removed duplicated footer and body/html closing tags
+- Bug caused invalid HTML output
+- All tests pass after fix
+
+### 8. prefers-reduced-motion for Back to Top Button ✅
+
+- Fixed accessibility issue where back-to-top button scroll behavior didn't respect prefers-reduced-motion
+- Changed from inline onclick to proper addEventListener with window.matchMedia check
+- Uses 'auto' behavior when user prefers reduced motion, 'smooth' otherwise
+- Applied to both school-page.js and homepage.js templates
+- Completes the accessibility support that CSS transitions already had
 
 ### 9. Province Listing Pages ✅
 
@@ -104,25 +100,22 @@ WQ|MX|JQ|
 - Created province-page.js template with kabupaten/kota listing
 - Added province page generation to PageBuilder.js and build-pages.js
 - Pages now generate at /provinsi/{slug}/index.html during build
-YQ|
-#QT|
-#WK|### 10. Remove Duplicate Meta Tags ✅
-#QM|
-#WR|- Fixed duplicate meta tags in all three HTML templates
-#HQ|- Removed duplicate theme-color, X-XSS-Protection, and title tags
-#BV|- homepage.js: Removed duplicate theme-color (light mode) and duplicate meta block
-#QM|- school-page.js: Removed duplicate theme-color (light mode)
-#TH|- province-page.js: Removed duplicate entire meta tags block
-#QQ|- Improves HTML output cleanliness and follows HTML best practices
-#YQ|
-#NX|## Testing
-## Testing
 
-## Testing
+### 10. Remove Duplicate Meta Tags ✅
 
-- Added @media print for better printing
-- Hides navigation, optimizes layout for print
-- Ensures readable output on paper
+- Fixed duplicate meta tags in all three HTML templates
+- Removed duplicate theme-color, X-XSS-Protection, and title tags
+- homepage.js: Removed duplicate theme-color (light mode) and duplicate meta block
+- school-page.js: Removed duplicate theme-color (light mode)
+- province-page.js: Removed duplicate entire meta tags block
+- Improves HTML output cleanliness and follows HTML best practices
+
+### 11. Fix Corrupted Template Markers ✅
+
+- Fixed corrupted edit tool markers (#QH|, #SN|, #VP|, #YV|, #VK|, etc.) appearing in generated HTML
+- Affected files: school-page.js, homepage.js, province-page.js
+- These markers were being output as literal text in the HTML
+- Build and tests pass after fix
 
 ## Testing
 

@@ -151,11 +151,11 @@ function generateHomepageHtml(schools) {
   <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin">
-  YV|  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
-#VK|  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
-#QH|  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-#SN|  <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
-#VP|  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="/" />
   <link rel="stylesheet" href="/styles.css">
 </head>
