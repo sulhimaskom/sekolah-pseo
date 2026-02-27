@@ -129,6 +129,29 @@ QH|
 MT|- `npm run lint` passes
 XW|- No functional changes - gitignore only
 XW|
+### 2026-02-27: Remove Duplicate Secrets from CI Workflows
+
+**Issue**: Duplicate and incorrect secret mappings in GitHub Actions workflows
+
+**Problem**:
+
+- `.github/workflows/on-push.yml`: Had duplicate `GEMINI_API_KEY` → `API_KEY` mapping, and incorrect `VITE_SUPABASE_ANON_KEY` pointing to `VITE_SUPABASE_KEY` instead of `SUPABASE_ANON_KEY`
+- `.github/workflows/parallel.yml`: Had duplicate `GEMINI_API_KEY` → `API_KEY` mapping in 4 jobs
+- Issue #315 was supposed to fix this but the PR was never created due to GitHub App permission limitations
+
+**Solution**:
+
+- Removed entire env block from on-push.yml (12 lines of unused secrets)
+- Removed 4 duplicate `API_KEY` entries from parallel.yml
+- These secrets are not used by the workflows and were unnecessarily exposing secrets
+
+**Verification**:
+
+- YAML syntax validated: PASS
+- `npm run lint` passes
+- `npm run test:js` passes (558 tests)
+
+
 WV|## Best Practices
 
 **Verification**:
