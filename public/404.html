@@ -78,6 +78,35 @@
         outline: 2px solid var(--color-focus);
         outline-offset: 2px;
       }
+
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        .error-code {
+          color: var(--color-primary-focus);
+        }
+        .error-title {
+          color: var(--color-dark-text-primary);
+        }
+        .error-message {
+          color: var(--color-dark-text-secondary);
+        }
+        .btn-secondary {
+          background-color: var(--color-dark-bg-accent);
+          color: var(--color-dark-text-primary);
+        }
+        .btn-secondary:hover {
+          background-color: var(--color-dark-border);
+        }
+      }
+
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        .btn,
+        .btn-primary,
+        .btn-secondary {
+          transition: none;
+        }
+      }
     </style>
   </head>
   <body>
@@ -104,8 +133,34 @@
       </div>
     </main>
 
-    <footer role="contentinfo">
-      <p>&copy; <script>document.write(new Date().getFullYear())</script> Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
-    </footer>
+    <button class="back-to-top" aria-label="Kembali ke atas">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
+    
+    <script>
+      (function() {
+        var backToTop = document.querySelector('.back-to-top');
+        if (!backToTop) return;
+        
+        function handleScroll() {
+          if (window.scrollY > 300) {
+            backToTop.classList.add('visible');
+          } else {
+            backToTop.classList.remove('visible');
+          }
+        }
+        
+        function scrollToTop() {
+          var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+          window.scrollTo({ top: 0, behavior: behavior });
+        }
+        
+        backToTop.addEventListener('click', scrollToTop);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+      })();
+    </script>
   </body>
 </html>
