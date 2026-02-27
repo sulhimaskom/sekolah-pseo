@@ -1,5 +1,18 @@
+/**
+ * @module resilience
+ * @description Resilience patterns for error handling, retries, and circuit breakers.
+ * Provides utilities for building robust integrations with proper error handling.
+ */
+
 const { EventEmitter } = require('events');
 
+/**
+ * Custom error class for integration errors with code and details.
+ * @extends Error
+ * @param {string} message - Error message
+ * @param {string} code - Error code from ERROR_CODES
+ * @param {Object} [details={}] - Additional error details
+ */
 class IntegrationError extends Error {
   constructor(message, code, details = {}) {
     super(message);
@@ -20,6 +33,11 @@ class IntegrationError extends Error {
   }
 }
 
+/**
+ * Standard error codes for integration errors.
+ * @readonly
+ * @enum {string}
+ */
 const ERROR_CODES = {
   TIMEOUT: 'TIMEOUT',
   RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
@@ -32,6 +50,11 @@ const ERROR_CODES = {
 
 const TRANSIENT_ERROR_CODES = ['EAGAIN', 'EIO', 'ENOSPC', 'EBUSY', 'ETIMEDOUT'];
 
+/**
+ * Checks if an error is a transient error that may be retried.
+ * @param {Error|null} error - Error to check
+ * @returns {boolean} True if error is transient and should be retried
+ */
 function isTransientError(error) {
   if (!error) return false;
   if (TRANSIENT_ERROR_CODES.includes(error.code)) return true;
@@ -48,6 +71,14 @@ function isTransientError(error) {
   return false;
 }
 
+/**
+ * Executes a promise with a timeout.
+ * @param {Promise<*>} promise - Promise to execute
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @param {string} [operationName='operation'] - Name for this operation (for logging)
+ * @returns {Promise<*>} Result of the promise
+ * @throws {IntegrationError} Throws TIMEOUT error if deadline exceeded
+ */
 async function withTimeout(promise, timeoutMs, operationName = 'operation') {
   let timeoutHandle;
 
@@ -73,6 +104,23 @@ async function withTimeout(promise, timeoutMs, operationName = 'operation') {
   }
 }
 
+/**
+ * Retry options for the retry function.
+ * @typedef {Object} RetryOptions
+ * @property {number} [maxAttempts=3] - Maximum retry attempts
+ * @property {number} [initialDelayMs=100] - Initial delay between retries (ms)
+ * @property {number} [maxDelayMs=10000] - Maximum delay between retries (ms)
+ * @property {number} [backoffMultiplier=2] - Multiplier for exponential backoff
+ * @property {Function} [shouldRetry=isTransientError] - Function to determine if error should be retried
+ */
+
+/**
+ * Executes a function with exponential backoff retry.
+ * @param {Function} fn - Function to execute
+ * @param {RetryOptions} [options={}] - Retry configuration
+ * @returns {Promise<*>} Result of the function execution
+ * @throws {IntegrationError} Throws RETRY_EXHAUSTED error after max attempts
+ */
 async function retry(fn, options = {}) {
   const {
     maxAttempts = 3,
@@ -112,7 +160,24 @@ async function retry(fn, options = {}) {
   throw lastError;
 }
 
+/**
+ * Circuit breaker pattern implementation.
+ * Prevents cascading failures by tracking errors and opening the circuit after threshold.
+ * @see https://martinfowler.com/bliki/CircuitBreaker.html
+ */
 class CircuitBreaker {
+  /**
+   * Circuit breaker options.
+   * @typedef {Object} CircuitBreakerOptions
+   * @property {number} [failureThreshold=5] - Number of failures before opening circuit
+   * @property {number} [resetTimeoutMs=60000] - Time to wait before attempting reset (ms)
+   * @property {number} [monitoringPeriodMs=10000] - Period for monitoring failures (ms)
+   */
+
+  /**
+   * Creates a new CircuitBreaker instance.
+   * @param {CircuitBreakerOptions} [options={}] - Configuration options
+   */
   constructor(options = {}) {
     this.failureThreshold = options.failureThreshold || 5;
     this.resetTimeoutMs = options.resetTimeoutMs || 60000;
@@ -125,6 +190,13 @@ class CircuitBreaker {
     this.monitoringStart = null;
   }
 
+  /**
+   * Executes a function through the circuit breaker.
+   * @param {Function} fn - Function to execute
+   * @param {string} [operationName='operation'] - Name for this operation (for logging)
+   * @returns {Promise<*>} Result of the function execution
+   * @throws {IntegrationError} Throws CIRCUIT_BREAKER_OPEN if circuit is open
+   */
   async execute(fn, operationName = 'operation') {
     if (this.state === 'OPEN') {
       if (this.shouldAttemptReset()) {
@@ -179,6 +251,10 @@ class CircuitBreaker {
     return this.lastFailureTime && Date.now() - this.lastFailureTime > this.resetTimeoutMs;
   }
 
+  /**
+   * Gets the current state of the circuit breaker.
+   * @returns {Object} Current state including state, failureCount, and lastFailureTime
+   */
   getState() {
     return {
       state: this.state,

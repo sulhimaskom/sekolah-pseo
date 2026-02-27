@@ -1,8 +1,10 @@
-/*
- * Sitemap generator. Splits the URLs produced by build-pages.js into multiple
- * sitemap files respecting the 50,000 URL and 50MB limits, and writes a
- * sitemap-index.xml that references them. Assumes the `dist` directory has
- * been populated with HTML files.
+/**
+ * @module sitemap
+ * @description Sitemap generator for Indonesian School PSEO project.
+ * Splits the URLs produced by build-pages.js into multiple sitemap files
+ * respecting the 50,000 URL and 50MB limits, and writes a sitemap-index.xml
+ * that references them. Assumes the `dist` directory has been populated with
+ * HTML files.
  */
 
 const path = require('path');
@@ -18,6 +20,19 @@ module.exports = {
   writeSitemapIndex,
 };
 
+/**
+ * URL entry for sitemap generation.
+ * @typedef {Object} SitemapUrl
+ * @property {string} url - Full URL of the page
+ * @property {string} [lastmod] - Last modified date (ISO format)
+ */
+
+/**
+ * Collects URLs from HTML files in a directory.
+ * @param {string} dir - Directory to walk for HTML files
+ * @param {string} baseUrl - Base URL for the site
+ * @returns {Promise<SitemapUrl[]>} Array of URL entries
+ */
 async function collectUrls(dir, baseUrl) {
   return await walkDirectory(dir, (fullPath, relativePath, entry, stat) => {
     return {
@@ -27,6 +42,12 @@ async function collectUrls(dir, baseUrl) {
   });
 }
 
+/**
+ * Writes sitemap XML files, splitting URLs into chunks respecting limits.
+ * @param {SitemapUrl[]} urls - Array of URL entries
+ * @param {string} outDir - Output directory for sitemap files
+ * @returns {Promise<string[]>} Array of created sitemap filenames
+ */
 async function writeSitemapFiles(urls, outDir) {
   const sitemapFiles = [];
   for (let i = 0; i < urls.length; i += CONFIG.MAX_URLS_PER_SITEMAP) {
@@ -56,6 +77,13 @@ async function writeSitemapFiles(urls, outDir) {
   return sitemapFiles;
 }
 
+/**
+ * Writes the sitemap index file that references all sitemap files.
+ * @param {string[]} files - Array of sitemap filenames
+ * @param {string} outDir - Output directory
+ * @param {string} baseUrl - Base URL for the site
+ * @returns {Promise<void>}
+ */
 async function writeSitemapIndex(files, outDir, baseUrl) {
   // Use array join for better performance when building large strings
   const contentParts = [
@@ -72,6 +100,11 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
   await safeWriteFile(path.join(outDir, 'sitemap-index.xml'), content);
 }
 
+/**
+ * Main function to generate all sitemaps.
+ * Collects URLs from dist directory and generates sitemap files and index.
+ * @returns {Promise<void>}
+ */
 async function generateSitemaps() {
   const distDir = CONFIG.DIST_DIR;
   const outDir = distDir; // put sitemap files in dist

@@ -1,10 +1,19 @@
-/*
- * Shared configuration for the Indonesian School PSEO project
+/**
+ * @module config
+ * @description Shared configuration for the Indonesian School PSEO project.
+ * Provides centralized configuration values with environment variable support,
+ * validation, and security utilities.
  */
 
 const path = require('path');
 const logger = require('./logger');
 
+/**
+ * Validates that a target path is within a base directory (prevents path traversal attacks).
+ * @param {string} targetPath - The path to validate
+ * @param {string} basePath - The base directory that the target must be within
+ * @returns {boolean} True if target path is within base path, false otherwise
+ */
 function validatePath(targetPath, basePath) {
   const resolved = path.resolve(targetPath);
   const normalized = path.normalize(resolved);
@@ -91,4 +100,3 @@ const CONFIG = {
 };
 
 module.exports = CONFIG;
-
