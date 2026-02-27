@@ -212,8 +212,7 @@ jobs:
             Never overlap responsibility.
             Never introduce complexity without measurable gain.
             Optimize for long-term maintainability and strategic leverage.
-            " \
-            --model opencode/minimax-m2.5-free
+            "             --model opencode/minimax-m2.5-free
 
 
   # ================================================================
@@ -317,9 +316,7 @@ jobs:
           
           Never refactor unrelated modules.
           Never introduce unnecessary abstraction.
-          " \
-          --model opencode/minimax-m2.5-free \
-          --agent ${{ matrix.role }}
+          "           --model opencode/minimax-m2.5-free           --agent ${{ matrix.role }}
 
 
   # ================================================================
@@ -373,8 +370,7 @@ jobs:
           Fix minor issues automatically.
           Add detailed technical comments.
           DO NOT merge PR.
-          " \
-          --model opencode/minimax-m2.5-free
+          "           --model opencode/minimax-m2.5-free
 
 
   # ================================================================
@@ -447,5 +443,4 @@ jobs:
              - Close linked issues
              - Delete remote branch if policy allows
              - Log action
-          " \
-          --model opencode/minimax-m2.5-free
+          "           --model opencode/minimax-m2.5-free

@@ -194,5 +194,4 @@ jobs:
             - Dokumentasi telah diperbarui jika perlu
 
           PROMPT
-          )" \
-            --model iflowcn/qwen3-max
+          )"             --model iflowcn/qwen3-max

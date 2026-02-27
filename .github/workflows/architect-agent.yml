@@ -210,5 +210,4 @@ jobs:
             Jika kosong, gunakan default task untuk analisis log dan pembuatan workflow.
 
           PROMPT
-          )" \
-            --model iflowcn/qwen3-max
+          )"             --model iflowcn/qwen3-max
