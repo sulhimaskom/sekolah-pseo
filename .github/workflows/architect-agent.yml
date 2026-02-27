@@ -211,5 +211,4 @@ jobs:
 
           PROMPT
           )" \
-            --model iflowcn/qwen3-max \
-            --share false \
+            --model iflowcn/qwen3-max

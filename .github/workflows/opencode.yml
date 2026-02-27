@@ -139,8 +139,7 @@ jobs:
           - Mengabaikan test yang gagal tanpa analisis menyeluruh
           PROMPT
           )" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model iflowcn/glm-4.6
       
       - name: Verify PR Status
         id: verify_status

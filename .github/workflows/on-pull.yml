@@ -432,5 +432,4 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model opencode/kimi-k2.5-free \
-            --share false \
+            --model opencode/kimi-k2.5-free
