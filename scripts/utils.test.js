@@ -6,7 +6,8 @@ const {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
-} = require('../scripts/utils');
+  escapeCsvField,
+} = require('./utils');
 
 test('parseCsv handles empty data', () => {
   assert.deepStrictEqual(parseCsv(''), []);
@@ -120,4 +121,65 @@ test('hasCoordinateData returns false for zero coordinates', () => {
 test('hasCoordinateData returns false for null/undefined school', () => {
   assert.strictEqual(hasCoordinateData(null), false);
   assert.strictEqual(hasCoordinateData(undefined), false);
+});
+
+// Formula injection protection tests
+test('escapeCsvField handles null and undefined', () => {
+  assert.strictEqual(escapeCsvField(null), '');
+  assert.strictEqual(escapeCsvField(undefined), '');
+});
+
+test('escapeCsvField returns string as-is for normal values', () => {
+  assert.strictEqual(escapeCsvField('Test Value'), 'Test Value');
+  assert.strictEqual(escapeCsvField('School Name'), 'School Name');
+  assert.strictEqual(escapeCsvField(''), '');
+  assert.strictEqual(escapeCsvField('123'), '123');
+});
+
+test('escapeCsvField escapes comma-containing values', () => {
+  assert.strictEqual(escapeCsvField('Street, City'), '"Street, City"');
+  assert.strictEqual(escapeCsvField('A, B, C'), '"A, B, C"');
+});
+
+test('escapeCsvField escapes double quotes', () => {
+  assert.strictEqual(escapeCsvField('Test "Value"'), '"Test ""Value"""');
+});
+
+test('escapeCsvField escapes newline characters', () => {
+  assert.strictEqual(escapeCsvField('Line1\nLine2'), '"Line1\nLine2"');
+});
+
+// Formula injection protection - critical security tests
+test('escapeCsvField prefixes formula injection characters', () => {
+  // Equal sign (=) - most common formula injection
+  assert.strictEqual(escapeCsvField('=SUM(1,2)'), "'=SUM(1,2)");
+  assert.strictEqual(escapeCsvField("=CMD|' /C calc"), "'=CMD|' /C calc");
+  assert.strictEqual(escapeCsvField('=DDE("cmd""/c calc"'), '\'=DDE("cmd""/c calc"');
+
+  // Plus sign (+)
+  assert.strictEqual(escapeCsvField('+1+1'), "'+1+1");
+  assert.strictEqual(escapeCsvField('+SUM(A1:B1)'), "'+SUM(A1:B1)");
+
+  // Minus sign (-)
+  assert.strictEqual(escapeCsvField('-1-1'), "'-1-1");
+  assert.strictEqual(escapeCsvField('-2*3'), "'-2*3");
+
+  // At sign (@)
+  assert.strictEqual(escapeCsvField('@CONCATENATE(A1,B1)'), "'@CONCATENATE(A1,B1)");
+
+  // Tab character
+  assert.strictEqual(escapeCsvField('\tdata'), "'\tdata");
+});
+
+test('escapeCsvField handles formula injection combined with quoting needs', () => {
+  // Formula char + comma needs both protections
+  assert.strictEqual(escapeCsvField('=SUM(1,2),3'), "'=SUM(1,2),3");
+});
+
+test('escapeCsvField does not affect non-formula strings', () => {
+  assert.strictEqual(escapeCsvField('formula'), 'formula');
+  assert.strictEqual(escapeCsvField('=notformula'), "'=notformula");
+  assert.strictEqual(escapeCsvField('test+value'), 'test+value');
+  assert.strictEqual(escapeCsvField('test-value'), 'test-value');
+  assert.strictEqual(escapeCsvField('email@domain.com'), 'email@domain.com');
 });
