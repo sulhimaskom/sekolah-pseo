@@ -46,6 +46,11 @@ function prepareSchoolDataForSearch(schools) {
     provinsi: school.provinsi || '',
     slug: slugify(school.nama || ''),
     provinceSlug: slugify(school.provinsi || ''),
+    provinceSlug: slugify(school.provinsi || ''),
+    kabKotaSlug: slugify(school.kab_kota || ''),
+    kecamatanSlug: slugify(school.kecamatan || ''),
+    namaSlug: slugify(school.nama || ''),
+    schoolUrl: `/provinsi/${slugify(school.provinsi || '')}/kabupaten/${slugify(school.kab_kota || '')}/kecamatan/${slugify(school.kecamatan || '')}/${school.npsn || ''}-${slugify(school.nama || '')}.html`,
   }));
 }
 
@@ -351,7 +356,7 @@ function generateHomepageHtml(schools) {
         li.className = 'school-result-item';
         
         var a = document.createElement('a');
-        a.href = '/provinsi/' + school.provinceSlug + '/';
+        a.href = school.schoolUrl || '/provinsi/' + school.provinceSlug + '/';
         a.className = 'school-result-link';
         
         var header = document.createElement('div');
