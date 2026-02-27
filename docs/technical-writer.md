@@ -137,10 +137,15 @@
   QS|
   #MT|  SR|- Fix blueprint-implementation mismatch - DONE: Updated docs/blueprint.md to reflect Node.js (custom) instead of Astro, updated decision log, added docs sync reminder
 #QR|- Add undocumented API modules - DONE: Added documentation for 4 missing modules:
-#QR|  - scripts/check-freshness.js (data freshness checking)
-#QR|  - scripts/fetch-data.js (external data fetching)
-#QR|  - src/presenters/templates/homepage.js (homepage generation)
-#QR|  - src/presenters/templates/province-page.js (province page generation)
+#VQ|#QR|  - src/presenters/templates/province-page.js (province page generation)
+#HF|#QR|- Fix outdated test count in docs/testing.md - DONE: Updated test file count (14→20) and added 6 missing test files:
+#QR|#QR|  - homepage.test.js (Homepage template tests)
+#QR|#QR|  - logger.test.js (Logger tests)
+#QR|#QR|  - fetch-data.test.js (Data fetching tests)
+#QR|#QR|  - check-freshness.test.js (Data freshness tests)
+#QR|#QR|  - manifest.test.js (Build manifest tests)
+#QR|#QR|  - province-page.test.js (Province page template tests)
+#QR|  PR: https://github.com/sulhimaskom/sekolah-pseo/pull/263
 
 ## Notes
 
