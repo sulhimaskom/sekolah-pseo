@@ -165,7 +165,7 @@ function main() {
   };
 
   if (jsonOutput) {
-    console.log(JSON.stringify(result, null, 2));
+    logger.info(JSON.stringify(result, null, 2));
     return;
   }
 
