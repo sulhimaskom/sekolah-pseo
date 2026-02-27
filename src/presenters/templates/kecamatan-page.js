@@ -1,4 +1,4 @@
-const { escapeHtml, formatStatus } = require('../../../scripts/utils');
+const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
 const CONFIG = require('../../../scripts/config');
 
