@@ -80,7 +80,45 @@ This document serves as the security reference for the Sekolah PSEO project.
   - Validates hostname is present
   - Reconstructs URL to remove any injected characters
   - Validates URL ends with .git for git repositories
-- **Exports**: `validateRepoUrl` function for testing
+HV|- **Exports**: `validateRepoUrl` function for testing
+WR|
+#### 11. CSV Formula Injection Protection
+
+YB|- **Location**: `scripts/utils.js` - `escapeCsvField()` function
+RT|- **Protection**: Prefixes dangerous characters (=, +, -, @, tab) with single quote
+YX|- **Purpose**: Prevents spreadsheet applications from executing formulas from CSV data
+BT|- **Coverage**: All CSV exports use this function
+
+#### 12. Least-Privilege Workflow Permissions
+
+VX|- **Location**: `.github/workflows/*.yml`
+YX|- **Implementation**: Permissions reduced to minimum required for each workflow
+BT|- **Changes**:
+SP|  - Removed unnecessary `id-token: write` permissions
+SQ|  - Removed unnecessary `actions: write` permissions
+WS|  - Workflows only request what's needed (contents, issues, pull-requests)
+
+#### 13. Self-Hosted Runner Security
+
+YN|- **Location**: `orchestrator.yml`, `architect-agent.yml`
+VK|- **Status**: Uses self-hosted runners for AI agent execution
+KQ|- **Security Requirements**:
+TM|  - Runner must be on isolated network segment
+TB|  - Runner must have no persistent storage of secrets
+XW|  - Runner credentials must rotate regularly
+YJ|  - Runner should be ephemeral where possible
+ZJ|- **Alternative**: Consider GitHub-hosted runners for production
+
+#### 14. AI Agent Secret Handling
+
+BQ|- **Design Decision**: Workflows pass secrets to AI agents via environment variables
+VR|- **Rationale**: AI agents (OpenCode) require API keys to execute tasks
+JM|- **Risk Mitigation**:
+PQ|  - Secrets limited to specific workflow steps where needed
+XZ|  - Runner isolation prevents secret exfiltration
+RB|  - Regular secret rotation recommended
+JB|- **Future**: Consider ephemeral credential pools for AI operations
+WR|
 
 ### Code Patterns to Maintain
 
@@ -106,7 +144,16 @@ This document serves as the security reference for the Sekolah PSEO project.
 | pino    | ^10.3.1 | runtime | Logging        |
 | globals | ^17.0.0 | dev     | ESLint globals |
 
-### Future Security Considerations
+XS|### Future Security Considerations
+SS|
+MZ|1. ~~**Security.txt**~~: Add `public/security.txt` for security researcher coordination ✅ (Done)
+VK|2. ~~**npm audit**~~: Add to CI pipeline ✅ (Done)
+SB|3. ~~**Modern Security Headers**~~: Add Permissions-Policy, COOP, CORP headers ✅ (Done)
+XY|4. ~~**Command Injection Protection**~~: Add URL validation for git operations ✅ (Done)
+KK|5. ~~**CSV Formula Injection**~~: Add formula injection protection to CSV exports ✅ (Done)
+TH|6. ~~**Least-Privilege Permissions**~~: Reduce workflow permissions ✅ (Done)
+YM|7. ~~**Self-Hosted Runner Security**~~: Document runner security requirements ✅ (Done)
+JK|8. **Subresource Integrity**: Add SRI hashes if external resources are added
 
 1. ~~**Security.txt**~~: Add `public/security.txt` for security researcher coordination ✅ (Done)
 2. ~~**npm audit**~~: Add to CI pipeline ✅ (Done)
