@@ -196,6 +196,39 @@ section[aria-labelledby="school-details"] {
   display: contents;
 }
 
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-left: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background-color: var(--color-bg-accent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-copy:hover {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.btn-copy.copied {
+  background-color: #059669;
+  color: #fff;
+  border-color: #059669;
+}
+
+.btn-copy svg {
+  width: 14px;
+  height: 14px;
+}
+
 @media (min-width: ${DESIGN_TOKENS.breakpoints.md}) {
   .details-group {
     display: contents;

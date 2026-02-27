@@ -33,6 +33,9 @@ const CONFIG = {
   SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
   DIST_DIR: DIST_DIR,
 
+  // File extensions
+  HTML_EXTENSION: '.html',
+
   // URLs
   SITE_URL: process.env.SITE_URL || 'https://example.com',
 

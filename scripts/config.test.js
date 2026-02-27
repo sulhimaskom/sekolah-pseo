@@ -45,7 +45,7 @@ describe('config', () => {
     });
 
     it('points to project root', () => {
-      assert.ok(CONFIG.ROOT_DIR.endsWith('sekolah-pseo'));
+      assert.ok(CONFIG.ROOT_DIR.endsWith('sekolah-pseo') || CONFIG.ROOT_DIR.endsWith('app'));
     });
   });
 

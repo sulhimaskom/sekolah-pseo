@@ -113,7 +113,16 @@ function generateSchoolPageHtml(school, relativePath) {
         <dl class="school-details-list">
           <div class="details-group">
             <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dd>
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <button class="btn-copy" data-copy-target="npsn-value" aria-label="Salin NPSN">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Salin</span>
+              </button>
+            </dd>
             
             <dt>Jenjang</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
@@ -152,26 +161,50 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // ===== Back to Top Functionality =====
       var backToTop = document.querySelector('.back-to-top');
-      if (!backToTop) return;
-      
-      function handleScroll() {
-        if (window.scrollY > 300) {
-          backToTop.classList.add('visible');
-        } else {
-          backToTop.classList.remove('visible');
+      if (backToTop) {
+        function handleScroll() {
+          if (window.scrollY > 300) {
+            backToTop.classList.add('visible');
+          } else {
+            backToTop.classList.remove('visible');
+          }
         }
+
+        function scrollToTop() {
+          var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+          window.scrollTo({ top: 0, behavior: behavior });
+        }
+
+        backToTop.addEventListener('click', scrollToTop);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
       }
-      
-      function scrollToTop() {
-        var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-        window.scrollTo({ top: 0, behavior: behavior });
-      }
-      
-      backToTop.addEventListener('click', scrollToTop);
-      
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      handleScroll();
+
+      // ===== Copy Functionality =====
+      var copyButtons = document.querySelectorAll('.btn-copy');
+      copyButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var targetId = btn.getAttribute('data-copy-target');
+          var targetEl = document.getElementById(targetId);
+          if (!targetEl) return;
+
+          var textToCopy = targetEl.textContent;
+          navigator.clipboard.writeText(textToCopy).then(function() {
+            var originalContent = btn.innerHTML;
+            btn.innerHTML = '<span>Tersalin!</span>';
+            btn.classList.add('copied');
+
+            setTimeout(function() {
+              btn.innerHTML = originalContent;
+              btn.classList.remove('copied');
+            }, 2000);
+          }).catch(function(err) {
+            console.error('Gagal menyalin: ', err);
+          });
+        });
+      });
     })();
   </script>
 </body>
