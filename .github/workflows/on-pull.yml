@@ -71,7 +71,7 @@ jobs:
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         run: |
-          opencode run /ulw-loop "$(cat <<'PROMPT'
+          timeout -k 1m 25m opencode run /ulw-loop "$(cat <<'PROMPT'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT. YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
           ========================
@@ -432,5 +432,5 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model iflowcn/qwen3-coder \
+            --model iflowcn/glm-4.6 \
             --share false --thinking false \

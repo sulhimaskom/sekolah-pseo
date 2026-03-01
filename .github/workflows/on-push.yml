@@ -80,8 +80,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/00.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/00.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -105,8 +105,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/01.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/01.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -130,8 +130,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/02.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/02.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -155,8 +155,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/03.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/03.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -180,8 +180,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/04.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/04.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -205,8 +205,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/05.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/05.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -230,8 +230,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/06.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/06.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -255,8 +255,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/07.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/07.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -280,8 +280,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/08.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/08.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -305,8 +305,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/09.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/09.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -330,8 +330,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/10.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/10.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -355,8 +355,8 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout 25m opencode run "$(cat .github/prompt/11.md)" \
-              --model iflowcn/qwen3-coder \
+            if timeout -k 1m 25m opencode run "$(cat .github/prompt/11.md)" \
+              --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
               break
@@ -375,7 +375,7 @@ jobs:
         if: steps.check_issues.outputs.open_issue_count == '0'
         timeout-minutes: 60
         run: |
-          timeout 25m opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 25m opencode run "$(cat <<'PROMPT'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT.
           YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
@@ -732,5 +732,5 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model iflowcn/qwen3-coder \
+            --model iflowcn/glm-4.6 \
             --share false --thinking false \

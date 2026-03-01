@@ -79,7 +79,7 @@ jobs:
       - name: Architect Intelligence Cycle
         timeout-minutes: 30
         run: |
-            opencode run /ulw-loop "
+            timeout -k 1m 25m opencode run /ulw-loop "
             IF Github issue_count > 10 THEN enter MANAGER MODE. IF Github issue_count < 10 THEN enter CREATOR MODE.
 
             // MANAGER MODE
@@ -213,8 +213,8 @@ jobs:
             Never introduce complexity without measurable gain.
             Optimize for long-term maintainability and strategic leverage.
             " \
-            --model iflowcn/qwen3-coder \
-            --share false
+            --model iflowcn/glm-4.6 \
+            --share false --thinking false
 
   # ================================================================
   # STAGE 2 — SPECIALISTS (THE MUSCLE)
@@ -282,7 +282,7 @@ jobs:
         run: |
           echo "🚀 Specialist ${{ matrix.role }} executing"
 
-          opencode run /ulw-loop "
+          timeout -k 1m 25m opencode run /ulw-loop "
           You are Autonomous ${{ matrix.role }} Specialist.
 
           DOMAIN: ${{ matrix.role }}
@@ -318,9 +318,9 @@ jobs:
           Never refactor unrelated modules.
           Never introduce unnecessary abstraction.
           " \
-          --model iflowcn/qwen3-coder \
+          --model iflowcn/glm-4.6 \
           --agent ${{ matrix.role }} \
-          --share false
+          --share false --thinking false
 
   # ================================================================
   # STAGE 3 — FIXER
@@ -359,7 +359,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          opencode run /ulw-loop "
+          timeout -k 1m 25m opencode run /ulw-loop "
           You are Autonomous PR Fixer.
 
           Audit ALL non-merged PRs.
@@ -374,8 +374,8 @@ jobs:
           Add detailed technical comments.
           DO NOT merge PR.
           " \
-          --model iflowcn/qwen3-coder \
-          --share false
+          --model iflowcn/glm-4.6 \
+          --share false --thinking false
 
   # ================================================================
   # STAGE 4 — PR HANDLER
@@ -412,7 +412,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          opencode run /ulw-loop "
+          timeout -k 1m 25m opencode run /ulw-loop "
           GOAL:
           Make every PR safely mergable and merge it without conflicts.
           
@@ -448,5 +448,5 @@ jobs:
              - Delete remote branch if policy allows
              - Log action
           " \
-          --model iflowcn/qwen3-coder \
-          --share false
+          --model iflowcn/glm-4.6 \
+          --share false --thinking false
