@@ -30,7 +30,7 @@ jobs:
   pr-handler:
     name: PR Handler
     runs-on: ubuntu-slim
-    timeout-minutes: 40
+    timeout-minutes: 60
     permissions:
       id-token: write
       contents: write
@@ -52,7 +52,7 @@ jobs:
       
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          curl -fsSL https://opencode.ai/install | bash -s -- --version 1.2.15
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       
       - name: Get PR Details
@@ -69,9 +69,9 @@ jobs:
       
       - name: Run PR Analysis
         id: analyze_pr
-        timeout-minutes: 25
+        timeout-minutes: 45
         run: |
-          timeout -k 1m 25m opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
           Anda adalah PR Handler Expert yang bertugas menangani Pull Request secara komprehensif.
 
           ========================================
