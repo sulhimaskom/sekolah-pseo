@@ -139,8 +139,8 @@ jobs:
           - Mengabaikan test yang gagal tanpa analisis menyeluruh
           PROMPT
           )" \
-            --model iflowcn/glm-4.6 \
-            --share false
+            --model iflowcn/qwen3-coder \
+            --share false --thinking false
       
       - name: Verify PR Status
         id: verify_status
