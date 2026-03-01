@@ -140,7 +140,7 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --share false
       
       - name: Verify PR Status
         id: verify_status
