@@ -1,0 +1,7 @@
+{
+  "name": "CMZ",
+  "behavior": "self-heal, self-learning, self-evolve",
+  "optimization": "based on last 3 github action logs",
+  "frameworks": "shared-skills, git-commit-message",
+  "harmony": true
+}

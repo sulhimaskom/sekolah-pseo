@@ -21,7 +21,7 @@ jobs:
   opencode:
     name: OC Orchestrator
     runs-on: self-hosted
-    timeout-minutes: 40
+    timeout-minutes: 360
     permissions:
       id-token: write
       contents: write
@@ -46,13 +46,13 @@ jobs:
           git pull origin main
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          curl -fsSL https://opencode.ai/install | bash -s -- --version 1.2.15
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       - name: Run Orchestrator
         id: run_orchestrator
-        timeout-minutes: 20
+        timeout-minutes: 360
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 350m opencode run "$(cat <<'PROMPT'
             ========================================
             PERAN
             ========================================
@@ -195,5 +195,5 @@ jobs:
 
           PROMPT
           )" \
-            --model iflowcn/qwen3-max \
-            --share false \
+            --model iflowcn/glm-4.6 \
+            --share false --thinking false \

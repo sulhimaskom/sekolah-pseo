@@ -2967,3 +2967,6 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+## BugLover Findings
+[x] error: Test failure in scripts/config.test.js - ROOT_DIR points to /app instead of ending with sekolah-pseo.

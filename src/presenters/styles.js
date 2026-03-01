@@ -78,7 +78,7 @@ nav[aria-label="Navigasi utama"] {
 nav a {
   color: var(--color-text-secondary);
   text-decoration: none;
-  transition: color var(--transition-fast) ease;
+  transition: all var(--transition-normal) ease-in-out;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
 }

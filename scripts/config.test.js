@@ -45,7 +45,10 @@ describe('config', () => {
     });
 
     it('points to project root', () => {
-      assert.ok(CONFIG.ROOT_DIR.endsWith('sekolah-pseo'));
+      // In CI/sandbox, the directory might be named /app or similar
+      // instead of sekolah-pseo, so we check for a known file
+      const fs = require('fs');
+      assert.ok(fs.existsSync(path.join(CONFIG.ROOT_DIR, 'package.json')));
     });
   });
 
