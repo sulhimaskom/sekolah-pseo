@@ -25,7 +25,7 @@ jobs:
   opencode:
     name: OC Architect Agent
     runs-on: self-hosted
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       id-token: write
       contents: write
@@ -49,9 +49,9 @@ jobs:
           echo "$HOME/.github/workflows" >> $GITHUB_PATH
       - name: Run Architect Agent
         id: run_architect_agent
-        timeout-minutes: 45
+        timeout-minutes: 90
         run: |
-          timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 55m opencode run "$(cat <<'PROMPT'
             ========================================
             PERAN
             ========================================

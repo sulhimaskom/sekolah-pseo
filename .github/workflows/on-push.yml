@@ -72,7 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 00 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -80,7 +80,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/00.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/00.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -97,7 +97,7 @@ jobs:
           done
 
       - name: 01 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -105,7 +105,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/01.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/01.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -122,7 +122,7 @@ jobs:
           done
 
       - name: 02 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -130,7 +130,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/02.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/02.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -147,7 +147,7 @@ jobs:
           done
 
       - name: 03 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -155,7 +155,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/03.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/03.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -172,7 +172,7 @@ jobs:
           done
 
       - name: 04 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -180,7 +180,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/04.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/04.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -197,7 +197,7 @@ jobs:
           done
 
       - name: 05 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -205,7 +205,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/05.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/05.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -222,7 +222,7 @@ jobs:
           done
 
       - name: 06 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -230,7 +230,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/06.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/06.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -247,7 +247,7 @@ jobs:
           done
 
       - name: 07 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -255,7 +255,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/07.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/07.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -272,7 +272,7 @@ jobs:
           done
 
       - name: 08 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -280,7 +280,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/08.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/08.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -297,7 +297,7 @@ jobs:
           done
 
       - name: 09 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -305,7 +305,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/09.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/09.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -322,7 +322,7 @@ jobs:
           done
 
       - name: 10 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -330,7 +330,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/10.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/10.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -347,7 +347,7 @@ jobs:
           done
 
       - name: 11 flow
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           max_retries=2
           retry_count=0
@@ -355,7 +355,7 @@ jobs:
           while [ $retry_count -lt $max_retries ]; do
             echo "Attempt $((retry_count + 1)) of $max_retries"
 
-            if timeout -k 1m 45m opencode run "$(cat .github/prompt/11.md)" \
+            if timeout -k 1m 55m opencode run "$(cat .github/prompt/11.md)" \
               --model iflowcn/glm-4.6 \
               --share false --thinking false; then
               echo "OpenCode execution succeeded"
@@ -373,9 +373,9 @@ jobs:
 
       - name: on-push
         if: steps.check_issues.outputs.open_issue_count == '0'
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
-          timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 55m opencode run "$(cat <<'PROMPT'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT.
           YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
