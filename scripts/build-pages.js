@@ -14,7 +14,7 @@ const path = require('path');
 const { parseCsv } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
-const { ERROR_CODES } = CONFIG;
+const { ERROR_CODES, HTML_EXTENSION } = CONFIG;
 const { IntegrationError } = require('./resilience');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const {
@@ -302,8 +302,9 @@ async function build(options = {}) {
   // Generate homepage
   logger.info('Generating homepage...');
   const homepageHtml = generateHomepageHtml(schools);
-  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
-  logger.info('Generated homepage (index.html)');
+  const homepagePath = `index${HTML_EXTENSION}`;
+  await safeWriteFile(path.join(distDir, homepagePath), homepageHtml);
+  logger.info(`Generated homepage (${homepagePath})`);
 
   // Generate province pages
   await generateProvincePages(schools);
@@ -355,8 +356,9 @@ async function buildIncremental() {
   // Generate homepage (always regenerate as it lists all schools)
   logger.info('Generating homepage...');
   const homepageHtml = generateHomepageHtml(schools);
-  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
-  logger.info('Generated homepage (index.html)');
+  const homepagePath = `index${HTML_EXTENSION}`;
+  await safeWriteFile(path.join(distDir, homepagePath), homepageHtml);
+  logger.info(`Generated homepage (${homepagePath})`);
 
   // Generate province pages (always regenerate)
   await generateProvincePages(schools);
