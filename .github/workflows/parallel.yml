@@ -214,7 +214,7 @@ jobs:
             Optimize for long-term maintainability and strategic leverage.
             " \
             --model opencode/minimax-m2.5-free \
-            --share false
+            --share false --thinking false
 
   # ================================================================
   # STAGE 2 — SPECIALISTS (THE MUSCLE)
@@ -320,7 +320,7 @@ jobs:
           " \
           --model opencode/minimax-m2.5-free \
           --agent ${{ matrix.role }} \
-          --share false
+          --share false --thinking false
 
   # ================================================================
   # STAGE 3 — FIXER
@@ -375,7 +375,7 @@ jobs:
           DO NOT merge PR.
           " \
           --model opencode/minimax-m2.5-free \
-          --share false
+          --share false --thinking false
 
   # ================================================================
   # STAGE 4 — PR HANDLER
@@ -449,4 +449,4 @@ jobs:
              - Log action
           " \
           --model opencode/minimax-m2.5-free \
-          --share false
+          --share false --thinking false

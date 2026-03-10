@@ -3,6 +3,7 @@
  */
 
 const path = require('path');
+const CONFIG = require('./config');
 const { safeReaddir, safeStat } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 
@@ -28,7 +29,7 @@ async function walkDirectory(dir, callback) {
 
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
-      } else if (entry.endsWith('.html') && typeof callback === 'function') {
+      } else if (entry.endsWith(CONFIG.HTML_EXTENSION) && typeof callback === 'function') {
         const result = await callback(fullPath, relPath, entry, stat);
         if (result !== undefined) {
           results.push(result);
@@ -39,6 +40,33 @@ async function walkDirectory(dir, callback) {
 
   await walk(dir, '');
   return results;
+}
+
+/**
+ * Validate a school record to ensure it meets the required criteria.
+ * This is a shared utility used in ETL and Page Building.
+ *
+ * @param {Object} record
+ * @returns {boolean}
+ */
+function validateRecord(record) {
+  if (!record || typeof record !== 'object') {
+    return false;
+  }
+
+  const requiredFields = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
+
+  for (const field of requiredFields) {
+    if (!record[field] || String(record[field]).trim() === '') {
+      return false;
+    }
+  }
+
+  if (!/^\d+$/.test(record.npsn)) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -257,4 +285,5 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  validateRecord,
 };

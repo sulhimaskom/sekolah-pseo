@@ -58,11 +58,21 @@ const ERROR_CODES = {
   CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
 };
 
+// Common constants
+const HTML_EXTENSION = '.html';
+const CSV_EXTENSION = '.csv';
+const SCHOOLS_CSV_FILENAME = 'schools.csv';
+
 // Environment variables with defaults
 const CONFIG = {
+  // File extensions and naming
+  HTML_EXTENSION,
+  CSV_EXTENSION,
+  SCHOOLS_CSV_FILENAME,
+
   // File paths
   RAW_DATA_PATH: rawPath,
-  SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
+  SCHOOLS_CSV_PATH: path.join(DATA_DIR, SCHOOLS_CSV_FILENAME),
   DIST_DIR: DIST_DIR,
 
   // URLs
