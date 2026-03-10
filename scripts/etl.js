@@ -19,7 +19,7 @@
  * or `papaparse`.
  */
 
-const { parseCsv, writeCsv } = require('./utils');
+const { parseCsv, writeCsv, validateRecord } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess } = require('./fs-safe');
@@ -91,31 +91,6 @@ function normaliseRecord(raw) {
   };
 }
 
-/**
- * Validate a normalized record to ensure it meets the required criteria.
- *
- * @param {Object} record
- * @returns {boolean}
- */
-function validateRecord(record) {
-  if (!record || typeof record !== 'object') {
-    return false;
-  }
-
-  const requiredFields = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
-
-  for (const field of requiredFields) {
-    if (!record[field] || record[field].trim() === '') {
-      return false;
-    }
-  }
-
-  if (!/^\d+$/.test(record.npsn)) {
-    return false;
-  }
-
-  return true;
-}
 
 /**
  * Validate latitude and longitude coordinates for Indonesia bounds.

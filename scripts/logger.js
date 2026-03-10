@@ -29,6 +29,14 @@ const validLevel = levelMap[normalizedLevel] !== undefined ? normalizedLevel : '
 const logger = pino({
   level: validLevel,
   timestamp: pino.stdTimeFunctions.isoTime,
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      ignore: 'pid,hostname',
+      translateTime: 'SYS:standard',
+    },
+  },
   formatters: {
     level: label => {
       return { level: label };
