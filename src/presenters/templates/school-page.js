@@ -93,11 +93,11 @@ function generateSchoolPageHtml(school, relativePath) {
   </script>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+  <a href="#main-content" class="skip-link">${escapeHtml(CONFIG.TEXT.SKIP_LINK)}</a>
   
   <header role="banner">
     <nav aria-label="Navigasi utama">
-      <a href="/">Beranda</a>
+      <a href="/">${escapeHtml(CONFIG.TEXT.HOME)}</a>
       <span aria-hidden="true"> / </span>
       <span aria-current="page">${escapeHtml(school.nama)}</span>
     </nav>
@@ -108,30 +108,35 @@ function generateSchoolPageHtml(school, relativePath) {
       <h1 id="school-name">${escapeHtml(school.nama)}</h1>
       
       <section aria-labelledby="school-details">
-        <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
+        <h2 id="school-details" class="sr-only">${escapeHtml(CONFIG.TEXT.DETAIL_SEKOLAH)}</h2>
         <dl class="school-details-list">
           <div class="details-group">
-            <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dt>${escapeHtml(CONFIG.TEXT.NPSN)}</dt>
+            <dd class="copyable-wrapper">
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <button class="btn-copy" data-copy-target="npsn-value" aria-label="${escapeHtml(CONFIG.TEXT.COPY_NPSN)}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </dd>
             
-            <dt>Jenjang</dt>
+            <dt>${escapeHtml(CONFIG.TEXT.JENJANG)}</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
             
-            <dt>Status</dt>
+            <dt>${escapeHtml(CONFIG.TEXT.STATUS)}</dt>
             <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
           </div>
           
           <div class="details-group">
-            <dt>Alamat</dt>
+            <dt>${escapeHtml(CONFIG.TEXT.ALAMAT)}</dt>
             <dd>${escapeHtml(school.alamat)}</dd>
             
-            <dt>Provinsi</dt>
+            <dt>${escapeHtml(CONFIG.TEXT.PROVINSI)}</dt>
             <dd>${escapeHtml(school.provinsi)}</dd>
             
-            <dt>Kabupaten/Kota</dt>
+            <dt>${escapeHtml(CONFIG.TEXT.KAB_KOTA)}</dt>
             <dd>${escapeHtml(school.kab_kota)}</dd>
             
-            <dt>Kecamatan</dt>
+            <dt>${escapeHtml(CONFIG.TEXT.KECAMATAN)}</dt>
             <dd>${escapeHtml(school.kecamatan)}</dd>
           </div>
         </dl>
@@ -140,10 +145,10 @@ function generateSchoolPageHtml(school, relativePath) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} Sekolah PSEO. ${escapeHtml(CONFIG.TEXT.DATA_SOURCE)}</p>
   </footer>
   
-  <button class="back-to-top" aria-label="Kembali ke atas">
+  <button class="back-to-top" aria-label="${escapeHtml(CONFIG.TEXT.BACK_TO_TOP)}">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"></polyline>
     </svg>
@@ -151,26 +156,50 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // Back to top functionality
       var backToTop = document.querySelector('.back-to-top');
-      if (!backToTop) return;
-      
-      function handleScroll() {
-        if (window.scrollY > 300) {
-          backToTop.classList.add('visible');
-        } else {
-          backToTop.classList.remove('visible');
+      if (backToTop) {
+        function handleScroll() {
+          if (window.scrollY > 300) {
+            backToTop.classList.add('visible');
+          } else {
+            backToTop.classList.remove('visible');
+          }
         }
+
+        function scrollToTop() {
+          var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+          window.scrollTo({ top: 0, behavior: behavior });
+        }
+
+        backToTop.addEventListener('click', scrollToTop);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
       }
-      
-      function scrollToTop() {
-        var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-        window.scrollTo({ top: 0, behavior: behavior });
-      }
-      
-      backToTop.addEventListener('click', scrollToTop);
-      
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      handleScroll();
+
+      // Copy to clipboard functionality
+      var copyButtons = document.querySelectorAll('.btn-copy');
+      copyButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var targetId = btn.getAttribute('data-copy-target');
+          var targetEl = document.getElementById(targetId);
+          if (!targetEl) return;
+
+          var textToCopy = targetEl.textContent;
+          navigator.clipboard.writeText(textToCopy).then(function() {
+            var originalHtml = btn.innerHTML;
+            btn.classList.add('copied');
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+            setTimeout(function() {
+              btn.classList.remove('copied');
+              btn.innerHTML = originalHtml;
+            }, 2000);
+          }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+          });
+        });
+      });
     })();
   </script>
 </body>
