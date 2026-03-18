@@ -40,7 +40,14 @@ jobs:
           fetch-depth: 1
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            if curl -fsSL https://opencode.ai/install | bash; then
+              echo "OpenCode installation successful"
+              break
+            fi
+            echo "Attempt $i failed, retrying in 30 seconds..."
+            sleep 30
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       - name: Run [nama workflow]
         id: run_[nama workflow]
