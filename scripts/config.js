@@ -8,29 +8,24 @@
 const path = require('path');
 const logger = require('./logger');
 
-/**
- * Validates that a target path is within a base directory (prevents path traversal attacks).
- * @param {string} targetPath - The path to validate
- * @param {string} basePath - The base directory that the target must be within
- * @returns {boolean} True if target path is within base path, false otherwise
- */
-function validatePath(targetPath, basePath) {
-  const resolved = path.resolve(targetPath);
-  const normalized = path.normalize(resolved);
-  const baseNormalized = path.normalize(path.resolve(basePath));
-  return normalized.startsWith(baseNormalized);
-}
-
 // Define base directories
 const ROOT_DIR = path.join(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const EXTERNAL_DIR = path.join(ROOT_DIR, 'external');
 
+// Helper to validate path without circular dependency
+function localValidatePath(targetPath, basePath) {
+  const resolved = path.resolve(targetPath);
+  const normalized = path.normalize(resolved);
+  const baseNormalized = path.normalize(path.resolve(basePath));
+  return normalized.startsWith(baseNormalized);
+}
+
 // Validate RAW_DATA_PATH to prevent path traversal
 let rawPath = process.env.RAW_DATA_PATH || path.join(EXTERNAL_DIR, 'raw.csv');
 const resolvedRawPath = path.resolve(ROOT_DIR, rawPath);
-if (!validatePath(resolvedRawPath, ROOT_DIR)) {
+if (!localValidatePath(resolvedRawPath, ROOT_DIR)) {
   logger.warn('RAW_DATA_PATH falls outside project directory, using default');
   rawPath = path.join(EXTERNAL_DIR, 'raw.csv');
 }
@@ -110,6 +105,23 @@ const CONFIG = {
     MAX_CACHE_SIZE: 10000,
   },
 
+  // Text labels for templates
+  TEXT: {
+    SKIP_LINK: 'Langsung ke konten utama',
+    HOME: 'Beranda',
+    NPSN: 'NPSN',
+    JENJANG: 'Jenjang',
+    STATUS: 'Status',
+    ALAMAT: 'Alamat',
+    PROVINSI: 'Provinsi',
+    KAB_KOTA: 'Kabupaten/Kota',
+    KECAMATAN: 'Kecamatan',
+    BACK_TO_TOP: 'Kembali ke atas',
+    COPY_NPSN: 'Salin NPSN',
+    DETAIL_SEKOLAH: 'Detail Sekolah',
+    DATA_SOURCE: 'Data sekolah berasal dari Dapodik.',
+  },
+
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
@@ -118,8 +130,8 @@ const CONFIG = {
   DATA_DIR: DATA_DIR,
   EXTERNAL_DIR: EXTERNAL_DIR,
 
-  // Security utilities
-  validatePath,
+  // Security utilities (using local implementation to avoid circular dep)
+  validatePath: localValidatePath,
 };
 
 // Attach ERROR_CODES to CONFIG for backward compatibility
@@ -128,4 +140,4 @@ CONFIG.ERROR_CODES = ERROR_CODES;
 // Also export ERROR_CODES directly for convenience
 module.exports = CONFIG;
 module.exports.ERROR_CODES = ERROR_CODES;
-module.exports.validatePath = validatePath;
+module.exports.validatePath = localValidatePath;

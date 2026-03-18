@@ -42,6 +42,19 @@ async function walkDirectory(dir, callback) {
 }
 
 /**
+ * Validates that a target path is within a base directory (prevents path traversal attacks).
+ * @param {string} targetPath - The path to validate
+ * @param {string} basePath - The base directory that the target must be within
+ * @returns {boolean} True if target path is within base path, false otherwise
+ */
+function validatePath(targetPath, basePath) {
+  const resolved = path.resolve(targetPath);
+  const normalized = path.normalize(resolved);
+  const baseNormalized = path.normalize(path.resolve(basePath));
+  return normalized.startsWith(baseNormalized);
+}
+
+/**
  * Parse a CSV string into an array of objects. This parser handles quoted fields
  * that may contain commas, which is a more robust approach than simple splitting.
  *
@@ -257,4 +270,5 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  validatePath,
 };

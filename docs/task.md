@@ -2967,3 +2967,6 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+- [ ] error: Slow test detected in scripts/rate-limiter.test.js (1237ms) - expected due to timeouts
+- [ ] error: Slow test detected in scripts/resilience.test.js (2214ms) - expected due to retry backoff timeouts
+- [STRENGTHEN] Moved validatePath from scripts/config.js to scripts/utils.js for better logic separation, while maintaining a local version in config.js to avoid circular dependencies.

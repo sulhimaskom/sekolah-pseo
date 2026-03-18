@@ -21,7 +21,7 @@ jobs:
   ci:
     name: pull
     runs-on: ubuntu-22.04-arm
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,7 +60,14 @@ jobs:
 
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            if curl -fsSL https://opencode.ai/install | bash; then
+              echo "OpenCode installation successful"
+              break
+            fi
+            echo "Attempt $i failed, retrying in 30 seconds..."
+            sleep 30
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: On-Pull
@@ -70,8 +77,9 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        timeout-minutes: 100
         run: |
-          opencode run /ulw-loop "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run /ulw-loop "$(cat <<'PROMPT'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT. YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
           ========================
@@ -432,5 +440,6 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model opencode/kimi-k2.5-free \
-            --share false \
+            --model iflowcn/glm-4.6 \
+            --thinking false \
+            --share false
