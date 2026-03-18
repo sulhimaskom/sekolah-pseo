@@ -82,314 +82,98 @@ jobs:
       - name: 00 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/00.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/00.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 01 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/01.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/01.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 02 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/02.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/02.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 03 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/03.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/03.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 04 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/04.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/04.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 05 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/05.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/05.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 06 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/06.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/06.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 07 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/07.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/07.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 08 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/08.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/08.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 09 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/09.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/09.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 10 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/10.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/10.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: 11 flow
         timeout-minutes: 120
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if timeout -k 1m 90m opencode run "$(cat .github/prompt/11.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/11.md)" \
               --model iflowcn/glm-4.6 \
               --thinking false \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+              --share false
 
       - name: on-push
         if: steps.check_issues.outputs.open_issue_count == '0'
