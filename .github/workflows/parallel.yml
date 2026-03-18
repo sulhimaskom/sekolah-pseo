@@ -27,6 +27,7 @@ jobs:
   architect:
     name: "Architect: Strategy & Triage"
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
 
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,7 +78,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Architect Intelligence Cycle
-        timeout-minutes: 45
+        timeout-minutes: 50
         run: |
             timeout -k 1m 45m opencode run /ulw-loop "
             IF Github issue_count > 10 THEN enter MANAGER MODE. IF Github issue_count < 10 THEN enter CREATOR MODE.
@@ -225,6 +226,7 @@ jobs:
     needs: architect
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
@@ -272,7 +274,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Execute Specialist Work
-        timeout-minutes: 45
+        timeout-minutes: 50
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -331,6 +333,7 @@ jobs:
     name: "Fixer"
     needs: specialists
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v6
@@ -387,6 +390,7 @@ jobs:
     name: "PR-Handler"
     needs: Fixer
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v6

@@ -30,7 +30,7 @@ jobs:
   pr-handler:
     name: PR Handler
     runs-on: ubuntu-slim
-    timeout-minutes: 50
+    timeout-minutes: 60
     permissions:
       id-token: write
       contents: write

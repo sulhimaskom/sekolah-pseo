@@ -44,7 +44,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       - name: Run [nama workflow]
         id: run_[nama workflow]
-        timeout-minutes: 45
+        timeout-minutes: 50
         run: |
           timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
             ========================================
