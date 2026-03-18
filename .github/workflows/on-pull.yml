@@ -70,9 +70,9 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-        timeout-minutes: 50
+        timeout-minutes: 100
         run: |
-          timeout -k 1m 45m opencode run /ulw-loop "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run /ulw-loop "$(cat <<'PROMPT'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT. YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
           ========================

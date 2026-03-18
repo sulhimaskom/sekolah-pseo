@@ -50,9 +50,9 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       - name: Run Orchestrator
         id: run_orchestrator
-        timeout-minutes: 50
+        timeout-minutes: 100
         run: |
-          timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run "$(cat <<'PROMPT'
             ========================================
             PERAN
             ========================================

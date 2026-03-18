@@ -78,9 +78,9 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Architect Intelligence Cycle
-        timeout-minutes: 50
+        timeout-minutes: 100
         run: |
-            timeout -k 1m 45m opencode run /ulw-loop "
+            timeout -k 1m 90m opencode run /ulw-loop "
             IF Github issue_count > 10 THEN enter MANAGER MODE. IF Github issue_count < 10 THEN enter CREATOR MODE.
 
             // MANAGER MODE
@@ -274,7 +274,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Execute Specialist Work
-        timeout-minutes: 50
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -285,7 +285,7 @@ jobs:
         run: |
           echo "🚀 Specialist ${{ matrix.role }} executing"
 
-          timeout -k 1m 45m opencode run /ulw-loop "
+          timeout -k 1m 90m opencode run /ulw-loop "
           You are Autonomous ${{ matrix.role }} Specialist.
 
           DOMAIN: ${{ matrix.role }}
@@ -355,7 +355,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Audit & Fix PRs
-        timeout-minutes: 50
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -364,7 +364,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          timeout -k 1m 45m opencode run /ulw-loop "
+          timeout -k 1m 90m opencode run /ulw-loop "
           You are Autonomous PR Fixer.
 
           Audit ALL non-merged PRs.
@@ -410,7 +410,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Merge Qualified PRs
-        timeout-minutes: 50
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -419,7 +419,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          timeout -k 1m 45m opencode run /ulw-loop "
+          timeout -k 1m 90m opencode run /ulw-loop "
           GOAL:
           Make every PR safely mergable and merge it without conflicts.
           
