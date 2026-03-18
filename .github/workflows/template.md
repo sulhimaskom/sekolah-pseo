@@ -44,9 +44,9 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       - name: Run [nama workflow]
         id: run_[nama workflow]
-        timeout-minutes: 20
+        timeout-minutes: 45
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
             ========================================
             PERAN
             ========================================
@@ -171,5 +171,6 @@ jobs:
 
           PROMPT
           )" \
-            --model iflowcn/[pilih satu:tstars2.0,qwen3-vl-plus,qwen3-max-preview,qwen3-max,qwen3-coder-plus,qwen3-coder,qwen3-32b,qwen3-235b-a22b-thinking-2507,qwen3-235b-a22b-instruct,qwen3-235b,minimax-m2,kimi-k2-0905,kimi-k2,glm-4.6,deepseek-v3.2,deepseek-v3.1,deepseek-v3] \
-            --share false \
+            --model iflowcn/glm-4.6 \
+            --thinking false \
+            --share false

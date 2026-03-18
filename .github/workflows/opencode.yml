@@ -30,7 +30,7 @@ jobs:
   pr-handler:
     name: PR Handler
     runs-on: ubuntu-slim
-    timeout-minutes: 40
+    timeout-minutes: 50
     permissions:
       id-token: write
       contents: write
@@ -69,9 +69,9 @@ jobs:
       
       - name: Run PR Analysis
         id: analyze_pr
-        timeout-minutes: 25
+        timeout-minutes: 45
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 45m opencode run "$(cat <<'PROMPT'
           Anda adalah PR Handler Expert yang bertugas menangani Pull Request secara komprehensif.
 
           ========================================
@@ -140,7 +140,8 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --thinking false \
+            --share false
       
       - name: Verify PR Status
         id: verify_status
