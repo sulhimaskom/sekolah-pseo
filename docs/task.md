@@ -2967,3 +2967,8 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+- [x] error: Missing dependencies 'globals' and 'pino' prevented lint and tests from running. Fixed by running 'npm install'.
+- [x] [CONSOLIDATE] Centralized ROOT_DIR test in 'scripts/config.test.js' to be more robust across environments.
+- [x] [REMOVE] Fixed redundant 'globals' and 'pino' module error by installing missing dependencies.
+- [x] [STRENGTHEN] Enhanced 'school-page.js' template with a 'Copy to Clipboard' feature for NPSN values.
+- [x] [STRENGTHEN] Centralized UI text labels and file extensions in 'scripts/config.js' to promote modularity.

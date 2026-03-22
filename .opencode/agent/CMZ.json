@@ -1,0 +1,6 @@
+{
+  "name": "CMZ",
+  "behavior": "self-heal, self-learning, self-evolve",
+  "capabilities": ["automation", "optimization", "error-recovery"],
+  "status": "active"
+}

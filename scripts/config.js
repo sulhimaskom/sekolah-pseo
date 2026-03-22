@@ -58,12 +58,20 @@ const ERROR_CODES = {
   CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
 };
 
+// File names
+const SCHOOLS_CSV_FILENAME = 'schools.csv';
+
 // Environment variables with defaults
 const CONFIG = {
   // File paths
   RAW_DATA_PATH: rawPath,
-  SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
+  SCHOOLS_CSV_FILENAME,
+  SCHOOLS_CSV_PATH: path.join(DATA_DIR, SCHOOLS_CSV_FILENAME),
   DIST_DIR: DIST_DIR,
+
+  // File extensions
+  HTML_EXTENSION: '.html',
+  CSV_EXTENSION: '.csv',
 
   // URLs
   SITE_URL: process.env.SITE_URL || 'https://example.com',
@@ -112,6 +120,24 @@ const CONFIG = {
 
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
+
+  // UI Text labels
+  TEXT: {
+    NPSN: 'NPSN',
+    JENJANG: 'Jenjang',
+    STATUS: 'Status',
+    ALAMAT: 'Alamat',
+    PROVINSI: 'Provinsi',
+    KABUPATEN: 'Kabupaten/Kota',
+    KECAMATAN: 'Kecamatan',
+    BERANDA: 'Beranda',
+    SALIN: 'Salin NPSN',
+    TERSALIN: 'Tersalin!',
+    KEMBALI_KE_ATAS: 'Kembali ke atas',
+    DETAIL_SEKOLAH: 'Detail Sekolah',
+    TIDAK_DIKETAHUI: 'Tidak Diketahui',
+    TIDAK_TERSEDIA: 'Tidak tersedia',
+  },
 
   // Directories
   ROOT_DIR: ROOT_DIR,

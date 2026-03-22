@@ -4,6 +4,7 @@
 
 const path = require('path');
 const { safeReaddir, safeStat } = require('./fs-safe');
+const CONFIG = require('./config');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 /**
@@ -28,7 +29,7 @@ async function walkDirectory(dir, callback) {
 
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
-      } else if (entry.endsWith('.html') && typeof callback === 'function') {
+      } else if (entry.endsWith(CONFIG.HTML_EXTENSION) && typeof callback === 'function') {
         const result = await callback(fullPath, relPath, entry, stat);
         if (result !== undefined) {
           results.push(result);
@@ -151,14 +152,14 @@ function escapeHtml(text) {
 }
 
 function formatStatus(status) {
-  if (!status) return 'Tidak Diketahui';
+  if (!status) return CONFIG.TEXT.TIDAK_DIKETAHUI;
   const normalized = status.trim().toUpperCase();
   if (normalized === 'N') return 'Negeri';
   if (normalized === 'S') return 'Swasta';
   return status;
 }
 
-function formatEmptyValue(value, placeholder = 'Tidak tersedia') {
+function formatEmptyValue(value, placeholder = CONFIG.TEXT.TIDAK_TERSEDIA) {
   if (value === null || value === undefined || value === '') {
     return placeholder;
   }
