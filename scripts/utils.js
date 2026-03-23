@@ -247,6 +247,22 @@ function escapeCsvField(value) {
 
   return str;
 }
+
+/**
+ * Log message and terminate process with exit code.
+ * @param {string} message - Message to log
+ * @param {number} [code=1] - Exit code (defaults to 1)
+ */
+function terminate(message, code = 1) {
+  const logger = require('./logger');
+  if (code === 0) {
+    logger.info(message);
+  } else {
+    logger.error(message);
+  }
+  process.exit(code);
+}
+
 module.exports = {
   parseCsv,
   addNumbers,
@@ -257,4 +273,5 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  terminate,
 };

@@ -157,6 +157,51 @@ section[aria-labelledby="school-details"] {
   word-break: break-word;
 }
 
+.npsn-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-bg-accent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-copy:hover {
+  background-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-copy:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.icon-copy {
+  width: 14px;
+  height: 14px;
+}
+
+.copy-feedback {
+  font-weight: var(--font-weight-medium);
+}
+
+.btn-copy.copied {
+  background-color: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -335,6 +380,23 @@ footer[role="contentinfo"] {
 
   .empty-value {
     color: var(--color-dark-text-light);
+  }
+
+  .btn-copy {
+    background-color: var(--color-dark-bg-accent);
+    border-color: var(--color-dark-border);
+    color: var(--color-dark-text-secondary);
+  }
+
+  .btn-copy:hover {
+    background-color: var(--color-dark-border);
+    color: var(--color-dark-text-primary);
+  }
+
+  .btn-copy.copied {
+    background-color: #064e3b;
+    border-color: #065f46;
+    color: #34d399;
   }
 
   footer[role="contentinfo"] {

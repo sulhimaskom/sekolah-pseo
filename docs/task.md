@@ -2,6 +2,30 @@
 
 ## Completed Tasks
 
+### [TASK-018] Test Optimization - Slow Test Detection
+
+**Status**: Complete
+**Agent**: TestGuard
+
+### Description
+
+Identified and documented slow tests in the JavaScript test suite exceeding the 500ms runtime threshold.
+
+### Findings
+
+- **retry respects custom maxAttempts**: 704ms (scripts/resilience.test.js)
+- **retry overall suite**: 2226ms (scripts/resilience.test.js) - naturally slow due to exponential backoff.
+- **RateLimiter execute**: 850ms (scripts/rate-limiter.test.js)
+- **RateLimiter should reject queued operations after timeout**: 501ms (scripts/rate-limiter.test.js)
+- **RateLimiter overall suite**: 1239ms (scripts/rate-limiter.test.js)
+- **build creates dist directory and generates files**: 1398ms (scripts/build-pages.test.js) - Integration test with file I/O.
+- **buildIncremental runs without error**: 1176ms (scripts/build-pages.test.js)
+
+### Recommendations
+
+- Optimization for `retry` tests could involve mocking timers to avoid real-world delays.
+- Integration tests in `build-pages.test.js` should be monitored but are expected to be slower as they perform real file system operations.
+
 ### [TASK-017] Integration Hardening - Rate Limiting for Concurrent Operations
 
 **Status**: Complete
