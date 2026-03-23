@@ -183,7 +183,7 @@ jobs:
             
             4. PR Management Selesai
             ----------------------------------------
-            - Semua PR telah dilabel dengan benar
+            - Semua PR telah dilabel with benar
             - PR prioritas telah diidentifikasi
             - Review checklist telah dibuat
             - Rekomendasi merge telah dibuat
