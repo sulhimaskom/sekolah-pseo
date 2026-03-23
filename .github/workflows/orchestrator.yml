@@ -52,7 +52,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       - name: Run Orchestrator
         id: run_orchestrator
-        timeout-minutes: 100
+        timeout-minutes: 120
         run: |
           PROMPT=$(cat <<'EOF'
             ========================================

@@ -51,7 +51,7 @@ jobs:
           echo "$HOME/.github/workflows" >> $GITHUB_PATH
       - name: Run Architect Agent
         id: run_architect_agent
-        timeout-minutes: 100
+        timeout-minutes: 120
         run: |
           PROMPT=$(cat <<'EOF'
             ========================================

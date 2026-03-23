@@ -71,7 +71,7 @@ jobs:
       
       - name: Run PR Analysis
         id: analyze_pr
-        timeout-minutes: 100
+        timeout-minutes: 120
         run: |
           PROMPT=$(cat <<'EOF'
           Anda adalah PR Handler Expert yang bertugas menangani Pull Request secara komprehensif.

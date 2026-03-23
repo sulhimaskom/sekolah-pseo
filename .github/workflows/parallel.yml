@@ -60,7 +60,7 @@ jobs:
 
       - name: Run Architect Work
         id: run_architect
-        timeout-minutes: 100
+        timeout-minutes: 120
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -149,7 +149,6 @@ jobs:
     name: "Specialist: ${{ matrix.role }}"
     needs: architect
     runs-on: ubuntu-24.04-arm
-    continue-on-error: true
     timeout-minutes: 120
 
     strategy:
@@ -200,7 +199,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Execute Specialist Work
-        timeout-minutes: 100
+        timeout-minutes: 120
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -284,7 +283,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Audit & Fix PRs
-        timeout-minutes: 100
+        timeout-minutes: 120
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -343,7 +342,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Merge Qualified PRs
-        timeout-minutes: 100
+        timeout-minutes: 120
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
