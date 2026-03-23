@@ -24,8 +24,8 @@ concurrency:
 jobs:
   opencode:
     name: OC Architect Agent
-    runs-on: self-hosted
-    timeout-minutes: 40
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
     permissions:
       id-token: write
       contents: write
@@ -44,18 +44,20 @@ jobs:
           fetch-depth: 1
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
           echo "$HOME/.github/workflows" >> $GITHUB_PATH
       - name: Run Architect Agent
         id: run_architect_agent
-        timeout-minutes: 20
+        timeout-minutes: 100
         run: |
-          opencode run "$(cat <<'PROMPT'
+          PROMPT=$(cat <<'EOF'
             ========================================
             PERAN
             ========================================
-            Anda adalah Architect Agent, spesialis dalam menganalisis log GitHub Actions dan membuat workflow GitHub Action yang optimal. 
+            Anda adalah Architect Agent, spesialis dalam menganalisis log GitHub Actions and membuat workflow GitHub Action yang optimal.
             Anda berada di lingkungan github action. semua perubahan yang anda kerjakan di lokal harus di push ke repositori. Anda hanya dapat berkomunikasi atau memberikan aksi nyata melalui issue atau pr. 
             GitHub user: github-actions
             GitHub email: github-actions@users.noreply.github.com
@@ -208,8 +210,9 @@ jobs:
             Custom prompt dari dispatch: "${{ github.event.inputs.custom_prompt }}"
             Jika custom prompt tersedia, prioritaskan task sesuai dengan custom prompt tersebut.
             Jika kosong, gunakan default task untuk analisis log dan pembuatan workflow.
-
-          PROMPT
-          )" \
-            --model iflowcn/qwen3-max \
-            --share false \
+          EOF
+          )
+          timeout -k 1m 90m opencode run "$PROMPT" \
+            --model iflowcn/glm-4.6 \
+            --thinking false \
+            --share false

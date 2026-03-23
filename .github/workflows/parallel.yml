@@ -1,64 +1,46 @@
-name: parallel
+name: oc - parallel
 
 on:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: "0 */4 * * *"
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  actions: write
   id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-global
   cancel-in-progress: false
 
 jobs:
-
   # ================================================================
   # STAGE 1 — ARCHITECT (THE BRAIN)
   # ================================================================
   architect:
-    name: "Architect: Strategy & Triage"
+    name: "Architect"
     runs-on: ubuntu-24.04-arm
-
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    timeout-minutes: 120
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Check Open Issue Count
+
+      - name: Skip if Open PR Exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COUNT=$(gh issue list --state open --json number --jq length)
-          echo "Open issues: $COUNT"      
-          if [ "$COUNT" -gt 10 ]; then
-            echo "🚫 Issue count > 10. Skipping Architect stage."
+          COUNT=$(gh pr list --state open --json number --jq length)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "🚫 Open PR exists. Skipping."
             exit 0
           fi
-          
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.npm
-          key: opencode-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-v1
-          restore-keys: |
-            opencode-${{ runner.os }}-v1
 
       - name: Configure Git
         run: |
@@ -69,94 +51,35 @@ jobs:
         with:
           node-version: "20"
 
-      - run: npm ci || true
-
       - name: Install OpenCode
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
-      - name: Architect Intelligence Cycle
-        timeout-minutes: 30
+      - name: Run Architect Work
+        id: run_architect
+        timeout-minutes: 100
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-            opencode run /ulw-loop "
-            IF Github issue_count > 10 THEN enter MANAGER MODE. IF Github issue_count < 10 THEN enter CREATOR MODE.
-
-            // MANAGER MODE
-            - Audit all existing issues:
-                - Verify each issue is still relevant.
-                - Ensure labels match the correct layer and priority.
-                - Remove duplicate issues or merge overlapping scopes.
-
-            // CREATOR MODE
-            You are a Fully Autonomous System Orchestrator.
-            
-            SYSTEM TARGET:
-            Fullstack serverless production-grade application.
-            
-            YOU LEAD AI AGENT TEAM:
-            - RnD
-            - Product-Architect
-            - AI-Agent-Engineer
-            - Backend-Engineer
-            - Frontend-Engineer
-            - UI-UX-Engineer
-            - Platform-Engineer
-            - Security-Engineer
-            - Quality-Assurance
-            - DX-Engineer
-            - Technical-Writer
-            - User-Story-Engineer
-            - Growth-Innovation-Strategist
+          PROMPT=$(cat <<'EOF'
+            You are the Master Architect.
             
             OBJECTIVE:
-            Continuously evolve the system across:
-            - Architecture integrity
-            - Backend & frontend quality
-            - Infrastructure & DevOps
-            - Security posture
-            - Testing coverage
-            - Documentation clarity
-            - Developer Experience (DX)
-            - Product usability
-            - Strategic innovation
+            Scan the entire repository and discover all valid features, gaps, technical debt, and bugs.
+            Create high-quality, actionable, atomic github issues for specialized agents.
             
-            PRIMARY TASK:
-            1. Perform deep full-repository audit.
-            2. Detect:
-               - Inefficiencies
-               - Architectural drift
-               - Tech debt
-               - Missing or weak tests
-               - Security gaps
-               - DX friction
-               - UX friction
-            3. Identify hidden leverage & innovation opportunities.
-            4. Create atomic, non-overlapping GitHub Issues.
-            5. Maintain docs/blueprint.md as the architectural constitution.
-            
-            WORK PRINCIPLES:
-            - Production-grade discipline
-            - Zero redundancy
-            - Clean architecture boundaries
-            - High cohesion, low coupling
-            - Security-first mindset
-            - Test-first validation
-            - Performance-aware design
-            - Simplicity over novelty
-            - Avoid overengineering
-            - Prefer leverage over feature bloat
-            
-            INNOVATION DIRECTIVE:
-            Every cycle MUST include at least one:
-            - UX simplification proposal
-            - Automation opportunity
-            - AI-native feature idea
-            - Performance breakthrough
-            - Workflow optimization
-            - 10x leverage improvement
-            
-            Innovation proposals must include:
+            STRATEGIC GUIDELINE:
+            - Prioritize system integrity and reliability.
+            - Identify non-obvious integration points.
+            - Ensure every issue include:
             - Clear hypothesis
             - Measurable expected outcome
             - Rollback strategy
@@ -212,8 +135,11 @@ jobs:
             Never overlap responsibility.
             Never introduce complexity without measurable gain.
             Optimize for long-term maintainability and strategic leverage.
-            " \
-            --model opencode/minimax-m2.5-free \
+          EOF
+          )
+          timeout -k 1m 90m opencode run "$PROMPT" \
+            --model iflowcn/glm-4.6 \
+            --thinking false \
             --share false
 
   # ================================================================
@@ -224,6 +150,7 @@ jobs:
     needs: architect
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
+    timeout-minutes: 120
 
     strategy:
       fail-fast: false
@@ -267,11 +194,13 @@ jobs:
 
       - name: Install OpenCode
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Execute Specialist Work
-        timeout-minutes: 30
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -281,8 +210,7 @@ jobs:
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "🚀 Specialist ${{ matrix.role }} executing"
-
-          opencode run /ulw-loop "
+          PROMPT=$(cat <<'EOF'
           You are Autonomous ${{ matrix.role }} Specialist.
 
           DOMAIN: ${{ matrix.role }}
@@ -317,9 +245,12 @@ jobs:
           
           Never refactor unrelated modules.
           Never introduce unnecessary abstraction.
-          " \
-          --model opencode/minimax-m2.5-free \
+          EOF
+          )
+          timeout -k 1m 90m opencode run /ulw-loop "$PROMPT" \
+          --model iflowcn/glm-4.6 \
           --agent ${{ matrix.role }} \
+          --thinking false \
           --share false
 
   # ================================================================
@@ -329,6 +260,7 @@ jobs:
     name: "Fixer"
     needs: specialists
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v6
@@ -346,11 +278,13 @@ jobs:
 
       - name: Install OpenCode
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Audit & Fix PRs
-        timeout-minutes: 60
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -359,7 +293,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          opencode run /ulw-loop "
+          PROMPT=$(cat <<'EOF'
           You are Autonomous PR Fixer.
 
           Audit ALL non-merged PRs.
@@ -373,8 +307,11 @@ jobs:
           Fix minor issues automatically.
           Add detailed technical comments.
           DO NOT merge PR.
-          " \
-          --model opencode/minimax-m2.5-free \
+          EOF
+          )
+          timeout -k 1m 90m opencode run /ulw-loop "$PROMPT" \
+          --model iflowcn/glm-4.6 \
+          --thinking false \
           --share false
 
   # ================================================================
@@ -384,6 +321,7 @@ jobs:
     name: "PR-Handler"
     needs: Fixer
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v6
@@ -399,11 +337,13 @@ jobs:
 
       - name: Install OpenCode
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Merge Qualified PRs
-        timeout-minutes: 60
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -412,7 +352,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          opencode run /ulw-loop "
+          PROMPT=$(cat <<'EOF'
           GOAL:
           Make every PR safely mergable and merge it without conflicts.
           
@@ -447,6 +387,9 @@ jobs:
              - Close linked issues
              - Delete remote branch if policy allows
              - Log action
-          " \
-          --model opencode/minimax-m2.5-free \
+          EOF
+          )
+          timeout -k 1m 90m opencode run /ulw-loop "$PROMPT" \
+          --model iflowcn/glm-4.6 \
+          --thinking false \
           --share false
