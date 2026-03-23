@@ -29,8 +29,8 @@ concurrency:
 jobs:
   pr-handler:
     name: PR Handler
-    runs-on: ubuntu-slim
-    timeout-minutes: 40
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
     permissions:
       id-token: write
       contents: write
@@ -52,7 +52,9 @@ jobs:
       
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
       
       - name: Get PR Details
@@ -69,9 +71,9 @@ jobs:
       
       - name: Run PR Analysis
         id: analyze_pr
-        timeout-minutes: 25
+        timeout-minutes: 100
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run "$(cat <<'PROMPT'
           Anda adalah PR Handler Expert yang bertugas menangani Pull Request secara komprehensif.
 
           ========================================
@@ -140,7 +142,7 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --thinking false
       
       - name: Verify PR Status
         id: verify_status
