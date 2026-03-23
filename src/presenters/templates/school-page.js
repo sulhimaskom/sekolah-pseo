@@ -35,6 +35,7 @@ function generateSchoolPageHtml(school, relativePath) {
     throw new Error('Invalid school object provided');
   }
 
+  const { TEXT } = CONFIG;
   const requiredFields = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
   const missingFields = requiredFields.filter(field => !school[field]);
 
@@ -93,11 +94,11 @@ function generateSchoolPageHtml(school, relativePath) {
   </script>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+  <a href="#main-content" class="skip-link">${escapeHtml(TEXT.SKIP_TO_CONTENT)}</a>
   
   <header role="banner">
     <nav aria-label="Navigasi utama">
-      <a href="/">Beranda</a>
+      <a href="/">${escapeHtml(TEXT.BERANDA)}</a>
       <span aria-hidden="true"> / </span>
       <span aria-current="page">${escapeHtml(school.nama)}</span>
     </nav>
@@ -108,30 +109,39 @@ function generateSchoolPageHtml(school, relativePath) {
       <h1 id="school-name">${escapeHtml(school.nama)}</h1>
       
       <section aria-labelledby="school-details">
-        <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
+        <h2 id="school-details" class="sr-only">${escapeHtml(TEXT.SCHOOL_DETAILS)}</h2>
         <dl class="school-details-list">
           <div class="details-group">
-            <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dt>${escapeHtml(TEXT.NPSN)}</dt>
+            <dd class="npsn-container">
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <button class="btn-copy" data-copy-target="npsn-value" aria-label="Salin ${escapeHtml(TEXT.NPSN)}">
+                <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="copy-feedback" aria-live="polite">${escapeHtml(TEXT.COPY)}</span>
+              </button>
+            </dd>
             
-            <dt>Jenjang</dt>
+            <dt>${escapeHtml(TEXT.JENJANG)}</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
             
-            <dt>Status</dt>
+            <dt>${escapeHtml(TEXT.STATUS)}</dt>
             <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
           </div>
           
           <div class="details-group">
-            <dt>Alamat</dt>
+            <dt>${escapeHtml(TEXT.ALAMAT)}</dt>
             <dd>${escapeHtml(school.alamat)}</dd>
             
-            <dt>Provinsi</dt>
+            <dt>${escapeHtml(TEXT.PROVINSI)}</dt>
             <dd>${escapeHtml(school.provinsi)}</dd>
             
-            <dt>Kabupaten/Kota</dt>
+            <dt>${escapeHtml(TEXT.KAB_KOTA)}</dt>
             <dd>${escapeHtml(school.kab_kota)}</dd>
             
-            <dt>Kecamatan</dt>
+            <dt>${escapeHtml(TEXT.KECAMATAN)}</dt>
             <dd>${escapeHtml(school.kecamatan)}</dd>
           </div>
         </dl>
@@ -140,10 +150,10 @@ function generateSchoolPageHtml(school, relativePath) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} ${escapeHtml(TEXT.FOOTER_COPYRIGHT_SUFFIX)}</p>
   </footer>
   
-  <button class="back-to-top" aria-label="Kembali ke atas">
+  <button class="back-to-top" aria-label="${escapeHtml(TEXT.BACK_TO_TOP)}">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"></polyline>
     </svg>
@@ -151,26 +161,49 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // Back to top functionality
       var backToTop = document.querySelector('.back-to-top');
-      if (!backToTop) return;
-      
-      function handleScroll() {
-        if (window.scrollY > 300) {
-          backToTop.classList.add('visible');
-        } else {
-          backToTop.classList.remove('visible');
+      if (backToTop) {
+        function handleScroll() {
+          if (window.scrollY > 300) {
+            backToTop.classList.add('visible');
+          } else {
+            backToTop.classList.remove('visible');
+          }
         }
+
+        function scrollToTop() {
+          var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+          window.scrollTo({ top: 0, behavior: behavior });
+        }
+
+        backToTop.addEventListener('click', scrollToTop);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
       }
-      
-      function scrollToTop() {
-        var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-        window.scrollTo({ top: 0, behavior: behavior });
-      }
-      
-      backToTop.addEventListener('click', scrollToTop);
-      
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      handleScroll();
+
+      // Copy to clipboard functionality
+      var copyButtons = document.querySelectorAll('.btn-copy');
+      copyButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var targetId = btn.getAttribute('data-copy-target');
+          var textToCopy = document.getElementById(targetId).textContent;
+          var feedback = btn.querySelector('.copy-feedback');
+
+          navigator.clipboard.writeText(textToCopy).then(function() {
+            var originalText = feedback.textContent;
+            feedback.textContent = '${escapeHtml(TEXT.COPIED)}';
+            btn.classList.add('copied');
+
+            setTimeout(function() {
+              feedback.textContent = originalText;
+              btn.classList.remove('copied');
+            }, 2000);
+          }).catch(function(err) {
+            console.error('Gagal menyalin text: ', err);
+          });
+        });
+      });
     })();
   </script>
 </body>

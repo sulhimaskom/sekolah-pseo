@@ -110,6 +110,24 @@ const CONFIG = {
     MAX_CACHE_SIZE: 10000,
   },
 
+  // UI Text labels
+  TEXT: {
+    NPSN: 'NPSN',
+    JENJANG: 'Jenjang',
+    STATUS: 'Status',
+    ALAMAT: 'Alamat',
+    PROVINSI: 'Provinsi',
+    KAB_KOTA: 'Kabupaten/Kota',
+    KECAMATAN: 'Kecamatan',
+    BERANDA: 'Beranda',
+    BACK_TO_TOP: 'Kembali ke atas',
+    COPY: 'Salin',
+    COPIED: 'Tersalin!',
+    SKIP_TO_CONTENT: 'Langsung ke konten utama',
+    SCHOOL_DETAILS: 'Detail Sekolah',
+    FOOTER_COPYRIGHT_SUFFIX: 'Sekolah PSEO. Data sekolah berasal dari Dapodik.',
+  },
+
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
