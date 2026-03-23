@@ -76,7 +76,7 @@ jobs:
       - name: 00 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/00.md)" \
+          opencode run "$(cat .github/prompt/00.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -84,7 +84,7 @@ jobs:
       - name: 01 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/01.md)" \
+          opencode run "$(cat .github/prompt/01.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -92,7 +92,7 @@ jobs:
       - name: 02 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/02.md)" \
+          opencode run "$(cat .github/prompt/02.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -100,7 +100,7 @@ jobs:
       - name: 03 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/03.md)" \
+          opencode run "$(cat .github/prompt/03.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -108,7 +108,7 @@ jobs:
       - name: 04 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/04.md)" \
+          opencode run "$(cat .github/prompt/04.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -116,7 +116,7 @@ jobs:
       - name: 05 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/05.md)" \
+          opencode run "$(cat .github/prompt/05.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -124,7 +124,7 @@ jobs:
       - name: 06 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/06.md)" \
+          opencode run "$(cat .github/prompt/06.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -132,7 +132,7 @@ jobs:
       - name: 07 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/07.md)" \
+          opencode run "$(cat .github/prompt/07.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -140,7 +140,7 @@ jobs:
       - name: 08 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/08.md)" \
+          opencode run "$(cat .github/prompt/08.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -148,7 +148,7 @@ jobs:
       - name: 09 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/09.md)" \
+          opencode run "$(cat .github/prompt/09.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -156,7 +156,7 @@ jobs:
       - name: 10 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/10.md)" \
+          opencode run "$(cat .github/prompt/10.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -164,7 +164,7 @@ jobs:
       - name: 11 flow
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat .github/prompt/11.md)" \
+          opencode run "$(cat .github/prompt/11.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -173,7 +173,7 @@ jobs:
         if: steps.check_issues.outputs.open_issue_count == '0'
         timeout-minutes: 100
         run: |
-          timeout -k 1m 90m opencode run "$(cat <<'PROMPT'
+          PROMPT=$(cat <<'EOF'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT.
           YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
@@ -528,8 +528,9 @@ jobs:
           - DO NOT GUESS
 
           END OF PROMPT
-          PROMPT
-          )" \
+          EOF
+          )
+          opencode run "$PROMPT" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
