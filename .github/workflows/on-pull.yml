@@ -439,7 +439,7 @@ jobs:
           END OF PROMPT
           EOF
           )
-          opencode run /ulw-loop "$PROMPT" \
+          timeout -k 1m 90m opencode run /ulw-loop "$PROMPT" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false

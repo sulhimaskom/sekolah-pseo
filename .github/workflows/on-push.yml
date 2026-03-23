@@ -76,7 +76,7 @@ jobs:
       - name: 00 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/00.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/00.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -84,7 +84,7 @@ jobs:
       - name: 01 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/01.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/01.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -92,7 +92,7 @@ jobs:
       - name: 02 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/02.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/02.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -100,7 +100,7 @@ jobs:
       - name: 03 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/03.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/03.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -108,7 +108,7 @@ jobs:
       - name: 04 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/04.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/04.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -116,7 +116,7 @@ jobs:
       - name: 05 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/05.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/05.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -124,7 +124,7 @@ jobs:
       - name: 06 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/06.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/06.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -132,7 +132,7 @@ jobs:
       - name: 07 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/07.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/07.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -140,7 +140,7 @@ jobs:
       - name: 08 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/08.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/08.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -148,7 +148,7 @@ jobs:
       - name: 09 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/09.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/09.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -156,7 +156,7 @@ jobs:
       - name: 10 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/10.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/10.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -164,7 +164,7 @@ jobs:
       - name: 11 flow
         timeout-minutes: 100
         run: |
-          opencode run "$(cat .github/prompt/11.md)" \
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/11.md)" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false
@@ -530,7 +530,7 @@ jobs:
           END OF PROMPT
           EOF
           )
-          opencode run "$PROMPT" \
+          timeout -k 1m 90m opencode run "$PROMPT" \
             --model iflowcn/glm-4.6 \
             --thinking false \
             --share false

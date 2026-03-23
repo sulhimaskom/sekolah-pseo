@@ -141,7 +141,7 @@ jobs:
           - Mengabaikan test yang gagal tanpa analisis menyeluruh
           EOF
           )
-          opencode run "$PROMPT" \
+          timeout -k 1m 90m opencode run "$PROMPT" \
             --model iflowcn/glm-4.6 \
             --thinking false
       
