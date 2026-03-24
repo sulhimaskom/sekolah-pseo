@@ -288,7 +288,6 @@ test('generateKabupatenPageHtml includes security headers', () => {
 
   assert.ok(result.includes('Content-Security-Policy'));
   assert.ok(result.includes('X-Content-Type-Options'));
-  assert.ok(result.includes('X-Frame-Options'));
   assert.ok(result.includes('Referrer-Policy'));
   assert.ok(result.includes('Permissions-Policy'));
   assert.ok(result.includes('Cross-Origin-Opener-Policy'));

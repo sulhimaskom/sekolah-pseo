@@ -434,3 +434,4 @@ jobs:
           )" \
             --model opencode/kimi-k2.5-free \
             --share false \
+            --thinking false

@@ -1,3 +1,3 @@
 npsn,nama,bentuk_pendidikan,status,alamat,kelurahan,kecamatan,kab_kota,provinsi,lat,lon,updated_at
-12345678,SMA Negeri 1 Jakarta,SMA,Negeri,Jl. Jend. Sudirman No. 1,,Gambir,Jakarta Pusat,DKI Jakarta,'-6.2088,106.8456,2026-03-24
-87654321,SD Negeri 2 Bandung,SD,Negeri,Jl. Asia Afrika No. 2,,Cicendo,Kota Bandung,Jawa Barat,'-6.9175,107.6191,2026-03-24
+12345678,SMA Negeri 1 Jakarta,SMA,Negeri,Jl. Jend. Sudirman No. 1,,Gambir,Jakarta Pusat,DKI Jakarta,-6.2088,106.8456,2026-03-24
+87654321,SD Negeri 2 Bandung,SD,Negeri,Jl. Asia Afrika No. 2,,Cicendo,Kota Bandung,Jawa Barat,-6.9175,107.6191,2026-03-24

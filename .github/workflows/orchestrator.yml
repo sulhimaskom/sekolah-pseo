@@ -197,3 +197,4 @@ jobs:
           )" \
             --model iflowcn/qwen3-max \
             --share false \
+            --thinking false

@@ -232,7 +232,13 @@ function escapeCsvField(value) {
     firstChar === '@' ||
     firstChar === '\t'
   ) {
-    return `${String.fromCharCode(39)}${str}`;
+    // Optimization: Do not prefix negative numbers (starting with '-') with a quote,
+    // as they are common in coordinate data and are not dangerous in most spreadsheet software.
+    if (firstChar === '-' && !isNaN(parseFloat(str)) && isFinite(str)) {
+      // It's a number, skip prefixing
+    } else {
+      return `${String.fromCharCode(39)}${str}`;
+    }
   }
 
   // Check if the field needs quoting
