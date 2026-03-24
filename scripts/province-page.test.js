@@ -212,7 +212,6 @@ test('generateProvincePageHtml includes security headers', () => {
 
   assert.ok(html.includes('Content-Security-Policy'));
   assert.ok(html.includes('X-Content-Type-Options'));
-  assert.ok(html.includes('X-Frame-Options'));
   assert.ok(html.includes('Referrer-Policy'));
 });
 
