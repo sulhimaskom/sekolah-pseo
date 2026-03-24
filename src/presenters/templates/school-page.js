@@ -54,7 +54,6 @@ function generateSchoolPageHtml(school, relativePath) {
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
@@ -62,7 +61,6 @@ function generateSchoolPageHtml(school, relativePath) {
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
   <title>${escapeHtml(school.nama)}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
@@ -93,11 +91,11 @@ function generateSchoolPageHtml(school, relativePath) {
   </script>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+  <a href="#main-content" class="skip-link">${CONFIG.TEXT.SKIP_LINK}</a>
   
   <header role="banner">
     <nav aria-label="Navigasi utama">
-      <a href="/">Beranda</a>
+      <a href="/">${CONFIG.TEXT.HOME}</a>
       <span aria-hidden="true"> / </span>
       <span aria-current="page">${escapeHtml(school.nama)}</span>
     </nav>
@@ -111,27 +109,32 @@ function generateSchoolPageHtml(school, relativePath) {
         <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
         <dl class="school-details-list">
           <div class="details-group">
-            <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dt>${CONFIG.TEXT.NPSN}</dt>
+            <dd>
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <button class="btn-copy" data-copy-target="npsn-value" aria-label="${CONFIG.TEXT.COPY_NPSN}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </dd>
             
-            <dt>Jenjang</dt>
+            <dt>${CONFIG.TEXT.LEVEL}</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
             
-            <dt>Status</dt>
+            <dt>${CONFIG.TEXT.STATUS}</dt>
             <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
           </div>
           
           <div class="details-group">
-            <dt>Alamat</dt>
+            <dt>${CONFIG.TEXT.ADDRESS}</dt>
             <dd>${escapeHtml(school.alamat)}</dd>
             
-            <dt>Provinsi</dt>
+            <dt>${CONFIG.TEXT.PROVINCE}</dt>
             <dd>${escapeHtml(school.provinsi)}</dd>
             
-            <dt>Kabupaten/Kota</dt>
+            <dt>${CONFIG.TEXT.CITY}</dt>
             <dd>${escapeHtml(school.kab_kota)}</dd>
             
-            <dt>Kecamatan</dt>
+            <dt>${CONFIG.TEXT.DISTRICT}</dt>
             <dd>${escapeHtml(school.kecamatan)}</dd>
           </div>
         </dl>
@@ -140,10 +143,10 @@ function generateSchoolPageHtml(school, relativePath) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} ${CONFIG.TEXT.FOOTER_TEXT}</p>
   </footer>
   
-  <button class="back-to-top" aria-label="Kembali ke atas">
+  <button class="back-to-top" aria-label="${CONFIG.TEXT.BACK_TO_TOP}">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"></polyline>
     </svg>
@@ -151,6 +154,27 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // Copy to clipboard functionality
+      document.querySelectorAll('.btn-copy').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var targetId = this.getAttribute('data-copy-target');
+          var targetEl = document.getElementById(targetId);
+          if (!targetEl) return;
+
+          var text = targetEl.textContent;
+          navigator.clipboard.writeText(text).then(function() {
+            var originalLabel = btn.getAttribute('aria-label');
+            btn.setAttribute('aria-label', '${CONFIG.TEXT.COPIED}');
+            btn.classList.add('copied');
+
+            setTimeout(function() {
+              btn.setAttribute('aria-label', originalLabel);
+              btn.classList.remove('copied');
+            }, 2000);
+          });
+        });
+      });
+
       var backToTop = document.querySelector('.back-to-top');
       if (!backToTop) return;
       
