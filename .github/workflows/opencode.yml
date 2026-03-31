@@ -145,20 +145,27 @@ jobs:
       - name: Verify PR Status
         id: verify_status
         run: |
-          # Check CI status
-          CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq '.statusCheckRollup.state')
+          # Check CI status - Handle both object and array formats for statusCheckRollup
+          CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq '
+            if .statusCheckRollup == null then "SUCCESS"
+            elif (.statusCheckRollup | type) == "array" then
+              if (.statusCheckRollup | length == 0) then "SUCCESS"
+              elif all(.statusCheckRollup[]; .state == "SUCCESS" or .conclusion == "SUCCESS" or .state == "NEUTRAL") then "SUCCESS"
+              else "FAILURE" end
+            else .statusCheckRollup.state // "SUCCESS"
+            end')
           
           # Check reviews
-          APPROVAL_COUNT=$(gh pr view $PR_NUMBER --json reviews --jq '[.reviews[] | select(.state == "APPROVED")] | length')
+          APPROVAL_COUNT=$(gh pr view $PR_NUMBER --json reviews --jq '[.reviews // [] | .[] | select(.state == "APPROVED")] | length')
           
           # Check if PR has the ready-to-merge label
-          HAS_READY_LABEL=$(gh pr view $PR_NUMBER --json labels --jq '.labels[] | select(.name == "ready-to-merge")')
+          HAS_READY_LABEL=$(gh pr view $PR_NUMBER --json labels --jq 'if .labels then any(.labels[]; .name == "ready-to-merge") else false end')
           
           echo "CI_STATUS=$CI_STATUS" >> $GITHUB_OUTPUT
           echo "APPROVAL_COUNT=$APPROVAL_COUNT" >> $GITHUB_OUTPUT
           echo "HAS_READY_LABEL=$HAS_READY_LABEL" >> $GITHUB_OUTPUT
           
-          if [[ "$CI_STATUS" == "SUCCESS" && "$APPROVAL_COUNT" -ge 1 && -n "$HAS_READY_LABEL" ]]; then
+          if [[ "$CI_STATUS" == "SUCCESS" && "$APPROVAL_COUNT" -ge 1 && "$HAS_READY_LABEL" == "true" ]]; then
             echo "ready=true" >> $GITHUB_OUTPUT
           else
             echo "ready=false" >> $GITHUB_OUTPUT
@@ -178,8 +185,8 @@ jobs:
         if: steps.verify_status.outputs.ready == 'false' && steps.analyze_pr.outcome == 'success'
         run: |
           BLOCKERS=$(gh pr view $PR_NUMBER --json statusCheckRollup,reviews --jq '
-            .statusCheckRollup.contexts | map(select(.state != "SUCCESS")) as $failedChecks |
-            .reviews | map(select(.state == "CHANGES_REQUESTED")) as $blockingReviews |
+            (if (.statusCheckRollup | type) == "array" then .statusCheckRollup else .statusCheckRollup.contexts // [] end | map(select(.state != "SUCCESS" and .conclusion != "SUCCESS" and .state != "NEUTRAL"))) as $failedChecks |
+            (.reviews // [] | map(select(.state == "CHANGES_REQUESTED"))) as $blockingReviews |
             {
               failedChecks: $failedChecks,
               blockingReviews: $blockingReviews
