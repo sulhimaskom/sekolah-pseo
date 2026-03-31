@@ -2967,3 +2967,24 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+## [TASK-018] Bug Fix - Robust ROOT_DIR Validation and NPSN Copy Feature
+
+**Status**: Complete
+**Agent**: Senior Software Engineer
+
+### Description
+
+Fix failing ROOT_DIR test and implement missing NPSN copy feature.
+
+### Acceptance Criteria
+
+- [x] ROOT_DIR test passes in any directory containing package.json
+- [x] NPSN copy to clipboard feature implemented and styled
+### [TEST-PERF] Slow Test Report
+
+The following tests exceeded the 500ms threshold:
+- `build creates dist directory and generates files` (~1.5s)
+- `buildIncremental runs without error when manifest exists` (~1.6s)
+- `RateLimiter: should reject queued operations after timeout` (~0.5s)
+- `retry: respects custom maxAttempts` (~0.7s)
+- `retry` suite (~2.2s)

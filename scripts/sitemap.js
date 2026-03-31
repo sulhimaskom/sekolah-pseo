@@ -11,7 +11,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeWriteFile } = require('./fs-safe');
-const { walkDirectory } = require('./utils');
+const { walkDirectory, terminate } = require('./utils');
 
 // Export functions for testing
 module.exports = {
@@ -117,7 +117,6 @@ async function generateSitemaps() {
 
 if (require.main === module) {
   generateSitemaps().catch(error => {
-    logger.error('Sitemap generation failed:', error);
-    process.exit(1);
+    terminate(`Sitemap generation failed: ${error.message}`);
   });
 }
