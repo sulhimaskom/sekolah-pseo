@@ -11,7 +11,7 @@
  */
 
 const path = require('path');
-const { parseCsv } = require('./utils');
+const { parseCsv, terminate } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { ERROR_CODES } = CONFIG;
@@ -375,7 +375,6 @@ async function buildIncremental() {
 
 if (require.main === module) {
   build().catch(error => {
-    logger.error('Build failed:', error);
-    process.exit(1);
+    terminate(`Build failed: ${error.message}`);
   });
 }

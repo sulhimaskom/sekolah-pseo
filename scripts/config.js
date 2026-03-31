@@ -113,6 +113,22 @@ const CONFIG = {
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
+  // Text labels
+  TEXT: {
+    NPSN: 'NPSN',
+    JENJANG: 'Jenjang',
+    STATUS: 'Status',
+    ALAMAT: 'Alamat',
+    PROVINSI: 'Provinsi',
+    KAB_KOTA: 'Kabupaten/Kota',
+    KECAMATAN: 'Kecamatan',
+    COPY: 'Salin',
+    COPIED: 'Tersalin!',
+    BACK_TO_TOP: 'Kembali ke atas',
+    SKIP_LINK: 'Langsung ke konten utama',
+    BERANDA: 'Beranda',
+  },
+
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,

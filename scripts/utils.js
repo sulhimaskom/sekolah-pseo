@@ -257,4 +257,20 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  terminate,
 };
+
+/**
+ * Log a message and terminate the process with a given exit code.
+ * @param {string} message - The message to log
+ * @param {number} code - The exit code (default 1)
+ */
+function terminate(message, code = 1) {
+  const logger = require('./logger');
+  if (code === 0) {
+    logger.info(message);
+  } else {
+    logger.error(message);
+  }
+  process.exit(code);
+}
