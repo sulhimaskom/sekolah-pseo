@@ -140,19 +140,19 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --thinking false
+            --thinking false \
+            --share false
       
       - name: Verify PR Status
         id: verify_status
         run: |
-          # Check CI status
-          CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq '.statusCheckRollup.state')
+          # Use temporary file for robust JSON parsing
+          gh pr view $PR_NUMBER --json statusCheckRollup,reviews,labels > pr_data.json
           
-          # Check reviews
-          APPROVAL_COUNT=$(gh pr view $PR_NUMBER --json reviews --jq '[.reviews[] | select(.state == "APPROVED")] | length')
-          
-          # Check if PR has the ready-to-merge label
-          HAS_READY_LABEL=$(gh pr view $PR_NUMBER --json labels --jq '.labels[] | select(.name == "ready-to-merge")')
+          # Extract data using jq
+          CI_STATUS=$(jq -r '.statusCheckRollup.state // "null"' pr_data.json)
+          APPROVAL_COUNT=$(jq -r '[.reviews[] | select(.state == "APPROVED")] | length' pr_data.json)
+          HAS_READY_LABEL=$(jq -r '.labels[] | select(.name == "ready-to-merge") | .name' pr_data.json)
           
           echo "CI_STATUS=$CI_STATUS" >> $GITHUB_OUTPUT
           echo "APPROVAL_COUNT=$APPROVAL_COUNT" >> $GITHUB_OUTPUT
@@ -177,14 +177,17 @@ jobs:
       - name: Request Manual Review if Blocked
         if: steps.verify_status.outputs.ready == 'false' && steps.analyze_pr.outcome == 'success'
         run: |
-          BLOCKERS=$(gh pr view $PR_NUMBER --json statusCheckRollup,reviews --jq '
-            .statusCheckRollup.contexts | map(select(.state != "SUCCESS")) as $failedChecks |
+          # Reuse pr_data.json if it exists, otherwise fetch
+          [ ! -f pr_data.json ] && gh pr view $PR_NUMBER --json statusCheckRollup,reviews > pr_data.json
+
+          BLOCKERS=$(jq -c '
+            (.statusCheckRollup.contexts // []) | map(select(.state != "SUCCESS")) as $failedChecks |
             .reviews | map(select(.state == "CHANGES_REQUESTED")) as $blockingReviews |
             {
               failedChecks: $failedChecks,
               blockingReviews: $blockingReviews
-            } | tojson
-          ')
+            }
+          ' pr_data.json)
           
           gh pr comment $PR_NUMBER --body "🔄 **PR Status Update**
 

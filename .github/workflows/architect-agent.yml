@@ -212,4 +212,5 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --thinking false
+            --thinking false \
+            --share false
