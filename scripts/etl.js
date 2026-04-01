@@ -19,7 +19,7 @@
  * or `papaparse`.
  */
 
-const { parseCsv, writeCsv } = require('./utils');
+const { parseCsv, writeCsv, terminate } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess } = require('./fs-safe');
@@ -310,9 +310,9 @@ async function run() {
   try {
     await safeAccess(rawPath);
   } catch (error) {
-    logger.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
-    logger.error(`Error details: ${error.message}`);
-    process.exit(1);
+    terminate(
+      `Raw data file not found at ${rawPath}. Please ensure the data file exists.\nError details: ${error.message}`
+    );
   }
 
   try {
@@ -346,8 +346,7 @@ async function run() {
     logger.info(`Rejected ${rejected.length} invalid records`);
 
     if (processed.length === 0) {
-      logger.error('No valid records found after processing');
-      process.exit(1);
+      terminate('No valid records found after processing');
     }
 
     const qualityReport = generateDataQualityReport(processed);
@@ -380,13 +379,12 @@ async function run() {
     } else {
       logger.error(`ETL process failed: ${error.message}`);
     }
-    process.exit(1);
+    terminate('ETL process failed');
   }
 }
 
 if (require.main === module) {
   run().catch(error => {
-    logger.error('ETL process failed:', error);
-    process.exit(1);
+    terminate(`ETL process failed: ${error.message}`);
   });
 }

@@ -21,6 +21,14 @@ function validatePath(targetPath, basePath) {
   return normalized.startsWith(baseNormalized);
 }
 
+// Define file extensions
+const HTML_EXTENSION = '.html';
+const CSV_EXTENSION = '.csv';
+
+// Define filenames
+const SCHOOLS_CSV_FILENAME = 'schools' + CSV_EXTENSION;
+const RAW_DATA_FILENAME = 'raw' + CSV_EXTENSION;
+
 // Define base directories
 const ROOT_DIR = path.join(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
@@ -28,7 +36,7 @@ const DATA_DIR = path.join(ROOT_DIR, 'data');
 const EXTERNAL_DIR = path.join(ROOT_DIR, 'external');
 
 // Validate RAW_DATA_PATH to prevent path traversal
-let rawPath = process.env.RAW_DATA_PATH || path.join(EXTERNAL_DIR, 'raw.csv');
+let rawPath = process.env.RAW_DATA_PATH || path.join(EXTERNAL_DIR, RAW_DATA_FILENAME);
 const resolvedRawPath = path.resolve(ROOT_DIR, rawPath);
 if (!validatePath(resolvedRawPath, ROOT_DIR)) {
   logger.warn('RAW_DATA_PATH falls outside project directory, using default');
@@ -62,7 +70,7 @@ const ERROR_CODES = {
 const CONFIG = {
   // File paths
   RAW_DATA_PATH: rawPath,
-  SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
+  SCHOOLS_CSV_PATH: path.join(DATA_DIR, SCHOOLS_CSV_FILENAME),
   DIST_DIR: DIST_DIR,
 
   // URLs
@@ -112,6 +120,10 @@ const CONFIG = {
 
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
+
+  // File extensions
+  HTML_EXTENSION,
+  CSV_EXTENSION,
 
   // Directories
   ROOT_DIR: ROOT_DIR,
