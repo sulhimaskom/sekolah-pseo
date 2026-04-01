@@ -1527,6 +1527,36 @@ Clear, actionable. Agent can execute without questions.
 - [ ] Verifiable criterion
 ```
 
+### [TEST-OPTIMIZATION] Phase 4 - Test Execution Time Report
+
+**Status**: Complete
+**Agent**: Jules
+
+### Description
+
+Monitored test execution times to identify slow tests exceeding the 500ms threshold for optimization or migration.
+
+### Slow Tests Detected
+
+1. **`build-pages.test.js`**:
+   - `build creates dist directory and generates files`: ~1417ms (Reason: End-to-end build process with 3474 schools)
+   - `buildIncremental runs without error when manifest exists`: ~1432ms (Reason: Manifest check and processing)
+
+2. **`rate-limiter.test.js`**:
+   - `should reject queued operations after timeout`: ~501ms (Reason: Explicit timeout testing)
+   - `execute` suite: ~852ms (Reason: Multiple concurrent operation tests)
+   - `RateLimiter` overall: ~1243ms
+
+3. **`resilience.test.js`**:
+   - `retry` suite: ~2217ms (Reason: Tests involving retries with backoff/delays)
+   - `respects custom maxAttempts`: ~702ms
+
+### Recommendations
+
+- Migration: Consider moving the full `build` E2E tests to a separate integration or nightly pipeline as they process the entire dataset.
+- Optimization: In `resilience.test.js`, use shorter initial delays or mock timers if possible to speed up retry tests.
+- Optimization: In `rate-limiter.test.js`, reduce the timeout duration in tests to the minimum required for verification.
+
 ### [TASK-012] UI/UX Enhancement - Design System & Responsive Design
 
 **Status**: Complete
