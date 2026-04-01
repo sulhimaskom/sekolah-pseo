@@ -15,6 +15,10 @@ jobs:
   analyze:
     name: on-push
     runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        flow: ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -29,7 +33,7 @@ jobs:
 
     steps:
       - name: Wait in Queue
-        uses: softprops/turnstyle@v2
+        uses: softprops/turnstyle@v3
         with:
           poll-interval-seconds: 30
           same-branch-only: false
@@ -63,319 +67,47 @@ jobs:
           curl -fsSL https://opencode.ai/install | bash
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
-      - name: Check Open Issues
-        id: check_issues
+      - name: ${{ matrix.flow }} flow
+        timeout-minutes: 100
         run: |
-          count=$(gh issue list --state open --json number --jq 'length')
-          echo "open_issue_count=$count" >> $GITHUB_OUTPUT
+          timeout -k 1m 90m opencode run "$(cat .github/prompt/${{ matrix.flow }}.md)" \
+            --model iflowcn/glm-4.6 \
+            --thinking false
+
+  on-push-main:
+    name: on-push-main
+    needs: analyze
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - name: Wait in Queue
+        uses: softprops/turnstyle@v3
+        with:
+          poll-interval-seconds: 30
+          same-branch-only: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 00 flow
-        timeout-minutes: 30
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
         run: |
-          max_retries=2
-          retry_count=0
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/00.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 01 flow
-        timeout-minutes: 30
+      - name: Install OpenCode
         run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/01.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 02 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/02.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 03 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/03.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 04 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/04.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 05 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/05.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 06 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/06.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 07 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/07.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 08 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/08.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 09 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/09.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 10 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/10.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: 11 flow
-        timeout-minutes: 30
-        run: |
-          max_retries=2
-          retry_count=0
-
-          while [ $retry_count -lt $max_retries ]; do
-            echo "Attempt $((retry_count + 1)) of $max_retries"
-
-            if opencode run "$(cat .github/prompt/11.md)" \
-              --model opencode/glm-4.7-free \
-              --share false; then
-              echo "OpenCode execution succeeded"
-              break
-            else
-              retry_count=$((retry_count + 1))
-              echo "OpenCode execution failed, retrying in 30 seconds..."
-              sleep 30
-              if [ $retry_count -eq $max_retries ]; then
-                echo "All retry attempts failed"
-                exit 1
-              fi
-            fi
-          done
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: on-push
-        if: steps.check_issues.outputs.open_issue_count == '0'
-        timeout-minutes: 30
+        timeout-minutes: 100
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run "$(cat <<'PROMPT'
           YOU ARE AN AUTONOMOUS SOFTWARE ENGINEERING AGENT.
           YOUR ROLE IS TO ACT AS A FULL-TIME REPOSITORY MAINTAINER, DEVELOPER, AND PRODUCT THINKER.
 
@@ -732,5 +464,5 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model opencode/glm-4.7-free \
-            --share false \
+            --model iflowcn/glm-4.6 \
+            --thinking false
