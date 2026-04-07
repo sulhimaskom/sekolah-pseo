@@ -42,6 +42,26 @@ async function walkDirectory(dir, callback) {
 }
 
 /**
+ * Generate meta description for SEO
+ * @param {Object} school - School data object
+ * @returns {string} - SEO meta description
+ */
+function generateMetaDescription(school) {
+  if (!school) return '';
+  const { nama, bentuk_pendidikan, kab_kota, kecamatan } = school;
+  const parts = [];
+
+  if (nama) parts.push(nama);
+  if (bentuk_pendidikan) parts.push(bentuk_pendidikan);
+  if (kab_kota) parts.push(`di ${kab_kota}`);
+  if (kecamatan) parts.push(`Kec. ${kecamatan}`);
+
+  const description = parts.join(' - ');
+  // Truncate to optimal length for SEO (150-160 chars)
+  return description.length > 155 ? description.substring(0, 152) + '...' : description;
+}
+
+/**
  * Parse a CSV string into an array of objects. This parser handles quoted fields
  * that may contain commas, which is a more robust approach than simple splitting.
  *
@@ -257,4 +277,5 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  generateMetaDescription,
 };

@@ -2967,3 +2967,13 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+## [TestGuard] Slow Test Report
+The following tests exceed the 500ms execution threshold:
+- RateLimiter: should reject queued operations after timeout (500.2ms)
+- RateLimiter: execute suite (852.0ms)
+- RateLimiter: total module (1240.9ms)
+- retry: respects custom maxAttempts (701.1ms)
+- retry: total module (2214.4ms)
+
+Recommendation: Consider mocking timers for RateLimiter and retry tests to reduce real-world wait time, or migrate to nightly pipeline.

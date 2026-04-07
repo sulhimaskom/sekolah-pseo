@@ -24,8 +24,8 @@ concurrency:
 jobs:
   opencode:
     name: OC Architect Agent
-    runs-on: self-hosted
-    timeout-minutes: 40
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
     permissions:
       id-token: write
       contents: write
@@ -44,14 +44,15 @@ jobs:
           fetch-depth: 1
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-          echo "$HOME/.github/workflows" >> $GITHUB_PATH
       - name: Run Architect Agent
         id: run_architect_agent
-        timeout-minutes: 20
+        timeout-minutes: 100
         run: |
-          opencode run "$(cat <<'PROMPT'
+          cat <<'EOF' > architect_prompt.md
             ========================================
             PERAN
             ========================================
@@ -209,7 +210,9 @@ jobs:
             Jika custom prompt tersedia, prioritaskan task sesuai dengan custom prompt tersebut.
             Jika kosong, gunakan default task untuk analisis log dan pembuatan workflow.
 
-          PROMPT
-          )" \
+          EOF
+
+          timeout -k 1m 90m opencode run "$(cat architect_prompt.md)" \
             --model iflowcn/qwen3-max \
-            --share false \
+            --thinking false \
+            --share false

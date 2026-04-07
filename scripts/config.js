@@ -110,6 +110,22 @@ const CONFIG = {
     MAX_CACHE_SIZE: 10000,
   },
 
+  // UI Text labels
+  TEXT: {
+    NPSN: 'NPSN',
+    LEVEL: 'Jenjang',
+    STATUS: 'Status',
+    ADDRESS: 'Alamat',
+    PROVINCE: 'Provinsi',
+    CITY: 'Kabupaten/Kota',
+    DISTRICT: 'Kecamatan',
+    HOME: 'Beranda',
+    BACK_TO_TOP: 'Kembali ke atas',
+    SKIP_LINK: 'Langsung ke konten utama',
+    COPIED: 'Tersalin!',
+    COPY_ARIA: 'Salin NPSN ke papan klip'
+  },
+
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
