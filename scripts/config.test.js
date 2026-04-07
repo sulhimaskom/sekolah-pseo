@@ -45,7 +45,9 @@ describe('config', () => {
     });
 
     it('points to project root', () => {
-      assert.ok(CONFIG.ROOT_DIR.endsWith('sekolah-pseo'));
+      const fs = require('fs');
+      const packageJsonPath = path.join(CONFIG.ROOT_DIR, 'package.json');
+      assert.ok(fs.existsSync(packageJsonPath), 'ROOT_DIR should contain package.json');
     });
   });
 
