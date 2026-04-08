@@ -60,6 +60,14 @@ const ERROR_CODES = {
 
 // Environment variables with defaults
 const CONFIG = {
+  // File extensions
+  HTML_EXTENSION: '.html',
+  CSV_EXTENSION: '.csv',
+
+  // File names
+  SCHOOLS_CSV_FILENAME: 'schools.csv',
+  RAW_DATA_FILENAME: 'raw.csv',
+
   // File paths
   RAW_DATA_PATH: rawPath,
   SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
@@ -108,6 +116,21 @@ const CONFIG = {
   // Cache defaults
   CACHE_DEFAULTS: {
     MAX_CACHE_SIZE: 10000,
+  },
+
+  // UI Text labels
+  TEXT: {
+    NPSN: 'NPSN',
+    JENJANG: 'Jenjang',
+    STATUS: 'Status',
+    ALAMAT: 'Alamat',
+    PROVINSI: 'Provinsi',
+    KAB_KOTA: 'Kabupaten/Kota',
+    KECAMATAN: 'Kecamatan',
+    BERANDA: 'Beranda',
+    FOOTER_TEXT: 'Data sekolah berasal dari Dapodik.',
+    COPY_SUCCESS: 'Tersalin!',
+    SALIN_NPSN: 'Salin NPSN',
   },
 
   // File operation timeouts

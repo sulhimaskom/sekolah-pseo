@@ -2967,3 +2967,43 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+## Phase 1 Findings (BugLover)
+- [ ] error: test fail on scripts/config.test.js - points to project root
+
+## Phase 1 Results (BugLover)
+- [x] fixed: test fail on scripts/config.test.js - points to project root
+- [x] fixed: CSV escaping bug for negative numbers (coordinates)
+
+## Phase 2 Results (Palette)
+- [x] micro-UX: added "Copy NPSN" button to school pages with feedback
+
+## Phase 3 Results (Flexy)
+- [x] modularity: moved UI labels and file extensions to CONFIG
+- [x] flexy: replaced hardcoded strings with CONFIG constants in school-page template and utils
+
+## Phase 4 Results (TestGuard)
+### [TestGuard] Slow Tests
+The following tests exceed the 500ms threshold:
+- [ ] `RateLimiter > execute > should reject queued operations after timeout` (501ms) - Expected as it tests a 500ms timeout.
+- [ ] `RateLimiter` suite total (1240ms) - Aggregated time.
+- [ ] `retry > respects custom maxAttempts` (702ms) - Likely due to exponential backoff in retry logic.
+- [ ] `retry` suite total (2214ms) - Aggregated time.
+
+These tests are slow due to intentional delays (timeouts and retries) and are necessary for verifying resilience patterns.
+
+## Phase 5 Results (StorX)
+- [x] consolidate: centralized `sanitize`, `validateLatLon`, and `terminate` logic into `scripts/utils.js`
+- [x] strengthen: refactored `scripts/etl.js` to use shared utilities, reducing code duplication and standardizing process exit handling
+
+## Phase 6 Results (CodeKeep)
+- [x] quality: verified zero errors and warnings in lint and tests
+- [x] review: conducted self-review, ensuring secure implementation of the NPSN copy feature and proper integration of consolidated utilities
+
+## Phase 7 Results (CMZ)
+- [x] automation: created CMZ agent configuration in `.opencode/agent/CMZ.json`
+- [x] skills: registered specified skills and supplemental repositories for the CMZ agent
+
+## Pre-commit Review Adjustments
+- [x] data integrity: reverted accidental changes to `data/schools.csv` to preserve production dataset
+- [x] nitpick: kept `require('./logger')` inside `terminate` function to avoid potential circular dependencies, as verified by existing patterns in the codebase

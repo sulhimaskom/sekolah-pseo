@@ -111,27 +111,38 @@ function generateSchoolPageHtml(school, relativePath) {
         <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
         <dl class="school-details-list">
           <div class="details-group">
-            <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dt>${CONFIG.TEXT.NPSN}</dt>
+            <dd class="npsn-container">
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <div class="copy-wrapper">
+                <button class="btn-copy" aria-label="${CONFIG.TEXT.SALIN_NPSN}" title="${CONFIG.TEXT.SALIN_NPSN}" data-copy-target="npsn-value">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+                <span class="copy-feedback" aria-live="polite">${CONFIG.TEXT.COPY_SUCCESS}</span>
+              </div>
+            </dd>
             
-            <dt>Jenjang</dt>
+            <dt>${CONFIG.TEXT.JENJANG}</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
             
-            <dt>Status</dt>
+            <dt>${CONFIG.TEXT.STATUS}</dt>
             <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
           </div>
           
           <div class="details-group">
-            <dt>Alamat</dt>
+            <dt>${CONFIG.TEXT.ALAMAT}</dt>
             <dd>${escapeHtml(school.alamat)}</dd>
             
-            <dt>Provinsi</dt>
+            <dt>${CONFIG.TEXT.PROVINSI}</dt>
             <dd>${escapeHtml(school.provinsi)}</dd>
             
-            <dt>Kabupaten/Kota</dt>
+            <dt>${CONFIG.TEXT.KAB_KOTA}</dt>
             <dd>${escapeHtml(school.kab_kota)}</dd>
             
-            <dt>Kecamatan</dt>
+            <dt>${CONFIG.TEXT.KECAMATAN}</dt>
             <dd>${escapeHtml(school.kecamatan)}</dd>
           </div>
         </dl>
@@ -151,6 +162,55 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // NPSN Copy Functionality
+      var copyBtn = document.querySelector('.btn-copy');
+      var feedback = document.querySelector('.copy-feedback');
+
+      if (copyBtn && feedback) {
+        copyBtn.addEventListener('click', function() {
+          var npsn = document.getElementById('npsn-value').textContent;
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(npsn).then(function() {
+              showFeedback();
+            }).catch(function(err) {
+              console.error('Failed to copy: ', err);
+              fallbackCopy(npsn);
+            });
+          } else {
+            fallbackCopy(npsn);
+          }
+        });
+      }
+
+      function fallbackCopy(text) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          var successful = document.execCommand('copy');
+          if (successful) showFeedback();
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textArea);
+      }
+
+      function showFeedback() {
+        feedback.classList.add('visible');
+        copyBtn.classList.add('success');
+        setTimeout(function() {
+          feedback.classList.remove('visible');
+          copyBtn.classList.remove('success');
+        }, 2000);
+      }
+
+      // Back to top functionality
       var backToTop = document.querySelector('.back-to-top');
       if (!backToTop) return;
       
