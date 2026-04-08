@@ -3,6 +3,7 @@
  */
 
 const path = require('path');
+const CONFIG = require('./config');
 const { safeReaddir, safeStat } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 
@@ -28,7 +29,7 @@ async function walkDirectory(dir, callback) {
 
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
-      } else if (entry.endsWith('.html') && typeof callback === 'function') {
+      } else if (entry.endsWith(CONFIG.HTML_EXTENSION) && typeof callback === 'function') {
         const result = await callback(fullPath, relPath, entry, stat);
         if (result !== undefined) {
           results.push(result);
@@ -225,13 +226,17 @@ function escapeCsvField(value) {
   // This prevents spreadsheet applications from interpreting cells as formulas
   // Dangerous characters: =, +, -, @, tab (\t)
   const firstChar = str.charAt(0);
-  if (
+  const isDangerous =
     firstChar === '=' ||
     firstChar === '+' ||
     firstChar === '-' ||
     firstChar === '@' ||
-    firstChar === '\t'
-  ) {
+    firstChar === '\t';
+
+  // If it's a negative number, don't prefix it (it's likely a coordinate)
+  const isNegativeNumber = firstChar === '-' && !isNaN(parseFloat(str)) && isFinite(str);
+
+  if (isDangerous && !isNegativeNumber) {
     return `${String.fromCharCode(39)}${str}`;
   }
 
@@ -257,4 +262,72 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  sanitize,
+  validateLatLon,
+  terminate,
 };
+
+/**
+ * Sanitize a string by trimming whitespace, collapsing multiple spaces and
+ * removing problematic characters.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  // Cache regex patterns to avoid recreating them each time
+  const whitespaceRegex = /\s+/g;
+  const controlCharsRegex = /[\u0000-\u001F]/g;
+  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+
+  return value
+    .replace(whitespaceRegex, ' ') // collapse whitespace
+    .replace(controlCharsRegex, '') // remove control chars
+    .trim()
+    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
+}
+
+/**
+ * Validate latitude and longitude coordinates for Indonesia bounds.
+ * Indonesia: Latitude -11 to 6, Longitude 95 to 141
+ *
+ * @param {string} lat - Latitude as string
+ * @param {string} lon - Longitude as string
+ * @returns {boolean}
+ */
+function validateLatLon(lat, lon) {
+  if (!lat || !lon) {
+    return false;
+  }
+
+  const latNum = parseFloat(lat);
+  const lonNum = parseFloat(lon);
+
+  if (isNaN(latNum) || isNaN(lonNum)) {
+    return false;
+  }
+
+  const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
+
+  return latNum >= LAT_MIN && latNum <= LAT_MAX && lonNum >= LON_MIN && lonNum <= LON_MAX;
+}
+
+/**
+ * Terminate process with a message and exit code.
+ *
+ * @param {string} message - Error message to log
+ * @param {number} code - Exit code (default: 1)
+ */
+function terminate(message, code = 1) {
+  const logger = require('./logger');
+  if (code === 0) {
+    logger.info(message);
+  } else {
+    logger.error(message);
+  }
+  process.exit(code);
+}

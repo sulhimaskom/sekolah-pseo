@@ -19,7 +19,7 @@
  * or `papaparse`.
  */
 
-const { parseCsv, writeCsv } = require('./utils');
+const { parseCsv, writeCsv, sanitize, validateLatLon, terminate } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess } = require('./fs-safe');
@@ -35,30 +35,6 @@ module.exports = {
   checkNpsnUniqueness,
   generateDataQualityReport,
 };
-
-/**
- * Sanitize a string by trimming whitespace, collapsing multiple spaces and
- * removing problematic characters. Update this function to suit your needs.
- *
- * @param {string} value
- * @returns {string}
- */
-function sanitize(value) {
-  if (typeof value !== 'string') {
-    return '';
-  }
-
-  // Cache regex patterns to avoid recreating them each time
-  const whitespaceRegex = /\s+/g;
-  const controlCharsRegex = /[\u0000-\u001F]/g;
-  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
-
-  return value
-    .replace(whitespaceRegex, ' ') // collapse whitespace
-    .replace(controlCharsRegex, '') // remove control chars
-    .trim()
-    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
-}
 
 /**
  * Normalise a record into the canonical schema expected by the site generator.
@@ -117,30 +93,6 @@ function validateRecord(record) {
   return true;
 }
 
-/**
- * Validate latitude and longitude coordinates for Indonesia bounds.
- * Indonesia: Latitude -11 to 6, Longitude 95 to 141
- *
- * @param {string} lat - Latitude as string
- * @param {string} lon - Longitude as string
- * @returns {boolean}
- */
-function validateLatLon(lat, lon) {
-  if (!lat || !lon) {
-    return false;
-  }
-
-  const latNum = parseFloat(lat);
-  const lonNum = parseFloat(lon);
-
-  if (isNaN(latNum) || isNaN(lonNum)) {
-    return false;
-  }
-
-  const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
-
-  return latNum >= LAT_MIN && latNum <= LAT_MAX && lonNum >= LON_MIN && lonNum <= LON_MAX;
-}
 
 /**
  * Validate categorical field against allowed values.
@@ -310,9 +262,9 @@ async function run() {
   try {
     await safeAccess(rawPath);
   } catch (error) {
-    logger.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
-    logger.error(`Error details: ${error.message}`);
-    process.exit(1);
+    terminate(
+      `Raw data file not found at ${rawPath}. Please ensure the data file exists. Error: ${error.message}`
+    );
   }
 
   try {
@@ -346,8 +298,7 @@ async function run() {
     logger.info(`Rejected ${rejected.length} invalid records`);
 
     if (processed.length === 0) {
-      logger.error('No valid records found after processing');
-      process.exit(1);
+      terminate('No valid records found after processing');
     }
 
     const qualityReport = generateDataQualityReport(processed);
@@ -376,17 +327,15 @@ async function run() {
     logger.info(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {
-      logger.error(`Integration error: ${error.code} - ${error.message}`);
+      terminate(`Integration error: ${error.code} - ${error.message}`);
     } else {
-      logger.error(`ETL process failed: ${error.message}`);
+      terminate(`ETL process failed: ${error.message}`);
     }
-    process.exit(1);
   }
 }
 
 if (require.main === module) {
   run().catch(error => {
-    logger.error('ETL process failed:', error);
-    process.exit(1);
+    terminate(`ETL process failed: ${error.message}`);
   });
 }
