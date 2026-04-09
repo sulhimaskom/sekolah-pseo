@@ -123,20 +123,6 @@ function parseCsvLine(line) {
   return result;
 }
 
-/**
- * Function to compute the sum of two numbers
- *
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - Sum of the two numbers
- */
-function addNumbers(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new IntegrationError('Both parameters must be finite numbers', ERROR_CODES.INVALID_INPUT, { reason: 'non_finite_number' });
-  }
-  return a + b;
-}
-
 function escapeHtml(text) {
   if (text === null || text === undefined) {
     return '';
@@ -172,6 +158,71 @@ function hasCoordinateData(school) {
   if (school.lat === '' || school.lon === '') return false;
   if (parseFloat(school.lat) === 0 || parseFloat(school.lon) === 0) return false;
   return true;
+}
+
+/**
+ * Sanitize a string by trimming whitespace, collapsing multiple spaces and
+ * removing problematic characters.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  // Cache regex patterns to avoid recreating them each time
+  const whitespaceRegex = /\s+/g;
+  const controlCharsRegex = /[\u0000-\u001F]/g;
+  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+
+  return value
+    .replace(whitespaceRegex, ' ') // collapse whitespace
+    .replace(controlCharsRegex, '') // remove control chars
+    .trim()
+    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
+}
+
+/**
+ * Validate latitude and longitude coordinates for Indonesia bounds.
+ * Indonesia: Latitude -11 to 6, Longitude 95 to 141
+ *
+ * @param {string} lat - Latitude as string
+ * @param {string} lon - Longitude as string
+ * @returns {boolean}
+ */
+function validateLatLon(lat, lon) {
+  if (!lat || !lon) {
+    return false;
+  }
+
+  const latNum = parseFloat(lat);
+  const lonNum = parseFloat(lon);
+
+  if (isNaN(latNum) || isNaN(lonNum)) {
+    return false;
+  }
+
+  const CONFIG = require('./config');
+  const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
+
+  return latNum >= LAT_MIN && latNum <= LAT_MAX && lonNum >= LON_MIN && lonNum <= LON_MAX;
+}
+
+/**
+ * Validate categorical field against allowed values.
+ *
+ * @param {string} field - Field value to validate
+ * @param {Array<string>} allowedValues - Array of allowed values
+ * @returns {boolean}
+ */
+function validateCategoricalField(field, allowedValues) {
+  if (!field || typeof field !== 'string') {
+    return false;
+  }
+
+  return allowedValues.includes(field.trim());
 }
 
 /**
@@ -249,7 +300,6 @@ function escapeCsvField(value) {
 }
 module.exports = {
   parseCsv,
-  addNumbers,
   escapeHtml,
   escapeCsvField,
   walkDirectory,
@@ -257,4 +307,7 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  sanitize,
+  validateLatLon,
+  validateCategoricalField,
 };

@@ -2967,3 +2967,36 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+## [PHASE 4] Test Performance
+
+**Status**: Verified
+**Date**: 2026-04-09
+
+### Summary
+All tests in the current suite are performing well within the established performance budget of 500ms per test.
+
+### Metrics
+- Total tests: 600
+- Total duration: ~3.9 seconds
+- Average duration per test: ~6.5ms
+- Slowest test: `writeSitemapFiles splits URLs into multiple sitemaps when exceeding limit` (~95ms)
+
+### Recommendations
+- Continue monitoring test performance as the dataset and features grow.
+- Maintain the 500ms threshold for individual unit tests to ensure fast CI feedback.
+
+## [CONSOLIDATE] Logic Centralization
+
+**Status**: Complete
+**Date**: 2026-04-09
+
+### Actions Taken
+- Moved `sanitize`, `validateLatLon`, and `validateCategoricalField` from `scripts/etl.js` to `scripts/utils.js` to enable reuse across the system.
+- Updated `scripts/etl.js` to import these functions from `scripts/utils.js`.
+- Removed unused `addNumbers` function from `scripts/utils.js` and updated its tests.
+
+### Impact
+- Improved code modularity and reusability.
+- Reduced code duplication in the ETL process.
+- Cleaner utility module by removing dead code.
