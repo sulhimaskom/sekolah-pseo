@@ -196,6 +196,63 @@ section[aria-labelledby="school-details"] {
   display: contents;
 }
 
+.copy-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-copy:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-accent);
+}
+
+.btn-copy:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.btn-copy svg {
+  width: 14px;
+  height: 14px;
+}
+
+.copy-tooltip {
+  position: absolute;
+  left: 100%;
+  margin-left: var(--spacing-sm);
+  background-color: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal) ease, visibility var(--transition-normal) ease;
+  pointer-events: none;
+}
+
+.copy-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
 @media (min-width: ${DESIGN_TOKENS.breakpoints.md}) {
   .details-group {
     display: contents;
