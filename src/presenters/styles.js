@@ -1063,6 +1063,101 @@ TV}
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* Copy NPSN Button Styles */
+.copy-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-left: var(--spacing-sm);
+  background-color: var(--color-bg-accent);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-copy:hover {
+  background-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-copy:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.btn-copy svg {
+  width: 14px;
+  height: 14px;
+  margin-right: var(--spacing-xs);
+}
+
+.copy-feedback {
+  position: absolute;
+  top: -2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast) ease;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-index-dropdown);
+}
+
+.copy-feedback.visible {
+  opacity: 1;
+  visibility: visible;
+  top: -2rem;
+}
+
+.copy-feedback::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--color-text-primary) transparent transparent transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .btn-copy {
+    background-color: var(--color-dark-bg-accent);
+    color: var(--color-dark-text-secondary);
+    border-color: var(--color-dark-border);
+  }
+
+  .btn-copy:hover {
+    background-color: var(--color-dark-border);
+    color: var(--color-dark-text-primary);
+  }
+
+  .copy-feedback {
+    background-color: var(--color-dark-text-primary);
+    color: var(--color-dark-bg-primary);
+  }
+
+  .copy-feedback::after {
+    border-top-color: var(--color-dark-text-primary);
+  }
+}
 `;
 }
 

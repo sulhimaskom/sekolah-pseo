@@ -113,6 +113,26 @@ const CONFIG = {
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
+  // UI Text
+  TEXT: {
+    HOME: 'Beranda',
+    NPSN: 'NPSN',
+    JENJANG: 'Jenjang',
+    STATUS: 'Status',
+    ALAMAT: 'Alamat',
+    PROVINSI: 'Provinsi',
+    KAB_KOTA: 'Kabupaten/Kota',
+    KECAMATAN: 'Kecamatan',
+    COPY: 'Salin',
+    COPIED: 'Tersalin!',
+    UNKNOWN: 'Tidak Diketahui',
+    NOT_AVAILABLE: 'Tidak tersedia',
+    BACK_TO_TOP: 'Kembali ke atas',
+    SKIP_LINK: 'Langsung ke konten utama',
+    NAV_MAIN: 'Navigasi utama',
+    SCHOOL_DETAILS: 'Detail Sekolah',
+  },
+
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,

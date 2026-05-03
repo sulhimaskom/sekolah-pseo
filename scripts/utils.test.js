@@ -2,11 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert');
 const {
   parseCsv,
-  addNumbers,
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
   escapeCsvField,
+  generateMetaDescription,
 } = require('./utils');
 
 test('parseCsv handles empty data', () => {
@@ -36,27 +36,6 @@ test('parseCsv handles escaped quotes', () => {
   const csv = 'npsn,nama,alamat\n12345,"School ""Name""","Street, City"';
   const expected = [{ npsn: '12345', nama: 'School "Name"', alamat: 'Street, City' }];
   assert.deepStrictEqual(parseCsv(csv), expected);
-});
-
-test('addNumbers computes sum of two numbers', () => {
-  assert.strictEqual(addNumbers(2, 3), 5);
-  assert.strictEqual(addNumbers(-1, 1), 0);
-  assert.strictEqual(addNumbers(0, 0), 0);
-  assert.ok(Math.abs(addNumbers(10.5, 2.3) - 12.8) < 1e-10, '10.5 + 2.3 should be close to 12.8');
-});
-
-test('addNumbers throws error for non-number inputs', () => {
-  assert.throws(() => addNumbers('a', 'b'), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(1, 'b'), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers('a', 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(null, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(undefined, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(Infinity, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(-Infinity, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(NaN, 2), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(2, Infinity), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(2, -Infinity), /Both parameters must be finite numbers/);
-  assert.throws(() => addNumbers(2, NaN), /Both parameters must be finite numbers/);
 });
 
 test('formatStatus converts N to Negeri', () => {
@@ -182,4 +161,34 @@ test('escapeCsvField does not affect non-formula strings', () => {
   assert.strictEqual(escapeCsvField('test+value'), 'test+value');
   assert.strictEqual(escapeCsvField('test-value'), 'test-value');
   assert.strictEqual(escapeCsvField('email@domain.com'), 'email@domain.com');
+});
+
+test('generateMetaDescription generates correct description', () => {
+  const school = {
+    nama: 'SD Negeri 1',
+    bentuk_pendidikan: 'SD',
+    kab_kota: 'Jakarta',
+    kecamatan: 'Menteng',
+  };
+  const expected = 'SD Negeri 1 - SD - di Jakarta - Kec. Menteng';
+  assert.strictEqual(generateMetaDescription(school), expected);
+});
+
+test('generateMetaDescription handles missing fields', () => {
+  const school = {
+    nama: 'SD Negeri 1',
+    kab_kota: 'Jakarta',
+  };
+  const expected = 'SD Negeri 1 - di Jakarta';
+  assert.strictEqual(generateMetaDescription(school), expected);
+});
+
+test('generateMetaDescription truncates long descriptions', () => {
+  const school = {
+    nama: 'A'.repeat(100),
+    bentuk_pendidikan: 'B'.repeat(100),
+  };
+  const result = generateMetaDescription(school);
+  assert.ok(result.length <= 155);
+  assert.ok(result.endsWith('...'));
 });

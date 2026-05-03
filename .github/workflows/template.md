@@ -173,3 +173,4 @@ jobs:
           )" \
             --model iflowcn/[pilih satu:tstars2.0,qwen3-vl-plus,qwen3-max-preview,qwen3-max,qwen3-coder-plus,qwen3-coder,qwen3-32b,qwen3-235b-a22b-thinking-2507,qwen3-235b-a22b-instruct,qwen3-235b,minimax-m2,kimi-k2-0905,kimi-k2,glm-4.6,deepseek-v3.2,deepseek-v3.1,deepseek-v3] \
             --share false \
+            --thinking false

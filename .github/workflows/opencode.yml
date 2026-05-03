@@ -58,7 +58,7 @@ jobs:
       - name: Get PR Details
         id: pr_details
         run: |
-          PR_INFO=$(gh pr view $PR_NUMBER --json title,body,author,headRefName,baseRefName,state,mergeable,reviewDecision,statusCheckRollup)
+          PR_INFO=$(gh pr view $PR_NUMBER --json title,body,author,headRefName,baseRefName,state,mergeable,reviewDecision)
           echo "PR_INFO=$PR_INFO" >> $GITHUB_OUTPUT
           echo "BRANCH_NAME=$(echo $PR_INFO | jq -r '.headRefName')" >> $GITHUB_OUTPUT
           echo "BASE_BRANCH=$(echo $PR_INFO | jq -r '.baseRefName')" >> $GITHUB_OUTPUT
@@ -140,13 +140,19 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --thinking false
       
       - name: Verify PR Status
         id: verify_status
         run: |
           # Check CI status
-          CI_STATUS=$(gh pr view $PR_NUMBER --json statusCheckRollup --jq '.statusCheckRollup.state')
+          if gh pr checks $PR_NUMBER | grep -q "FAILING"; then
+            CI_STATUS="FAILURE"
+          elif gh pr checks $PR_NUMBER | grep -q "PENDING"; then
+            CI_STATUS="PENDING"
+          else
+            CI_STATUS="SUCCESS"
+          fi
           
           # Check reviews
           APPROVAL_COUNT=$(gh pr view $PR_NUMBER --json reviews --jq '[.reviews[] | select(.state == "APPROVED")] | length')
@@ -177,14 +183,8 @@ jobs:
       - name: Request Manual Review if Blocked
         if: steps.verify_status.outputs.ready == 'false' && steps.analyze_pr.outcome == 'success'
         run: |
-          BLOCKERS=$(gh pr view $PR_NUMBER --json statusCheckRollup,reviews --jq '
-            .statusCheckRollup.contexts | map(select(.state != "SUCCESS")) as $failedChecks |
-            .reviews | map(select(.state == "CHANGES_REQUESTED")) as $blockingReviews |
-            {
-              failedChecks: $failedChecks,
-              blockingReviews: $blockingReviews
-            } | tojson
-          ')
+          FAILED_CHECKS=$(gh pr checks $PR_NUMBER --json name,state,status | jq -c 'map(select(.state == "FAILURE" or .state == "FAILING"))')
+          BLOCKING_REVIEWS=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.state == "CHANGES_REQUESTED"))')
           
           gh pr comment $PR_NUMBER --body "🔄 **PR Status Update**
 

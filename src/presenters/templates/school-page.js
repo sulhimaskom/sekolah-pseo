@@ -1,24 +1,5 @@
-const { escapeHtml, formatStatus } = require('../../../scripts/utils');
+const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../scripts/utils');
 const CONFIG = require('../../../scripts/config');
-
-/**
- * Generate meta description for SEO
- * @param {Object} school - School data object
- * @returns {string} - SEO meta description
- */
-function generateMetaDescription(school) {
-  const { nama, bentuk_pendidikan, kab_kota, kecamatan } = school;
-  const parts = [];
-
-  if (nama) parts.push(nama);
-  if (bentuk_pendidikan) parts.push(bentuk_pendidikan);
-  if (kab_kota) parts.push(`di ${kab_kota}`);
-  if (kecamatan) parts.push(`Kec. ${kecamatan}`);
-
-  const description = parts.join(' - ');
-  // Truncate to optimal length for SEO (150-160 chars)
-  return description.length > 155 ? description.substring(0, 152) + '...' : description;
-}
 
 /**
  * Generate canonical URL for the school page
@@ -46,6 +27,8 @@ function generateSchoolPageHtml(school, relativePath) {
   const canonicalUrl = generateCanonicalUrl(relativePath);
   const currentYear = new Date().getFullYear();
 
+  const { TEXT } = CONFIG;
+
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -54,7 +37,6 @@ function generateSchoolPageHtml(school, relativePath) {
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
@@ -62,7 +44,6 @@ function generateSchoolPageHtml(school, relativePath) {
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
   <title>${escapeHtml(school.nama)}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
@@ -93,11 +74,11 @@ function generateSchoolPageHtml(school, relativePath) {
   </script>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
+  <a href="#main-content" class="skip-link">${escapeHtml(TEXT.SKIP_LINK)}</a>
   
   <header role="banner">
-    <nav aria-label="Navigasi utama">
-      <a href="/">Beranda</a>
+    <nav aria-label="${escapeHtml(TEXT.NAV_MAIN)}">
+      <a href="/">${escapeHtml(TEXT.HOME)}</a>
       <span aria-hidden="true"> / </span>
       <span aria-current="page">${escapeHtml(school.nama)}</span>
     </nav>
@@ -108,30 +89,39 @@ function generateSchoolPageHtml(school, relativePath) {
       <h1 id="school-name">${escapeHtml(school.nama)}</h1>
       
       <section aria-labelledby="school-details">
-        <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
+        <h2 id="school-details" class="sr-only">${escapeHtml(TEXT.SCHOOL_DETAILS)}</h2>
         <dl class="school-details-list">
           <div class="details-group">
-            <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dt>${escapeHtml(TEXT.NPSN)}</dt>
+            <dd>
+              <div class="copy-wrapper">
+                <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+                <button class="btn-copy" aria-label="${escapeHtml(TEXT.COPY)} ${escapeHtml(TEXT.NPSN)}" data-copy-target="npsn-value">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  ${escapeHtml(TEXT.COPY)}
+                </button>
+                <span class="copy-feedback" aria-hidden="true">${escapeHtml(TEXT.COPIED)}</span>
+              </div>
+            </dd>
             
-            <dt>Jenjang</dt>
+            <dt>${escapeHtml(TEXT.JENJANG)}</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
             
-            <dt>Status</dt>
+            <dt>${escapeHtml(TEXT.STATUS)}</dt>
             <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
           </div>
           
           <div class="details-group">
-            <dt>Alamat</dt>
+            <dt>${escapeHtml(TEXT.ALAMAT)}</dt>
             <dd>${escapeHtml(school.alamat)}</dd>
             
-            <dt>Provinsi</dt>
+            <dt>${escapeHtml(TEXT.PROVINSI)}</dt>
             <dd>${escapeHtml(school.provinsi)}</dd>
             
-            <dt>Kabupaten/Kota</dt>
+            <dt>${escapeHtml(TEXT.KAB_KOTA)}</dt>
             <dd>${escapeHtml(school.kab_kota)}</dd>
             
-            <dt>Kecamatan</dt>
+            <dt>${escapeHtml(TEXT.KECAMATAN)}</dt>
             <dd>${escapeHtml(school.kecamatan)}</dd>
           </div>
         </dl>
@@ -143,7 +133,7 @@ function generateSchoolPageHtml(school, relativePath) {
     <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
-  <button class="back-to-top" aria-label="Kembali ke atas">
+  <button class="back-to-top" aria-label="${escapeHtml(TEXT.BACK_TO_TOP)}">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"></polyline>
     </svg>
@@ -151,26 +141,45 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // Back to top functionality
       var backToTop = document.querySelector('.back-to-top');
-      if (!backToTop) return;
-      
-      function handleScroll() {
-        if (window.scrollY > 300) {
-          backToTop.classList.add('visible');
-        } else {
-          backToTop.classList.remove('visible');
+      if (backToTop) {
+        function handleScroll() {
+          if (window.scrollY > 300) {
+            backToTop.classList.add('visible');
+          } else {
+            backToTop.classList.remove('visible');
+          }
         }
+
+        function scrollToTop() {
+          var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+          window.scrollTo({ top: 0, behavior: behavior });
+        }
+
+        backToTop.addEventListener('click', scrollToTop);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
       }
-      
-      function scrollToTop() {
-        var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-        window.scrollTo({ top: 0, behavior: behavior });
-      }
-      
-      backToTop.addEventListener('click', scrollToTop);
-      
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      handleScroll();
+
+      // Copy functionality
+      var copyButtons = document.querySelectorAll('.btn-copy');
+      copyButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var targetId = btn.getAttribute('data-copy-target');
+          var textToCopy = document.getElementById(targetId).textContent;
+          var feedback = btn.nextElementSibling;
+
+          navigator.clipboard.writeText(textToCopy).then(function() {
+            if (feedback && feedback.classList.contains('copy-feedback')) {
+              feedback.classList.add('visible');
+              setTimeout(function() {
+                feedback.classList.remove('visible');
+              }, 2000);
+            }
+          });
+        });
+      });
     })();
   </script>
 </body>
