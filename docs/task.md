@@ -2967,3 +2967,13 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+- [x] Fix brittle ROOT_DIR test in config.test.js
+- [x] Remove invalid security meta tags from school-page.js
+## Slow Tests (>500ms) - Sun May  3 00:38:23 UTC 2026
+- [ ] build-pages.test.js: build creates dist directory and generates files (~1500ms)
+- [ ] build-pages.test.js: buildIncremental runs without error when manifest exists (~1400ms)
+- [ ] rate-limiter.test.js: should reject queued operations after timeout (~500ms)
+- [ ] rate-limiter.test.js: should execute queued operations after active ones complete (~850ms)
+- [ ] rate-limiter.test.js: should handle operations that return undefined (~1240ms)
+- [ ] resilience.test.js: respects custom maxAttempts (~700ms)
+- [ ] resilience.test.js: includes error details in retry exhaustion (~2200ms)

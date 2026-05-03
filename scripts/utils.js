@@ -42,6 +42,25 @@ async function walkDirectory(dir, callback) {
 }
 
 /**
+ * Generate meta description for SEO
+ * @param {Object} school - School data object
+ * @returns {string} - SEO meta description
+ */
+function generateMetaDescription(school) {
+  const { nama, bentuk_pendidikan, kab_kota, kecamatan } = school;
+  const parts = [];
+
+  if (nama) parts.push(nama);
+  if (bentuk_pendidikan) parts.push(bentuk_pendidikan);
+  if (kab_kota) parts.push(`di ${kab_kota}`);
+  if (kecamatan) parts.push(`Kec. ${kecamatan}`);
+
+  const description = parts.join(' - ');
+  // Truncate to optimal length for SEO (150-160 chars)
+  return description.length > 155 ? description.substring(0, 152) + '...' : description;
+}
+
+/**
  * Parse a CSV string into an array of objects. This parser handles quoted fields
  * that may contain commas, which is a more robust approach than simple splitting.
  *
@@ -130,13 +149,6 @@ function parseCsvLine(line) {
  * @param {number} b - Second number
  * @returns {number} - Sum of the two numbers
  */
-function addNumbers(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new IntegrationError('Both parameters must be finite numbers', ERROR_CODES.INVALID_INPUT, { reason: 'non_finite_number' });
-  }
-  return a + b;
-}
-
 function escapeHtml(text) {
   if (text === null || text === undefined) {
     return '';
@@ -151,19 +163,22 @@ function escapeHtml(text) {
 }
 
 function formatStatus(status) {
-  if (!status) return 'Tidak Diketahui';
+  const { TEXT } = require('./config');
+  if (!status) return TEXT.UNKNOWN;
   const normalized = status.trim().toUpperCase();
   if (normalized === 'N') return 'Negeri';
   if (normalized === 'S') return 'Swasta';
   return status;
 }
 
-function formatEmptyValue(value, placeholder = 'Tidak tersedia') {
+function formatEmptyValue(value, placeholder = null) {
+  const { TEXT } = require('./config');
+  const actualPlaceholder = placeholder || TEXT.NOT_AVAILABLE;
   if (value === null || value === undefined || value === '') {
-    return placeholder;
+    return actualPlaceholder;
   }
   const trimmed = String(value).trim();
-  return trimmed || placeholder;
+  return trimmed || actualPlaceholder;
 }
 
 function hasCoordinateData(school) {
@@ -249,7 +264,6 @@ function escapeCsvField(value) {
 }
 module.exports = {
   parseCsv,
-  addNumbers,
   escapeHtml,
   escapeCsvField,
   walkDirectory,
@@ -257,4 +271,5 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  generateMetaDescription,
 };
