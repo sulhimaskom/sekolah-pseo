@@ -21,7 +21,6 @@ permissions:
   issues: write
   actions: write
 
-# Concurrency per PR to prevent conflicts
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
   cancel-in-progress: true
@@ -31,12 +30,6 @@ jobs:
     name: PR Handler
     runs-on: ubuntu-slim
     timeout-minutes: 120
-    permissions:
-      id-token: write
-      contents: write
-      pull-requests: write
-      issues: write
-      actions: write
     
     env:
       GH_TOKEN: ${{ github.token }}
@@ -58,14 +51,29 @@ jobs:
       - name: Get PR Details
         id: pr_details
         run: |
-          PR_INFO=$(gh pr view $PR_NUMBER --json title,body,author,headRefName,baseRefName,state,mergeable,reviewDecision,statusCheckRollup,labels)
-          echo "BRANCH_NAME=$(echo "$PR_INFO" | jq -r '.headRefName')" >> $GITHUB_OUTPUT
-          echo "BASE_BRANCH=$(echo "$PR_INFO" | jq -r '.baseRefName')" >> $GITHUB_OUTPUT
-          echo "MERGEABLE=$(echo "$PR_INFO" | jq -r '.mergeable')" >> $GITHUB_OUTPUT
-          echo "REVIEW_DECISION=$(echo "$PR_INFO" | jq -r '.reviewDecision')" >> $GITHUB_OUTPUT
-          echo "CI_STATUS=$(echo "$PR_INFO" | jq -r '.statusCheckRollup.state // "PENDING"')" >> $GITHUB_OUTPUT
-          echo "APPROVAL_COUNT=$(echo "$PR_INFO" | jq -r '[.reviews[]? | select(.state == "APPROVED")] | length')" >> $GITHUB_OUTPUT
-          echo "HAS_READY_LABEL=$(echo "$PR_INFO" | jq -r '.labels[]? | select(.name == "ready-to-merge") | .name')" >> $GITHUB_OUTPUT
+          # Fetch basic PR info
+          PR_INFO=$(gh pr view "$PR_NUMBER" --json headRefName,baseRefName,mergeable,reviewDecision,labels,reviews)
+
+          echo "BRANCH_NAME=$(echo "$PR_INFO" | jq -r '.headRefName // empty')" >> "$GITHUB_OUTPUT"
+          echo "BASE_BRANCH=$(echo "$PR_INFO" | jq -r '.baseRefName // empty')" >> "$GITHUB_OUTPUT"
+          echo "MERGEABLE=$(echo "$PR_INFO" | jq -r '.mergeable // empty')" >> "$GITHUB_OUTPUT"
+          echo "REVIEW_DECISION=$(echo "$PR_INFO" | jq -r '.reviewDecision // empty')" >> "$GITHUB_OUTPUT"
+
+          # Fetch CI checks separately
+          CHECKS=$(gh pr checks "$PR_NUMBER" --json state 2>/dev/null || echo "[]")
+
+          # Logic to determine CI_STATUS
+          if echo "$CHECKS" | jq -e 'length > 0 and all(.[]; .state == "SUCCESS")' > /dev/null; then
+            echo "CI_STATUS=SUCCESS" >> "$GITHUB_OUTPUT"
+          elif echo "$CHECKS" | jq -e 'any(.[]; .state == "PENDING" or .state == "EXPECTED" or .state == "IN_PROGRESS")' > /dev/null; then
+            echo "CI_STATUS=PENDING" >> "$GITHUB_OUTPUT"
+          else
+            echo "CI_STATUS=FAILURE" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Review and label counts
+          echo "APPROVAL_COUNT=$(echo "$PR_INFO" | jq -r '[.reviews[]? | select(.state == "APPROVED")] | length')" >> "$GITHUB_OUTPUT"
+          echo "HAS_READY_LABEL=$(echo "$PR_INFO" | jq -r '.labels[]? | select(.name == "ready-to-merge") | .name')" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
       
@@ -73,7 +81,7 @@ jobs:
         id: analyze_pr
         timeout-minutes: 120
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run "$(cat <<'PROMPT'
           Anda adalah PR Handler Expert yang bertugas menangani Pull Request secara komprehensif.
 
           ========================================
@@ -161,23 +169,21 @@ jobs:
         if: steps.verify_status.outputs.ready == 'true'
         run: |
           echo "🎉 PR #$PR_NUMBER telah memenuhi semua kriteria dan siap untuk merge!"
-          gh pr merge $PR_NUMBER --merge --delete-branch --admin
+          gh pr merge "$PR_NUMBER" --merge --delete-branch --admin
         env:
           GH_TOKEN: ${{ github.token }}
       
       - name: Request Manual Review if Blocked
         if: steps.verify_status.outputs.ready == 'false' && steps.analyze_pr.outcome == 'success'
         run: |
-          BLOCKERS=$(gh pr view $PR_NUMBER --json statusCheckRollup,reviews --jq '
-            .statusCheckRollup.contexts | map(select(.state != "SUCCESS")) as $failedChecks |
-            .reviews | map(select(.state == "CHANGES_REQUESTED")) as $blockingReviews |
-            {
-              failedChecks: $failedChecks,
-              blockingReviews: $blockingReviews
-            } | tojson
-          ')
+          # Fetch failure details robustly
+          CHECKS=$(gh pr checks "$PR_NUMBER" --json name,state 2>/dev/null || echo "[]")
+          FAILED_CHECKS=$(echo "$CHECKS" | jq -c 'map(select(.state != "SUCCESS"))')
+
+          PR_INFO=$(gh pr view "$PR_NUMBER" --json reviews)
+          BLOCKING_REVIEWS=$(echo "$PR_INFO" | jq -c '[.reviews[]? | select(.state == "CHANGES_REQUESTED")]')
           
-          gh pr comment $PR_NUMBER --body "🔄 **PR Status Update**
+          gh pr comment "$PR_NUMBER" --body "🔄 **PR Status Update**
 
           PR ini masih memerlukan beberapa perbaikan sebelum dapat di-merge:
 
@@ -187,7 +193,6 @@ jobs:
 
           Silakan periksa komentar terbaru dari bot untuk detail perbaikan yang diperlukan. Jika Anda memerlukan bantuan tambahan, tag @maintainer yang sesuai."
           
-          # Add label to indicate it needs attention
-          gh pr edit $PR_NUMBER --add-label "needs-attention"
+          gh pr edit "$PR_NUMBER" --add-label "needs-attention"
         env:
           GH_TOKEN: ${{ github.token }}
