@@ -5,6 +5,7 @@
 const path = require('path');
 const { safeReaddir, safeStat } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+const CONFIG = require('./config');
 
 /**
  * Recursively walk a directory tree and process each file with a callback.
@@ -28,7 +29,7 @@ async function walkDirectory(dir, callback) {
 
       if (stat.isDirectory()) {
         await walk(fullPath, relPath);
-      } else if (entry.endsWith('.html') && typeof callback === 'function') {
+      } else if (entry.endsWith(CONFIG.HTML_EXTENSION) && typeof callback === 'function') {
         const result = await callback(fullPath, relPath, entry, stat);
         if (result !== undefined) {
           results.push(result);
@@ -121,20 +122,6 @@ function parseCsvLine(line) {
   result.push(current.trim());
 
   return result;
-}
-
-/**
- * Function to compute the sum of two numbers
- *
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - Sum of the two numbers
- */
-function addNumbers(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new IntegrationError('Both parameters must be finite numbers', ERROR_CODES.INVALID_INPUT, { reason: 'non_finite_number' });
-  }
-  return a + b;
 }
 
 function escapeHtml(text) {
@@ -247,9 +234,26 @@ function escapeCsvField(value) {
 
   return str;
 }
+
+/**
+ * Standardized process termination with logging.
+ *
+ * @param {string} message - Error message to log
+ * @param {number} [code=1] - Process exit code
+ */
+function terminate(message, code = 1) {
+  const logger = require('./logger');
+  if (code === 0) {
+    logger.info(message);
+  } else {
+    logger.error(message);
+  }
+  process.exit(code);
+}
+
 module.exports = {
   parseCsv,
-  addNumbers,
+  terminate,
   escapeHtml,
   escapeCsvField,
   walkDirectory,

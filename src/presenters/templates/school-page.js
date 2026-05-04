@@ -112,7 +112,15 @@ function generateSchoolPageHtml(school, relativePath) {
         <dl class="school-details-list">
           <div class="details-group">
             <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dd>
+              <div class="copy-wrapper">
+                <code id="npsn">${escapeHtml(school.npsn)}</code>
+                <button class="btn-copy" data-copy="npsn" aria-label="Salin NPSN" title="Salin NPSN ke papan klip">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+                <span class="copy-feedback" aria-live="polite">Tersalin!</span>
+              </div>
+            </dd>
             
             <dt>Jenjang</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
@@ -151,6 +159,22 @@ function generateSchoolPageHtml(school, relativePath) {
   
   <script>
     (function() {
+      // Copy functionality
+      var copyBtn = document.querySelector('.btn-copy');
+      var copyFeedback = document.querySelector('.copy-feedback');
+
+      if (copyBtn && copyFeedback) {
+        copyBtn.addEventListener('click', function() {
+          var npsn = document.getElementById('npsn').innerText;
+          navigator.clipboard.writeText(npsn).then(function() {
+            copyFeedback.classList.add('show');
+            setTimeout(function() {
+              copyFeedback.classList.remove('show');
+            }, 2000);
+          });
+        });
+      }
+
       var backToTop = document.querySelector('.back-to-top');
       if (!backToTop) return;
       

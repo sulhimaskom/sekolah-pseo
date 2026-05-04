@@ -970,6 +970,54 @@ footer[role="contentinfo"] {
   }
 }
 
+/* Copy NPSN styles */
+.copy-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  position: relative;
+}
+
+.btn-copy {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-copy:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-accent);
+}
+
+.copy-feedback {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: var(--spacing-sm);
+  background-color: var(--color-primary);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast) ease;
+  white-space: nowrap;
+}
+
+.copy-feedback.show {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Reduced Motion for Search */
 @media (prefers-reduced-motion: reduce) {
   .search-input,
