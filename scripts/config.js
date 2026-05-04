@@ -8,6 +8,10 @@
 const path = require('path');
 const logger = require('./logger');
 
+// Constants
+const HTML_EXTENSION = '.html';
+const CSV_EXTENSION = '.csv';
+
 /**
  * Validates that a target path is within a base directory (prevents path traversal attacks).
  * @param {string} targetPath - The path to validate
@@ -28,11 +32,11 @@ const DATA_DIR = path.join(ROOT_DIR, 'data');
 const EXTERNAL_DIR = path.join(ROOT_DIR, 'external');
 
 // Validate RAW_DATA_PATH to prevent path traversal
-let rawPath = process.env.RAW_DATA_PATH || path.join(EXTERNAL_DIR, 'raw.csv');
+let rawPath = process.env.RAW_DATA_PATH || path.join(EXTERNAL_DIR, `raw${CSV_EXTENSION}`);
 const resolvedRawPath = path.resolve(ROOT_DIR, rawPath);
 if (!validatePath(resolvedRawPath, ROOT_DIR)) {
   logger.warn('RAW_DATA_PATH falls outside project directory, using default');
-  rawPath = path.join(EXTERNAL_DIR, 'raw.csv');
+  rawPath = path.join(EXTERNAL_DIR, `raw${CSV_EXTENSION}`);
 }
 
 // Error codes for IntegrationError (consistent across modules)
@@ -60,9 +64,13 @@ const ERROR_CODES = {
 
 // Environment variables with defaults
 const CONFIG = {
+  // Extensions
+  HTML_EXTENSION,
+  CSV_EXTENSION,
+
   // File paths
   RAW_DATA_PATH: rawPath,
-  SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
+  SCHOOLS_CSV_PATH: path.join(DATA_DIR, `schools${CSV_EXTENSION}`),
   DIST_DIR: DIST_DIR,
 
   // URLs
