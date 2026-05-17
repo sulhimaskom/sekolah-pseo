@@ -81,6 +81,30 @@ function parseCsv(csvData) {
 }
 
 /**
+ * Sanitize a string by trimming whitespace, collapsing multiple spaces and
+ * removing problematic characters.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function sanitize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  // Cache regex patterns to avoid recreating them each time
+  const whitespaceRegex = /\s+/g;
+  const controlCharsRegex = /[\u0000-\u001F]/g;
+  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+
+  return value
+    .replace(whitespaceRegex, ' ') // collapse whitespace
+    .replace(controlCharsRegex, '') // remove control chars
+    .trim()
+    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
+}
+
+/**
  * Parse a single CSV line, handling quoted fields that may contain commas.
  *
  * @param {string} line
@@ -249,6 +273,7 @@ function escapeCsvField(value) {
 }
 module.exports = {
   parseCsv,
+  sanitize,
   addNumbers,
   escapeHtml,
   escapeCsvField,

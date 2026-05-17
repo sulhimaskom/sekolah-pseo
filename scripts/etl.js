@@ -19,7 +19,7 @@
  * or `papaparse`.
  */
 
-const { parseCsv, writeCsv } = require('./utils');
+const { parseCsv, writeCsv, sanitize } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess } = require('./fs-safe');
@@ -35,30 +35,6 @@ module.exports = {
   checkNpsnUniqueness,
   generateDataQualityReport,
 };
-
-/**
- * Sanitize a string by trimming whitespace, collapsing multiple spaces and
- * removing problematic characters. Update this function to suit your needs.
- *
- * @param {string} value
- * @returns {string}
- */
-function sanitize(value) {
-  if (typeof value !== 'string') {
-    return '';
-  }
-
-  // Cache regex patterns to avoid recreating them each time
-  const whitespaceRegex = /\s+/g;
-  const controlCharsRegex = /[\u0000-\u001F]/g;
-  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
-
-  return value
-    .replace(whitespaceRegex, ' ') // collapse whitespace
-    .replace(controlCharsRegex, '') // remove control chars
-    .trim()
-    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
-}
 
 /**
  * Normalise a record into the canonical schema expected by the site generator.

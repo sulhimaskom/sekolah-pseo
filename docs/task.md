@@ -2967,3 +2967,10 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+### [TESTGUARD] Slow Test Detection Report
+
+
+### [CONSOLIDATE]
+- Centralized `sanitize` function from `scripts/etl.js` to `scripts/utils.js`.
+- Updated references in `scripts/etl.js` to use `sanitize` from `utils.js`.

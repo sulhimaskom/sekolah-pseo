@@ -21,7 +21,7 @@ jobs:
   ci:
     name: pull
     runs-on: ubuntu-22.04-arm
-    timeout-minutes: 30
+    timeout-minutes: 90
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -432,5 +432,6 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model opencode/kimi-k2.5-free \
+            --model iflowcn/glm-4.6 \
+            --thinking false \
             --share false \

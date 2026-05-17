@@ -113,6 +113,24 @@ const CONFIG = {
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
+  // UI Text Labels
+  TEXT: {
+    HOME: 'Beranda',
+    NPSN: 'NPSN',
+    LEVEL: 'Jenjang',
+    STATUS: 'Status',
+    ADDRESS: 'Alamat',
+    PROVINCE: 'Provinsi',
+    CITY: 'Kabupaten/Kota',
+    DISTRICT: 'Kecamatan',
+    SCHOOL_DETAILS: 'Detail Sekolah',
+    COPY_NPSN: 'Salin NPSN',
+    COPIED: 'Tersalin!',
+    FOOTER_TEXT: 'Data sekolah berasal dari Dapodik.',
+    BACK_TO_TOP: 'Kembali ke atas',
+    SKIP_LINK: 'Langsung ke konten utama'
+  },
+
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,
