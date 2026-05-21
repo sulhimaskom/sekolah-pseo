@@ -25,7 +25,7 @@ jobs:
   opencode:
     name: OC Architect Agent
     runs-on: self-hosted
-    timeout-minutes: 40
+    timeout-minutes: 100
     permissions:
       id-token: write
       contents: write
@@ -44,14 +44,16 @@ jobs:
           fetch-depth: 1
       - name: Install OpenCode CLI
         run: |
-          curl -fsSL https://opencode.ai/install | bash
+          for i in {1..5}; do
+            curl -fsSL https://opencode.ai/install | bash && break || sleep 10
+          done
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
           echo "$HOME/.github/workflows" >> $GITHUB_PATH
       - name: Run Architect Agent
         id: run_architect_agent
-        timeout-minutes: 20
+        timeout-minutes: 90
         run: |
-          opencode run "$(cat <<'PROMPT'
+          timeout -k 1m 90m opencode run "$(cat <<'PROMPT'
             ========================================
             PERAN
             ========================================
@@ -106,7 +108,7 @@ jobs:
             - Pilih model yang sesuai untuk task yang diberikan
             - Konfigurasi parameters dan options yang optimal
             - Handle API responses dan error cases
-            - Implementasikan retry logic untuk reliability
+            - Implementasikan retry logic for reliability
 
             5. Documentation dan Reporting
             ----------------------------------------
@@ -211,5 +213,6 @@ jobs:
 
           PROMPT
           )" \
-            --model iflowcn/qwen3-max \
-            --share false \
+            --model iflowcn/glm-4.6 \
+            --thinking false \
+            --share false
