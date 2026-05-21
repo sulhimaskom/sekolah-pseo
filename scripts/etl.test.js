@@ -1,7 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const {
-  parseCsv,
   sanitize,
   normaliseRecord,
   validateRecord,
@@ -9,24 +8,7 @@ const {
   validateCategoricalField,
   checkNpsnUniqueness,
   generateDataQualityReport,
-} = require('../scripts/etl');
-
-test('parseCsv handles empty data', () => {
-  assert.deepStrictEqual(parseCsv(''), []);
-  assert.deepStrictEqual(parseCsv(null), []);
-  assert.deepStrictEqual(parseCsv(undefined), []);
-});
-
-test('parseCsv handles header only', () => {
-  const result = parseCsv('npsn,nama');
-  assert.deepStrictEqual(result, []);
-});
-
-test('parseCsv parses valid CSV', () => {
-  const csv = 'npsn,nama\n12345,School Name';
-  const expected = [{ npsn: '12345', nama: 'School Name' }];
-  assert.deepStrictEqual(parseCsv(csv), expected);
-});
+} = require('./etl');
 
 test('sanitize trims whitespace', () => {
   assert.strictEqual(sanitize('  hello  '), 'hello');
@@ -256,22 +238,8 @@ test('generateDataQualityReport handles categorical distribution', () => {
   assert.strictEqual(report.categoricalDistribution.bentuk_pendidikan.SMA, 1);
 });
 
-test('generateDataQualityReport handles categorical distribution', () => {
-  const records = [
-    { npsn: '12345', nama: 'School 1', status: 'N', bentuk_pendidikan: 'SD' },
-    { npsn: '67890', nama: 'School 2', status: 'S', bentuk_pendidikan: 'SD' },
-    { npsn: '11111', nama: 'School 3', status: 'N', bentuk_pendidikan: 'SMA' },
-  ];
-  const report = generateDataQualityReport(records);
-  assert.strictEqual(report.categoricalDistribution.status.N, 2);
-  assert.strictEqual(report.categoricalDistribution.status.S, 1);
-  assert.strictEqual(report.categoricalDistribution.bentuk_pendidikan.SD, 2);
-  assert.strictEqual(report.categoricalDistribution.bentuk_pendidikan.SMA, 1);
-});
-
 // Benchmark test for performance validation
 test('generateDataQualityReport benchmark - single-pass optimization', () => {
-  // Generate 10k test records
   const recordCount = 10000;
   const records = [];
 
@@ -291,24 +259,17 @@ test('generateDataQualityReport benchmark - single-pass optimization', () => {
     });
   }
 
-  // Warm up
   generateDataQualityReport(records.slice(0, 100));
 
-  // Benchmark - single-pass should complete in < 500ms for 10k records
   const start = performance.now();
   const report = generateDataQualityReport(records);
   const elapsed = performance.now() - start;
 
-  // Verify correctness
   assert.strictEqual(report.totalRecords, recordCount);
   assert.strictEqual(report.fieldCompleteness.npsn.filled, recordCount);
   assert.strictEqual(report.coordinateStats.validCoordinates, recordCount);
   assert.strictEqual(report.uniqueness.uniqueNpsn, recordCount);
 
-  // Log performance (this is the key metric for the optimization)
   console.log(`Data quality report benchmark: ${recordCount} records in ${elapsed.toFixed(2)}ms`);
-
-  // Single-pass optimization should handle 10k records in under 500ms
-  // Previous 3-pass approach would take ~800-1000ms
   assert.ok(elapsed < 500, `Expected < 500ms, got ${elapsed.toFixed(2)}ms`);
 });

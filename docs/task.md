@@ -2967,3 +2967,21 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+## Phase 1 Findings
+- [x] error: fragile test in scripts/config.test.js for ROOT_DIR
+- [x] error: missing globals dependency for eslint
+
+## Phase 4 Findings: Slow Tests (>500ms)
+- [ ] test: build creates dist directory and generates files (1661ms)
+- [ ] test: buildIncremental runs without error when manifest exists (1392ms)
+- [ ] test: RateLimiter should reject queued operations after timeout (501ms)
+- [ ] test: RateLimiter execute (853ms)
+- [ ] test: retry respects custom maxAttempts (702ms)
+
+## Phase 5 Actions
+- [CONSOLIDATE] Moved generateMetaDescription from school-page.js template to scripts/utils.js for reuse.
+
+[MIGRATION] Slow tests (>500ms) identified in Phase 4 are slated for migration to 'tests/slow' to maintain CI efficiency.
+
+[REMOVE] Redundant parseCsv tests in etl.test.js were removed as they are already comprehensively covered in scripts/utils.test.js, adhering to the DRY principle.
