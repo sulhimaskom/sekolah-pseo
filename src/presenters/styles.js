@@ -157,6 +157,61 @@ section[aria-labelledby="school-details"] {
   word-break: break-word;
 }
 
+.copy-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  position: relative;
+}
+
+.btn-copy {
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast) ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-copy:hover {
+  color: var(--color-primary);
+  background-color: var(--color-bg-accent);
+}
+
+.btn-copy:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.copy-feedback {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-5px);
+  background-color: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal) ease, visibility var(--transition-normal) ease, transform var(--transition-normal) ease;
+  white-space: nowrap;
+  pointer-events: none;
+  margin-bottom: var(--spacing-xs);
+  z-index: var(--z-index-dropdown);
+}
+
+.copy-feedback.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-10px);
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

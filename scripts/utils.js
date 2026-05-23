@@ -123,20 +123,6 @@ function parseCsvLine(line) {
   return result;
 }
 
-/**
- * Function to compute the sum of two numbers
- *
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - Sum of the two numbers
- */
-function addNumbers(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new IntegrationError('Both parameters must be finite numbers', ERROR_CODES.INVALID_INPUT, { reason: 'non_finite_number' });
-  }
-  return a + b;
-}
-
 function escapeHtml(text) {
   if (text === null || text === undefined) {
     return '';
@@ -249,7 +235,6 @@ function escapeCsvField(value) {
 }
 module.exports = {
   parseCsv,
-  addNumbers,
   escapeHtml,
   escapeCsvField,
   walkDirectory,

@@ -113,6 +113,28 @@ const CONFIG = {
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
+  // Site text and metadata
+  TEXT: {
+    SITE_NAME: 'Sekolah PSEO',
+    SITE_DESCRIPTION: 'Indonesian School Directory - Informasi Lengkap Sekolah di Indonesia',
+    COPYRIGHT: 'Data sekolah berasal dari Dapodik.',
+    LABELS: {
+      NPSN: 'NPSN',
+      STATUS: 'Status',
+      ALAMAT: 'Alamat',
+      PROVINSI: 'Provinsi',
+      KAB_KOTA: 'Kabupaten/Kota',
+      KECAMATAN: 'Kecamatan',
+      JENJANG: 'Jenjang',
+      BERANDA: 'Beranda',
+      DETAIL_SEKOLAH: 'Detail Sekolah',
+      LANGSUNG_KE_KONTEN: 'Langsung ke konten utama',
+      KEMBALI_KE_ATAS: 'Kembali ke atas',
+      SALIN_NPSN: 'Salin NPSN',
+      TERSALIN: 'Tersalin!',
+    },
+  },
+
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,

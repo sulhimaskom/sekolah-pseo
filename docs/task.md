@@ -1926,6 +1926,46 @@ README.md
 - [x] Zero regressions
 - [x] Documentation updated (README.md, task.md)
 
+### [TASK-019] StorX - Dead Code Removal (PHASE 5)
+
+**Status**: Complete
+**Agent**: StorX
+
+### Description
+
+Removed dead code to satisfy the [REMOVE] priority of PHASE 5.
+
+### Actions Taken
+
+1. Removed unused `addNumbers` utility function from `scripts/utils.js`.
+2. Removed associated tests for `addNumbers` in `scripts/utils.test.js`.
+3. Verified all tests pass after removal.
+
+### [TASK-018] Test Optimization - Slow Test Detection (PHASE 4)
+
+**Status**: Complete
+**Agent**: TestGuard
+
+### Description
+
+Performed slow test detection as part of PHASE 4. Identified tests exceeding the 500ms threshold for future optimization or migration.
+
+### Slow Tests Identified
+
+1. **RateLimiter** suite:
+   - `should reject queued operations after timeout` (~501ms)
+   - `execute` subtest (~849ms)
+   - Total suite duration (~1241ms)
+
+2. **retry** suite:
+   - `respects custom maxAttempts` (~703ms)
+   - Total suite duration (~2217ms)
+
+### Actions Taken
+
+1. Measured execution times for all JavaScript and Python tests.
+2. Documented slow tests here for future migration to `tests/slow` or optimization.
+3. Fixed a regression in Python tests where `escapeCsvField` formula injection prefix caused numeric validation to fail.
 
 ### [TASK-007] Layer Separation - Page Builder Refactoring
 

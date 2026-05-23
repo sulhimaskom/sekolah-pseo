@@ -329,13 +329,17 @@ def run_functional_data_tests(suite: TestSuite, root: str) -> None:
             lat = row.get('lat', '').strip()
             lon = row.get('lon', '').strip()
             if lat:
+                # Handle possible formula injection prefix (single quote) from escapeCsvField
+                clean_lat = lat[1:] if lat.startswith("'") else lat
                 try:
-                    float(lat)
+                    float(clean_lat)
                 except ValueError:
                     suite.assert_true(False, f"lat '{lat}' should be numeric")
             if lon:
+                # Handle possible formula injection prefix (single quote) from escapeCsvField
+                clean_lon = lon[1:] if lon.startswith("'") else lon
                 try:
-                    float(lon)
+                    float(clean_lon)
                 except ValueError:
                     suite.assert_true(False, f"lon '{lon}' should be numeric")
     
