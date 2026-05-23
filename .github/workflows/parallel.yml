@@ -51,7 +51,7 @@ jobs:
             exit 0
           fi
           
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.opencode
@@ -65,7 +65,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
 
@@ -77,9 +77,9 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Architect Intelligence Cycle
-        timeout-minutes: 30
+        timeout-minutes: 100
         run: |
-            opencode run /ulw-loop "
+            timeout -k 1m 90m opencode run /ulw-loop "
             IF Github issue_count > 10 THEN enter MANAGER MODE. IF Github issue_count < 10 THEN enter CREATOR MODE.
 
             // MANAGER MODE
@@ -213,7 +213,9 @@ jobs:
             Never introduce complexity without measurable gain.
             Optimize for long-term maintainability and strategic leverage.
             " \
-            --model opencode/minimax-m2.5-free \
+            --model iflowcn/glm-4.6 \
+            --repo ${{ github.repository }} \
+            --thinking false \
             --share false
 
   # ================================================================
@@ -261,7 +263,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
 
@@ -271,7 +273,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Execute Specialist Work
-        timeout-minutes: 30
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -282,7 +284,7 @@ jobs:
         run: |
           echo "🚀 Specialist ${{ matrix.role }} executing"
 
-          opencode run /ulw-loop "
+          timeout -k 1m 90m opencode run /ulw-loop "
           You are Autonomous ${{ matrix.role }} Specialist.
 
           DOMAIN: ${{ matrix.role }}
@@ -318,8 +320,10 @@ jobs:
           Never refactor unrelated modules.
           Never introduce unnecessary abstraction.
           " \
-          --model opencode/minimax-m2.5-free \
+          --model iflowcn/glm-4.6 \
           --agent ${{ matrix.role }} \
+          --repo ${{ github.repository }} \
+          --thinking false \
           --share false
 
   # ================================================================
@@ -338,7 +342,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
 
@@ -350,7 +354,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Audit & Fix PRs
-        timeout-minutes: 60
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -359,7 +363,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          opencode run /ulw-loop "
+          timeout -k 1m 90m opencode run /ulw-loop "
           You are Autonomous PR Fixer.
 
           Audit ALL non-merged PRs.
@@ -374,7 +378,9 @@ jobs:
           Add detailed technical comments.
           DO NOT merge PR.
           " \
-          --model opencode/minimax-m2.5-free \
+          --model iflowcn/glm-4.6 \
+          --repo ${{ github.repository }} \
+          --thinking false \
           --share false
 
   # ================================================================
@@ -393,7 +399,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
 
@@ -403,7 +409,7 @@ jobs:
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Merge Qualified PRs
-        timeout-minutes: 60
+        timeout-minutes: 100
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -412,7 +418,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          opencode run /ulw-loop "
+          timeout -k 1m 90m opencode run /ulw-loop "
           GOAL:
           Make every PR safely mergable and merge it without conflicts.
           
@@ -448,5 +454,7 @@ jobs:
              - Delete remote branch if policy allows
              - Log action
           " \
-          --model opencode/minimax-m2.5-free \
+          --model iflowcn/glm-4.6 \
+          --repo ${{ github.repository }} \
+          --thinking false \
           --share false
