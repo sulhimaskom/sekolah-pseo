@@ -433,6 +433,5 @@ jobs:
           PROMPT
           )" \
             --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
             --thinking false \
             --share false

@@ -214,7 +214,6 @@ jobs:
             Optimize for long-term maintainability and strategic leverage.
             " \
             --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
             --thinking false \
             --share false
 
@@ -322,7 +321,6 @@ jobs:
           " \
           --model iflowcn/glm-4.6 \
           --agent ${{ matrix.role }} \
-          --repo ${{ github.repository }} \
           --thinking false \
           --share false
 
@@ -379,7 +377,6 @@ jobs:
           DO NOT merge PR.
           " \
           --model iflowcn/glm-4.6 \
-          --repo ${{ github.repository }} \
           --thinking false \
           --share false
 
@@ -455,6 +452,5 @@ jobs:
              - Log action
           " \
           --model iflowcn/glm-4.6 \
-          --repo ${{ github.repository }} \
           --thinking false \
           --share false
