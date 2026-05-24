@@ -1063,6 +1063,96 @@ TV}
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* Copy to clipboard button */
+.copy-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  background-color: var(--color-bg-accent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  position: relative;
+}
+
+.btn-copy:hover {
+  background-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-copy:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.copy-feedback {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background-color: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast) ease;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.copy-feedback::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: var(--color-text-primary) transparent transparent transparent;
+}
+
+.btn-copy.show .copy-feedback {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Dark mode copy button */
+@media (prefers-color-scheme: dark) {
+  .btn-copy {
+    background-color: var(--color-dark-bg-accent);
+    border-color: var(--color-dark-border);
+    color: var(--color-dark-text-secondary);
+  }
+
+  .btn-copy:hover {
+    background-color: var(--color-dark-border);
+    color: var(--color-dark-text-primary);
+  }
+
+  .copy-feedback {
+    background-color: var(--color-dark-text-primary);
+    color: var(--color-dark-bg-primary);
+  }
+
+  .copy-feedback::after {
+    border-color: var(--color-dark-text-primary) transparent transparent transparent;
+  }
+}
 `;
 }
 

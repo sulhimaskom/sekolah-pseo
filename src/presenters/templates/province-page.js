@@ -96,10 +96,10 @@ function generateProvincePageHtml(provinceName, schools) {
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <title>Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO</title>
+  <title>Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - ${escapeHtml(CONFIG.TEXT.SITE_NAME)}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
-  <meta property="og:title" content="Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO" />
+  <meta property="og:title" content="Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - ${escapeHtml(CONFIG.TEXT.SITE_NAME)}" />
   <meta property="og:description" content="${escapeHtml(metaDescription)}" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
@@ -146,7 +146,7 @@ function generateProvincePageHtml(provinceName, schools) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} ${escapeHtml(CONFIG.TEXT.SITE_NAME)}. ${escapeHtml(CONFIG.TEXT.FOOTER_TEXT)}.</p>
   </footer>
   
   <button class="back-to-top" aria-label="Kembali ke atas">

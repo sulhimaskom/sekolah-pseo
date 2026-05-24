@@ -113,6 +113,13 @@ const CONFIG = {
   // File operation timeouts
   FILE_TIMEOUT_MS: 30000,
 
+  // Text strings (centralized for modularity)
+  TEXT: {
+    SITE_NAME: 'Sekolah PSEO',
+    SITE_DESCRIPTION: 'Direktori lengkap sekolah-sekolah di Indonesia.',
+    FOOTER_TEXT: 'Data sekolah berasal dari Dapodik.',
+  },
+
   // Directories
   ROOT_DIR: ROOT_DIR,
   DATA_DIR: DATA_DIR,

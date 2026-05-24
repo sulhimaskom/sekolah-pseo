@@ -1,24 +1,5 @@
-const { escapeHtml, formatStatus } = require('../../../scripts/utils');
+const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../scripts/utils');
 const CONFIG = require('../../../scripts/config');
-
-/**
- * Generate meta description for SEO
- * @param {Object} school - School data object
- * @returns {string} - SEO meta description
- */
-function generateMetaDescription(school) {
-  const { nama, bentuk_pendidikan, kab_kota, kecamatan } = school;
-  const parts = [];
-
-  if (nama) parts.push(nama);
-  if (bentuk_pendidikan) parts.push(bentuk_pendidikan);
-  if (kab_kota) parts.push(`di ${kab_kota}`);
-  if (kecamatan) parts.push(`Kec. ${kecamatan}`);
-
-  const description = parts.join(' - ');
-  // Truncate to optimal length for SEO (150-160 chars)
-  return description.length > 155 ? description.substring(0, 152) + '...' : description;
-}
 
 /**
  * Generate canonical URL for the school page
@@ -112,7 +93,16 @@ function generateSchoolPageHtml(school, relativePath) {
         <dl class="school-details-list">
           <div class="details-group">
             <dt>NPSN</dt>
-            <dd>${escapeHtml(school.npsn)}</dd>
+            <dd class="copy-wrapper">
+              <span id="npsn-value">${escapeHtml(school.npsn)}</span>
+              <button class="btn-copy" aria-label="Salin NPSN" data-copy-target="npsn-value">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="copy-feedback">Tersalin!</span>
+              </button>
+            </dd>
             
             <dt>Jenjang</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
@@ -140,7 +130,7 @@ function generateSchoolPageHtml(school, relativePath) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} ${escapeHtml(CONFIG.TEXT.SITE_NAME)}. ${escapeHtml(CONFIG.TEXT.FOOTER_TEXT)}</p>
   </footer>
   
   <button class="back-to-top" aria-label="Kembali ke atas">
@@ -172,6 +162,26 @@ function generateSchoolPageHtml(school, relativePath) {
       window.addEventListener('scroll', handleScroll, { passive: true });
       handleScroll();
     })();
+
+    (function() {
+      var copyButtons = document.querySelectorAll('.btn-copy');
+
+      copyButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var targetId = btn.getAttribute('data-copy-target');
+          var text = document.getElementById(targetId).textContent;
+
+          navigator.clipboard.writeText(text).then(function() {
+            btn.classList.add('show');
+            setTimeout(function() {
+              btn.classList.remove('show');
+            }, 2000);
+          }).catch(function(err) {
+            console.error('Gagal menyalin text: ', err);
+          });
+        });
+      });
+    })();
   </script>
 </body>
 </html>`;
@@ -179,6 +189,5 @@ function generateSchoolPageHtml(school, relativePath) {
 
 module.exports = {
   generateSchoolPageHtml,
-  generateMetaDescription,
   generateCanonicalUrl,
 };

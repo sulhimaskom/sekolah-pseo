@@ -1,5 +1,6 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
+const CONFIG = require('../../../scripts/config');
 
 /**
  * Extract unique values for filter dropdowns
@@ -155,11 +156,11 @@ function generateHomepageHtml(schools) {
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
+  <title>${escapeHtml(CONFIG.TEXT.SITE_NAME)} - Direktori Sekolah Indonesia</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="/" />
-  <meta property="og:title" content="Sekolah PSEO - Direktori Sekolah Indonesia" />
-  <meta property="og:description" content="Direktori lengkap sekolah-sekolah di Indonesia. Temukan informasi NPSN, alamat, jenjang, dan status sekolah di seluruh Indonesia." />
+  <meta property="og:title" content="${escapeHtml(CONFIG.TEXT.SITE_NAME)} - Direktori Sekolah Indonesia" />
+  <meta property="og:description" content="${escapeHtml(CONFIG.TEXT.SITE_DESCRIPTION)}" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="/" />
 
@@ -176,9 +177,9 @@ function generateHomepageHtml(schools) {
   
   <main id="main-content" role="main">
     <div class="homepage-hero">
-      <h1>Sekolah PSEO</h1>
+      <h1>${escapeHtml(CONFIG.TEXT.SITE_NAME)}</h1>
       <p class="hero-description">
-        Direktori lengkap sekolah-sekolah di Indonesia. Temukan informasi lengkap tentang 
+        ${escapeHtml(CONFIG.TEXT.SITE_DESCRIPTION)} Temukan informasi lengkap tentang
         NPSN, alamat, jenjang pendidikan, dan status sekolah di seluruh Indonesia.
       </p>
       <div class="hero-stats">
@@ -256,7 +257,7 @@ function generateHomepageHtml(schools) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${currentYear} ${escapeHtml(CONFIG.TEXT.SITE_NAME)}. ${escapeHtml(CONFIG.TEXT.FOOTER_TEXT)}</p>
   </footer>
   
   <button class="back-to-top" aria-label="Kembali ke atas">
