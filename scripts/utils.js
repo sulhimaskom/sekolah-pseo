@@ -173,7 +173,9 @@ function hasCoordinateData(school) {
  */
 async function writeCsv(data, outputPath) {
   if (!Array.isArray(data) || data.length === 0) {
-    throw new IntegrationError('Data must be a non-empty array', ERROR_CODES.INVALID_INPUT, { reason: 'empty_array' });
+    throw new IntegrationError('Data must be a non-empty array', ERROR_CODES.INVALID_INPUT, {
+      reason: 'empty_array',
+    });
   }
 
   const { safeWriteFile } = require('./fs-safe');

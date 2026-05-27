@@ -38,12 +38,18 @@ function validateRepoUrl(url) {
 
     // Check protocol is allowed
     if (!allowedProtocols.includes(parsed.protocol)) {
-      throw new IntegrationError(`Invalid protocol: ${parsed.protocol}. Only http and https are allowed.`, ERROR_CODES.INVALID_URL, { protocol: parsed.protocol });
+      throw new IntegrationError(
+        `Invalid protocol: ${parsed.protocol}. Only http and https are allowed.`,
+        ERROR_CODES.INVALID_URL,
+        { protocol: parsed.protocol }
+      );
     }
 
     // Ensure hostname is present
     if (!parsed.hostname) {
-      throw new IntegrationError('URL must have a hostname.', ERROR_CODES.INVALID_URL, { reason: 'missing_hostname' });
+      throw new IntegrationError('URL must have a hostname.', ERROR_CODES.INVALID_URL, {
+        reason: 'missing_hostname',
+      });
     }
 
     // Reconstruct URL to ensure it's clean (removes any injected characters)
@@ -51,13 +57,17 @@ function validateRepoUrl(url) {
 
     // Validate it ends with .git (common for git repos)
     if (!sanitizedUrl.endsWith('.git')) {
-      throw new IntegrationError('Repository URL must end with .git', ERROR_CODES.INVALID_URL, { reason: 'missing_git_extension' });
+      throw new IntegrationError('Repository URL must end with .git', ERROR_CODES.INVALID_URL, {
+        reason: 'missing_git_extension',
+      });
     }
 
     return sanitizedUrl;
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new IntegrationError('Invalid URL format.', ERROR_CODES.INVALID_URL, { reason: 'parse_error' });
+      throw new IntegrationError('Invalid URL format.', ERROR_CODES.INVALID_URL, {
+        reason: 'parse_error',
+      });
     }
     throw error;
   }
