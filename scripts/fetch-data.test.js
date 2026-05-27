@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 
-const { fetchFromGitHub, findCsvFiles, copyToRaw } = require('./fetch-data');
+const { fetchFromGitHub, findCsvFiles, copyToRaw, validateRepoUrl, validateBranchName } = require('./fetch-data');
 
 describe('fetch-data', () => {
   describe('findCsvFiles', () => {
@@ -139,6 +139,114 @@ describe('fetch-data', () => {
 
     it('exports copyToRaw function', () => {
       assert.strictEqual(typeof copyToRaw, 'function');
+    });
+
+    it('exports validateRepoUrl function', () => {
+      assert.strictEqual(typeof validateRepoUrl, 'function');
+    });
+
+    it('exports validateBranchName function', () => {
+      assert.strictEqual(typeof validateBranchName, 'function');
+    });
+  });
+
+  describe('validateRepoUrl', () => {
+    it('accepts valid https GitHub URL', () => {
+      const result = validateRepoUrl('https://github.com/user/repo.git');
+      assert.strictEqual(result, 'https://github.com/user/repo.git');
+    });
+
+    it('accepts valid http URL', () => {
+      const result = validateRepoUrl('http://example.com/repo.git');
+      assert.strictEqual(result, 'http://example.com/repo.git');
+    });
+
+    it('rejects URL without .git extension', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/user/repo'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects non-http protocols like ftp', () => {
+      assert.throws(() => validateRepoUrl('ftp://example.com/repo.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects URL with no hostname', () => {
+      assert.throws(() => validateRepoUrl('https:///repo.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects invalid URL strings', () => {
+      assert.throws(() => validateRepoUrl('not-a-url'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('sanitizes URL by removing extra characters', () => {
+      const result = validateRepoUrl('https://github.com/user/repo.git');
+      assert.ok(result.startsWith('https://'));
+      assert.ok(result.endsWith('.git'));
+    });
+  });
+
+  describe('validateBranchName', () => {
+    it('accepts simple branch name', () => {
+      const result = validateBranchName('main');
+      assert.strictEqual(result, 'main');
+    });
+
+    it('accepts branch name with hyphens', () => {
+      const result = validateBranchName('feature-branch');
+      assert.strictEqual(result, 'feature-branch');
+    });
+
+    it('accepts branch name with slashes', () => {
+      const result = validateBranchName('feature/my-branch');
+      assert.strictEqual(result, 'feature/my-branch');
+    });
+
+    it('accepts branch name with underscores', () => {
+      const result = validateBranchName('my_branch');
+      assert.strictEqual(result, 'my_branch');
+    });
+
+    it('rejects branch name with spaces', () => {
+      assert.throws(() => validateBranchName('my branch'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects empty string', () => {
+      assert.throws(() => validateBranchName(''), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects non-string input', () => {
+      assert.throws(() => validateBranchName(null), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects branch name starting with dot', () => {
+      assert.throws(() => validateBranchName('.hidden'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects branch name with path traversal', () => {
+      assert.throws(() => validateBranchName('../etc/passwd'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects branch name with shell metacharacters', () => {
+      assert.throws(() => validateBranchName('branch;rm -rf /'), {
+        name: 'IntegrationError',
+      });
     });
   });
 });

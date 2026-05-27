@@ -262,6 +262,7 @@ module.exports = {
   findCsvFiles,
   copyToRaw,
   validateRepoUrl,
+  validateBranchName,
 };
 
 if (require.main === module) {

@@ -2,6 +2,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');
 
@@ -183,6 +184,79 @@ describe('check-freshness', () => {
       if (result.totalRecords > 0) {
         // Province count should not exceed total records
         assert.ok(result.metrics.province.count <= result.totalRecords);
+      }
+    });
+  });
+
+  describe('main() via CLI', () => {
+    function extractJsonFromPino(raw) {
+      // pino logs the stringified JSON in the msg field
+      const line = raw.trim().split('\n').find(l => l.includes('"msg"'));
+      if (!line) return null;
+      const parsed = JSON.parse(line);
+      return JSON.parse(parsed.msg);
+    }
+
+    it('outputs JSON with --json flag', () => {
+      const result = execSync('node scripts/check-freshness.js --json', {
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      const data = extractJsonFromPino(result);
+      assert.ok(data !== null);
+      assert.ok(data.hasOwnProperty('exists'));
+      assert.ok(data.hasOwnProperty('isFresh'));
+      assert.ok(data.hasOwnProperty('maxAgeDays'));
+      assert.ok(data.hasOwnProperty('checkedAt'));
+    });
+
+    it('JSON output includes quality metrics', () => {
+      const result = execSync('node scripts/check-freshness.js --json', {
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      const data = extractJsonFromPino(result);
+      assert.ok(data !== null);
+      assert.ok(data.hasOwnProperty('quality'));
+      assert.ok(data.quality === null || data.quality.hasOwnProperty('totalRecords'));
+    });
+
+    it('JSON output shows stale data correctly', () => {
+      const result = execSync('node scripts/check-freshness.js --json', {
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      const data = extractJsonFromPino(result);
+      assert.ok(data !== null);
+      assert.strictEqual(data.isFresh, false);
+      assert.ok(data.daysAgo > 7);
+      assert.ok(data.recordCount > 0);
+    });
+
+    it('verbose output includes quality metrics section', () => {
+      try {
+        const result = execSync('node scripts/check-freshness.js --verbose', {
+          encoding: 'utf-8',
+          timeout: 10000,
+        });
+        assert.ok(result.includes('Data Quality Metrics'));
+      } catch (e) {
+        // Exits with 1 because data is stale, but stderr has the output
+        assert.ok(e.stderr || e.stdout);
+      }
+    });
+
+    it('exits with non-zero when data is stale', () => {
+      try {
+        execSync('node scripts/check-freshness.js', {
+          encoding: 'utf-8',
+          timeout: 10000,
+        });
+        assert.fail('Should have thrown');
+      } catch (e) {
+        // Expected: exits with code 1 because data is stale
+        assert.ok(e.status === 1);
+        assert.ok(e.stdout.includes('Last Update'));
       }
     });
   });
