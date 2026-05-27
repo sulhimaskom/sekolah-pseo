@@ -27,6 +27,8 @@
     "test:all": "npm run test:js && npm run test:py:pytest",
     "coverage": "c8 --reporter=text --reporter=text-summary --check-coverage --lines=80 --branches=75 node --test scripts/*.test.js",
     "cli": "node scripts/interactive.js",
+    "data-quality": "node scripts/data-quality.js",
+    "data-quality:json": "node scripts/data-quality.js --json",
     "coverage:report": "c8 --reporter=text --reporter=html --reporter=text-summary node --test scripts/*.test.js"
   },
   "repository": {
