@@ -19,7 +19,8 @@ const readline = require('readline');
 const SCRIPTS = {
   Development: [
     { label: 'Dev (lint + test JS)', cmd: 'npm run dev' },
-    { label: 'Build all pages', cmd: 'npm run build' },
+    { label: 'Build all pages (full)', cmd: 'npm run build' },
+    { label: 'Build changed pages (incremental)', cmd: 'npm run build:incremental' },
   ],
   'Data Pipeline': [
     { label: 'Run ETL', cmd: 'npm run etl' },
