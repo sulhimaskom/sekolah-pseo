@@ -20,30 +20,40 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 
 ```
 sekolah-pseo/
- ├── src/
- │   ├── presenters/         # Presentation layer
- │   │   ├── templates/      # Page templates
- │   │   │   └── school-page.js  # School HTML template
- │   │   ├── design-system.js    # Design tokens (colors, spacing, typography)
- │   │   └── styles.js          # Generated CSS with responsive design
- │   └── services/           # Business logic layer
- │       └── PageBuilder.js   # Page generation service
- ├── scripts/                # Controllers/Orchestrators
- │   ├── build-pages.js      # Page build controller
- │   ├── etl.js              # Data ETL
- │   ├── sitemap.js          # Sitemap generator
- │   ├── validate-links.js   # Link validation
- │   ├── config.js           # Shared configuration
- │   ├── utils.js            # Utility functions
- │   ├── slugify.js          # URL slug generation
- │   ├── resilience.js        # Resilience patterns (retry, timeout, circuit breaker)
- │   ├── fs-safe.js          # Resilient file system wrappers
- │   ├── rate-limiter.js     # Rate limiting for concurrent operations
- │   └── *.test.js          # Test files
- ├── data/
- │   └── schools.csv         # School data source
- ├── dist/                   # Generated HTML pages
- └── tests/                  # Test files
+├── src/
+│   ├── presenters/              # Presentation layer
+│   │   ├── templates/           # Page templates
+│   │   │   ├── school-page.js       # School HTML template
+│   │   │   ├── homepage.js          # Homepage HTML template
+│   │   │   └── province-page.js     # Province page HTML template
+│   │   ├── design-system.js     # Design tokens (colors, spacing, typography)
+│   │   └── styles.js            # CSS generator and external stylesheet writer
+│   └── services/                # Business logic layer
+│       └── PageBuilder.js       # Page generation service
+├── scripts/                     # Controllers/Orchestrators
+│   ├── build-pages.js           # Page build controller (full + incremental)
+│   ├── etl.js                   # Data ETL pipeline
+│   ├── sitemap.js               # Sitemap generator
+│   ├── validate-links.js        # Link validation
+│   ├── config.js                # Shared configuration with validation
+│   ├── utils.js                 # Utility functions (CSV, HTML, directory walk, concurrency)
+│   ├── slugify.js               # URL slug generation with caching
+│   ├── resilience.js            # Resilience patterns (retry, timeout, circuit breaker)
+│   ├── fs-safe.js               # Resilient file system wrappers
+│   ├── rate-limiter.js          # Rate limiting for concurrent operations
+│   ├── manifest.js              # Build manifest for incremental builds
+│   ├── logger.js                # Pino-based logging
+│   ├── fetch-data.js            # External data fetch from GitHub
+│   ├── check-freshness.js       # Data freshness check
+│   └── *.test.js                # Test files
+├── data/
+│   └── schools.csv              # Processed school data
+├── dist/                        # Generated HTML pages
+│   ├── index.html               # Homepage
+│   ├── styles.css               # External stylesheet
+│   ├── provinsi/{slug}/         # Province pages
+│   └── {path}/{npsn}-{slug}.html  # School pages
+└── tests/                       # Python test files
 ```
 
 ## Core Components
@@ -58,7 +68,11 @@ sekolah-pseo/
 
 - **Input**: Processed CSV (data/schools.csv)
 - **Output**: Static HTML (dist/)
-- **Purpose**: Generate individual school pages
+- **Purpose**: Generate individual school pages, province index pages, and homepage
+- **Key outputs**:
+  - `dist/index.html` - Homepage with search and filtering
+  - `dist/provinsi/{slug}/index.html` - Province-level index pages
+  - `dist/{path}/{npsn}-{slug}.html` - Individual school pages
 
 ### Sitemap Generator
 
@@ -71,6 +85,17 @@ sekolah-pseo/
 - **Input**: Generated pages (dist/)
 - **Output**: Validation report
 - **Purpose**: Internal link integrity
+
+### Incremental Build System
+
+- **Input**: School data + previous manifest
+- **Output**: Only changed pages rebuilt
+- **Purpose**: Faster rebuilds by tracking content hashes per school
+- **Key features**:
+  - Content hash comparison detects changed records
+  - Manifest persistence enables cross-session incremental builds
+  - Homepage and province pages always regenerated (aggregate data)
+  - Supports `--incremental` flag for targeted rebuilds
 
 ## Standards
 
@@ -244,15 +269,16 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 
 ## Decisions Log
 
-| Date       | Decision                                                     | Rationale                                                    |
-| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ | -------------------------- | ---------------------------------------------------- |
-| QJ         |                                                              | 2026-01-07                                                   | Use Node.js for templating | Custom JavaScript templates with PageBuilder service |
-| 2026-01-07 | CSV over database                                            | Simple, portable, low overhead                               |
-| 2026-01-07 | Node.js scripts                                              | Cross-platform, easy to maintain                             |
-| 2026-01-07 | Implement resilience patterns                                | Prevent cascading failures, handle transient errors          |
-| 2026-01-07 | Implement layer separation (controller/service/presentation) | Better separation of concerns, testability, maintainability  |
-| 2026-01-07 | Extract HTML templates to separate modules                   | Templates testable in isolation, reusable, easy to modify    |
-| 2026-01-07 | Create PageBuilder service layer                             | Business logic isolated from file I/O and presentation       |
-| 2026-01-10 | Implement rate limiting for concurrent operations            | Controlled concurrency, backpressure, metrics for operations |
+| Date       | Decision                                                      | Rationale                                                    |
+| ---------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| 2026-01-07 | Use Node.js for templating                                    | Custom JavaScript templates with PageBuilder service         |
+| 2026-01-07 | CSV over database                                             | Simple, portable, low overhead                               |
+| 2026-01-07 | Node.js scripts                                               | Cross-platform, easy to maintain                             |
+| 2026-01-07 | Implement resilience patterns                                 | Prevent cascading failures, handle transient errors          |
+| 2026-01-07 | Implement layer separation (controller/service/presentation)  | Better separation of concerns, testability, maintainability  |
+| 2026-01-07 | Extract HTML templates to separate modules                    | Templates testable in isolation, reusable, easy to modify    |
+| 2026-01-07 | Create PageBuilder service layer                              | Business logic isolated from file I/O and presentation       |
+| 2026-01-10 | Implement rate limiting for concurrent operations             | Controlled concurrency, backpressure, metrics for operations |
+| 2026-01-10 | Performance optimization (homepage payload, build efficiency) | 15% homepage size reduction, eliminated duplicate iterations |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).

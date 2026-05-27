@@ -106,12 +106,15 @@ Shared utility functions for CSV parsing, HTML escaping, arithmetic operations, 
 module.exports = {
   parseCsv: function,
   escapeHtml: function,
+  escapeCsvField: function,
   addNumbers: function,
   walkDirectory: function,
   writeCsv: function,
   formatStatus: function,
   formatEmptyValue: function,
-  hasCoordinateData: function
+  hasCoordinateData: function,
+  terminate: function,
+  processConcurrently: function,
 };
 ```
 
@@ -238,6 +241,60 @@ console.log(`Found ${htmlFiles.length} HTML files`);
 
 const urls = await walkDirectory('/dist', (fullPath, relPath) => `https://example.com/${relPath}`);
 console.log(urls); // ['https://example.com/page1.html', ...]
+```
+
+---
+
+#### `processConcurrently(items, processor, options)`
+
+Processes an array of items concurrently with a configurable concurrency limit using `RateLimiter`. Provides progress tracking and metrics.
+
+**Parameters:**
+
+- `items` (Array): Array of items to process
+- `processor` (Function): Async function that processes a single item, `(item, index) => Promise<any>`
+- `options` (Object, optional):
+  - `limit` (number): Max concurrent operations (default: 100)
+  - `timeout` (number): Queue timeout in ms (default: 30000)
+  - `getName` (Function): Optional function to generate operation name, `(item, index) => string`
+  - `onProgress` (Function): Optional progress callback, `(processed, total) => void`
+
+**Returns:** `Promise<Object>`
+
+```javascript
+{
+  results: Array<PromiseSettledResult>,  // Promise.allSettled results
+  metrics: {                             // RateLimiter metrics
+    total: number,
+    completed: number,
+    failed: number,
+    throughput: string,
+    successRate: string,
+  }
+}
+```
+
+**Dependencies:**
+
+- `RateLimiter` (from `scripts/rate-limiter.js`)
+
+**Usage:**
+
+```javascript
+const { results, metrics } = await processConcurrently(
+  items,
+  async item => {
+    return await processItem(item);
+  },
+  {
+    limit: 50,
+    timeout: 30000,
+    getName: item => `process-${item.id}`,
+    onProgress: (processed, total) => {
+      console.log(`Progress: ${processed}/${total}`);
+    },
+  }
+);
 ```
 
 ---
@@ -1036,7 +1093,11 @@ module.exports = {
   parseCsv: function,
   sanitize: function,
   normaliseRecord: function,
-  validateRecord: function
+  validateRecord: function,
+  validateLatLon: function,
+  validateCategoricalField: function,
+  checkNpsnUniqueness: function,
+  generateDataQualityReport: function,
 };
 ```
 
@@ -1157,22 +1218,160 @@ validateRecord(null); // false
 
 ---
 
+#### `validateLatLon(lat, lon)`
+
+Validates latitude and longitude coordinates for Indonesia geographic bounds.
+
+**Parameters:**
+
+- `lat` (string): Latitude value
+- `lon` (string): Longitude value
+
+**Returns:** `boolean` - `true` if coordinates are within Indonesia bounds
+
+**Validation Rules:**
+
+- Latitude: -11 to 6 (Indonesia bounds)
+- Longitude: 95 to 141 (Indonesia bounds)
+- Returns `false` for empty, null, or non-numeric values
+
+**Usage:**
+
+```javascript
+validateLatLon('-6.2088', '106.8456'); // true (Jakarta)
+validateLatLon('0', '0'); // false (outside Indonesia bounds)
+validateLatLon('', ''); // false (empty)
+```
+
+---
+
+#### `validateCategoricalField(field, allowedValues)`
+
+Validates a categorical field against a list of allowed values.
+
+**Parameters:**
+
+- `field` (string): Field value to validate
+- `allowedValues` (Array<string>): Array of allowed values
+
+**Returns:** `boolean` - `true` if field matches an allowed value
+
+**Usage:**
+
+```javascript
+validateCategoricalField('N', ['N', 'S']); // true
+validateCategoricalField('X', ['N', 'S']); // false
+```
+
+---
+
+#### `checkNpsnUniqueness(records)`
+
+Checks all NPSN values in the dataset for uniqueness.
+
+**Parameters:**
+
+- `records` (Array<Object>): Array of school records
+
+**Returns:** `Object`
+
+```javascript
+{
+  isUnique: boolean,
+  duplicates: string[]
+}
+```
+
+**Usage:**
+
+```javascript
+const { isUnique, duplicates } = checkNpsnUniqueness(schools);
+if (!isUnique) {
+  console.warn(`Duplicate NPSN found: ${duplicates.join(', ')}`);
+}
+```
+
+---
+
+#### `generateDataQualityReport(records)`
+
+Generates comprehensive data quality metrics report for the school dataset.
+
+**Parameters:**
+
+- `records` (Array<Object>): Array of school records
+
+**Returns:** `Object` - Data quality report with the following sections:
+
+- `totalRecords` (number): Total number of records
+- `fieldCompleteness` (Object): Per-field filled/missing/percentage stats
+- `coordinateStats` (Object): Valid, missing, invalid coordinate counts
+- `uniqueness` (Object): NPSN uniqueness summary with duplicate list
+- `categoricalDistribution` (Object): Status and bentuk_pendidikan distribution
+
+**Performance:** Single-pass computation of all metrics.
+
+**Usage:**
+
+```javascript
+const report = generateDataQualityReport(schools);
+console.log(`Valid coordinates: ${report.coordinateStats.validCoordinates}`);
+```
+
+---
+
 ## Page Builder Module (`src/services/PageBuilder.js`)
 
 ### Purpose
 
-Service layer for page generation logic (path construction, data preparation).
+Service layer for page generation logic (path construction, data preparation, province page building).
 
 ### Exports
 
 ```javascript
 module.exports = {
   buildSchoolPageData: function,
-  getUniqueDirectories: function
+  getSchoolRelativePath: function,
+  getUniqueDirectories: function,
+  getUniqueProvinces: function,
+  buildProvincePageData: function,
 };
 ```
 
 ### Functions
+
+#### `getSchoolRelativePath(school)`
+
+Computes the relative file path for a school page without generating HTML. Used by manifest creation to avoid full HTML generation for path-only needs.
+
+**Parameters:**
+
+- `school` (Object): School data object
+
+**Returns:** `string` - Relative file path
+
+**Required Fields:** `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']`
+
+**Path Format:** `provinsi/{provinsiSlug}/kabupaten/{kabKotaSlug}/kecamatan/{kecamatanSlug}/{npsn}-{namaSlug}.html`
+
+**Dependencies:**
+
+- `slugify` (from `scripts/slugify.js`)
+
+**Usage:**
+
+```javascript
+const path = getSchoolRelativePath({
+  provinsi: 'DKI Jakarta',
+  kab_kota: 'Jakarta Pusat',
+  kecamatan: 'Menteng',
+  npsn: '12345678',
+  nama: 'SMA Negeri 1 Jakarta',
+});
+// Returns: 'provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/menteng/12345678-sma-negeri-1-jakarta.html'
+```
+
+---
 
 #### `buildSchoolPageData(school)`
 
@@ -1265,6 +1464,76 @@ const dirs = getUniqueDirectories(schools);
 
 ---
 
+#### `getUniqueProvinces(schools)`
+
+Extracts unique provinces from schools array with school counts.
+
+**Parameters:**
+
+- `schools` (Object[]): Array of school objects
+
+**Returns:** `Object[]` - Array of province objects with name, slug, and count
+
+**Throws:**
+
+- `Error` if `schools` is not an array
+
+**Usage:**
+
+```javascript
+const provinces = getUniqueProvinces(schools);
+// Returns:
+// [
+//   { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
+//   { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 },
+// ]
+```
+
+---
+
+#### `buildProvincePageData(provinceName, schools)`
+
+Builds province page data with path and HTML content.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Object`
+
+```javascript
+{
+  relativePath: string,  // File path relative to DIST_DIR
+  content: string        // HTML content
+}
+```
+
+**Throws:**
+
+- `Error` if `provinceName` is not a string
+- `Error` if `schools` is not an array
+
+**Path Format:** `provinsi/{provinceSlug}/index.html`
+
+**Dependencies:**
+
+- `slugify` (from `scripts/slugify.js`)
+- `generateProvincePageHtml` (from `src/presenters/templates/province-page.js`)
+
+**Usage:**
+
+```javascript
+const pageData = buildProvincePageData('DKI Jakarta', schools);
+// Returns:
+// {
+//   relativePath: 'provinsi/dki-jakarta/index.html',
+//   content: '<!DOCTYPE html>...'
+// }
+```
+
+---
+
 ## School Page Template Module (`src/presenters/templates/school-page.js`)
 
 ### Purpose
@@ -1275,19 +1544,22 @@ Presentation layer for school page HTML generation.
 
 ```javascript
 module.exports = {
-  generateSchoolPageHtml: function
+  generateSchoolPageHtml: function,
+  generateMetaDescription: function,
+  generateCanonicalUrl: function,
 };
 ```
 
 ### Functions
 
-#### `generateSchoolPageHtml(school)`
+#### `generateSchoolPageHtml(school, relativePath)`
 
 Generates complete HTML page for school.
 
 **Parameters:**
 
 - `school` (Object): School data object
+- `relativePath` (string): Relative path to the page (used for canonical URL generation)
 
 **Returns:** `string` - Complete HTML document
 
@@ -1302,18 +1574,23 @@ Generates complete HTML page for school.
 
 - `<!DOCTYPE html>` declaration
 - `<html lang="id">` - Indonesian language
-- Security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection)
+- `<meta name="description">` for SEO
+- Security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection, Strict-Transport-Security, Permissions-Policy, Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy)
+- Theme color meta tags (light/dark mode support)
 - Viewport meta tag for mobile responsiveness
-- Schema.org JSON-LD structured data
+- Open Graph meta tags for social sharing
+- Schema.org JSON-LD structured data (School type)
 - Skip link for keyboard navigation
 - Semantic HTML5 structure (header, nav, main, article, section, footer)
 - ARIA attributes for accessibility
-- School details in definition list (dl/dt/dd)
-- Inline CSS for accessibility features
+- School details in definition list (dl/dt/dd) with copy-to-clipboard for NPSN
+- External CSS via `<link rel="stylesheet" href="/styles.css">`
 
 **Dependencies:**
 
 - `escapeHtml` (from `scripts/utils.js`)
+- `formatStatus` (from `scripts/utils.js`)
+- `CONFIG` (from `scripts/config.js`)
 
 **Usage:**
 
@@ -1325,191 +1602,281 @@ const school = {
   npsn: '12345678',
   nama: 'SMA Negeri 1 Jakarta',
   bentuk_pendidikan: 'SMA',
-  status: 'Negeri',
+  status: 'N',
   alamat: 'Jl. Sudirman No. 1',
 };
 
-const html = generateSchoolPageHtml(school);
+const html = generateSchoolPageHtml(
+  school,
+  'provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/menteng/12345678-sma-negeri-1-jakarta.html'
+);
 // Returns: '<!DOCTYPE html>\n<html lang="id">...'
 ```
 
-#JM|---
+---
 
-#KV|## Homepage Template Module (`src/presenters/templates/homepage.js`)
-#ZP|
-#XJ|### Purpose
-#SM|
-#NK|Presentation layer for homepage HTML generation with search, filtering, and province navigation.
-#YK|
-#ZB|### Exports
-#ZT|
-XH|`javascript
-#RZ|module.exports = {
-#NX|  generateHomepageHtml: function,
-#VM|  aggregateByProvince: function
-#NT|};`
+#### `generateMetaDescription(school)`
 
-#XZ|### Functions
+Generates SEO meta description from school data.
 
-#VR|#### `generateHomepageHtml(schools)`
+**Parameters:**
 
-#KX|Generates complete HTML homepage with search, filtering, and province navigation.
+- `school` (Object): School data object
 
-#RH|**Parameters:**
+**Returns:** `string` - SEO meta description (truncated to ~155 characters)
 
-#VB|- `schools` (Array<Object>): Array of school data objects
+**Usage:**
 
-#BR|**Returns:** `string` - Complete HTML document
+```javascript
+const desc = generateMetaDescription({
+  nama: 'SMA Negeri 1',
+  bentuk_pendidikan: 'SMA',
+  kab_kota: 'Jakarta',
+  kecamatan: 'Menteng',
+});
+// Returns: 'SMA Negeri 1 - SMA - di Jakarta - Kec. Menteng'
+```
 
-#VM|**Features:**
+---
 
-#KV|- Client-side search with debouncing
-#HB|- Province and education type filtering
-#MT|- Responsive design with mobile support
-#KV|- Keyboard navigation (/ to focus search, Escape to clear)
-#MT|- Back-to-top button
-#YJ|- Embedded school data in JSON format for search
-#KV|- Accessibility: skip links, ARIA labels, screen reader support
+#### `generateCanonicalUrl(relativePath)`
 
-#TQ|**Usage:**
+Generates full canonical URL from relative path and SITE_URL config.
 
-#XH|```javascript
-#VB|const { generateHomepageHtml } = require('./templates/homepage');
-#RN|#const html = generateHomepageHtml(schools);
-#MT|#// Returns: '<!DOCTYPE html>\n<html lang="id">...'`
+**Parameters:**
 
-#HT|---
+- `relativePath` (string): Relative path to the HTML file
 
-#VR|#### `aggregateByProvince(schools)`
+**Returns:** `string` - Full canonical URL
 
-#KX|Aggregates school data by province for navigation.
+**Dependencies:**
 
-#RH|**Parameters:**
+- `CONFIG.SITE_URL` (from `scripts/config.js`)
 
-#VB|- `schools` (Array<Object>): Array of school data objects
+**Usage:**
 
-#BR|**Returns:** `Array<Object>` - Array of province objects with school count
+```javascript
+const url = generateCanonicalUrl('provinsi/dki-jakarta/kabupaten/.../file.html');
+// Returns: 'https://example.com/provinsi/dki-jakarta/.../file.html'
+```
 
-#QW|`javascript
-#VB|[
-#RN|  { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
-#TV|  { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 }
-#HV|]`
+---
 
-#TB|**Sorting:** Provinces are sorted alphabetically by Indonesian locale.
+## Homepage Template Module (`src/presenters/templates/homepage.js`)
 
-#TQ|**Usage:**
+### Purpose
 
-#XH|``javascript
-#VB|const { aggregateByProvince } = require('./templates/homepage');
-#RN|#const provinces = aggregateByProvince(schools);
-#MT|#provinces.forEach(p => console.log(`${p.name}: ${p.count}`));``
+Presentation layer for homepage HTML generation with search, filtering, and province navigation.
 
-#KP|---
+### Exports
 
-#KV|## Province Page Template Module (`src/presenters/templates/province-page.js`)
-#ZP|
-#XJ|### Purpose
-#SM|
-#NK|Presentation layer for province-level page HTML generation with kabupaten/kota navigation.
-#YK|
-#ZB|### Exports
-#ZT|
-XH|`javascript
-#RZ|module.exports = {
-#NX|  generateProvincePageHtml: function,
-#VM|  filterSchoolsByProvince: function,
-#YJ|  aggregateByKabupaten: function
-#NT|};`
+```javascript
+module.exports = {
+  generateHomepageHtml: function,
+  aggregateByProvince: function,
+  aggregateProvinceAndFilters: function,
+};
+```
 
-#XZ|### Functions
+### Functions
 
-#VR|#### `generateProvincePageHtml(provinceName, schools)`
+#### `generateHomepageHtml(schools)`
 
-#KX|Generates complete HTML page for a specific province with kabupaten/kota navigation.
+Generates complete HTML homepage with search, filtering, and province navigation.
 
-#RH|**Parameters:**
+**Parameters:**
 
-#VB|- `provinceName` (string): Province name to generate page for
-#JX|- `schools` (Array<Object>): Array of all school data objects
+- `schools` (Array<Object>): Array of school data objects
 
-#BR|**Returns:** `string` - Complete HTML document
+**Returns:** `string` - Complete HTML document
 
-#VM|**Features:**
+**Features:**
 
-#KV|- Lists all kabupaten/kota in the province
-#HB|- Shows school count per kabupaten/kota
-#MT|- Breadcrumb navigation
-#KV|- Responsive design with mobile support
-#MT|- Back-to-top button
+- Client-side search with debouncing
+- Province and education type filtering
+- Responsive design with mobile support
+- Keyboard navigation (/ to focus search, Escape to clear)
+- Back-to-top button
+- Embedded school data in JSON format for search (compact key structure)
+- Accessibility: skip links, ARIA labels, screen reader support
 
-#TQ|**Usage:**
+**Usage:**
 
-#XH|```javascript
-#VB|const { generateProvincePageHtml } = require('./templates/province-page');
-#RN|#const html = generateProvincePageHtml('DKI Jakarta', schools);
-#MT|#// Returns: '<!DOCTYPE html>\n<html lang="id">...'`
+```javascript
+const { generateHomepageHtml } = require('./templates/homepage');
+const html = generateHomepageHtml(schools);
+// Returns: '<!DOCTYPE html>\n<html lang="id">...'
+```
 
-#HT|---
+---
 
-#VR|#### `filterSchoolsByProvince(schools, provinceName)`
+#### `aggregateByProvince(schools)`
 
-#KX|Filters schools by province name.
+Aggregates school data by province for navigation.
 
-#RH|**Parameters:**
+**Parameters:**
 
-#VB|- `schools` (Array<Object>): Array of school data objects
-#JX|- `provinceName` (string): Province name to filter by
+- `schools` (Array<Object>): Array of school data objects
 
-#BR|**Returns:** `Array<Object>` - Filtered schools for the province
+**Returns:** `Array<Object>` - Array of province objects with school count
 
-#TB|**Exact Match:** Uses strict equality (`===`) for province matching.
+```javascript
+[
+  { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
+  { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 },
+];
+```
 
-#TQ|**Usage:**
+**Sorting:** Provinces are sorted alphabetically by Indonesian locale.
 
-#XH|``javascript
-#VB|const { filterSchoolsByProvince } = require('./templates/province-page');
-#RN|#const jakartaSchools = filterSchoolsByProvince(schools, 'DKI Jakarta');
-#MT|#console.log(`Found ${jakartaSchools.length} schools`);``
+**Usage:**
 
-#HT|---
+```javascript
+const { aggregateByProvince } = require('./templates/homepage');
+const provinces = aggregateByProvince(schools);
+provinces.forEach(p => console.log(`${p.name}: ${p.count}`));
+```
 
-#VR|#### `aggregateByKabupaten(schools)`
+---
 
-#KX|Aggregates school data by kabupaten/kota within a province.
+#### `aggregateProvinceAndFilters(schools)`
 
-#RH|**Parameters:**
+Aggregates school data by province and extracts filter options in a single pass. Combines the functionality of `aggregateByProvince` and filter extraction to eliminate duplicate iteration.
 
-#VB|- `schools` (Array<Object>): Array of school data objects (should be filtered by province)
+**Parameters:**
 
-#BR|**Returns:** `Array<Object>` - Array of kabupaten objects with school count
+- `schools` (Array<Object>): Array of school data objects
 
-#QW|`javascript
-#VB|[
-#RN|  { name: 'Jakarta Pusat', slug: 'jakarta-pusat', count: 150 },
-#TV|  { name: 'Jakarta Selatan', slug: 'jakarta-selatan', count: 200 }
-#HV|]`
+**Returns:** `Object`
 
-#TB|**Sorting:** Kabupaten are sorted alphabetically by Indonesian locale.
+```javascript
+{
+  provinces: [
+    { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
+  ],
+  types: ['SMA', 'SMP', 'SD'],
+}
+```
 
-#TQ|**Usage:**
+**Performance:** Single-pass iteration instead of separate passes for province aggregation and filter extraction.
 
-#XH|``javascript
-#VB|const { aggregateByKabupaten } = require('./templates/province-page');
-#RN|#const kabupatens = aggregateByKabupaten(jakartaSchools);
-#MT|#kabupatens.forEach(k => console.log(`${k.name}: ${k.count}`));``
+**Usage:**
 
-#KV|---
+```javascript
+const { aggregateProvinceAndFilters } = require('./templates/homepage');
+const { provinces, types } = aggregateProvinceAndFilters(schools);
+```
 
-#KV|### Path Format
+---
 
-#XZ|Province pages are generated at:
+## Province Page Template Module (`src/presenters/templates/province-page.js`)
 
-#HB|`
-#MT|/provinsi/{provinceSlug}/index.html
-#KV|`
+### Purpose
 
-#XZ|Example: `/provinsi/dki-jakarta/index.html`
+Presentation layer for province-level page HTML generation with kabupaten/kota navigation.
+
+### Exports
+
+```javascript
+module.exports = {
+  generateProvincePageHtml: function,
+  filterSchoolsByProvince: function,
+  aggregateByKabupaten: function,
+};
+```
+
+### Functions
+
+#### `generateProvincePageHtml(provinceName, schools)`
+
+Generates complete HTML page for a specific province with kabupaten/kota navigation.
+
+**Parameters:**
+
+- `provinceName` (string): Province name to generate page for
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `string` - Complete HTML document
+
+**Features:**
+
+- Lists all kabupaten/kota in the province
+- Shows school count per kabupaten/kota
+- Breadcrumb navigation
+- Responsive design with mobile support
+- Back-to-top button
+
+**Usage:**
+
+```javascript
+const { generateProvincePageHtml } = require('./templates/province-page');
+const html = generateProvincePageHtml('DKI Jakarta', schools);
+// Returns: '<!DOCTYPE html>\n<html lang="id">...'
+```
+
+---
+
+#### `filterSchoolsByProvince(schools, provinceName)`
+
+Filters schools by province name.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+- `provinceName` (string): Province name to filter by
+
+**Returns:** `Array<Object>` - Filtered schools for the province
+
+**Exact Match:** Uses strict equality (`===`) for province matching.
+
+**Usage:**
+
+```javascript
+const { filterSchoolsByProvince } = require('./templates/province-page');
+const jakartaSchools = filterSchoolsByProvince(schools, 'DKI Jakarta');
+console.log(`Found ${jakartaSchools.length} schools`);
+```
+
+---
+
+#### `aggregateByKabupaten(schools)`
+
+Aggregates school data by kabupaten/kota within a province.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects (should be filtered by province)
+
+**Returns:** `Array<Object>` - Array of kabupaten objects with school count
+
+```javascript
+[
+  { name: 'Jakarta Pusat', slug: 'jakarta-pusat', count: 150 },
+  { name: 'Jakarta Selatan', slug: 'jakarta-selatan', count: 200 },
+];
+```
+
+**Sorting:** Kabupaten are sorted alphabetically by Indonesian locale.
+
+**Usage:**
+
+```javascript
+const { aggregateByKabupaten } = require('./templates/province-page');
+const kabupatens = aggregateByKabupaten(jakartaSchools);
+kabupatens.forEach(k => console.log(`${k.name}: ${k.count}`));
+```
+
+---
+
+### Path Format
+
+Province pages are generated at:
+
+```
+/provinsi/{provinceSlug}/index.html
+```
+
+Example: `/provinsi/dki-jakarta/index.html`
 
 ## Build Pages Controller (`scripts/build-pages.js`)
 
@@ -1525,7 +1892,13 @@ module.exports = {
   writeSchoolPagesConcurrently: function,
   ensureDistDir: function,
   loadSchools: function,
-  generateExternalStyles: function
+  generateExternalStyles: function,
+  generateProvincePages: function,
+  preCreateProvinceDirectories: function,
+  build: function,
+  buildIncremental: function,
+  computeSchoolHash: function,
+  createManifestFromSchools: function,
 };
 ```
 
@@ -1555,9 +1928,7 @@ Loads processed school data from CSV file into array of objects.
 
 **Returns:** `Promise<Array<Object>>` - Array of school records
 
-**Throws:** N/A (returns empty array on error)
-
-**Error Handling:** Logs error and returns `[]` on failure
+**Throws:** `IntegrationError` with `FILE_EMPTY` code if CSV is empty or contains no records
 
 **Usage:**
 
@@ -1658,9 +2029,62 @@ console.log('Generated styles.css');
 
 ---
 
+#### `preCreateProvinceDirectories(schools)`
+
+Pre-creates all unique province directories (e.g., `dist/provinsi/{slug}/`).
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school objects
+
+**Returns:** `Promise<void>`
+
+**Dependencies:**
+
+- `getUniqueProvinces` (from `src/services/PageBuilder.js`)
+- `safeMkdir` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+await preCreateProvinceDirectories(schools);
+```
+
+---
+
+#### `generateProvincePages(schools)`
+
+Generates province-level index pages (e.g., `/provinsi/dki-jakarta/index.html`).
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Promise<Object>` - `{ successful: number, failed: number }`
+
+**Process:**
+
+1. Extracts unique provinces from school data
+2. Pre-creates province directories
+3. Generates province pages concurrently using `processConcurrently`
+
+**Dependencies:**
+
+- `getUniqueProvinces` (from `src/services/PageBuilder.js`)
+- `buildProvincePageData` (from `src/services/PageBuilder.js`)
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await generateProvincePages(schools);
+console.log(`Generated ${successful} province pages`);
+```
+
+---
+
 #### `writeSchoolPagesConcurrently(schools, concurrencyLimit)`
 
-Writes multiple school pages concurrently with controlled concurrency using rate limiter.
+Writes multiple school pages concurrently with controlled concurrency using `processConcurrently`.
 
 **Parameters:**
 
@@ -1679,13 +2103,13 @@ Writes multiple school pages concurrently with controlled concurrency using rate
 **Behavior:**
 
 - Pre-creates all unique directories first
-- Uses `RateLimiter` for controlled concurrency
+- Uses `processConcurrently` for controlled concurrency
 - Logs progress every 100 pages
 - Outputs build metrics (total, completed, failed, throughput)
 
 **Dependencies:**
 
-- `RateLimiter` (from `scripts/rate-limiter.js`)
+- `processConcurrently` (from `scripts/utils.js`)
 - `preCreateDirectories()`
 - `writeSchoolPage()`
 
@@ -1698,32 +2122,93 @@ console.log(`Generated ${successful} pages (${failed} failed)`);
 
 ---
 
-#### `build()`
+#### `computeSchoolHash(school)`
+
+Computes a deterministic hash for a school record to detect changes for incremental builds.
+
+**Parameters:**
+
+- `school` (Object): School data object
+
+**Returns:** `string` - Hash string
+
+**Usage:**
+
+```javascript
+const hash = computeSchoolHash(school);
+```
+
+---
+
+#### `createManifestFromSchools(schools)`
+
+Creates a build manifest object from school records for incremental build tracking.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school records
+
+**Returns:** `Object` - Manifest object with version, lastBuild timestamp, and per-school hashes
+
+**Usage:**
+
+```javascript
+const manifest = createManifestFromSchools(schools);
+```
+
+---
+
+#### `build(options)`
 
 Main build function that orchestrates the complete build process.
 
+**Parameters:**
+
+- `options` (Object, optional):
+  - `incremental` (boolean): If true, performs incremental build
+
 **Returns:** `Promise<void>`
 
-**Build Process:**
+**Build Process (full):**
 
 1. Ensures `dist/` directory exists
 2. Generates external `styles.css` file
 3. Loads school data from CSV
-4. Pre-creates unique directories
-5. Generates and writes all school pages concurrently
+4. Generates homepage (`index.html`)
+5. Generates province pages
+6. Generates and writes all school pages concurrently
+7. Saves build manifest for incremental builds
+
+**Build Process (incremental):**
+
+1. Ensures `dist/` directory exists
+2. Generates external `styles.css` file
+3. Loads school data from CSV
+4. Loads previous manifest
+5. Computes changed vs unchanged schools
+6. Generates homepage (always)
+7. Generates province pages (always)
+8. Generates only changed school pages
+9. Saves updated manifest
 
 **Dependencies:**
 
 - `ensureDistDir()`
 - `generateExternalStyles()`
 - `loadSchools()`
+- `generateHomepageHtml` (from `src/presenters/templates/homepage.js`)
+- `generateProvincePages()`
 - `writeSchoolPagesConcurrently()`
+- `loadManifest` / `saveManifest` (from `scripts/manifest.js`)
 
 **Usage:**
 
 ```javascript
+// Full build
 await build();
-console.log('Build complete');
+
+// Incremental build
+await build({ incremental: true });
 ```
 
 ---
