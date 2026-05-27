@@ -73,6 +73,7 @@ external/raw.csv → ETL Process → data/schools.csv → Build Process → dist
 | `npm run test:js:coverage:report` | Hasilkan laporan coverage HTML                 |
 | `npm run test:py`                 | Jalankan test Python                           |
 | `npm run test:ci`                 | Jalankan test untuk CI pipeline                |
+| `npm run cli`                     | Jalankan menu CLI interaktif                   |
 | `npm run coverage`                | Cek coverage (minimum 80% lines, 75% branches) |
 | `npm run coverage:report`         | Hasilkan laporan coverage detail               |
 
@@ -146,6 +147,24 @@ Untuk verbose output dengan metrik kualitas:
 ```bash
 node scripts/check-freshness.js --verbose
 ```
+
+### Menu CLI Interaktif
+
+Untuk kemudahan penggunaan, tersedia menu CLI interaktif:
+
+```bash
+npm run cli
+```
+
+Menu ini menyediakan akses cepat ke semua perintah umum:
+
+- **Development**: Menjalankan lint dan test
+- **Data Pipeline**: ETL, fetch data, pengecekkan kesegaran data
+- **Testing**: Semua test, JavaScript, Python, atau dengan coverage
+- **Validation**: Validasi tautan dan generate sitemap
+- **Utilities**: Lint dan format kode
+
+Menu ini berfungsi secara interaktif di terminal dan akan menampilkan daftar perintah jika dijalankan di lingkungan non-interaktif (CI).
 
 ## Struktur Direktori
 
