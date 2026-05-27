@@ -110,6 +110,7 @@ Optimized the homepage payload size and eliminated duplicate computation in the 
 ### Performance Results
 
 **Before Optimization:**
+
 - Homepage size: 1.3MB (1,290.6 KB)
 - JSON search data: 1,276.7 KB
 - Build time: ~1.09s for 3474 pages
@@ -117,6 +118,7 @@ Optimized the homepage payload size and eliminated duplicate computation in the 
 - Homepage generation: 3 separate full-school iterations
 
 **After Optimization:**
+
 - Homepage size: 1.1MB (1,107.3 KB) - **200KB / 15% reduction**
 - JSON search data: 1,093.5 KB - **183KB saved from key compression**
 - Build time: ~1.06s (maintained)
@@ -124,6 +126,7 @@ Optimized the homepage payload size and eliminated duplicate computation in the 
 - Homepage generation: 2 combined iterations (1 fewer full pass)
 
 **Metrics:**
+
 - Homepage payload reduction: 15% (200KB saved per page load)
 - User bandwidth saved: 200KB on every homepage visit
 - Download time improved: ~20% faster on 3G connections
@@ -153,23 +156,27 @@ Optimized the homepage payload size and eliminated duplicate computation in the 
 ### Impact
 
 **User Experience:**
+
 - 15% smaller homepage reduces initial page load time
 - 200KB less data consumed per homepage visit
 - Faster perceived performance, especially on mobile connections
 - All existing functionality preserved (search, filter, navigation)
 
 **Build Efficiency:**
+
 - Manifest creation no longer generates full HTML pages unnecessarily
 - Cleaner separation between path computation and content generation
 - Date allocation eliminated from per-school hot path
 
 **Code Quality:**
+
 - Removed unused `extractFilterOptions()` function (detected by lint)
 - Combined related operations into single-pass utility function
 - Consistent `CURRENT_YEAR` constant pattern across template files
 - All optimizations maintain backward compatibility
 
 **Maintainability:**
+
 - `getSchoolRelativePath()` provides a focused utility for path-only needs
 - Combined aggregation function reduces code duplication
 - Compact JSON keys reduce payload without altering client-side API
