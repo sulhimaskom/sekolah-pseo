@@ -1814,7 +1814,6 @@ git clone ...
 ```
 ````
 
-
 ```
 
 ### Key Enhancements
@@ -2965,19 +2964,18 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
-scripts/sitemap.test.js:  await fs.writeFile(path.join(testDir, 'script.js'), 'console.log()', 'utf8');
-scripts/etl.test.js:  console.log(`Data quality report benchmark: ${recordCount} records in ${elapsed.toFixed(2)}ms`);
-        # Subtest: should reject queued operations after timeout           duration_ms: 502.025861
-        # Subtest: should execute queued operations after active ones complete       duration_ms: 851.167885
-        # Subtest: should handle operations that return undefined   duration_ms: 1251.772514
-    # Subtest: respects custom maxAttempts       duration_ms: 706.063767
-    # Subtest: includes error details in retry exhaustion   duration_ms: 2220.797802
+
+scripts/sitemap.test.js: await fs.writeFile(path.join(testDir, 'script.js'), 'console.log()', 'utf8');
+scripts/etl.test.js: console.log(`Data quality report benchmark: ${recordCount} records in ${elapsed.toFixed(2)}ms`); # Subtest: should reject queued operations after timeout duration_ms: 502.025861 # Subtest: should execute queued operations after active ones complete duration_ms: 851.167885 # Subtest: should handle operations that return undefined duration_ms: 1251.772514 # Subtest: respects custom maxAttempts duration_ms: 706.063767 # Subtest: includes error details in retry exhaustion duration_ms: 2220.797802
 
 ### [CONSOLIDATE] Concurrency Control Logic
+
 Consolidated nearly identical concurrency control patterns in `scripts/build-pages.js` and `scripts/validate-links.js` into a reusable utility `processConcurrently` in `scripts/utils.js`. This reduces code duplication and standardizes how concurrency and rate limiting are handled across the project.
 
 ### [REMOVE] Unused Utility Function
+
 Removed `addNumbers` function from `scripts/utils.js` and its corresponding tests in `scripts/utils.test.js`. This function was identified as dead code during the TestGuard phase.
 
 ### [STRENGTHEN] Environment Agnostic Root Directory Testing
+
 Strengthened `scripts/config.test.js` by replacing the hardcoded project folder name check with a check for project markers (package.json). This ensures tests pass in various environments like CI/CD or different development containers.

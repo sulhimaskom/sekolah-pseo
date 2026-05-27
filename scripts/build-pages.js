@@ -67,10 +67,10 @@ async function loadSchools() {
 
   if (schools.length === 0) {
     throw new IntegrationError(
-          `No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`,
-          ERROR_CODES.FILE_EMPTY,
-          { path: CONFIG.SCHOOLS_CSV_PATH }
-        );
+      `No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`,
+      ERROR_CODES.FILE_EMPTY,
+      { path: CONFIG.SCHOOLS_CSV_PATH }
+    );
   }
 
   return schools;
@@ -159,7 +159,9 @@ async function generateProvincePages(schools) {
   );
 
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
+  const failed = results.filter(
+    r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
+  ).length;
 
   logger.info('Province build metrics:', {
     total: metrics.total,
@@ -284,12 +286,12 @@ async function build(options = {}) {
   precomputeSlugCache(schools);
 
   if (schools.length === 0) {
-      throw new IntegrationError(
-        'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
-        ERROR_CODES.FILE_EMPTY,
-        { path: CONFIG.SCHOOLS_CSV_PATH }
-      );
-    }
+    throw new IntegrationError(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+      ERROR_CODES.FILE_EMPTY,
+      { path: CONFIG.SCHOOLS_CSV_PATH }
+    );
+  }
 
   // Generate homepage
   logger.info('Generating homepage...');
@@ -324,12 +326,12 @@ async function buildIncremental() {
   precomputeSlugCache(schools);
 
   if (schools.length === 0) {
-      throw new IntegrationError(
-        'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
-        ERROR_CODES.FILE_EMPTY,
-        { path: CONFIG.SCHOOLS_CSV_PATH }
-      );
-    }
+    throw new IntegrationError(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+      ERROR_CODES.FILE_EMPTY,
+      { path: CONFIG.SCHOOLS_CSV_PATH }
+    );
+  }
 
   // Load manifest to check for changes
   const manifest = await loadManifest();
