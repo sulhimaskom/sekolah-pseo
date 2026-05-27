@@ -125,6 +125,7 @@ This project supports [VS Code Dev Containers](https://code.visualstudio.com/doc
 3. Click "Reopen in Container" when prompted
 
 The container will automatically:
+
 - Install Node.js dependencies
 - Set up ESLint and Prettier
 - Configure port forwarding for ports 3000 and 8080
@@ -132,12 +133,14 @@ The container will automatically:
 ### Recommended Extensions
 
 The devcontainer includes these extensions:
+
 - **ESLint** (`dbaeumer.vscode-eslint`) - JavaScript linting
 - **Prettier** (`esbenp.prettier-vscode`) - Code formatting
 
 ### Port Forwarding
 
 The following ports are forwarded:
+
 - `3000` - Application
 - `8080` - Preview
 

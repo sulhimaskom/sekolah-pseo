@@ -241,3 +241,6 @@ dist/
 # Data files (generated from external sources)
 data/
 schools.csv
+
+# OpenCode internal session data
+.omo/
