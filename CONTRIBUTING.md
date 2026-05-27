@@ -153,9 +153,14 @@ The following ports are forwarded:
 3. Run lint, format, and tests to ensure code quality
 4. Submit a pull request with a clear description
 
+## Reporting Security Issues
+
+If you discover a security vulnerability, please follow the process in [SECURITY.md](./SECURITY.md). Do NOT report security issues in public GitHub issues.
+
 ## Documentation
 
 - Project overview: `README.md` (in Indonesian)
 - Architecture: `docs/blueprint.md`
 - API documentation: `docs/api.md`
 - Testing guide: `docs/testing.md`
+- Security: `SECURITY.md`
