@@ -3,7 +3,13 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 
-const { fetchFromGitHub, findCsvFiles, copyToRaw, validateRepoUrl, validateBranchName } = require('./fetch-data');
+const {
+  fetchFromGitHub,
+  findCsvFiles,
+  copyToRaw,
+  validateRepoUrl,
+  validateBranchName,
+} = require('./fetch-data');
 
 describe('fetch-data', () => {
   describe('findCsvFiles', () => {

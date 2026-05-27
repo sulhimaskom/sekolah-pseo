@@ -191,7 +191,10 @@ describe('check-freshness', () => {
   describe('main() via CLI', () => {
     function extractJsonFromPino(raw) {
       // pino logs the stringified JSON in the msg field
-      const line = raw.trim().split('\n').find(l => l.includes('"msg"'));
+      const line = raw
+        .trim()
+        .split('\n')
+        .find(l => l.includes('"msg"'));
       if (!line) return null;
       const parsed = JSON.parse(line);
       return JSON.parse(parsed.msg);
