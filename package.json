@@ -26,6 +26,7 @@
     "test:ci": "npm run test:js && npm run test:py -- --json",
     "test:all": "npm run test:js && npm run test:py:pytest",
     "coverage": "c8 --reporter=text --reporter=text-summary --check-coverage --lines=80 --branches=75 node --test scripts/*.test.js",
+    "cli": "node scripts/interactive.js",
     "coverage:report": "c8 --reporter=text --reporter=html --reporter=text-summary node --test scripts/*.test.js"
   },
   "repository": {
