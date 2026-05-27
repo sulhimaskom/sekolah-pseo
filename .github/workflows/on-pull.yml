@@ -432,7 +432,6 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false

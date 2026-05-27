@@ -75,8 +75,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/00.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -84,8 +83,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/01.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -93,8 +91,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/02.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -102,8 +99,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/03.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -111,8 +107,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/04.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -120,8 +115,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/05.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -129,8 +123,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/06.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -138,8 +131,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/07.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -147,8 +139,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/08.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -156,8 +147,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/09.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -165,8 +155,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/10.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -174,8 +163,7 @@ jobs:
         timeout-minutes: 120
         run: |
           timeout -k 1m 90m opencode run "$(cat .github/prompt/11.md)" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false
 
@@ -540,7 +528,6 @@ jobs:
           END OF PROMPT
           PROMPT
           )" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
+            --model opencode/deepseek-v4-flash-free \
             --thinking false \
             --share false

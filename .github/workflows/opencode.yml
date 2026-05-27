@@ -139,9 +139,9 @@ jobs:
           - Mengabaikan test yang gagal tanpa analisis menyeluruh
           PROMPT
           )" \
-            --model iflowcn/glm-4.6 \
-            --repo ${{ github.repository }} \
-            --thinking false
+            --model opencode/deepseek-v4-flash-free \
+            --thinking false \
+            --share false
       
       - name: Verify PR Status
         id: verify_status
