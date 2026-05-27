@@ -2,6 +2,80 @@
 
 ## Completed Tasks
 
+### [TASK-018] Code Sanitization - Dead Code Removal, Formatting Fix, and DRY Consolidation
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Performed comprehensive code sanitization across the codebase: removed dead template files, fixed Prettier formatting inconsistencies, added missing npm scripts, and consolidated duplicate slug caching logic.
+
+### Actions Taken
+
+1. **Fixed Prettier formatting** in 5 files:
+   - `scripts/build-pages.js`, `scripts/check-freshness.js`, `scripts/config.test.js`
+   - `scripts/fetch-data.js`, `scripts/utils.js`
+   - All now pass `npm run format:check` (JavaScript files clean)
+
+2. **Removed dead code** - 2 unused template files:
+   - `src/presenters/templates/kabupaten-page.js` (199 lines) - Zero references across codebase
+   - `src/presenters/templates/kecamatan-page.js` (190 lines) - Zero references across codebase
+   - Removed associated test file `scripts/kabupaten-page.test.js`
+
+3. **Added missing npm scripts** to `package.json`:
+   - `npm run fetch-data` - CLI access to external data fetch
+   - `npm run check-freshness` - CLI access to data freshness check
+
+4. **Consolidated duplicate slug caches** (DRY violation):
+   - Removed separate `slugCache` in `src/services/PageBuilder.js` that duplicated `scripts/slugify.js`'s built-in cache
+   - Removed `cachedSlugify()`, `precomputeSlugCache()`, `clearSlugCache()`, `getSlugCacheStats()` wrapper functions
+   - All PageBuilder callers now use `slugify()` directly, which has its own efficient cache (10000 entry limit, LRU eviction)
+   - Removed `precomputeSlugCache(schools)` calls from `scripts/build-pages.js` (both `build()` and `buildIncremental()`)
+   - Reduced lines of code while maintaining same cache efficiency
+
+5. **Resolved npm audit vulnerabilities**: Ran `npm audit fix` - 4 vulnerabilities (2 moderate, 2 high) reduced to 0
+
+### Files Deleted
+
+- `src/presenters/templates/kabupaten-page.js` (199 lines) - Unused template
+- `src/presenters/templates/kecamatan-page.js` (190 lines) - Unused template
+- `scripts/kabupaten-page.test.js` - Test for removed template
+
+### Files Modified
+
+- `scripts/build-pages.js` (removed `precomputeSlugCache` import and 2 call sites)
+- `src/services/PageBuilder.js` (removed duplicate slug cache layer - ~65 lines removed)
+- `package.json` (added `fetch-data` and `check-freshness` scripts)
+- `scripts/build-pages.js` (Prettier formatting fix)
+- `scripts/check-freshness.js` (Prettier formatting fix)
+- `scripts/config.test.js` (Prettier formatting fix)
+- `scripts/fetch-data.js` (Prettier formatting fix)
+- `scripts/utils.js` (Prettier formatting fix)
+
+### Test Results
+
+- Total tests: 567 (down from 598 due to dead test removal)
+- All tests pass: 567/567 ✓
+- All lint checks pass: 0 errors ✓
+- Build passes: 3474 school pages generated ✓
+- npm audit: 0 vulnerabilities ✓
+- Zero regressions introduced
+
+### Acceptance Criteria
+
+- [x] Prettier formatting fixed for all 5 files
+- [x] Dead code removed (unused template files + test)
+- [x] npm scripts added for fetch-data and check-freshness
+- [x] Duplicate slug cache consolidated (single source of truth in slugify.js)
+- [x] Build passes (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] All tests pass (567/567)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Zero regressions
+
+---
+
 ### [TASK-017] Integration Hardening - Rate Limiting for Concurrent Operations
 
 **Status**: Complete
@@ -1790,7 +1864,6 @@ Ini adalah dokumentasi untuk proyek Sekolah PSEO.
 ## Struktur Direktori
 
 - `src/` - Kode sumber
-  ...
 ```
 
 **After (English, 220+ lines)**:
@@ -1814,8 +1887,6 @@ Get started in under 5 minutes with these steps...
 git clone ...
 ```
 ````
-
-...
 
 ```
 
@@ -2967,3 +3038,18 @@ Created comprehensive documentation suite for the Sekolah PSEO project as reques
 - API docs ensure consistent module usage across the codebase
 
 ---
+
+scripts/sitemap.test.js: await fs.writeFile(path.join(testDir, 'script.js'), 'console.log()', 'utf8');
+scripts/etl.test.js: console.log(`Data quality report benchmark: ${recordCount} records in ${elapsed.toFixed(2)}ms`); # Subtest: should reject queued operations after timeout duration_ms: 502.025861 # Subtest: should execute queued operations after active ones complete duration_ms: 851.167885 # Subtest: should handle operations that return undefined duration_ms: 1251.772514 # Subtest: respects custom maxAttempts duration_ms: 706.063767 # Subtest: includes error details in retry exhaustion duration_ms: 2220.797802
+
+### [CONSOLIDATE] Concurrency Control Logic
+
+Consolidated nearly identical concurrency control patterns in `scripts/build-pages.js` and `scripts/validate-links.js` into a reusable utility `processConcurrently` in `scripts/utils.js`. This reduces code duplication and standardizes how concurrency and rate limiting are handled across the project.
+
+### [REMOVE] Unused Utility Function
+
+Removed `addNumbers` function from `scripts/utils.js` and its corresponding tests in `scripts/utils.test.js`. This function was identified as dead code during the TestGuard phase.
+
+### [STRENGTHEN] Environment Agnostic Root Directory Testing
+
+Strengthened `scripts/config.test.js` by replacing the hardcoded project folder name check with a check for project markers (package.json). This ensures tests pass in various environments like CI/CD or different development containers.

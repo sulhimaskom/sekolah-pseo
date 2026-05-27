@@ -11,6 +11,8 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
+    "fetch-data": "node scripts/fetch-data.js",
+    "check-freshness": "node scripts/check-freshness.js",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

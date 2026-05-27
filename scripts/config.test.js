@@ -45,7 +45,13 @@ describe('config', () => {
     });
 
     it('points to project root', () => {
-      assert.ok(CONFIG.ROOT_DIR.endsWith('sekolah-pseo'));
+      // In CI/CD or different environments, the folder name might vary (e.g., 'app' instead of 'sekolah-pseo')
+      // Instead of checking folder name, check for existence of project markers
+      const fs = require('fs');
+      assert.ok(
+        fs.existsSync(path.join(CONFIG.ROOT_DIR, 'package.json')),
+        'ROOT_DIR should contain package.json'
+      );
     });
   });
 

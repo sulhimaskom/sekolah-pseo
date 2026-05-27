@@ -15,8 +15,6 @@ const { IntegrationError, ERROR_CODES } = require('./resilience');
 const CONFIG = require('./config');
 const logger = require('./logger');
 
-
-
 const DEFAULT_MAX_AGE_DAYS = 7;
 
 /**
@@ -97,7 +95,6 @@ function getDataFreshness() {
   }
 }
 
-
 /**
  * Calculate data quality metrics
  * @returns {Object} Quality metrics
@@ -171,7 +168,6 @@ function getDataQualityMetrics() {
     );
   }
 }
-
 
 /**
  * Main function
