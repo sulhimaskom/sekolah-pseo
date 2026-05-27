@@ -3003,215 +3003,217 @@ Set log level dynamically.
 logger.setLevel('debug'); // Enable debug logging
 ```
 
-#YS|
+
 
 ## Data Freshness Module (`scripts/check-freshness.js`)
 
-#ZP|
-#XJ|### Purpose
-#SM|
-#NK|Checks the freshness of school data and generates quality metrics reports. Can be run locally or in CI/CD pipelines to ensure data is up-to-date.
-#YK|
-#ZB|### Exports
-#ZT|
-XH|`javascript
-#RZ|module.exports = {
-#NX|  getDataFreshness: function,
-#VM|  getDataQualityMetrics: function
-#NT|};`
 
-#XZ|### Constants
+### Purpose
 
-#HZ|- `DEFAULT_MAX_AGE_DAYS`: Maximum acceptable age of data in days (default: 7)
+Checks the freshness of school data and generates quality metrics reports. Can be run locally or in CI/CD pipelines to ensure data is up-to-date.
 
-#XZ|### Functions
+### Exports
 
-#VR|#### `getDataFreshness()`
-
-#KX|Jets the most recent update date from schools.csv and determines if data is fresh.
-
-#JR|**Returns:** `Object` - Freshness information
-
-#QW|`javascript
-#VB|{
-#RN|  exists: boolean,      // Whether schools.csv exists
-#TV|  date: string|null,  // ISO date string or null
-#MW|  daysAgo: number|null, // Days since last update or null
-#HV|  recordCount: number, // Total number of school records
-#HB|  isFresh: boolean    // true if data is within DEFAULT_MAX_AGE_DAYS
-#KV|}`
-
-#TB|**Freshness Threshold:** Data is considered fresh if `daysAgo <= 7` (DEFAULT_MAX_AGE_DAYS)
-
-#TQ|**Usage:**
-
-#XH|``javascript
-#VB|const { getDataFreshness } = require('./check-freshness');
-#RN|const freshness = getDataFreshness();
-#KV|#
-#KV|# If freshness.isFresh is false, data needs updating
-#HB|if (!freshness.isFresh) {
-#MT|  console.log(`Data is ${freshness.daysAgo} days old - consider refreshing`);
-#KV|}``
-
-#HT|---
-
-#VR|#### `getDataQualityMetrics()`
-
-#KX|Calculates data quality metrics from schools.csv.
-
-#JR|**Returns:** `Object|null` - Quality metrics or null if file doesn't exist
-
-#QW|`javascript
-#VB|{
-#RN|  totalRecords: number,
-#MW|  metrics: {
-#HB|    coordinates: { count: number, percentage: string },
-#MT|    address: { count: number, percentage: string },
-#KV|    npsn: { count: number, percentage: string },
-#YJ|    province: { count: number, percentage: string }
-#KV|  }
-#KV|}`
-
-#TB|**Quality Metrics:**
-
-#HB|- **coordinates**: Records with valid lat/lon values
-#MT|- **address**: Records with non-empty address fields
-#KV|- **npsn**: Records with valid NPSN (numeric)
-#YJ|- **province**: Records with province information
-
-#TQ|**Usage:**
-
-#XH|``javascript
-#VB|const { getDataQualityMetrics } = require('./check-freshness');
-#RN|#const quality = getDataQualityMetrics();
-#KV|#if (quality) {
-#MT|#  console.log(`Records with coordinates: ${quality.metrics.coordinates.percentage}%`);
-#KV|#}``
-
-#HT|---
-
-#KV|### CLI Usage
-
-#XZ|The module can be run directly from the command line:
-
-#HB|`bash
-#MT|# Basic check
-#KV|node scripts/check-freshness.js
-#KV|#
-#KV|# JSON output
-#MT|node scripts/check-freshness.js --json
-#KV|#
-#KV|# Verbose output with quality metrics
-#MT|node scripts/check-freshness.js --verbose
-#KV|`
-
-#KV|Exit Codes:
-#HB|- `0`: Data is fresh
-#MT|- `1`: Data is stale or error occurred
-
-#KV|---
-
-#KV|## Fetch Data Module (`scripts/fetch-data.js`)
-#ZP|
-#XJ|### Purpose
-#SM|
-#NK|Fetches the latest school data from external GitHub repositories. Supports cloning or updating external data sources.
-#YK|
-#ZB|### Exports
-#ZT|
+```javascript
 module.exports = {
-fetchFromGitHub: function,
-findCsvFiles: function,
-copyToRaw: function,
-validateRepoUrl: function
+  getDataFreshness: function,
+  getDataQualityMetrics: function
+};```
+
+### Constants
+
+- `DEFAULT_MAX_AGE_DAYS`: Maximum acceptable age of data in days (default: 7)
+
+### Functions
+
+#### `getDataFreshness()`
+
+Jets the most recent update date from schools.csv and determines if data is fresh.
+
+**Returns:** `Object` - Freshness information
+
+```javascript
+{
+  exists: boolean,      // Whether schools.csv exists
+  date: string|null,  // ISO date string or null
+  daysAgo: number|null, // Days since last update or null
+  recordCount: number, // Total number of school records
+  isFresh: boolean    // true if data is within DEFAULT_MAX_AGE_DAYS
+}```
+
+**Freshness Threshold:** Data is considered fresh if `daysAgo <= 7` (DEFAULT_MAX_AGE_DAYS)
+
+**Usage:**
+
+```javascript
+const { getDataFreshness } = require('./check-freshness');
+const freshness = getDataFreshness();
+
+// If freshness.isFresh is false, data needs updating
+if (!freshness.isFresh) {
+  console.log(`Data is ${freshness.daysAgo} days old - consider refreshing`);
+}```
+
+---
+
+#### `getDataQualityMetrics()`
+
+Calculates data quality metrics from schools.csv.
+
+**Returns:** `Object|null` - Quality metrics or null if file doesn't exist
+
+```javascript
+{
+  totalRecords: number,
+  metrics: {
+    coordinates: { count: number, percentage: string },
+    address: { count: number, percentage: string },
+    npsn: { count: number, percentage: string },
+    province: { count: number, percentage: string }
+  }
+}```
+
+**Quality Metrics:**
+
+- **coordinates**: Records with valid lat/lon values
+- **address**: Records with non-empty address fields
+- **npsn**: Records with valid NPSN (numeric)
+- **province**: Records with province information
+
+**Usage:**
+
+```javascript
+const { getDataQualityMetrics } = require('./check-freshness');
+const quality = getDataQualityMetrics();
+if (quality) {
+  console.log(`Records with coordinates: ${quality.metrics.coordinates.percentage}%`);
+}```
+
+---
+
+### CLI Usage
+
+The module can be run directly from the command line:
+
+```bash
+# Basic check
+node scripts/check-freshness.js
+
+# JSON output
+node scripts/check-freshness.js --json
+
+# Verbose output with quality metrics
+node scripts/check-freshness.js --verbose
+```
+
+Exit Codes:
+- `0`: Data is fresh
+- `1`: Data is stale or error occurred
+
+---
+
+## Fetch Data Module (`scripts/fetch-data.js`)
+
+### Purpose
+
+Fetches the latest school data from external GitHub repositories. Supports cloning or updating external data sources.
+
+### Exports
+
+```javascript
+module.exports = {
+  fetchFromGitHub: function,
+  findCsvFiles: function,
+  copyToRaw: function,
+  validateRepoUrl: function
 };
+```
 
-#XZ|### Constants
+### Constants
 
-#HZ|- `DEFAULT_SOURCE_REPO`: Default GitHub repository URL
-#HB|- `DEFAULT_BRANCH`: Default branch name (default: 'main')
-#KV|- `EXTERNAL_DATA_DIR`: Directory for cloned external data
+- `DEFAULT_SOURCE_REPO`: Default GitHub repository URL
+- `DEFAULT_BRANCH`: Default branch name (default: 'main')
+- `EXTERNAL_DATA_DIR`: Directory for cloned external data
 
-#XZ|### Functions
+### Functions
 
-#VR|#### `fetchFromGitHub(repoUrl, branch)`
+#### `fetchFromGitHub(repoUrl, branch)`
 
-#KX|Clones or updates the external data repository and finds the best CSV file.
+Clones or updates the external data repository and finds the best CSV file.
 
-#RH|**Parameters:**
+**Parameters:**
 
-#VB|- `repoUrl` (string, optional): Git repository URL
-#JX|- `branch` (string, optional): Branch name
+- `repoUrl` (string, optional): Git repository URL
+- `branch` (string, optional): Branch name
 
-#BR|**Returns:** `string|null` - Path to CSV file or null if failed
+**Returns:** `string|null` - Path to CSV file or null if failed
 
-#VM|**Behavior:**
+**Behavior:**
 
-#KV|- Clones repository if not exists
-#HB|- Updates existing repository if already cloned
-#MT|- Searches for CSV files with preferred names: sekolah.csv, data.csv, schools.csv, daftarsekolah.csv
+- Clones repository if not exists
+- Updates existing repository if already cloned
+- Searches for CSV files with preferred names: sekolah.csv, data.csv, schools.csv, daftarsekolah.csv
 
-#TQ|**Usage:**
+**Usage:**
 
-#XH|``javascript
-#VB|const { fetchFromGitHub } = require('./fetch-data');
-#RN|#const csvPath = await fetchFromGitHub();
-#KV|#if (csvPath) {
-#MT|#  console.log(`Using: ${csvPath}`);
-#KV|#}``
+```javascript
+const { fetchFromGitHub } = require('./fetch-data');
+const csvPath = await fetchFromGitHub();
+if (csvPath) {
+  console.log(`Using: ${csvPath}`);
+}```
 
-#HT|---
+---
 
-#VR|#### `findCsvFiles(dir)`
+#### `findCsvFiles(dir)`
 
-#KX|Recursively finds all CSV files in a directory.
+Recursively finds all CSV files in a directory.
 
-#RH|**Parameters:**
+**Parameters:**
 
-#VB|- `dir` (string): Directory path to search
+- `dir` (string): Directory path to search
 
-#BR|**Returns:** `string[]` - Array of CSV file paths
+**Returns:** `string[]` - Array of CSV file paths
 
-#VM|**Behavior:**
+**Behavior:**
 
-#KV|- Recursively traverses directory tree
-#HB|- Only includes .csv files
-#MT|- Excludes hidden directories (starting with '.')
+- Recursively traverses directory tree
+- Only includes .csv files
+- Excludes hidden directories (starting with '.')
 
-#TQ|**Usage:**
+**Usage:**
 
-#XH|``javascript
-#VB|const { findCsvFiles } = require('./fetch-data');
-#RN|#const files = findCsvFiles('/path/to/data');
-#MT|#console.log(`Found ${files.length} CSV files`);``
+```javascript
+const { findCsvFiles } = require('./fetch-data');
+const files = findCsvFiles('/path/to/data');
+console.log(`Found ${files.length} CSV files`);```
 
-#HT|---
+---
 
-#VR|#### `copyToRaw(sourcePath, destPath)`
+#### `copyToRaw(sourcePath, destPath)`
 
-#KX|Copies external CSV file to raw data location.
+Copies external CSV file to raw data location.
 
-#RH|**Parameters:**
+**Parameters:**
 
-#VB|- `sourcePath` (string): Source CSV file path
-#JX|- `destPath` (string): Destination path
+- `sourcePath` (string): Source CSV file path
+- `destPath` (string): Destination path
 
-#BR|**Returns:** `boolean` - Success status
+**Returns:** `boolean` - Success status
 
-#VM|**Behavior:**
+**Behavior:**
 
-#KV|- Creates destination directory if needed
-#HB|- Uses fs.copyFileSync for reliable copying
+- Creates destination directory if needed
+- Uses fs.copyFileSync for reliable copying
 
-#TQ|**Usage:**
+**Usage:**
 
-#XH|`javascript
-#VB|const { copyToRaw } = require('./fetch-data');
-#RN|#const success = copyToRaw('/source/data.csv', '/path/to/raw.csv');
-#MT|#if (success) {
-#KV|#  console.log('File copied successfully');
-#KV|#}`
+```javascript
+const { copyToRaw } = require('./fetch-data');
+const success = copyToRaw('/source/data.csv', '/path/to/raw.csv');
+if (success) {
+  console.log('File copied successfully');
+}```
 
 ---
 
@@ -3248,22 +3250,22 @@ validateRepoUrl('https://evil.com'); // Error: must end with .git
 
 ---
 
-#KV|### CLI Usage
+### CLI Usage
 
-#XZ|The module can be run directly from the command line:
+The module can be run directly from the command line:
 
-#HB|`bash
-#MT|# Default fetch
-#KV|node scripts/fetch-data.js
-#KV|#
-#KV|# Specify output path
-#MT|node scripts/fetch-data.js --output custom/path.csv
-#KV|#
-#KV|# Specify source repository
-#MT|node scripts/fetch-data.js --source https://github.com/user/repo.git
-#KV|`
+```bash
+# Default fetch
+node scripts/fetch-data.js
 
-#HT|---
+# Specify output path
+node scripts/fetch-data.js --output custom/path.csv
+
+# Specify source repository
+node scripts/fetch-data.js --source https://github.com/user/repo.git
+```
+
+---
 
 ## Build Manifest Module (`scripts/manifest.js`)
 
