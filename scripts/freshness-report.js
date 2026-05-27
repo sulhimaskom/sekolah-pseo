@@ -17,6 +17,7 @@ const path = require('path');
 const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');
 const { safeWriteFile, safeMkdir } = require('./fs-safe');
 const CONFIG = require('./config');
+const logger = require('./logger');
 const { DESIGN_TOKENS } = require('../src/presenters/design-system');
 
 const REPORT_DIR = path.join(CONFIG.DIST_DIR, 'freshness-report');
@@ -284,7 +285,7 @@ async function main() {
   const quality = getDataQualityMetrics();
 
   if (!freshness.exists) {
-    console.error('No schools.csv found. Run ETL first.');
+    logger.error('No schools.csv found. Run ETL first.');
     process.exit(1);
   }
 
@@ -296,6 +297,7 @@ async function main() {
   await safeMkdir(REPORT_DIR, { recursive: true });
   const html = generateHtml(freshness, quality);
   await safeWriteFile(REPORT_FILE, html);
+  logger.info({ reportFile: REPORT_FILE, status: freshness.isFresh ? 'fresh' : 'stale', daysOld: freshness.daysAgo, recordCount: freshness.recordCount }, 'Freshness report generated');
   console.log(`✅ Freshness report generated: ${REPORT_FILE}`);
   console.log(
     `   Status: ${freshness.isFresh ? 'Fresh' : 'Stale'} (${freshness.daysAgo} days old)`
