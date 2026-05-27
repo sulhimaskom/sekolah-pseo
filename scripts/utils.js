@@ -3,8 +3,9 @@
  */
 
 const path = require('path');
-const { safeReaddir, safeStat } = require('./fs-safe');
+const { safeReaddir, safeStat, safeWriteFile } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+const { RateLimiter } = require('./rate-limiter');
 const logger = require('./logger');
 
 /**
@@ -178,8 +179,6 @@ async function writeCsv(data, outputPath) {
     });
   }
 
-  const { safeWriteFile } = require('./fs-safe');
-
   const header = Object.keys(data[0]);
   const lines = [header.join(',')];
 
@@ -265,7 +264,6 @@ function terminate(message, code = 1) {
  * @returns {Promise<Object>} - Object containing results and metrics
  */
 async function processConcurrently(items, processor, options = {}) {
-  const { RateLimiter } = require('./rate-limiter');
   const limit = options.limit || 100;
   const timeout = options.timeout || 30000;
   const namePrefix = options.namePrefix || 'op';
