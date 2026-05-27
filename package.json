@@ -13,6 +13,7 @@
     "validate-links": "node scripts/validate-links.js",
     "fetch-data": "node scripts/fetch-data.js",
     "check-freshness": "node scripts/check-freshness.js",
+    "freshness-report": "node scripts/freshness-report.js",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
