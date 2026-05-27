@@ -11,6 +11,8 @@
     "etl": "node scripts/etl.js",
     "sitemap": "node scripts/sitemap.js",
     "validate-links": "node scripts/validate-links.js",
+    "fetch-data": "node scripts/fetch-data.js",
+    "check-freshness": "node scripts/check-freshness.js",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -48,11 +50,12 @@
   "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme",
   "devDependencies": {
     "c8": "^11.0.0",
-    "eslint": "^9.0.0",
-    "globals": "^17.3.0",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "prettier": "^3.8.3"
+    "lint-staged": "^17.0.5",
+    "picomatch": "^2.3.2",
+    "prettier": "^3.4.2"
   },
   "c8": {
     "reporter": [
