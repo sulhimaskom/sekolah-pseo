@@ -16,12 +16,11 @@
  * }
  */
 
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
+const { safeReadFile, safeWriteFile, safeAccess, safeUnlink } = require('./fs-safe');
 
 const MANIFEST_FILE = '.build-manifest.json';
 const MANIFEST_VERSION = 1;
@@ -159,8 +158,7 @@ async function clearManifest() {
   const manifestPath = path.join(CONFIG.ROOT_DIR, MANIFEST_FILE);
 
   try {
-    await safeAccess(manifestPath);
-    await fs.promises.unlink(manifestPath);
+    await safeUnlink(manifestPath);
     logger.info('Build manifest cleared');
   } catch {
     // File doesn't exist - that's fine

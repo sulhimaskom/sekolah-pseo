@@ -1,5 +1,6 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
+const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 
 /**
  * Extract unique values for filter dropdowns
@@ -259,11 +260,7 @@ function generateHomepageHtml(schools) {
     <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
-  <button class="back-to-top" aria-label="Kembali ke atas">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="18 15 12 9 6 15"></polyline>
-    </svg>
-  </button>
+  ${generateBackToTopHtml()}
   
   <!-- Embedded school data for client-side search -->
   <script id="school-data" type="application/json">${safeSchoolDataJson}</script>
@@ -272,26 +269,8 @@ function generateHomepageHtml(schools) {
     (function() {
       'use strict';
       
-      // ===== Back to Top Functionality =====
-      var backToTop = document.querySelector('.back-to-top');
-      if (backToTop) {
-        function handleScroll() {
-          if (window.scrollY > 300) {
-            backToTop.classList.add('visible');
-          } else {
-            backToTop.classList.remove('visible');
-          }
-        }
-        
-        function scrollToTop() {
-          var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-          window.scrollTo({ top: 0, behavior: behavior });
-        }
-        
-        backToTop.addEventListener('click', scrollToTop);
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-      }
+      // ===== Back to Top (shared module) =====
+      ${generateBackToTopScript().replace('<script>', '').replace('</script>', '').trim()}
       
       // ===== School Search Functionality =====
       var schoolDataElement = document.getElementById('school-data');

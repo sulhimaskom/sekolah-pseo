@@ -156,6 +156,20 @@ function createFsSafe(options = {}) {
     });
   }
 
+  function safeUnlink(filePath, fileOptions = {}) {
+    return retry(
+      () => withTimeout(fs.unlink(filePath), fileOptions.timeoutMs || 5000, `unlink: ${filePath}`),
+      { maxAttempts: fileOptions.maxAttempts || 3 }
+    ).catch(error => {
+      if (error.code === 'ENOENT') return;
+      throw new IntegrationError(
+        `Failed to delete file ${filePath}`,
+        ERROR_CODES.FILE_WRITE_ERROR,
+        { filePath, originalError: error.message }
+      );
+    });
+  }
+
   return {
     safeReadFile,
     safeWriteFile,
@@ -163,6 +177,7 @@ function createFsSafe(options = {}) {
     safeAccess,
     safeReaddir,
     safeStat,
+    safeUnlink,
     resetCircuitBreakers,
     fileReadCircuitBreaker,
     fileWriteCircuitBreaker,
@@ -180,6 +195,7 @@ const {
   safeAccess,
   safeReaddir,
   safeStat,
+  safeUnlink,
   resetCircuitBreakers,
   fileReadCircuitBreaker,
   fileWriteCircuitBreaker,
@@ -195,6 +211,7 @@ module.exports = {
   safeAccess,
   safeReaddir,
   safeStat,
+  safeUnlink,
   // Utility functions
   DEFAULT_FILE_TIMEOUT_MS,
   resetCircuitBreakers,
