@@ -129,19 +129,19 @@ Moved inline CSS from 404.html to centralized styles.css:
 3. **Consistent with other pages** - Now follows same pattern as homepage, school-page, and province-page templates
 
 4. **Uses design tokens** - All styling uses CSS custom properties from design-system for consistency
-#JH|4. **Uses design tokens** - All styling uses CSS custom properties from design-system for consistency
-#WZ|
-#QX|
-#BT|### Remove Orphaned CSS Rules and Duplicate Fields (2026-02-27)
-#QS|
-#WZ|Fixed code quality issues in the frontend templates:
-#QR|
-#XB|1. **Removed orphaned CSS in styles.js** - 6 lines of invalid CSS properties (font-size, color, background-color, padding, border-radius) were outside any CSS selector, causing parsing issues
-#WX|
-#BV|2. **Removed duplicate provinceSlug** - The `provinceSlug` field was defined twice in `prepareSchoolDataForSearch` function
-#RS|
-#XM|3. **Removed unused slug fields** - Removed `kabKotaSlug`, `kecamatanSlug`, and `namaSlug` fields that were never used in the JavaScript code, reducing unnecessary data processing
-#VM|
+   #JH|4. **Uses design tokens** - All styling uses CSS custom properties from design-system for consistency
+   #WZ|
+   #QX|
+   #BT|### Remove Orphaned CSS Rules and Duplicate Fields (2026-02-27)
+   #QS|
+   #WZ|Fixed code quality issues in the frontend templates:
+   #QR|
+   #XB|1. **Removed orphaned CSS in styles.js** - 6 lines of invalid CSS properties (font-size, color, background-color, padding, border-radius) were outside any CSS selector, causing parsing issues
+   #WX|
+   #BV|2. **Removed duplicate provinceSlug** - The `provinceSlug` field was defined twice in `prepareSchoolDataForSearch` function
+   #RS|
+   #XM|3. **Removed unused slug fields** - Removed `kabKotaSlug`, `kecamatanSlug`, and `namaSlug` fields that were never used in the JavaScript code, reducing unnecessary data processing
+   #VM|
 
 #QX|#PR|4. **Tests verified** - All 558 tests pass, ESLint clean
 #QW|
@@ -150,14 +150,14 @@ Moved inline CSS from 404.html to centralized styles.css:
 #JB|Added Open Graph meta tags to all page templates and fixed a bug in kabupaten-page.js:
 #QW|
 #QW|1. **Added OG tags to all templates** - Homepage, province-page, kabupaten-page, and kecamatan-page now have:
-#QV|   - `og:title` - Page-specific title for social media
-#QV|   - `og:description` - Meta description for social sharing
-#QV|   - `og:type` - Set to "website"
-#QV|   - `og:url` - Canonical URL for the page
+#QV| - `og:title` - Page-specific title for social media
+#QV| - `og:description` - Meta description for social sharing
+#QV| - `og:type` - Set to "website"
+#QV| - `og:url` - Canonical URL for the page
 #QW|
 #QW|2. **Fixed duplicate head bug** - Removed duplicate `<head>` section in kabupaten-page.js:
-#QV|   - The original file had duplicate favicon, canonical URL, and stylesheet links
-#QV|   - This caused invalid HTML output with duplicate meta tags
+#QV| - The original file had duplicate favicon, canonical URL, and stylesheet links
+#QV| - This caused invalid HTML output with duplicate meta tags
 #QW|
 #QW|3. **Build verified** - All 3474+ pages generated successfully with correct OG tags
 #QW|4. **All tests pass** - 27 tests pass, ESLint clean

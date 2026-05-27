@@ -74,6 +74,46 @@ function validateRepoUrl(url) {
 }
 
 /**
+ * Validates a Git branch name to prevent command injection in execSync.
+ * Only allows safe characters: alphanumeric, hyphens, underscores, dots, slashes.
+ * @param {string} branchName - The branch name to validate
+ * @returns {string} The validated branch name
+ * @throws {IntegrationError} If branch name contains unsafe characters
+ */
+function validateBranchName(branchName) {
+  // Git branch naming rules: allows alphanumeric, hyphen, underscore, dot, forward slash
+  // Reject any branch name with shell metacharacters
+  if (typeof branchName !== 'string' || branchName.length === 0) {
+    throw new IntegrationError(
+      'Branch name must be a non-empty string.',
+      ERROR_CODES.VALIDATION_ERROR,
+      {
+        reason: 'Invalid branch name type or empty',
+      }
+    );
+  }
+
+  if (!/^[a-zA-Z0-9_\-.\\/]+$/.test(branchName)) {
+    throw new IntegrationError(
+      `Invalid branch name: "${branchName}". Branch names can only contain alphanumeric characters, hyphens, underscores, dots, and slashes.`,
+      ERROR_CODES.VALIDATION_ERROR,
+      { branchName }
+    );
+  }
+
+  // Prevent path traversal / hidden directories
+  if (branchName.startsWith('.') || branchName.includes('..')) {
+    throw new IntegrationError(
+      `Invalid branch name: "${branchName}". Branch names cannot start with a dot or contain double dots.`,
+      ERROR_CODES.VALIDATION_ERROR,
+      { branchName }
+    );
+  }
+
+  return branchName;
+}
+
+/**
  * Clone or update the external data repository
  * @param {string} repoUrl - Git repository URL
  * @param {string} branch - Branch name
@@ -82,6 +122,8 @@ function validateRepoUrl(url) {
 function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH) {
   // Validate and sanitize the repo URL to prevent command injection
   const safeRepoUrl = validateRepoUrl(repoUrl);
+  // Validate branch name to prevent command injection in execSync
+  const safeBranch = validateBranchName(branch);
   logger.info(`Fetching data from: ${safeRepoUrl}`);
 
   try {
@@ -95,7 +137,7 @@ function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH)
     } else {
       logger.info('Updating external data repository...');
       execSync('git fetch origin', { cwd: EXTERNAL_DATA_DIR, stdio: 'inherit' });
-      execSync(`git checkout ${branch}`, { cwd: EXTERNAL_DATA_DIR, stdio: 'inherit' });
+      execSync(`git checkout ${safeBranch}`, { cwd: EXTERNAL_DATA_DIR, stdio: 'inherit' });
     }
 
     // Find CSV files in the repository

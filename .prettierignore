@@ -1,0 +1,6 @@
+node_modules/
+.omo/
+.git/
+dist/
+coverage/
+bug.md
