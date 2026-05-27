@@ -5,6 +5,7 @@
 const path = require('path');
 const { safeReaddir, safeStat } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+const logger = require('./logger');
 
 /**
  * Recursively walk a directory tree and process each file with a callback.
@@ -123,20 +124,6 @@ function parseCsvLine(line) {
   return result;
 }
 
-/**
- * Function to compute the sum of two numbers
- *
- * @param {number} a - First number
- * @param {number} b - Second number
- * @returns {number} - Sum of the two numbers
- */
-function addNumbers(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    throw new IntegrationError('Both parameters must be finite numbers', ERROR_CODES.INVALID_INPUT, { reason: 'non_finite_number' });
-  }
-  return a + b;
-}
-
 function escapeHtml(text) {
   if (text === null || text === undefined) {
     return '';
@@ -247,9 +234,69 @@ function escapeCsvField(value) {
 
   return str;
 }
+/**
+ * Log message and terminate process with given exit code.
+ *
+ * @param {string} message - Message to log
+ * @param {number} code - Exit code (default: 1)
+ */
+function terminate(message, code = 1) {
+  if (code === 0) {
+    logger.info(message);
+  } else {
+    logger.error(message);
+  }
+  process.exit(code);
+}
+
+/**
+ * Processes items concurrently with a given limit using RateLimiter.
+ *
+ * @param {Array} items - Items to process
+ * @param {Function} processor - Function that processes a single item (receives item, index)
+ * @param {Object} options - Configuration options
+ * @param {number} options.limit - Max concurrent operations
+ * @param {number} options.timeout - Queue timeout in ms
+ * @param {string} options.namePrefix - Prefix for operation names
+ * @param {Function} options.getName - Optional function to generate operation name (receives item, index)
+ * @param {Function} options.onProgress - Optional progress callback (processed, total)
+ * @returns {Promise<Object>} - Object containing results and metrics
+ */
+async function processConcurrently(items, processor, options = {}) {
+  const { RateLimiter } = require('./rate-limiter');
+  const limit = options.limit || 100;
+  const timeout = options.timeout || 30000;
+  const namePrefix = options.namePrefix || 'op';
+  const onProgress = options.onProgress;
+
+  const limiter = new RateLimiter({
+    maxConcurrent: limit,
+    queueTimeoutMs: timeout,
+  });
+
+  let processed = 0;
+  const promises = items.map((item, index) => {
+    const opName = options.getName ? options.getName(item, index) : `${namePrefix}-${index}`;
+    return limiter.execute(async () => {
+      const result = await processor(item, index);
+      processed++;
+      if (typeof onProgress === 'function') {
+        onProgress(processed, items.length);
+      }
+      return result;
+    }, opName);
+  });
+
+  const results = await Promise.allSettled(promises);
+
+  return {
+    results,
+    metrics: limiter.getMetrics(),
+  };
+}
+
 module.exports = {
   parseCsv,
-  addNumbers,
   escapeHtml,
   escapeCsvField,
   walkDirectory,
@@ -257,4 +304,6 @@ module.exports = {
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
+  terminate,
+  processConcurrently,
 };

@@ -10,8 +10,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
-const { walkDirectory } = require('./utils');
-const { RateLimiter } = require('./rate-limiter');
+const { walkDirectory, processConcurrently } = require('./utils');
 
 // Export functions for testing
 module.exports = {
@@ -116,38 +115,35 @@ async function validateLinks() {
     return true;
   }
 
-  const limiter = new RateLimiter({
-    maxConcurrent: CONFIG.VALIDATION_CONCURRENCY_LIMIT,
-    queueTimeoutMs: 30000,
-  });
-
-  const broken = [];
-  let processed = 0;
-
-  const validatePromises = htmlFiles.map(file =>
-    limiter.execute(
-      async () => {
-        try {
-          const content = await safeReadFile(file);
-          const links = extractLinks(content);
-          return await validateLinksInFile(file, links, distDir);
-        } catch (error) {
-          logger.warn(`Failed to read file ${file}: ${error.message}`);
-          return [];
+  const { results, metrics } = await processConcurrently(
+    htmlFiles,
+    async file => {
+      try {
+        const content = await safeReadFile(file);
+        const links = extractLinks(content);
+        return await validateLinksInFile(file, links, distDir);
+      } catch (error) {
+        logger.warn(`Failed to read file ${file}: ${error.message}`);
+        return [];
+      }
+    },
+    {
+      limit: CONFIG.VALIDATION_CONCURRENCY_LIMIT,
+      timeout: 30000,
+      getName: file => `validateLinks-${path.basename(file)}`,
+      onProgress: (processed, total) => {
+        if (processed % 100 === 0 || processed === total) {
+          logger.info(`Processed ${processed} of ${total} files`);
         }
       },
-      `validateLinks-${path.basename(file)}`
-    )
+    }
   );
 
-  const settledResults = await Promise.allSettled(validatePromises);
-  const results = settledResults.filter(r => r.status === 'fulfilled').map(r => r.value);
-  results.flat().forEach(brokenLink => broken.push(brokenLink));
-  processed = results.length;
+  const broken = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value)
+    .flat();
 
-  logger.info(`Processed ${processed} of ${htmlFiles.length} files`);
-
-  const metrics = limiter.getMetrics();
   logger.info('Validation metrics:', {
     total: metrics.total,
     completed: metrics.completed,

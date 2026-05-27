@@ -60,6 +60,10 @@ const ERROR_CODES = {
 
 // Environment variables with defaults
 const CONFIG = {
+  // File extensions
+  HTML_EXTENSION: '.html',
+  CSV_EXTENSION: '.csv',
+
   // File paths
   RAW_DATA_PATH: rawPath,
   SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),

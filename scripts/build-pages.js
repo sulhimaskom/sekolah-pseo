@@ -11,7 +11,7 @@
  */
 
 const path = require('path');
-const { parseCsv } = require('./utils');
+const { parseCsv, processConcurrently } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { ERROR_CODES } = CONFIG;
@@ -26,7 +26,6 @@ const {
 } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
 const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
-const { RateLimiter } = require('./rate-limiter');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 
 // Export functions for testing
@@ -139,13 +138,9 @@ async function generateProvincePages(schools) {
 
   logger.info(`Generating ${provinces.length} province pages...`);
 
-  const limiter = new RateLimiter({
-    maxConcurrent: CONFIG.BUILD_CONCURRENCY_LIMIT,
-    queueTimeoutMs: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
-  });
-
-  const writePromises = provinces.map(province =>
-    limiter.execute(async () => {
+  const { results, metrics } = await processConcurrently(
+    provinces,
+    async province => {
       try {
         const pageData = buildProvincePageData(province.name, schools);
         const outputPath = path.join(distDir, pageData.relativePath);
@@ -155,14 +150,17 @@ async function generateProvincePages(schools) {
         logger.error(`Failed to generate province page for ${province.name}: ${err.message}`);
         return { success: false, name: province.name };
       }
-    }, `generateProvincePage-${province.name}`)
+    },
+    {
+      limit: CONFIG.BUILD_CONCURRENCY_LIMIT,
+      timeout: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
+      getName: province => `generateProvincePage-${province.name}`,
+    }
   );
 
-  const results = await Promise.allSettled(writePromises);
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  const failed = results.filter(r => r.status === 'rejected' || !r.value.success).length;
+  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
 
-  const metrics = limiter.getMetrics();
   logger.info('Province build metrics:', {
     total: metrics.total,
     completed: metrics.completed,
@@ -196,29 +194,23 @@ async function writeSchoolPagesConcurrently(
 ) {
   await preCreateDirectories(schools);
 
-  const limiter = new RateLimiter({
-    maxConcurrent: concurrencyLimit,
-    queueTimeoutMs: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
-  });
-
-  let processed = 0;
-  const results = [];
-
-  const writePromises = schools.map(school =>
-    limiter.execute(async () => {
+  const { results, metrics } = await processConcurrently(
+    schools,
+    async school => {
       await writeSchoolPage(school);
-      processed++;
-
-      if (processed % 100 === 0 || processed === schools.length) {
-        logger.info(`Processed ${processed} of ${schools.length} school pages`);
-      }
-    }, `writeSchoolPage-${school.npsn}`)
+    },
+    {
+      limit: concurrencyLimit,
+      timeout: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
+      getName: school => `writeSchoolPage-${school.npsn}`,
+      onProgress: (processed, total) => {
+        if (processed % 100 === 0 || processed === total) {
+          logger.info(`Processed ${processed} of ${total} school pages`);
+        }
+      },
+    }
   );
 
-  const writeResults = await Promise.allSettled(writePromises);
-  results.push(...writeResults);
-
-  const metrics = limiter.getMetrics();
   logger.info('Build metrics:', {
     total: metrics.total,
     completed: metrics.completed,
