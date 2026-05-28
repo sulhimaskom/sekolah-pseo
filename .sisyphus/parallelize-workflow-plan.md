@@ -106,7 +106,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   flows:
-    name: "Flow ${{ matrix.flow }}"
+    name: 'Flow ${{ matrix.flow }}'
     needs: setup
     runs-on: ubuntu-24.04-arm
     strategy:
@@ -227,6 +227,7 @@ jobs:
 ## Blocker
 
 The `GITHUB_TOKEN` in this repository lacks the `workflows` permission, required to push changes to `.github/workflows/` files. Resolution options:
+
 1. Grant `workflows: write` permission to the GITHUB_TOKEN in the repository settings
 2. Use a Personal Access Token (PAT) with `workflows` scope
 3. Apply this change manually via the GitHub web interface
