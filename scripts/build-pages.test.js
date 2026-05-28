@@ -13,11 +13,26 @@ const {
   buildIncremental,
   createManifestFromSchools,
 } = require('./build-pages');
+const { resetCircuitBreakers } = require('./fs-safe');
 const CONFIG = require('./config');
 const slugify = require('./slugify');
 
 test.before(async () => {
   process.env.TEST_TEMP_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'build-pages-test-'));
+
+  // Ensure clean state for integration tests: remove stale dist/ and manifest
+  // This prevents circuit breaker cascade failures from stale build artifacts
+  try {
+    await fs.rm(CONFIG.DIST_DIR, { recursive: true, force: true });
+  } catch {
+    // Ignore if dist/ doesn't exist
+  }
+  try {
+    await fs.rm(path.join(CONFIG.ROOT_DIR, '.build-manifest.json'), { force: true });
+  } catch {
+    // Ignore if manifest doesn't exist
+  }
+  resetCircuitBreakers();
 });
 
 test.after(async () => {

@@ -229,19 +229,34 @@ def run_data_validation_tests(suite: TestSuite, root: str) -> None:
     def test_dist_directory_creation():
         dist_dir = os.path.join(root, 'dist')
         
-        # Clean up if exists
+        # Clean up if exists, with retry for transient ENOTEMPTY errors
+        import shutil
+        import time
         if os.path.exists(dist_dir):
-            import shutil
-            shutil.rmtree(dist_dir)
+            for attempt in range(3):
+                try:
+                    shutil.rmtree(dist_dir)
+                    break
+                except OSError:
+                    if attempt < 2:
+                        time.sleep(0.1)
+                        continue
+                    # Last resort: just log and skip teardown failure
+                    pass
         
         # Try to create
         os.makedirs(dist_dir, exist_ok=True)
         suite.assert_true(os.path.exists(dist_dir), "dist/ directory should be creatable")
         
-        # Clean up
+        # Clean up, with retry for transient ENOTEMPTY errors
         if os.path.exists(dist_dir):
-            import shutil
-            shutil.rmtree(dist_dir)
+            for attempt in range(3):
+                try:
+                    shutil.rmtree(dist_dir)
+                    break
+                except OSError:
+                    if attempt < 2:
+                        time.sleep(0.1)
     
     suite.run_test("dist/ directory can be created", test_dist_directory_creation)
     
