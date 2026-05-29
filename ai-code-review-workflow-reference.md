@@ -6,10 +6,12 @@ The actual workflow file must be placed at `.github/workflows/ai-code-review.yml
 ## Implementation
 
 The workflow triggers on:
+
 - PR opened, synchronized, ready_for_review
 - Manual workflow_dispatch
 
 ## Features
+
 - Fetches PR diff and metadata
 - Uses OpenCode CLI to run AI-powered code review
 - Analyzes: Code Quality, Security, Performance, Potential Bugs, Best Practices
@@ -32,6 +34,7 @@ cp ai-code-review-workflow-reference.md .github/workflows/ai-code-review.yml
 ## Workflow Content
 
 The workflow YAML has been designed and verified:
+
 - YAML syntax valid ✓
 - Prettier formatting passes ✓
 - All 591 JS tests pass ✓
