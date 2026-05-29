@@ -26,6 +26,7 @@ const {
 const { writeExternalStylesFile } = require('../src/presenters/styles');
 const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
+const { BuildPerformanceTracker } = require('./build-performance');
 
 // Export functions for testing
 module.exports = {
@@ -269,48 +270,70 @@ function createManifestFromSchools(schools) {
  */
 async function build(options = {}) {
   const incremental = options.incremental || process.argv.includes('--incremental');
+  const tracker = new BuildPerformanceTracker();
+  tracker.start();
 
-  if (incremental) {
-    return buildIncremental();
+  try {
+    if (incremental) {
+      return await buildIncremental(tracker);
+    }
+
+    tracker.setBuildType('full');
+    await ensureDistDir();
+
+    await generateExternalStyles();
+
+    const schools = await loadSchools();
+    logger.info(`Loaded ${schools.length} schools from CSV`);
+
+    if (schools.length === 0) {
+      throw new IntegrationError(
+        'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+        ERROR_CODES.FILE_EMPTY,
+        { path: CONFIG.SCHOOLS_CSV_PATH }
+      );
+    }
+
+    // Generate homepage
+    logger.info('Generating homepage...');
+    const homepageHtml = generateHomepageHtml(schools);
+    await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
+    logger.info('Generated homepage (index.html)');
+
+    // Generate province pages
+    await generateProvincePages(schools);
+
+    const { successful, failed } = await writeSchoolPagesConcurrently(schools);
+    logger.info(`Generated ${successful} school pages (${failed} failed)`);
+
+    // Save manifest for incremental builds
+    await saveManifest(createManifestFromSchools(schools));
+    logger.info('Build manifest saved');
+
+    tracker.recordPageCounts(successful + failed, failed);
+  } finally {
+    tracker.stop();
+    tracker.logReport();
+
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      try {
+        const fs = require('fs');
+        fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, tracker.getGitHubSummary() + '\n');
+      } catch (summaryError) {
+        logger.debug(`Could not write to GITHUB_STEP_SUMMARY: ${summaryError.message}`);
+      }
+    }
   }
-
-  await ensureDistDir();
-
-  await generateExternalStyles();
-
-  const schools = await loadSchools();
-  logger.info(`Loaded ${schools.length} schools from CSV`);
-
-  if (schools.length === 0) {
-    throw new IntegrationError(
-      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
-      ERROR_CODES.FILE_EMPTY,
-      { path: CONFIG.SCHOOLS_CSV_PATH }
-    );
-  }
-
-  // Generate homepage
-  logger.info('Generating homepage...');
-  const homepageHtml = generateHomepageHtml(schools);
-  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
-  logger.info('Generated homepage (index.html)');
-
-  // Generate province pages
-  await generateProvincePages(schools);
-
-  const { successful, failed } = await writeSchoolPagesConcurrently(schools);
-  logger.info(`Generated ${successful} school pages (${failed} failed)`);
-
-  // Save manifest for incremental builds
-  await saveManifest(createManifestFromSchools(schools));
-  logger.info('Build manifest saved');
 }
 
 /**
  * Incremental build - only rebuilds pages that have changed.
  * Uses a manifest file to track built files and their content hashes.
+ *
+ * @param {BuildPerformanceTracker} [tracker] - Optional performance tracker
  */
-async function buildIncremental() {
+async function buildIncremental(tracker) {
+  if (tracker) tracker.setBuildType('incremental');
   await ensureDistDir();
 
   await generateExternalStyles();
@@ -350,9 +373,11 @@ async function buildIncremental() {
 
   if (schoolsToBuild.length === 0) {
     logger.info('No pages to rebuild');
+    if (tracker) tracker.recordPageCounts(0, 0);
   } else {
     const { successful, failed } = await writeSchoolPagesConcurrently(schoolsToBuild);
     logger.info(`Generated ${successful} school pages (${failed} failed)`);
+    if (tracker) tracker.recordPageCounts(successful + failed, failed);
   }
 
   // Save manifest for future incremental builds
