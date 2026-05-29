@@ -73,7 +73,7 @@ async function saveManifest(manifest) {
   try {
     await safeWriteFile(manifestPath, JSON.stringify(manifest, null, 2));
   } catch (error) {
-    logger.error(`Failed to save manifest: ${error.message}`);
+    logger.error({ err: error }, 'Failed to save manifest');
     throw error;
   }
 }

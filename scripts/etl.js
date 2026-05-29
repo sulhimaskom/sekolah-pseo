@@ -311,7 +311,7 @@ async function run() {
     await safeAccess(rawPath);
   } catch (error) {
     logger.error(`Raw data file not found at ${rawPath}. Please ensure the data file exists.`);
-    logger.error(`Error details: ${error.message}`);
+    logger.error({ err: error, path: rawPath }, 'Raw data file not found');
     process.exit(1);
   }
 
@@ -376,9 +376,9 @@ async function run() {
     logger.info(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {
-      logger.error(`Integration error: ${error.code} - ${error.message}`);
+      logger.error({ err: error, code: error.code }, 'Integration error');
     } else {
-      logger.error(`ETL process failed: ${error.message}`);
+      logger.error({ err: error }, 'ETL process failed');
     }
     process.exit(1);
   }

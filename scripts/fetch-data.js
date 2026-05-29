@@ -163,7 +163,7 @@ function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH)
     logger.info(`Using external data file: ${path.basename(selectedFile)}`);
     return selectedFile;
   } catch (error) {
-    logger.error(`Failed to fetch external data: ${error.message}`);
+    logger.error({ err: error }, 'Failed to fetch external data');
     return null;
   }
 }
@@ -213,7 +213,7 @@ function copyToRaw(sourcePath, destPath) {
     logger.info(`Copied ${sourcePath} to ${destPath}`);
     return true;
   } catch (error) {
-    logger.error(`Failed to copy file: ${error.message}`);
+    logger.error({ err: error }, 'Failed to copy file');
     return false;
   }
 }

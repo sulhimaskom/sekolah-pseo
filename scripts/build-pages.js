@@ -53,7 +53,7 @@ async function ensureDistDir() {
   try {
     await safeMkdir(distDir);
   } catch (error) {
-    logger.error(`Failed to create dist directory: ${error.message}`);
+    logger.error({ err: error }, 'Failed to create dist directory');
     throw error;
   }
 }
@@ -100,7 +100,7 @@ async function preCreateDirectories(schools) {
   const dirPromises = uniqueDirs.map(dir => {
     const fullPath = path.join(distDir, dir);
     return safeMkdir(fullPath).catch(err => {
-      logger.error(`Failed to create directory ${fullPath}: ${err.message}`);
+      logger.error({ err, path: fullPath }, 'Failed to create directory');
     });
   });
 
@@ -120,7 +120,7 @@ async function preCreateProvinceDirectories(schools) {
   const dirPromises = provinces.map(province => {
     const fullPath = path.join(distDir, 'provinsi', province.slug);
     return safeMkdir(fullPath).catch(err => {
-      logger.error(`Failed to create province directory ${fullPath}: ${err.message}`);
+      logger.error({ err, path: fullPath }, 'Failed to create province directory');
     });
   });
 
@@ -147,7 +147,7 @@ async function generateProvincePages(schools) {
         await safeWriteFile(outputPath, pageData.content);
         return { success: true, name: province.name };
       } catch (err) {
-        logger.error(`Failed to generate province page for ${province.name}: ${err.message}`);
+        logger.error({ err, province: province.name }, 'Failed to generate province page');
         return { success: false, name: province.name };
       }
     },
