@@ -123,7 +123,7 @@ async function validateLinks() {
         const links = extractLinks(content);
         return await validateLinksInFile(file, links, distDir);
       } catch (error) {
-        logger.warn(`Failed to read file ${file}: ${error.message}`);
+        logger.warn({ err: error, file }, 'Failed to read file');
         return [];
       }
     },
