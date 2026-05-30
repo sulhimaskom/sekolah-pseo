@@ -18,18 +18,18 @@ The autonomous repository maintenance agent completed issue normalization and du
 
 ## Current Open Issues (as of 2026-05-29)
 
-| # | Title | Labels | Status | Resolution |
-|---|-------|--------|--------|------------|
-| 289 | Enhance README.md with complete feature documentation | `enhancement`, `docs` | Already resolved | Commit `7b99e1d` (#321) — README now 275 lines |
-| 297 | Consider adding input validation CLI with interactive menu | `enhancement` | Already resolved | Commit `59d8059` (#150) — `scripts/interactive.js` |
-| 200 | [INNOVATION] Add AI-powered school data enrichment feature | `enhancement`, `P3` | Open (feature request) | Not implemented |
+| #   | Title                                                      | Labels                | Status                 | Resolution                                         |
+| --- | ---------------------------------------------------------- | --------------------- | ---------------------- | -------------------------------------------------- |
+| 289 | Enhance README.md with complete feature documentation      | `enhancement`, `docs` | Already resolved       | Commit `7b99e1d` (#321) — README now 275 lines     |
+| 297 | Consider adding input validation CLI with interactive menu | `enhancement`         | Already resolved       | Commit `59d8059` (#150) — `scripts/interactive.js` |
+| 200 | [INNOVATION] Add AI-powered school data enrichment feature | `enhancement`, `P3`   | Open (feature request) | Not implemented                                    |
 
 ### Required Label Fixes (Blocked by token permissions)
 
-| Issue # | Missing Label | Recommended |
-|---------|---------------|-------------|
-| 289 | Priority | `P2` (body says Medium priority) |
-| 297 | Priority | `P3` (body says Low priority) |
+| Issue # | Missing Label | Recommended                      |
+| ------- | ------------- | -------------------------------- |
+| 289     | Priority      | `P2` (body says Medium priority) |
+| 297     | Priority      | `P3` (body says Low priority)    |
 
 ### Required Closure Actions (Blocked by token permissions)
 
@@ -40,16 +40,16 @@ The autonomous repository maintenance agent completed issue normalization and du
 
 ## Codebase Health Assessment
 
-| Metric | Result | Target |
-|--------|--------|--------|
-| Build | ✅ PASS | — |
-| Lint (ESLint) | ✅ PASS | — |
-| JS Tests | ✅ 591/591 pass | — |
-| Python Tests | ✅ 27/27 pass | — |
-| npm audit | ✅ 0 vulnerabilities | — |
-| Line Coverage | ✅ 92.56% | ≥80% |
-| Branch Coverage | ✅ 86.31% | ≥75% |
-| Function Coverage | ✅ 95% | ≥75% |
+| Metric            | Result               | Target |
+| ----------------- | -------------------- | ------ |
+| Build             | ✅ PASS              | —      |
+| Lint (ESLint)     | ✅ PASS              | —      |
+| JS Tests          | ✅ 591/591 pass      | —      |
+| Python Tests      | ✅ 27/27 pass        | —      |
+| npm audit         | ✅ 0 vulnerabilities | —      |
+| Line Coverage     | ✅ 92.56%            | ≥80%   |
+| Branch Coverage   | ✅ 86.31%            | ≥75%   |
+| Function Coverage | ✅ 95%               | ≥75%   |
 
 ---
 

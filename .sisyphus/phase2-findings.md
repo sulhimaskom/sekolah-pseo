@@ -51,6 +51,7 @@
 **Domain**: Code Quality → Testability
 
 **Description**: Several core modules have sub-80% coverage:
+
 - `scripts/fetch-data.js`: 67.03% statements, 66.66% functions
 - `scripts/etl.js`: 78.31% statements
 - `scripts/check-freshness.js`: 78.57% statements
@@ -88,11 +89,11 @@ These modules handle external data fetching and ETL — the most critical data p
 
 ## Summary
 
-| Finding | Severity | Status |
-|---|---|---|
-| CI workflow missing verification | High | Blocked (needs workflows permission) |
-| Stale branches | Medium | Recommend cleanup |
-| Engine compatibility | Low | Minor |
-| Coverage gaps | Medium | Recommend tests |
-| Security policy | High | ✅ Fixed |
-| Duplicate issues | Medium | Awaiting issue triage |
+| Finding                          | Severity | Status                               |
+| -------------------------------- | -------- | ------------------------------------ |
+| CI workflow missing verification | High     | Blocked (needs workflows permission) |
+| Stale branches                   | Medium   | Recommend cleanup                    |
+| Engine compatibility             | Low      | Minor                                |
+| Coverage gaps                    | Medium   | Recommend tests                      |
+| Security policy                  | High     | ✅ Fixed                             |
+| Duplicate issues                 | Medium   | Awaiting issue triage                |

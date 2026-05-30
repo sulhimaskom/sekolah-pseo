@@ -53,7 +53,7 @@ Extend the existing search script with:
 
 3. **Keyboard navigation**:
    - Arrow Down: move to next suggestion
-   - Arrow Up: move to previous suggestion  
+   - Arrow Up: move to previous suggestion
    - Enter: navigate to selected school
    - Escape: close autocomplete
 
@@ -75,12 +75,12 @@ Extend the existing search script with:
 
 ## Risk Assessment
 
-| Risk | Mitigation |
-|------|-----------|
+| Risk                          | Mitigation                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------- |
 | Performance with 3474 schools | Limit to top 10 suggestions; debounce input; the data is already parsed in memory |
-| Screen reader confusion | Proper ARIA combobox pattern with live region announcements |
-| Mobile tap targets | Minimum 44px touch targets for suggestion items |
-| Styling conflicts | Use existing CSS variables from design-system.js |
+| Screen reader confusion       | Proper ARIA combobox pattern with live region announcements                       |
+| Mobile tap targets            | Minimum 44px touch targets for suggestion items                                   |
+| Styling conflicts             | Use existing CSS variables from design-system.js                                  |
 
 ---
 

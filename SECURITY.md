@@ -80,9 +80,9 @@ This project is a static site generator. CI workflows use only the auto-provided
 
 The following secrets are used by CI workflows:
 
-| Secret             | Purpose                                                            | Required        |
-| ------------------ | ------------------------------------------------------------------ | --------------- |
-| `GITHUB_TOKEN`     | Automatically provided by GitHub Actions for repository operations | Yes (automatic) |
+| Secret         | Purpose                                                            | Required        |
+| -------------- | ------------------------------------------------------------------ | --------------- |
+| `GITHUB_TOKEN` | Automatically provided by GitHub Actions for repository operations | Yes (automatic) |
 
 ### External Service Credentials
 
