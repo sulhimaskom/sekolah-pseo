@@ -3003,10 +3003,7 @@ Set log level dynamically.
 logger.setLevel('debug'); // Enable debug logging
 ```
 
-
-
 ## Data Freshness Module (`scripts/check-freshness.js`)
-
 
 ### Purpose
 
@@ -3014,7 +3011,7 @@ Checks the freshness of school data and generates quality metrics reports. Can b
 
 ### Exports
 
-```javascript
+````javascript
 module.exports = {
   getDataFreshness: function,
   getDataQualityMetrics: function
@@ -3104,9 +3101,10 @@ node scripts/check-freshness.js --json
 
 # Verbose output with quality metrics
 node scripts/check-freshness.js --verbose
-```
+````
 
 Exit Codes:
+
 - `0`: Data is fresh
 - `1`: Data is stale or error occurred
 
@@ -3156,7 +3154,7 @@ Clones or updates the external data repository and finds the best CSV file.
 
 **Usage:**
 
-```javascript
+````javascript
 const { fetchFromGitHub } = require('./fetch-data');
 const csvPath = await fetchFromGitHub();
 if (csvPath) {
@@ -3246,7 +3244,7 @@ const safeUrl = validateRepoUrl('https://github.com/user/repo.git');
 // Throws for invalid URLs:
 validateRepoUrl('file:///etc/passwd'); // Error: Invalid protocol
 validateRepoUrl('https://evil.com'); // Error: must end with .git
-```
+````
 
 ---
 

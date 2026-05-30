@@ -37,8 +37,14 @@ describe('interactive CLI', () => {
         assert.ok(Array.isArray(items), `${category} should be an array`);
         for (const item of items) {
           assert.ok(typeof item.label === 'string', `${category}: label must be string`);
-          assert.ok(typeof item.desc === 'string', `${category}: desc must be string for "${item.label}"`);
-          assert.ok(typeof item.cmd === 'string', `${category}: cmd must be string for "${item.label}"`);
+          assert.ok(
+            typeof item.desc === 'string',
+            `${category}: desc must be string for "${item.label}"`
+          );
+          assert.ok(
+            typeof item.cmd === 'string',
+            `${category}: cmd must be string for "${item.label}"`
+          );
           assert.ok(item.cmd.startsWith('npm '), `${category}: cmd must start with "npm "`);
         }
       }

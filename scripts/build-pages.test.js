@@ -20,6 +20,9 @@ const slugify = require('./slugify');
 test.before(async () => {
   process.env.TEST_TEMP_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'build-pages-test-'));
 
+  // Reset circuit breakers to prevent state pollution from previous tests
+  resetCircuitBreakers();
+
   // Ensure clean state for integration tests: remove stale dist/ and manifest
   // This prevents circuit breaker cascade failures from stale build artifacts
   try {
