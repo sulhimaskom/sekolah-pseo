@@ -18,30 +18,36 @@ const readline = require('readline');
 
 const SCRIPTS = {
   Development: [
-    { label: 'Dev (lint + test JS)', cmd: 'npm run dev' },
-    { label: 'Build all pages (full)', cmd: 'npm run build' },
-    { label: 'Build changed pages (incremental)', cmd: 'npm run build:incremental' },
+    { label: 'Dev (lint + test JS)', desc: 'Run linting and JavaScript tests', cmd: 'npm run dev' },
+    { label: 'Build all pages (full)', desc: 'Generate all school pages, province pages, and homepage', cmd: 'npm run build' },
+    { label: 'Build changed pages (incremental)', desc: 'Only rebuild pages changed since last build', cmd: 'npm run build:incremental' },
   ],
   'Data Pipeline': [
-    { label: 'Run ETL', cmd: 'npm run etl' },
-    { label: 'Fetch external data', cmd: 'npm run fetch-data' },
-    { label: 'Check data freshness', cmd: 'npm run check-freshness' },
-    { label: 'Generate freshness report', cmd: 'npm run freshness-report' },
+    { label: 'Run ETL', desc: 'Extract, transform, and load school data from CSV', cmd: 'npm run etl' },
+    { label: 'Fetch external data', desc: 'Download raw school data from external sources', cmd: 'npm run fetch-data' },
+    { label: 'Check data freshness', desc: 'Verify school data is up-to-date', cmd: 'npm run check-freshness' },
+    { label: 'Generate freshness report', desc: 'Create a detailed data freshness report', cmd: 'npm run freshness-report' },
+    { label: 'Data quality check', desc: 'Validate school data completeness and consistency', cmd: 'npm run data-quality' },
+    { label: 'Data quality (JSON)', desc: 'Data quality check with JSON formatted output', cmd: 'npm run data-quality:json' },
   ],
   Testing: [
-    { label: 'All tests', cmd: 'npm test' },
-    { label: 'JavaScript tests', cmd: 'npm run test:js' },
-    { label: 'Python tests', cmd: 'npm run test:py' },
-    { label: 'JS tests with coverage', cmd: 'npm run test:js:coverage' },
+    { label: 'All tests', desc: 'Run both JavaScript and Python tests', cmd: 'npm test' },
+    { label: 'JavaScript tests', desc: 'Run Node.js test runner on script test files', cmd: 'npm run test:js' },
+    { label: 'Python tests (default runner)', desc: 'Run Python test suite with default runner', cmd: 'npm run test:py' },
+    { label: 'Python tests (pytest)', desc: 'Run Python tests with pytest', cmd: 'npm run test:py:pytest' },
+    { label: 'All JS + Python tests (pytest)', desc: 'Run all tests using pytest for Python', cmd: 'npm run test:all' },
+    { label: 'CI tests', desc: 'Run test suite as CI would (JS + Python with JSON output)', cmd: 'npm run test:ci' },
+    { label: 'JS coverage check', desc: 'JS tests with coverage thresholds (80% lines, 75% branches)', cmd: 'npm run coverage' },
+    { label: 'JS coverage report', desc: 'Generate detailed coverage report (text + HTML)', cmd: 'npm run coverage:report' },
   ],
   Validation: [
-    { label: 'Validate internal links', cmd: 'npm run validate-links' },
-    { label: 'Generate sitemap', cmd: 'npm run sitemap' },
+    { label: 'Validate internal links', desc: 'Check all generated HTML files for broken links', cmd: 'npm run validate-links' },
+    { label: 'Generate sitemap', desc: 'Create XML sitemap for search engine indexing', cmd: 'npm run sitemap' },
   ],
   Utilities: [
-    { label: 'Lint code', cmd: 'npm run lint' },
-    { label: 'Format code', cmd: 'npm run format' },
-    { label: 'Check formatting', cmd: 'npm run format:check' },
+    { label: 'Lint code', desc: 'Check JavaScript for style and correctness issues', cmd: 'npm run lint' },
+    { label: 'Format code', desc: 'Auto-format all code with Prettier', cmd: 'npm run format' },
+    { label: 'Check formatting', desc: 'Verify code formatting without making changes', cmd: 'npm run format:check' },
   ],
 };
 
@@ -57,7 +63,11 @@ async function pickFromList(title, items, rl) {
   console.log('  ' + '='.repeat(title.length + 1));
 
   for (let i = 0; i < items.length; i++) {
-    console.log(`  ${String(i + 1).padStart(2)}. ${items[i].label}`);
+    const item = items[i];
+    console.log(`  ${String(i + 1).padStart(2)}. ${item.label}`);
+    if (item.desc) {
+      console.log(`      ${item.desc}`);
+    }
   }
   console.log(`  ${String(items.length + 1).padStart(2)}. Back to main menu`);
 
@@ -196,3 +206,5 @@ async function main() {
 }
 
 main();
+
+module.exports = { SCRIPTS, runCommand, pickFromList };

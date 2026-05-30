@@ -1,0 +1,95 @@
+'use strict';
+
+const { describe, it, before, after } = require('node:test');
+const assert = require('node:assert');
+const path = require('path');
+
+// Save original TTY state
+const originalIsTTY = process.stdin.isTTY;
+
+describe('interactive CLI', () => {
+  let mod;
+
+  before(() => {
+    // Non-interactive mode for data structure tests
+    process.stdin.isTTY = false;
+    delete require.cache[require.resolve('./interactive')];
+    mod = require('./interactive');
+  });
+
+  after(() => {
+    process.stdin.isTTY = originalIsTTY;
+  });
+
+  describe('SCRIPTS data structure', () => {
+    it('should be an object with category keys', () => {
+      const keys = Object.keys(mod.SCRIPTS);
+      assert.ok(keys.length >= 4, 'should have at least 4 categories');
+      assert.ok(keys.includes('Development'));
+      assert.ok(keys.includes('Data Pipeline'));
+      assert.ok(keys.includes('Testing'));
+      assert.ok(keys.includes('Validation'));
+      assert.ok(keys.includes('Utilities'));
+    });
+
+    it('each item should have label, desc, and cmd fields', () => {
+      for (const [category, items] of Object.entries(mod.SCRIPTS)) {
+        assert.ok(Array.isArray(items), `${category} should be an array`);
+        for (const item of items) {
+          assert.ok(typeof item.label === 'string', `${category}: label must be string`);
+          assert.ok(typeof item.desc === 'string', `${category}: desc must be string for "${item.label}"`);
+          assert.ok(typeof item.cmd === 'string', `${category}: cmd must be string for "${item.label}"`);
+          assert.ok(item.cmd.startsWith('npm '), `${category}: cmd must start with "npm "`);
+        }
+      }
+    });
+
+    it('should include data quality scripts', () => {
+      const dataPipeline = mod.SCRIPTS['Data Pipeline'];
+      const hasDataQuality = dataPipeline.some(i => i.cmd.includes('data-quality'));
+      assert.ok(hasDataQuality, 'Data Pipeline should include data-quality commands');
+    });
+
+    it('should include pytest and coverage scripts in Testing', () => {
+      const testing = mod.SCRIPTS.Testing;
+      assert.ok(testing.some(i => i.cmd.includes('test:py:pytest')));
+      assert.ok(testing.some(i => i.cmd.includes('test:ci')));
+      assert.ok(testing.some(i => i.cmd.includes('test:all')));
+      assert.ok(testing.some(i => i.cmd.includes('coverage')));
+    });
+  });
+
+  describe('npm script coverage', () => {
+    let pkgScripts;
+
+    before(() => {
+      const pkg = require('../package.json');
+      pkgScripts = pkg.scripts || {};
+    });
+
+    it('should cover all non-trivial npm scripts', () => {
+      // Collect all commands referenced in the menu
+      const menuCmds = new Set();
+      for (const items of Object.values(mod.SCRIPTS)) {
+        for (const item of items) {
+          menuCmds.add(item.cmd);
+        }
+      }
+
+      // Check each npm script has a menu entry (skip cli itself)
+      for (const [name] of Object.entries(pkgScripts)) {
+        // cli is the menu itself - skip
+        if (name === 'cli') continue;
+        // test:js:coverage is similar to coverage:report
+        if (name === 'test:js:coverage') continue;
+        if (name === 'test:js:coverage:report') continue;
+
+        const npmCmd = `npm run ${name}`;
+        const npmTestCmd = name === 'test' ? 'npm test' : null;
+
+        const found = menuCmds.has(npmCmd) || (npmTestCmd && menuCmds.has(npmTestCmd));
+        assert.ok(found, `npm script "${name}" should be covered in interactive menu (${npmCmd})`);
+      }
+    });
+  });
+});
