@@ -32,14 +32,7 @@ const { parseCsv } = require('./utils');
 
 // ── Configuration ───────────────────────────────────────────────────────────
 
-const REQUIRED_FIELDS = [
-  'npsn',
-  'nama',
-  'bentuk_pendidikan',
-  'provinsi',
-  'kab_kota',
-  'kecamatan',
-];
+const REQUIRED_FIELDS = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
 
 const INDONESIA_BOUNDS = {
   LAT_MIN: -11,
@@ -199,7 +192,13 @@ function analyzeQuality(schools) {
       (report.categoricalDistribution.educationTypes[type] || 0) + 1;
 
     // Status (Negeri/Swasta)
-    const status = school.status ? (school.status === 'N' ? 'Negeri' : school.status === 'S' ? 'Swasta' : school.status) : '(unknown)';
+    const status = school.status
+      ? school.status === 'N'
+        ? 'Negeri'
+        : school.status === 'S'
+          ? 'Swasta'
+          : school.status
+      : '(unknown)';
     report.categoricalDistribution.statuses[status] =
       (report.categoricalDistribution.statuses[status] || 0) + 1;
   }
@@ -213,12 +212,13 @@ function analyzeQuality(schools) {
   completenessScore /= REQUIRED_FIELDS.length;
 
   const coordinateScore = total > 0 ? (report.coordinates.valid / total) * 100 : 0;
-  const uniquenessScore = report.npsnUniqueness.duplicates === 0
-    ? 100
-    : Math.max(0, 100 - (report.npsnUniqueness.duplicateCount / total) * 100);
+  const uniquenessScore =
+    report.npsnUniqueness.duplicates === 0
+      ? 100
+      : Math.max(0, 100 - (report.npsnUniqueness.duplicateCount / total) * 100);
 
   report.summary.overallScore = parseFloat(
-    ((completenessScore * 0.4) + (coordinateScore * 0.3) + (uniquenessScore * 0.3)).toFixed(1)
+    (completenessScore * 0.4 + coordinateScore * 0.3 + uniquenessScore * 0.3).toFixed(1)
   );
 
   return report;
@@ -242,9 +242,10 @@ function checkThresholds(report, thresholds = DEFAULT_THRESHOLDS) {
     }
   }
 
-  const coordPct = report.summary.totalSchools > 0
-    ? (report.coordinates.valid / report.summary.totalSchools) * 100
-    : 0;
+  const coordPct =
+    report.summary.totalSchools > 0
+      ? (report.coordinates.valid / report.summary.totalSchools) * 100
+      : 0;
   if (coordPct < thresholds.MIN_COORDINATE_PCT) {
     failures.push(
       `Coordinate validity ${coordPct.toFixed(1)}% < ${thresholds.MIN_COORDINATE_PCT}%`
@@ -286,7 +287,9 @@ function formatHuman(report) {
   lines.push(`  Valid          ${c.valid.toString().padStart(6)}  ${pct(c.valid, c.total)}`);
   lines.push(`  Missing        ${c.missing.toString().padStart(6)}  ${pct(c.missing, c.total)}`);
   lines.push(`  Zero           ${c.zero.toString().padStart(6)}  ${pct(c.zero, c.total)}`);
-  lines.push(`  Out of bounds  ${c.outOfBounds.toString().padStart(6)}  ${pct(c.outOfBounds, c.total)}`);
+  lines.push(
+    `  Out of bounds  ${c.outOfBounds.toString().padStart(6)}  ${pct(c.outOfBounds, c.total)}`
+  );
 
   lines.push('\n  ── NPSN Uniqueness ──');
   const n = report.npsnUniqueness;
@@ -306,7 +309,9 @@ function formatHuman(report) {
 
   lines.push('\n  ── Categorical Distribution ──');
   lines.push(`  Provinces: ${Object.keys(report.categoricalDistribution.provinces).length}`);
-  lines.push(`  Education types: ${Object.keys(report.categoricalDistribution.educationTypes).join(', ')}`);
+  lines.push(
+    `  Education types: ${Object.keys(report.categoricalDistribution.educationTypes).join(', ')}`
+  );
 
   const statuses = report.categoricalDistribution.statuses;
   const statusLines = Object.entries(statuses)
@@ -370,7 +375,9 @@ function main() {
       console.log('  ── Verbose Stats ──');
       console.log(`  Fields analyzed: ${REQUIRED_FIELDS.length}`);
       console.log('  Categorical dimensions: province, education type, status');
-      console.log(`  Coordinate bounds: lat [${INDONESIA_BOUNDS.LAT_MIN}, ${INDONESIA_BOUNDS.LAT_MAX}], lon [${INDONESIA_BOUNDS.LON_MIN}, ${INDONESIA_BOUNDS.LON_MAX}]`);
+      console.log(
+        `  Coordinate bounds: lat [${INDONESIA_BOUNDS.LAT_MIN}, ${INDONESIA_BOUNDS.LAT_MAX}], lon [${INDONESIA_BOUNDS.LON_MIN}, ${INDONESIA_BOUNDS.LON_MAX}]`
+      );
       console.log('');
     }
   }

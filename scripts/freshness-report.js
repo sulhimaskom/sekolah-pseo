@@ -297,7 +297,15 @@ async function main() {
   await safeMkdir(REPORT_DIR, { recursive: true });
   const html = generateHtml(freshness, quality);
   await safeWriteFile(REPORT_FILE, html);
-  logger.info({ reportFile: REPORT_FILE, status: freshness.isFresh ? 'fresh' : 'stale', daysOld: freshness.daysAgo, recordCount: freshness.recordCount }, 'Freshness report generated');
+  logger.info(
+    {
+      reportFile: REPORT_FILE,
+      status: freshness.isFresh ? 'fresh' : 'stale',
+      daysOld: freshness.daysAgo,
+      recordCount: freshness.recordCount,
+    },
+    'Freshness report generated'
+  );
   console.log(`✅ Freshness report generated: ${REPORT_FILE}`);
   console.log(
     `   Status: ${freshness.isFresh ? 'Fresh' : 'Stale'} (${freshness.daysAgo} days old)`

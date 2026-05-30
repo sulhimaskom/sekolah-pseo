@@ -329,11 +329,7 @@ class BuildPerformanceTracker {
  * @returns {Promise<{result: *, report: Object}>}
  */
 async function monitorBuild(buildFn, options = {}) {
-  const {
-    buildType = 'full',
-    budgets = {},
-    throwOnViolation = false,
-  } = options;
+  const { buildType = 'full', budgets = {}, throwOnViolation = false } = options;
 
   const tracker = new BuildPerformanceTracker(budgets);
   tracker.setBuildType(buildType);
