@@ -39,7 +39,7 @@ Memvalidasi semua tautan internal dalam file HTML yang dihasilkan untuk memastik
 
 ### 7. Build Inkremental
 
-Mendukung build inkremental menggunakan manifest untuk跳过 halaman yang tidak berubah sejak build terakhir.
+Mendukung build inkremental menggunakan manifest untuk melewati halaman yang tidak berubah sejak build terakhir.
 
 ### 8. Pengecekkan Kesegaran Data
 
@@ -49,10 +49,13 @@ Memeriksa usia data sekolah dan menghasilkan laporan kualitas data.
 
 ```
 external/raw.csv → ETL Process → data/schools.csv → Build Process → dist/
-                                                                   ├── index.html (Homepage)
-                                                                   ├── Provinsi/
-                                                                   │   └── {province}/index.html
-                                                                   └── {path}/{npsn}-{slug}.html (School pages)
+                                                                    ├── index.html (Homepage)
+                                                                    ├── Provinsi/
+                                                                    │   └── {province}/index.html
+                                                                    ├── {path}/{npsn}-{slug}.html (School pages)
+                                                                    └── styles.css
+                                        Sitemap Generator → dist/sitemap-index.xml
+                                        Link Validator → Validation Report
 ```
 
 ## npm Scripts
@@ -60,10 +63,16 @@ external/raw.csv → ETL Process → data/schools.csv → Build Process → dist
 | Command                           | Description                                    |
 | --------------------------------- | ---------------------------------------------- |
 | `npm run dev`                     | Jalankan lint dan test JavaScript              |
-| `npm run build`                   | Bangun semua halaman sekolah                   |
+| `npm run build`                   | Bangun semua halaman sekolah (full build)      |
+| `npm run build:incremental`       | Build inkremental (hanya halaman berubah)      |
 | `npm run etl`                     | Jalankan proses ETL (ekstrak, transform, load) |
+| `npm run fetch-data`              | Ambil data sekolah dari sumber eksternal       |
 | `npm run sitemap`                 | Hasilkan file sitemap XML                      |
 | `npm run validate-links`          | Validasi semua tautan internal                 |
+| `npm run check-freshness`         | Periksa kesegaran data sekolah                 |
+| `npm run freshness-report`        | Hasilkan laporan kesegaran data detail         |
+| `npm run data-quality`            | Periksa kualitas data sekolah                  |
+| `npm run data-quality:json`       | Periksa kualitas data dengan output JSON       |
 | `npm run lint`                    | Jalankan ESLint untuk kode                     |
 | `npm run format`                  | Format kode dengan Prettier                    |
 | `npm run format:check`            | Periksa format kode tanpa mengubah             |
@@ -72,6 +81,8 @@ external/raw.csv → ETL Process → data/schools.csv → Build Process → dist
 | `npm run test:js:coverage`        | Jalankan test dengan coverage check            |
 | `npm run test:js:coverage:report` | Hasilkan laporan coverage HTML                 |
 | `npm run test:py`                 | Jalankan test Python                           |
+| `npm run test:py:pytest`          | Jalankan test Python dengan pytest             |
+| `npm run test:all`                | Jalankan semua test (JS + Python via pytest)   |
 | `npm run test:ci`                 | Jalankan test untuk CI pipeline                |
 | `npm run cli`                     | Jalankan menu CLI interaktif                   |
 | `npm run coverage`                | Cek coverage (minimum 80% lines, 75% branches) |
@@ -120,13 +131,19 @@ external/raw.csv → ETL Process → data/schools.csv → Build Process → dist
 
 ### Build Inkremental
 
-Untuk build inkremental (hanya halaman yang berubah), cukup jalankan:
+Build inkremental hanya memproses halaman yang berubah sejak build terakhir:
+
+```bash
+npm run build:incremental
+```
+
+Untuk full build (semua halaman):
 
 ```bash
 npm run build
 ```
 
-Sistem akan secara otomatis跳过 halaman yang tidak berubah sejak build terakhir menggunakan file manifest.
+Sistem menggunakan file manifest (`manifest.json`) untuk melacak perubahan — halaman yang tidak berubah akan dilewati secara otomatis.
 
 ### Pengecekkan Kesegaran Data
 
