@@ -272,6 +272,10 @@ test('createManifestFromSchools handles empty array', () => {
 });
 
 test('build creates dist directory and generates files', async () => {
+  // Reset circuit breakers to prevent state pollution from other test files
+  // that share the fs-safe singleton circuit breaker instance
+  resetCircuitBreakers();
+
   // Run build to test it
   await build();
 
