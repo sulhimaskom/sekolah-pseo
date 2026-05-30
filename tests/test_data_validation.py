@@ -75,7 +75,7 @@ class TestDataIntegrity:
         # Clean up if exists
         if os.path.exists(dist_dir):
             import shutil
-            shutil.rmtree(dist_dir)
+            shutil.rmtree(dist_dir, ignore_errors=True)
         
         # Try to create
         os.makedirs(dist_dir, exist_ok=True)
@@ -84,7 +84,7 @@ class TestDataIntegrity:
         # Clean up
         if os.path.exists(dist_dir):
             import shutil
-            shutil.rmtree(dist_dir)
+            shutil.rmtree(dist_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':
