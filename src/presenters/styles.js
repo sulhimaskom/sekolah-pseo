@@ -1,5 +1,5 @@
 const { getCssVariables, DESIGN_TOKENS } = require('./design-system');
-const { safeWriteFile } = require('../../scripts/fs-safe');
+const { safeWriteFile, safeMkdir } = require('../../scripts/fs-safe');
 const path = require('path');
 
 function generateSchoolPageStyles() {
@@ -1118,6 +1118,8 @@ TV}
 async function writeExternalStylesFile(distDir) {
   const css = generateSchoolPageStyles();
   const outputPath = path.join(distDir, 'styles.css');
+  // Ensure output directory exists — safeWriteFile does not autocreate dirs
+  await safeMkdir(distDir);
   await safeWriteFile(outputPath, css);
   return outputPath;
 }
