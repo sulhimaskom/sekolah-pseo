@@ -6,11 +6,11 @@ This document describes the release process for the Sekolah PSEO project.
 
 This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`
 
-| Component | When to Bump | Example |
-|-----------|-------------|---------|
+| Component | When to Bump                                                            | Example           |
+| --------- | ----------------------------------------------------------------------- | ----------------- |
 | **MAJOR** | Breaking changes (output format, API contract, required fields removed) | `1.0.0` → `2.0.0` |
-| **MINOR** | New backward-compatible functionality | `1.0.0` → `1.1.0` |
-| **PATCH** | Bug fixes, performance improvements, dependency updates | `1.0.0` → `1.0.1` |
+| **MINOR** | New backward-compatible functionality                                   | `1.0.0` → `1.1.0` |
+| **PATCH** | Bug fixes, performance improvements, dependency updates                 | `1.0.0` → `1.0.1` |
 
 The current version is tracked in `package.json` (`"version": "1.0.0"`).
 
@@ -50,6 +50,7 @@ npm version major
 ```
 
 This will:
+
 - Update `package.json` with the new version
 - Create a git commit with the version change
 - Create a git tag (e.g., `v1.0.1`)
@@ -88,6 +89,7 @@ The release will appear at:
 1. **Identify the last known-good version tag** from the [Releases page](https://github.com/sulhimaskom/sekolah-pseo/releases)
 
 2. **Revert the code**:
+
    ```bash
    # Create a fix branch from the broken release
    git checkout -b fix/rollback-v1.0.1
@@ -105,6 +107,7 @@ The release will appear at:
    ```
 
 3. **Create a patch release** after merging the revert:
+
    ```bash
    git checkout main
    git pull origin main
@@ -121,12 +124,12 @@ The release will appear at:
 
 For static hosting platforms, you can often revert the deployment without reverting code:
 
-| Platform    | Rollback Method |
-|-------------|----------------|
-| GitHub Pages | Push previous dist/ to gh-pages branch |
-| Netlify     | Deploys → select previous deploy → "Publish deploy" |
-| Vercel      | Deployments → select previous deployment → "Promote to Production" |
-| Traditional | Restore from backup or redeploy previous dist/ |
+| Platform     | Rollback Method                                                    |
+| ------------ | ------------------------------------------------------------------ |
+| GitHub Pages | Push previous dist/ to gh-pages branch                             |
+| Netlify      | Deploys → select previous deploy → "Publish deploy"                |
+| Vercel       | Deployments → select previous deployment → "Promote to Production" |
+| Traditional  | Restore from backup or redeploy previous dist/                     |
 
 ## Release Checklist
 

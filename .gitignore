@@ -244,3 +244,6 @@ schools.csv
 
 # OpenCode internal session data
 .omo/
+
+# Sisyphus working directory
+.sisyphus/
