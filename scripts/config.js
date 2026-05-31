@@ -122,6 +122,22 @@ const CONFIG = {
   DATA_DIR: DATA_DIR,
   EXTERNAL_DIR: EXTERNAL_DIR,
 
+  // UI Text and Labels
+  TEXT: {
+    NPSN: 'NPSN',
+    STATUS: 'Status',
+    ADDRESS: 'Alamat',
+    LEVEL: 'Jenjang',
+    PROVINCE: 'Provinsi',
+    CITY_REGENCY: 'Kabupaten/Kota',
+    DISTRICT: 'Kecamatan',
+    HOME: 'Beranda',
+    COPIED: 'Tersalin!',
+    COPY_NPSN: 'Salin NPSN',
+    SITE_NAME: 'Sekolah PSEO',
+    SITE_DESCRIPTION: 'Direktori lengkap sekolah-sekolah di Indonesia.',
+  },
+
   // Security utilities
   validatePath,
 };

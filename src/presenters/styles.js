@@ -226,7 +226,7 @@ section[aria-labelledby="school-details"] {
   position: absolute;
   bottom: 100%;
   left: 50%;
-  transform: translateX(-50%) translateY(-0.5rem);
+  transform: translateX(-50%) translateY(-0.5rem) scale(0.9);
   background-color: var(--color-text-primary);
   color: var(--color-bg-primary);
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -235,14 +235,16 @@ section[aria-labelledby="school-details"] {
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: all var(--transition-fast) ease;
+  transition: opacity var(--transition-fast) ease, transform var(--transition-fast) cubic-bezier(0.34, 1.56, 0.64, 1), visibility var(--transition-fast);
   pointer-events: none;
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-index-dropdown);
 }
 
 .btn-copy.show .copy-feedback {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(-0.25rem);
+  transform: translateX(-50%) translateY(-0.25rem) scale(1);
 }
 
 @media (min-width: ${DESIGN_TOKENS.breakpoints.md}) {

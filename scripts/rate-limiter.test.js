@@ -93,15 +93,15 @@ describe('RateLimiter', () => {
     it('should reject queued operations after timeout', async () => {
       const slowLimiter = new RateLimiter({
         maxConcurrent: 1,
-        queueTimeoutMs: 100,
+        queueTimeoutMs: 50,
       });
 
       const slowOp = slowLimiter.execute(async () => {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 200));
         return 'done';
       });
 
-      await new Promise(resolve => setTimeout(resolve, 20));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       const fastOps = Array.from({ length: 5 }, (_, i) =>
         slowLimiter.execute(async () => i).catch(err => err)
@@ -186,8 +186,6 @@ describe('RateLimiter', () => {
 
       await Promise.all(rejectedOps);
       await slowOp;
-
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       const metrics = testLimiter.getMetrics();
       assert.strictEqual(metrics.rejected, 3);
