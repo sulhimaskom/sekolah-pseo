@@ -2,6 +2,9 @@ const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 
+// Hoisted constant - computed once at module load
+const CURRENT_YEAR = new Date().getFullYear();
+
 /**
  * Extract unique values for filter dropdowns
  * @param {Array<Object>} schools - Array of school data objects
@@ -114,18 +117,56 @@ function generateTypeOptionsHtml(types) {
  * @param {Array<Object>} schools - Array of school data objects
  * @returns {string} - Homepage HTML
  */
+/**
+ * Aggregate province data and filter options in a single pass.
+ * Combines aggregateByProvince() and extractFilterOptions() to
+ * eliminate one full-school iteration during homepage generation.
+ */
+function aggregateProvinceAndFilters(schools) {
+  if (!Array.isArray(schools)) {
+    return { provinces: [], filterOptions: { provinces: [], types: [] } };
+  }
+
+  const provinceMap = new Map();
+  const provinceSet = new Set();
+  const typeSet = new Set();
+
+  for (const school of schools) {
+    // Aggregate by province
+    if (school.provinsi) {
+      provinceSet.add(school.provinsi);
+      if (!provinceMap.has(school.provinsi)) {
+        provinceMap.set(school.provinsi, {
+          name: school.provinsi,
+          slug: slugify(school.provinsi),
+          count: 0,
+        });
+      }
+      provinceMap.get(school.provinsi).count++;
+    }
+
+    // Extract filter options
+    if (school.bentuk_pendidikan) typeSet.add(school.bentuk_pendidikan);
+  }
+
+  const provinces = Array.from(provinceMap.values());
+  provinces.sort((a, b) => a.name.localeCompare(b.name, 'id'));
+
+  return {
+    provinces,
+    filterOptions: {
+      provinces: Array.from(provinceSet).sort((a, b) => a.localeCompare(b, 'id')),
+      types: Array.from(typeSet).sort((a, b) => a.localeCompare(b, 'id')),
+    },
+  };
+}
+
 function generateHomepageHtml(schools) {
-  const provinces = aggregateByProvince(schools);
-  const filterOptions = extractFilterOptions(schools);
-  // Escape script tags to prevent XSS in JSON data
-  let safeSchoolDataJson = JSON.stringify(prepareSchoolDataForSearch(schools));
-  safeSchoolDataJson = safeSchoolDataJson.replace(/<script/gi, '<\\script');
-  safeSchoolDataJson = safeSchoolDataJson.replace(/<\/script>/gi, '<\\/script>');
+  const { provinces, filterOptions } = aggregateProvinceAndFilters(schools);
   const provinceOptionsHtml = generateProvinceOptionsHtml(filterOptions.provinces);
   const typeOptionsHtml = generateTypeOptionsHtml(filterOptions.types);
 
   const totalSchools = schools.length;
-  const currentYear = new Date().getFullYear();
 
   const provinceLinks = provinces
     .map(
@@ -156,6 +197,7 @@ function generateHomepageHtml(schools) {
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
   <title>Sekolah PSEO - Direktori Sekolah Indonesia</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="/" />
@@ -257,13 +299,10 @@ function generateHomepageHtml(schools) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${CURRENT_YEAR} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
   ${generateBackToTopHtml()}
-  
-  <!-- Embedded school data for client-side search -->
-  <script id="school-data" type="application/json">${safeSchoolDataJson}</script>
   
   <script>
     (function() {
@@ -273,11 +312,24 @@ function generateHomepageHtml(schools) {
       ${generateBackToTopScript().replace('<script>', '').replace('</script>', '').trim()}
       
       // ===== School Search Functionality =====
-      var schoolDataElement = document.getElementById('school-data');
-      if (!schoolDataElement) return;
+      var schools = null;
+      var searchLoaded = false;
       
-      var schools = JSON.parse(schoolDataElement.textContent);
-      if (!schools || schools.length === 0) return;
+      // Lazy-load school search data from external JSON file
+      // Reduces initial HTML payload from 1.3MB to ~14KB
+      fetch('/schools.json').then(function(r) {
+        if (!r.ok) throw new Error('Failed to load search data');
+        return r.json();
+      }).then(function(d) {
+        schools = d;
+        searchLoaded = true;
+        // Re-run search if input already has value
+        if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value)) {
+          handleSearch();
+        }
+      }).catch(function() {
+        // Search will remain disabled
+      });
       
       // DOM Elements
       var searchInput = document.getElementById('school-search');
@@ -415,6 +467,11 @@ function generateHomepageHtml(schools) {
       
       // Handle search input
       function handleSearch() {
+        // Guard: data not loaded yet
+        if (!schools) {
+          resultCountEl.textContent = 'Memuat data...';
+          return;
+        }
         var query = searchInput.value;
         var province = provinceFilter.value;
         var type = typeFilter.value;
@@ -477,4 +534,7 @@ function generateHomepageHtml(schools) {
 module.exports = {
   generateHomepageHtml,
   aggregateByProvince,
+  aggregateProvinceAndFilters,
+  prepareSchoolDataForSearch,
+  extractFilterOptions,
 };

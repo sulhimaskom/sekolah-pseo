@@ -19,12 +19,13 @@ const { IntegrationError } = require('./resilience');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const {
   buildSchoolPageData,
+  getSchoolRelativePath,
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
 } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
-const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+const { generateHomepageHtml, prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 const { BuildPerformanceTracker } = require('./build-performance');
 
@@ -37,6 +38,7 @@ module.exports = {
   generateExternalStyles,
   generateProvincePages,
   preCreateProvinceDirectories,
+  writeSearchDataFile,
   build,
   buildIncremental,
   computeSchoolHash,
@@ -184,6 +186,22 @@ async function generateExternalStyles() {
 }
 
 /**
+ * Generate external search data file (schools.json) for lazy-loaded client-side search.
+ * This separates the ~1.3MB JSON search data from the homepage HTML,
+ * allowing the homepage to load as a lightweight ~14KB page.
+ * The JS client fetches the JSON asynchronously after page load.
+ *
+ * @param {Array<Object>} schools
+ */
+async function writeSearchDataFile(schools) {
+  const searchData = prepareSchoolDataForSearch(schools);
+  const jsonContent = JSON.stringify(searchData);
+  const outputPath = path.join(distDir, 'schools.json');
+  await safeWriteFile(outputPath, jsonContent);
+  logger.info(`Generated schools.json (${(Buffer.byteLength(jsonContent, 'utf-8') / 1024).toFixed(0)} KB)`);
+}
+
+/**
  * Write multiple school pages concurrently with a controlled concurrency limit
  * to avoid overwhelming the file system.
  *
@@ -244,12 +262,11 @@ function createManifestFromSchools(schools) {
   for (const school of schools) {
     const npsn = school.npsn;
     const hash = computeSchoolHash(school);
-    const pageData = buildSchoolPageData(school);
 
     manifest.schools[npsn] = {
       hash,
       builtAt: new Date().toISOString(),
-      path: pageData.relativePath,
+      path: getSchoolRelativePath(school),
     };
   }
 
@@ -299,6 +316,9 @@ async function build(options = {}) {
     const homepageHtml = generateHomepageHtml(schools);
     await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
     logger.info('Generated homepage (index.html)');
+
+    // Generate external search data for lazy-loaded client-side search
+    await writeSearchDataFile(schools);
 
     // Generate province pages
     await generateProvincePages(schools);
@@ -367,6 +387,9 @@ async function buildIncremental(tracker) {
   const homepageHtml = generateHomepageHtml(schools);
   await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
   logger.info('Generated homepage (index.html)');
+
+  // Generate external search data for lazy-loaded client-side search
+  await writeSearchDataFile(schools);
 
   // Generate province pages (always regenerate)
   await generateProvincePages(schools);

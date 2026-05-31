@@ -3,6 +3,9 @@ const slugify = require('../../../scripts/slugify');
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 
+// Hoisted constant - computed once at module load, not per province page
+const CURRENT_YEAR = new Date().getFullYear();
+
 /**
  * Filter schools by province
  * @param {Array<Object>} schools - Array of school data objects
@@ -63,7 +66,6 @@ function generateProvincePageHtml(provinceName, schools) {
   const provinceSlug = slugify(provinceName);
   const kabupatenList = aggregateByKabupaten(provinceSchools);
   const totalSchools = provinceSchools.length;
-  const currentYear = new Date().getFullYear();
 
   const canonicalUrl = `${CONFIG.SITE_URL.replace(/\/$/, '')}/provinsi/${provinceSlug}/`;
   const metaDescription = `Daftar sekolah di Provinsi ${provinceName}. Temukan informasi lengkap tentang ${totalSchools.toLocaleString('id-ID')} sekolah dari berbagai jenjang pendidikan.`;
@@ -97,6 +99,7 @@ function generateProvincePageHtml(provinceName, schools) {
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
   <title>Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
@@ -147,7 +150,7 @@ function generateProvincePageHtml(provinceName, schools) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${CURRENT_YEAR} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
   ${generateBackToTopHtml()}
