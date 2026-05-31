@@ -315,6 +315,7 @@ module.exports = {
  * @returns {string} - SEO meta description
  */
 function generateMetaDescription(school) {
+  if (!school || typeof school !== 'object') return '';
   const { nama, bentuk_pendidikan, kab_kota, kecamatan } = school;
   const parts = [];
 
