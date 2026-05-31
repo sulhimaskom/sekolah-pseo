@@ -295,20 +295,6 @@ async function processConcurrently(items, processor, options = {}) {
   };
 }
 
-module.exports = {
-  parseCsv,
-  escapeHtml,
-  escapeCsvField,
-  walkDirectory,
-  writeCsv,
-  formatStatus,
-  formatEmptyValue,
-  hasCoordinateData,
-  terminate,
-  processConcurrently,
-  generateMetaDescription,
-};
-
 /**
  * Generate meta description for SEO
  * @param {Object} school - School data object
@@ -328,3 +314,17 @@ function generateMetaDescription(school) {
   // Truncate to optimal length for SEO (150-160 chars)
   return description.length > 155 ? description.substring(0, 152) + '...' : description;
 }
+
+module.exports = {
+  parseCsv,
+  escapeHtml,
+  escapeCsvField,
+  walkDirectory,
+  writeCsv,
+  formatStatus,
+  formatEmptyValue,
+  hasCoordinateData,
+  terminate,
+  processConcurrently,
+  generateMetaDescription,
+};

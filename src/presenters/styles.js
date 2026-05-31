@@ -501,7 +501,7 @@ footer[role="contentinfo"] {
     margin: 2cm;
   }
 }
-#BN|/* Homepage styles */
+/* Homepage styles */
 .homepage-hero {
   text-align: center;
   padding: var(--spacing-2xl) var(--spacing-lg);
@@ -623,7 +623,7 @@ footer[role="contentinfo"] {
   gap: var(--spacing-xs);
   flex-wrap: wrap;
   align-items: center;
-
+}
 
 @media (max-width: ${DESIGN_TOKENS.breakpoints.sm}) {
   .homepage-hero {
@@ -1032,7 +1032,7 @@ footer[role="contentinfo"] {
   .back-to-top:hover {
     transform: none;
   }
-TV}
+}
 
 /* 404 Error Page Styles */
 .error-container {
