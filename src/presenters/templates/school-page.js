@@ -2,6 +2,9 @@ const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 
+// Hoisted constant - computed once at module load, not per school page
+const CURRENT_YEAR = new Date().getFullYear();
+
 /**
  * Generate canonical URL for the school page
  * @param {string} relativePath - Relative path to the HTML file
@@ -26,7 +29,6 @@ function generateSchoolPageHtml(school, relativePath) {
 
   const metaDescription = generateMetaDescription(school);
   const canonicalUrl = generateCanonicalUrl(relativePath);
-  const currentYear = new Date().getFullYear();
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -131,7 +133,7 @@ function generateSchoolPageHtml(school, relativePath) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${currentYear} ${escapeHtml(CONFIG.TEXT.SITE_NAME)}. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${CURRENT_YEAR} ${escapeHtml(CONFIG.TEXT.SITE_NAME)}. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
   ${generateBackToTopHtml()}

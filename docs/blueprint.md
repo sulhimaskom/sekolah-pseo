@@ -280,5 +280,9 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-01-07 | Create PageBuilder service layer                              | Business logic isolated from file I/O and presentation       |
 | 2026-01-10 | Implement rate limiting for concurrent operations             | Controlled concurrency, backpressure, metrics for operations |
 | 2026-01-10 | Performance optimization (homepage payload, build efficiency) | 15% homepage size reduction, eliminated duplicate iterations |
+| 2026-05-31 | Lazy-load homepage search JSON (separate schools.json)        | 98.8% homepage size reduction (1.3MB → 15KB), memory -9%     |
+| 2026-05-31 | Lightweight path computation in manifest creation             | Eliminated 3474 unnecessary HTML generations for paths       |
+| 2026-05-31 | Module-level CURRENT_YEAR constants                           | Eliminated 3476+ redundant Date allocations                  |
+| 2026-05-31 | Combined province aggregation + filter extraction             | Reduced 3 full-school iterations to 2                        |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
