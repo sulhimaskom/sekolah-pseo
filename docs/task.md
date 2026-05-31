@@ -3289,3 +3289,15 @@ Performed comprehensive code sanitization: resolved npm audit vulnerabilities, f
 - [x] Lint passes (0 errors)
 - [x] All tests pass (567/567)
 - [x] Zero regressions
+[x] error Resolved MODULE_NOT_FOUND error by installing dependencies
+| Test Name | Duration | Issue |
+|-----------|----------|-------|
+| build creates dist directory | 1414ms | Full build integration test |
+| buildIncremental runs without error | 1221ms | Incremental build integration test |
+| exits with non-zero when data is stale | 576ms | Data freshness check |
+| should reject queued operations after timeout | 501ms | Rate limiter queue timeout |
+| should execute queued operations after active | 848ms | Rate limiter concurrency |
+| should handle operations that return undefined | 1238ms | Rate limiter edge case |
+| respects custom maxAttempts | 701ms | Resilience retry logic |
+| includes error details in retry exhaustion | 2215ms | Resilience retry logic |
+[CONSOLIDATE] Centralized generateMetaDescription logic into scripts/utils.js

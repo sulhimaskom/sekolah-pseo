@@ -142,3 +142,4 @@
 ./.github/workflows/prompt/11.md:- 🔍 Tech Debt: TODOs, workarounds, deprecated patterns
 ./.github/prompt/02.md:4. Scan for TODO, FIXME, HACK comments
 ./.github/prompt/11.md:- 🔍 Tech Debt: TODOs, workarounds, deprecated patterns
+[x] bug Resolved missing pino and pino-pretty dependencies

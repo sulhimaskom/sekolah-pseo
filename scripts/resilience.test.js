@@ -187,7 +187,7 @@ describe('retry', () => {
       return Promise.resolve('success');
     };
 
-    const result = await retry(fn, { maxAttempts: 5 });
+    const result = await retry(fn, { maxAttempts: 5, initialDelayMs: 10 });
     assert.strictEqual(result, 'success');
     assert.strictEqual(attemptCount, 3);
   });
@@ -214,7 +214,7 @@ describe('retry', () => {
       return Promise.reject(new Error('EAGAIN: resource temporarily unavailable'));
     };
 
-    await assert.rejects(retry(fn, { maxAttempts: 2 }), error => {
+    await assert.rejects(retry(fn, { maxAttempts: 2, initialDelayMs: 10 }), error => {
       assert.ok(error instanceof IntegrationError);
       assert.strictEqual(error.code, ERROR_CODES.RETRY_EXHAUSTED);
       assert.strictEqual(attemptCount, 2);
@@ -229,7 +229,7 @@ describe('retry', () => {
       return Promise.reject(new Error('EAGAIN'));
     };
 
-    await assert.rejects(retry(fn, { maxAttempts: 4 }), error => {
+    await assert.rejects(retry(fn, { maxAttempts: 4, initialDelayMs: 10 }), error => {
       assert.strictEqual(error.code, ERROR_CODES.RETRY_EXHAUSTED);
       assert.strictEqual(attemptCount, 4);
       return true;
@@ -310,7 +310,7 @@ describe('retry', () => {
     const customShouldRetry = error => error.message.includes('CUSTOM');
 
     await assert.rejects(
-      retry(fn, { maxAttempts: 3, shouldRetry: customShouldRetry }),
+      retry(fn, { maxAttempts: 3, shouldRetry: customShouldRetry, initialDelayMs: 10 }),
       error => error.code === ERROR_CODES.RETRY_EXHAUSTED
     );
 
@@ -344,7 +344,7 @@ describe('retry', () => {
       return 'success';
     };
 
-    const result = await retry(fn, { maxAttempts: 3 });
+    const result = await retry(fn, { maxAttempts: 3, initialDelayMs: 10 });
     assert.strictEqual(result, 'success');
     assert.strictEqual(attemptCount, 2);
   });
@@ -352,7 +352,7 @@ describe('retry', () => {
   test('includes error details in retry exhaustion', async () => {
     const fn = () => Promise.reject(new Error('EIO: Input/output error'));
 
-    await assert.rejects(retry(fn, { maxAttempts: 2 }), error => {
+    await assert.rejects(retry(fn, { maxAttempts: 2, initialDelayMs: 10 }), error => {
       assert.ok(error.details);
       assert.strictEqual(error.details.attempts, 2);
       assert.strictEqual(error.details.lastError, 'EIO: Input/output error');
