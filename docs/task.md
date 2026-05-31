@@ -3344,18 +3344,18 @@ Performed comprehensive code sanitization: resolved npm audit vulnerabilities, f
 - [x] Lint passes (0 errors)
 - [x] All tests pass (567/567)
 - [x] Zero regressions
-[x] error Resolved MODULE_NOT_FOUND error by installing dependencies
-| Test Name | Duration | Issue |
-|-----------|----------|-------|
-| build creates dist directory | 1414ms | Full build integration test |
-| buildIncremental runs without error | 1221ms | Incremental build integration test |
-| exits with non-zero when data is stale | 576ms | Data freshness check |
-| should reject queued operations after timeout | 501ms | Rate limiter queue timeout |
-| should execute queued operations after active | 848ms | Rate limiter concurrency |
-| should handle operations that return undefined | 1238ms | Rate limiter edge case |
-| respects custom maxAttempts | 701ms | Resilience retry logic |
-| includes error details in retry exhaustion | 2215ms | Resilience retry logic |
-[CONSOLIDATE] Centralized generateMetaDescription logic into scripts/utils.js
+      [x] error Resolved MODULE_NOT_FOUND error by installing dependencies
+      | Test Name | Duration | Issue |
+      |-----------|----------|-------|
+      | build creates dist directory | 1414ms | Full build integration test |
+      | buildIncremental runs without error | 1221ms | Incremental build integration test |
+      | exits with non-zero when data is stale | 576ms | Data freshness check |
+      | should reject queued operations after timeout | 501ms | Rate limiter queue timeout |
+      | should execute queued operations after active | 848ms | Rate limiter concurrency |
+      | should handle operations that return undefined | 1238ms | Rate limiter edge case |
+      | respects custom maxAttempts | 701ms | Resilience retry logic |
+      | includes error details in retry exhaustion | 2215ms | Resilience retry logic |
+      [CONSOLIDATE] Centralized generateMetaDescription logic into scripts/utils.js
 
 ---
 
@@ -3371,7 +3371,7 @@ Performed comprehensive security hardening: added missing HSTS headers across al
 ### Actions Taken
 
 1. **Added HSTS header to homepage and province pages** (2 files):
-   - `src/presenters/templates/homepage.js`: Added `<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">` 
+   - `src/presenters/templates/homepage.js`: Added `<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">`
    - `src/presenters/templates/province-page.js`: Added `<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">`
    - Previously only `school-page.js` had HSTS — now all 3 templates consistently enforce HSTS
    - Verified: HSTS header present in all generated pages (index.html, province pages, school pages)
@@ -3393,27 +3393,27 @@ Performed comprehensive security hardening: added missing HSTS headers across al
 
 ### Dependency Health Check
 
-| Check | Result |
-|---|---|
-| npm audit (vulnerabilities) | ✅ 0 vulnerabilities |
-| Hardcoded secrets scan | ✅ Clean — no secrets in source code |
-| Deprecated packages | ✅ None found |
-| Outdated packages | ✅ All at latest compatible versions |
-| Node engine compatibility | ✅ lint-staged 16.4.0 compatible (>=20.17) |
+| Check                       | Result                                     |
+| --------------------------- | ------------------------------------------ |
+| npm audit (vulnerabilities) | ✅ 0 vulnerabilities                       |
+| Hardcoded secrets scan      | ✅ Clean — no secrets in source code       |
+| Deprecated packages         | ✅ None found                              |
+| Outdated packages           | ✅ All at latest compatible versions       |
+| Node engine compatibility   | ✅ lint-staged 16.4.0 compatible (>=20.17) |
 
 ### Security Headers Inventory
 
-| Header | school-page.js | homepage.js | province-page.js |
-|---|---|---|---|
-| Content-Security-Policy | ✅ | ✅ | ✅ |
-| X-Content-Type-Options | ✅ | ✅ | ✅ |
-| X-Frame-Options | ✅ | ✅ | ✅ |
-| Referrer-Policy | ✅ | ✅ | ✅ |
-| Permissions-Policy | ✅ | ✅ | ✅ |
-| Cross-Origin-Opener-Policy | ✅ | ✅ | ✅ |
-| Cross-Origin-Resource-Policy | ✅ | ✅ | ✅ |
-| X-XSS-Protection | ✅ | ✅ | ✅ |
-| **Strict-Transport-Security** | ✅ | ✅ *(fixed)* | ✅ *(fixed)* |
+| Header                        | school-page.js | homepage.js  | province-page.js |
+| ----------------------------- | -------------- | ------------ | ---------------- |
+| Content-Security-Policy       | ✅             | ✅           | ✅               |
+| X-Content-Type-Options        | ✅             | ✅           | ✅               |
+| X-Frame-Options               | ✅             | ✅           | ✅               |
+| Referrer-Policy               | ✅             | ✅           | ✅               |
+| Permissions-Policy            | ✅             | ✅           | ✅               |
+| Cross-Origin-Opener-Policy    | ✅             | ✅           | ✅               |
+| Cross-Origin-Resource-Policy  | ✅             | ✅           | ✅               |
+| X-XSS-Protection              | ✅             | ✅           | ✅               |
+| **Strict-Transport-Security** | ✅             | ✅ _(fixed)_ | ✅ _(fixed)_     |
 
 ### Test Results
 
@@ -3449,16 +3449,19 @@ Performed comprehensive security hardening: added missing HSTS headers across al
 ### Impact
 
 **Security Consistency:**
+
 - HSTS now enforced across ALL generated pages, not just school pages
 - Users get consistent HTTPS enforcement regardless of which page they land on
 - Prevents SSL stripping attacks on province and homepage entry points
 
 **Least-Privilege CI:**
+
 - Removed unnecessary `id-token: write` from 3 workflows (no OIDC usage)
 - Removed unnecessary `repository-projects: write` from on-pull.yml
 - Reduced attack surface if workflow tokens are compromised
 
 **Dependency Health:**
+
 - eslint updated to latest patch (10.4.1)
 - lint-staged downgraded to 16.x for Node 20 compatibility
 - Zero vulnerabilities across all dependencies
@@ -3532,17 +3535,17 @@ Optimized homepage payload by 98.8% through lazy-loading the JSON search data, e
 
 **Metrics:**
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Homepage HTML | 1,290.7 KB | 15 KB | **98.8% reduction** |
-| Initial page load | 1.3MB + 1 round trip | 15 KB + 1 async fetch | **~20x faster initial render** |
-| Manifest creation | Full HTML (3474×) | Path only | **~3000× less work per school** |
-| Date allocations | 3476+ | 3 | **99.9% reduction** |
-| Memory (Peak RSS) | 108.68 MB | 101.93 MB | **6.2% reduction** |
-| Memory (delta) | 14.32 MB | 8.49 MB | **40.7% reduction** |
-| Homepage iterations | 3 full passes | 2 full passes | **33% fewer iterations** |
-| Build time | 1.0s | 1.0s | maintained |
-| Tests | 596/596 | 596/596 | maintained |
+| Metric              | Before               | After                 | Improvement                     |
+| ------------------- | -------------------- | --------------------- | ------------------------------- |
+| Homepage HTML       | 1,290.7 KB           | 15 KB                 | **98.8% reduction**             |
+| Initial page load   | 1.3MB + 1 round trip | 15 KB + 1 async fetch | **~20x faster initial render**  |
+| Manifest creation   | Full HTML (3474×)    | Path only             | **~3000× less work per school** |
+| Date allocations    | 3476+                | 3                     | **99.9% reduction**             |
+| Memory (Peak RSS)   | 108.68 MB            | 101.93 MB             | **6.2% reduction**              |
+| Memory (delta)      | 14.32 MB             | 8.49 MB               | **40.7% reduction**             |
+| Homepage iterations | 3 full passes        | 2 full passes         | **33% fewer iterations**        |
+| Build time          | 1.0s                 | 1.0s                  | maintained                      |
+| Tests               | 596/596              | 596/596               | maintained                      |
 
 ### Acceptance Criteria
 

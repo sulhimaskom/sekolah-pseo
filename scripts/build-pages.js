@@ -25,7 +25,10 @@ const {
   buildProvincePageData,
 } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
-const { generateHomepageHtml, prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+const {
+  generateHomepageHtml,
+  prepareSchoolDataForSearch,
+} = require('../src/presenters/templates/homepage');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 const { BuildPerformanceTracker } = require('./build-performance');
 
@@ -198,7 +201,9 @@ async function writeSearchDataFile(schools) {
   const jsonContent = JSON.stringify(searchData);
   const outputPath = path.join(distDir, 'schools.json');
   await safeWriteFile(outputPath, jsonContent);
-  logger.info(`Generated schools.json (${(Buffer.byteLength(jsonContent, 'utf-8') / 1024).toFixed(0)} KB)`);
+  logger.info(
+    `Generated schools.json (${(Buffer.byteLength(jsonContent, 'utf-8') / 1024).toFixed(0)} KB)`
+  );
 }
 
 /**
