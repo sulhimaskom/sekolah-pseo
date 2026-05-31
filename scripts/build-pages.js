@@ -216,7 +216,9 @@ async function exportSchoolsCsv() {
   const csvContent = await safeReadFile(csvPath);
   const outputPath = path.join(distDataDir, 'schools.csv');
   await safeWriteFile(outputPath, csvContent);
-  logger.info(`Exported schools data (${(Buffer.byteLength(csvContent, 'utf-8') / 1024 / 1024).toFixed(1)} MB)`);
+  logger.info(
+    `Exported schools data (${(Buffer.byteLength(csvContent, 'utf-8') / 1024 / 1024).toFixed(1)} MB)`
+  );
 }
 
 /**
@@ -266,7 +268,10 @@ async function writeSchoolPagesConcurrently(
       npsn: r.reason?.details?.npsn || 'unknown',
       operationName: r.reason?.details?.operationName,
     }));
-    logger.warn({ failures: failureDetails, totalFailed: failed }, `${failed} school pages failed to generate`);
+    logger.warn(
+      { failures: failureDetails, totalFailed: failed },
+      `${failed} school pages failed to generate`
+    );
   }
 
   return { successful, failed };
