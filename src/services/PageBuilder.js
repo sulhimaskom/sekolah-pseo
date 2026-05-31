@@ -37,7 +37,7 @@ function getSchoolRelativePath(school) {
   );
 }
 
-function buildSchoolPageData(school) {
+function buildSchoolPageData(school, enrichment) {
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
   }
@@ -53,7 +53,7 @@ function buildSchoolPageData(school) {
 
   return {
     relativePath,
-    content: generateSchoolPageHtml(school, relativePath),
+    content: generateSchoolPageHtml(school, relativePath, enrichment),
   };
 }
 

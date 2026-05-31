@@ -31,6 +31,7 @@ const {
 } = require('../src/presenters/templates/homepage');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 const { BuildPerformanceTracker } = require('./build-performance');
+const { loadEnrichmentData } = require('./enrichment');
 
 // Export functions for testing
 module.exports = {
@@ -85,9 +86,10 @@ async function loadSchools() {
  * Write a single school page using PageBuilder service.
  *
  * @param {Object} school
+ * @param {Object} [enrichment] - Optional enrichment data for this school
  */
-async function writeSchoolPage(school) {
-  const pageData = buildSchoolPageData(school);
+async function writeSchoolPage(school, enrichment) {
+  const pageData = buildSchoolPageData(school, enrichment);
   const outputPath = path.join(distDir, pageData.relativePath);
   await safeWriteFile(outputPath, pageData.content);
 }
@@ -227,17 +229,20 @@ async function exportSchoolsCsv() {
  *
  * @param {Array<Object>} schools
  * @param {number} concurrencyLimit
+ * @param {Object} [enrichmentMap] - Optional map of NPSN to enrichment data
  */
 async function writeSchoolPagesConcurrently(
   schools,
-  concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT
+  concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT,
+  enrichmentMap
 ) {
   await preCreateDirectories(schools);
 
   const { results, metrics } = await processConcurrently(
     schools,
     async school => {
-      await writeSchoolPage(school);
+      const enrichment = enrichmentMap ? enrichmentMap[school.npsn] : undefined;
+      await writeSchoolPage(school, enrichment);
     },
     {
       limit: concurrencyLimit,
@@ -340,6 +345,12 @@ async function build(options = {}) {
       );
     }
 
+    const enrichmentMap = await loadEnrichmentData();
+    const enrichedCount = Object.keys(enrichmentMap).length;
+    if (enrichedCount > 0) {
+      logger.info(`Loaded enrichment data for ${enrichedCount} schools`);
+    }
+
     // Generate homepage
     logger.info('Generating homepage...');
     const homepageHtml = generateHomepageHtml(schools);
@@ -352,7 +363,7 @@ async function build(options = {}) {
     // Generate province pages
     await generateProvincePages(schools);
 
-    const { successful, failed } = await writeSchoolPagesConcurrently(schools);
+    const { successful, failed } = await writeSchoolPagesConcurrently(schools, CONFIG.BUILD_CONCURRENCY_LIMIT, enrichmentMap);
     logger.info(`Generated ${successful} school pages (${failed} failed)`);
 
     // Save manifest for incremental builds
@@ -400,6 +411,12 @@ async function buildIncremental(tracker) {
     );
   }
 
+  const enrichmentMap = await loadEnrichmentData();
+  const enrichedCount = Object.keys(enrichmentMap).length;
+  if (enrichedCount > 0) {
+    logger.info(`Loaded enrichment data for ${enrichedCount} schools`);
+  }
+
   // Load manifest to check for changes
   const manifest = await loadManifest();
 
@@ -429,7 +446,7 @@ async function buildIncremental(tracker) {
     logger.info('No pages to rebuild');
     if (tracker) tracker.recordPageCounts(0, 0);
   } else {
-    const { successful, failed } = await writeSchoolPagesConcurrently(schoolsToBuild);
+    const { successful, failed } = await writeSchoolPagesConcurrently(schoolsToBuild, CONFIG.BUILD_CONCURRENCY_LIMIT, enrichmentMap);
     logger.info(`Generated ${successful} school pages (${failed} failed)`);
     if (tracker) tracker.recordPageCounts(successful + failed, failed);
   }

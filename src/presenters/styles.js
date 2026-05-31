@@ -187,6 +187,55 @@ section[aria-labelledby="school-details"] {
   color: var(--color-badge-education-text);
 }
 
+/* Enrichment section styles */
+.enrichment-section {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.enrichment-card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.enrichment-extract {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.enrichment-source {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.enrichment-source a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.enrichment-source a:hover {
+  text-decoration: underline;
+}
+
+.enrichment-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
 .empty-value {
   color: var(--color-text-light);
   font-style: italic;
