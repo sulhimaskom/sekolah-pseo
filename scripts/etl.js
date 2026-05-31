@@ -23,6 +23,12 @@ const { parseCsv, writeCsv } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { safeReadFile, safeAccess } = require('./fs-safe');
+const {
+  isEnrichmentEnabled,
+  enrichSchools,
+  saveEnrichmentData,
+  logEnrichmentSummary,
+} = require('./enrichment');
 
 // Export functions for testing
 module.exports = {
@@ -370,6 +376,27 @@ async function run() {
     logger.info('\n=== Field Completeness ===');
     for (const [field, stats] of Object.entries(qualityReport.fieldCompleteness)) {
       logger.info(`${field}: ${stats.percentage}% (${stats.filled}/${qualityReport.totalRecords})`);
+    }
+
+    if (isEnrichmentEnabled()) {
+      logger.info('\n=== Enrichment Phase ===');
+      logger.info('Enrichment is enabled. Enriching school data...');
+      try {
+        const enrichmentData = await enrichSchools(processed, {
+          concurrency: 5,
+          onProgress: (processedCount, total) => {
+            if (processedCount % 50 === 0 || processedCount === total) {
+              logger.info(`Enrichment progress: ${processedCount}/${total} schools`);
+            }
+          },
+        });
+        await saveEnrichmentData(enrichmentData);
+        logEnrichmentSummary(enrichmentData, processed.length);
+      } catch (enrichError) {
+        logger.warn({ err: enrichError }, 'Enrichment phase failed, continuing without enrichment');
+      }
+    } else {
+      logger.info('\nEnrichment disabled. Use --enrich flag or ENRICHMENT_ENABLED=true to enable.');
     }
 
     await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);

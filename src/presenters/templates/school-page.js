@@ -15,7 +15,41 @@ function generateCanonicalUrl(relativePath) {
   return `${baseUrl}/${relativePath}`;
 }
 
-function generateSchoolPageHtml(school, relativePath) {
+/**
+ * Generate HTML for the enrichment section of a school page.
+ * Displays data from enrichment sources (e.g., Wikipedia) when available.
+ * Returns empty string if no enrichment data is present.
+ *
+ * @param {Object} enrichment - Enrichment data object keyed by source
+ * @returns {string} HTML for the enrichment section
+ */
+function generateEnrichmentSection(enrichment) {
+  if (!enrichment || typeof enrichment !== 'object') {
+    return '';
+  }
+
+  const parts = [];
+
+  // Wikipedia enrichment
+  if (enrichment.wikipedia && enrichment.wikipedia.wikipediaUrl) {
+    const wiki = enrichment.wikipedia;
+    parts.push(`
+      <section aria-labelledby="enrichment-wikipedia" class="enrichment-section">
+        <h2 id="enrichment-wikipedia">Informasi Tambahan</h2>
+        <div class="enrichment-card">
+          ${wiki.wikipediaExtract ? `<p class="enrichment-extract">${escapeHtml(wiki.wikipediaExtract)}</p>` : ''}
+          <p class="enrichment-source">
+            Sumber: <a href="${escapeHtml(wiki.wikipediaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wiki.wikipediaTitle || 'Wikipedia')}</a>
+            <span class="enrichment-badge">Wikipedia</span>
+          </p>
+        </div>
+      </section>`);
+  }
+
+  return parts.join('\n');
+}
+
+function generateSchoolPageHtml(school, relativePath, enrichment) {
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
   }
@@ -129,6 +163,8 @@ function generateSchoolPageHtml(school, relativePath) {
           </div>
         </dl>
       </section>
+
+      ${enrichment ? generateEnrichmentSection(enrichment) : ''}
     </article>
   </main>
   
@@ -169,4 +205,5 @@ function generateSchoolPageHtml(school, relativePath) {
 module.exports = {
   generateSchoolPageHtml,
   generateCanonicalUrl,
+  generateEnrichmentSection,
 };
