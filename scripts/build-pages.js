@@ -244,10 +244,16 @@ async function writeSchoolPagesConcurrently(
   });
 
   const successful = results.filter(result => result.status === 'fulfilled').length;
-  const failed = results.filter(result => result.status === 'rejected').length;
+  const failedResults = results.filter(result => result.status === 'rejected');
+  const failed = failedResults.length;
 
   if (failed > 0) {
-    logger.warn(`Warning: ${failed} school pages failed to generate`);
+    const failureDetails = failedResults.slice(0, 5).map(r => ({
+      reason: r.reason?.message || 'Unknown error',
+      npsn: r.reason?.details?.npsn || 'unknown',
+      operationName: r.reason?.details?.operationName,
+    }));
+    logger.warn({ failures: failureDetails, totalFailed: failed }, `${failed} school pages failed to generate`);
   }
 
   return { successful, failed };
