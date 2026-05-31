@@ -300,6 +300,7 @@ function generateHomepageHtml(schools) {
   
   <footer role="contentinfo">
     <p>&copy; ${CURRENT_YEAR} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+    <p class="footer-links"><a href="/data/schools.csv" download>Unduh Data Sekolah (CSV)</a></p>
   </footer>
   
   ${generateBackToTopHtml()}

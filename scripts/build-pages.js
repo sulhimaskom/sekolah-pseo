@@ -207,6 +207,19 @@ async function writeSearchDataFile(schools) {
 }
 
 /**
+ * Export schools CSV to dist directory for user download.
+ */
+async function exportSchoolsCsv() {
+  const csvPath = CONFIG.SCHOOLS_CSV_PATH;
+  const distDataDir = path.join(distDir, 'data');
+  await safeMkdir(distDataDir);
+  const csvContent = await safeReadFile(csvPath);
+  const outputPath = path.join(distDataDir, 'schools.csv');
+  await safeWriteFile(outputPath, csvContent);
+  logger.info(`Exported schools data (${(Buffer.byteLength(csvContent, 'utf-8') / 1024 / 1024).toFixed(1)} MB)`);
+}
+
+/**
  * Write multiple school pages concurrently with a controlled concurrency limit
  * to avoid overwhelming the file system.
  *
@@ -340,6 +353,8 @@ async function build(options = {}) {
     // Save manifest for incremental builds
     await saveManifest(createManifestFromSchools(schools));
     logger.info('Build manifest saved');
+
+    await exportSchoolsCsv();
 
     tracker.recordPageCounts(successful + failed, failed);
   } finally {
