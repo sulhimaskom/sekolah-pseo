@@ -20,9 +20,6 @@ const slugify = require('./slugify');
 test.before(async () => {
   process.env.TEST_TEMP_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'build-pages-test-'));
 
-  // Reset circuit breakers to prevent state pollution from previous tests
-  resetCircuitBreakers();
-
   // Ensure clean state for integration tests: remove stale dist/ and manifest
   // This prevents circuit breaker cascade failures from stale build artifacts
   try {
@@ -35,6 +32,13 @@ test.before(async () => {
   } catch {
     // Ignore if manifest doesn't exist
   }
+});
+
+// Reset circuit breakers before each test to prevent state pollution from
+// other test files that share the fs-safe singleton circuit breaker instance.
+// Without this, tests can fail with "Circuit breaker is OPEN" errors when
+// run as part of the full test suite (node --test scripts/*.test.js).
+test.beforeEach(() => {
   resetCircuitBreakers();
 });
 
