@@ -363,7 +363,11 @@ async function build(options = {}) {
     // Generate province pages
     await generateProvincePages(schools);
 
-    const { successful, failed } = await writeSchoolPagesConcurrently(schools, CONFIG.BUILD_CONCURRENCY_LIMIT, enrichmentMap);
+    const { successful, failed } = await writeSchoolPagesConcurrently(
+      schools,
+      CONFIG.BUILD_CONCURRENCY_LIMIT,
+      enrichmentMap
+    );
     logger.info(`Generated ${successful} school pages (${failed} failed)`);
 
     // Save manifest for incremental builds
@@ -446,7 +450,11 @@ async function buildIncremental(tracker) {
     logger.info('No pages to rebuild');
     if (tracker) tracker.recordPageCounts(0, 0);
   } else {
-    const { successful, failed } = await writeSchoolPagesConcurrently(schoolsToBuild, CONFIG.BUILD_CONCURRENCY_LIMIT, enrichmentMap);
+    const { successful, failed } = await writeSchoolPagesConcurrently(
+      schoolsToBuild,
+      CONFIG.BUILD_CONCURRENCY_LIMIT,
+      enrichmentMap
+    );
     logger.info(`Generated ${successful} school pages (${failed} failed)`);
     if (tracker) tracker.recordPageCounts(successful + failed, failed);
   }

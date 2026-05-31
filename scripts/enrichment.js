@@ -40,7 +40,8 @@ const MAX_WIKIPEDIA_RESULTS = 3;
  * @returns {boolean} True if enrichment is enabled
  */
 function isEnrichmentEnabled() {
-  const envEnabled = process.env.ENRICHMENT_ENABLED === 'true' || process.env.ENRICHMENT_ENABLED === '1';
+  const envEnabled =
+    process.env.ENRICHMENT_ENABLED === 'true' || process.env.ENRICHMENT_ENABLED === '1';
   const flagEnabled = process.argv.includes('--enrich');
   return envEnabled || flagEnabled;
 }
@@ -99,19 +100,23 @@ function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
   return withTimeout(
     new Promise((resolve, reject) => {
       protocol
-        .get(url, { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } }, res => {
-          let data = '';
-          res.on('data', chunk => {
-            data += chunk;
-          });
-          res.on('end', () => {
-            try {
-              resolve(JSON.parse(data));
-            } catch (parseError) {
-              reject(new Error(`Failed to parse API response: ${parseError.message}`));
-            }
-          });
-        })
+        .get(
+          url,
+          { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
+          res => {
+            let data = '';
+            res.on('data', chunk => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              try {
+                resolve(JSON.parse(data));
+              } catch (parseError) {
+                reject(new Error(`Failed to parse API response: ${parseError.message}`));
+              }
+            });
+          }
+        )
         .on('error', reject);
     }),
     timeoutMs,
@@ -228,9 +233,7 @@ async function enrichSchools(schools, options = {}) {
   // Process in batches to control concurrency
   for (let i = 0; i < schools.length; i += concurrency) {
     const batch = schools.slice(i, i + concurrency);
-    const batchResults = await Promise.allSettled(
-      batch.map(school => enrichSchool(school))
-    );
+    const batchResults = await Promise.allSettled(batch.map(school => enrichSchool(school)));
 
     for (let j = 0; j < batch.length; j++) {
       const school = batch[j];
@@ -297,7 +300,9 @@ function logEnrichmentSummary(enrichmentData, totalSchools) {
   logger.info('\n=== Enrichment Summary ===');
   logger.info(`Total schools: ${totalSchools}`);
   logger.info(`Enriched schools: ${enrichedCount}`);
-  logger.info(`Coverage: ${totalSchools > 0 ? ((enrichedCount / totalSchools) * 100).toFixed(1) : 0}%`);
+  logger.info(
+    `Coverage: ${totalSchools > 0 ? ((enrichedCount / totalSchools) * 100).toFixed(1) : 0}%`
+  );
 
   // Count by source
   const sourceCounts = {};

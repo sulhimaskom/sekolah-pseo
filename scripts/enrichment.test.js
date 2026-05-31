@@ -189,14 +189,18 @@ describe('saveEnrichmentData and loadEnrichmentData', () => {
     // Clean up any test file
     try {
       fs.unlinkSync(testDataPath);
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   });
 
   afterEach(() => {
     // Clean up test file
     try {
       fs.unlinkSync(testDataPath);
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   });
 
   it('loadEnrichmentData returns empty object when file does not exist', async () => {
@@ -243,7 +247,11 @@ describe('saveEnrichmentData and loadEnrichmentData', () => {
       // Clean up
       fs.unlinkSync(realPath);
     } finally {
-      try { fs.unlinkSync(tempPath); } catch (_) { /* ignore */ }
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (_) {
+        /* ignore */
+      }
     }
   });
 });
