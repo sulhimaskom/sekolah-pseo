@@ -1975,34 +1975,6 @@ await writeSchoolPage({
 
 ---
 
-#### `preCreateDirectories(schools)`
-
-Pre-creates all unique directories needed for school pages to reduce redundant `fs.mkdir` calls.
-
-**Parameters:**
-
-- `schools` (Array<Object>): Array of school objects
-
-**Returns:** `Promise<void>`
-
-**Throws:** N/A (logs individual directory creation failures)
-
-**Optimization:** Creates only unique directories once instead of per-school directory creation
-
-**Dependencies:**
-
-- `getUniqueDirectories` (from `src/services/PageBuilder.js`)
-- `safeMkdir` (from `scripts/fs-safe.js`)
-
-**Usage:**
-
-```javascript
-await preCreateDirectories(schools);
-console.log('All directories created');
-```
-
----
-
 #### `generateExternalStyles()`
 
 Generates the external CSS file for all school pages.
@@ -2110,7 +2082,7 @@ Writes multiple school pages concurrently with controlled concurrency using `pro
 **Dependencies:**
 
 - `processConcurrently` (from `scripts/utils.js`)
-- `preCreateDirectories()`
+- `getUniqueDirectories()` (from `src/services/PageBuilder.js`) for pre-creating school page directories
 - `writeSchoolPage()`
 
 **Usage:**
@@ -3011,11 +2983,12 @@ Checks the freshness of school data and generates quality metrics reports. Can b
 
 ### Exports
 
-````javascript
+```javascript
 module.exports = {
   getDataFreshness: function,
   getDataQualityMetrics: function
-};```
+};
+```
 
 ### Constants
 
@@ -3025,7 +2998,7 @@ module.exports = {
 
 #### `getDataFreshness()`
 
-Jets the most recent update date from schools.csv and determines if data is fresh.
+Gets the most recent update date from schools.csv and determines if data is fresh.
 
 **Returns:** `Object` - Freshness information
 
@@ -3036,7 +3009,8 @@ Jets the most recent update date from schools.csv and determines if data is fres
   daysAgo: number|null, // Days since last update or null
   recordCount: number, // Total number of school records
   isFresh: boolean    // true if data is within DEFAULT_MAX_AGE_DAYS
-}```
+}
+```
 
 **Freshness Threshold:** Data is considered fresh if `daysAgo <= 7` (DEFAULT_MAX_AGE_DAYS)
 
@@ -3049,7 +3023,8 @@ const freshness = getDataFreshness();
 // If freshness.isFresh is false, data needs updating
 if (!freshness.isFresh) {
   console.log(`Data is ${freshness.daysAgo} days old - consider refreshing`);
-}```
+}
+```
 
 ---
 
@@ -3068,7 +3043,8 @@ Calculates data quality metrics from schools.csv.
     npsn: { count: number, percentage: string },
     province: { count: number, percentage: string }
   }
-}```
+}
+```
 
 **Quality Metrics:**
 
@@ -3084,7 +3060,8 @@ const { getDataQualityMetrics } = require('./check-freshness');
 const quality = getDataQualityMetrics();
 if (quality) {
   console.log(`Records with coordinates: ${quality.metrics.coordinates.percentage}%`);
-}```
+}
+```
 
 ---
 
@@ -3101,7 +3078,7 @@ node scripts/check-freshness.js --json
 
 # Verbose output with quality metrics
 node scripts/check-freshness.js --verbose
-````
+```
 
 Exit Codes:
 
@@ -3154,12 +3131,13 @@ Clones or updates the external data repository and finds the best CSV file.
 
 **Usage:**
 
-````javascript
+```javascript
 const { fetchFromGitHub } = require('./fetch-data');
 const csvPath = await fetchFromGitHub();
 if (csvPath) {
   console.log(`Using: ${csvPath}`);
-}```
+}
+```
 
 ---
 
@@ -3184,7 +3162,8 @@ Recursively finds all CSV files in a directory.
 ```javascript
 const { findCsvFiles } = require('./fetch-data');
 const files = findCsvFiles('/path/to/data');
-console.log(`Found ${files.length} CSV files`);```
+console.log(`Found ${files.length} CSV files`);
+```
 
 ---
 
@@ -3211,7 +3190,8 @@ const { copyToRaw } = require('./fetch-data');
 const success = copyToRaw('/source/data.csv', '/path/to/raw.csv');
 if (success) {
   console.log('File copied successfully');
-}```
+}
+```
 
 ---
 
@@ -3244,7 +3224,7 @@ const safeUrl = validateRepoUrl('https://github.com/user/repo.git');
 // Throws for invalid URLs:
 validateRepoUrl('file:///etc/passwd'); // Error: Invalid protocol
 validateRepoUrl('https://evil.com'); // Error: must end with .git
-````
+```
 
 ---
 
