@@ -1880,6 +1880,95 @@ src/
 - Schema.org: application/ld+json with School type
 - All user content properly escaped with escapeHtml()
 
+### [TASK-025] Test Coverage - Untested Data Quality, Build Performance, and Freshness Report Modules
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Added comprehensive test coverage for three untested production modules totaling ~1072 lines: data-quality.js, build-performance.js, and freshness-report.js. These modules contain critical data quality analysis, build performance monitoring, and freshness reporting logic that previously had zero test coverage.
+
+### Actions Taken
+
+1. **Added module exports to `scripts/data-quality.js`**:
+   - Exported 8 functions + 3 constants for testability
+   - Functions: `analyzeQuality`, `checkThresholds`, `isValidCoordinate`, `isNonEmpty`, `pct`, `createBar`, `formatHuman`, `formatJson`
+   - Constants: `REQUIRED_FIELDS`, `INDONESIA_BOUNDS`, `DEFAULT_THRESHOLDS`
+
+2. **Created `scripts/data-quality.test.js`** with 41 tests:
+   - `isNonEmpty()`: valid strings, null/undefined, empty/whitespace, numbers (4 tests)
+   - `isValidCoordinate()`: Indonesia bounds acceptance, out-of-bounds rejection, zero rejection, non-numeric, boundary values (5 tests)
+   - `pct()`: normal percentages, zero total, partial values (3 tests)
+   - `createBar()`: full, empty, half, rounding, narrow width (5 tests)
+   - `analyzeQuality()`: empty array, field completeness, coordinate validity, duplicate NPSNs, categorical distribution, unknown status, overall score, large dataset, missing optional fields (9 tests)
+   - `checkThresholds()`: all pass, low completeness, low coordinates, duplicate NPSNs, custom thresholds, empty schools (6 tests)
+   - `formatHuman()`: output structure, coordinate info, no-duplicates message, categorical distribution (4 tests)
+   - `formatJson()`: valid JSON structure, all required sections (2 tests)
+   - Constants: required fields, Indonesia bounds, default thresholds (3 tests)
+
+3. **Created `scripts/build-performance.test.js`** with 47 tests:
+   - Constructor: default budgets, custom budgets, initial state (3 tests)
+   - `start()`/`stop()`: timing, memory recording, graceful handling (3 tests)
+   - `setBuildType()`: build type switching (1 test)
+   - `recordPageCounts()`: normal, with failures (2 tests)
+   - `getElapsedMs()`: not started, not stopped, duration (3 tests)
+   - `getThroughput()`: no pages, calculation, fast builds (3 tests)
+   - Memory: delta zero, positive, negative, peak RSS missing, specific value, real value (6 tests)
+   - `checkBudgets()`: no violations, build time, throughput, failed pages, storage, state clearing (6 tests)
+   - `formatBytes()`: zero, KB, MB, GB, fractional (5 tests)
+   - `formatDuration()`: ms, seconds, minutes, boundary (4 tests)
+   - `generateReport()`: structure, metrics fields, violations (3 tests)
+   - `getGitHubSummary()`: markdown structure, violations display (2 tests)
+   - `monitorBuild()`: wrapper, build type, error handling, throwOnViolation true, throwOnViolation false (5 tests)
+   - `DEFAULT_BUDGETS`: structure validation (1 test)
+
+4. **Created `scripts/freshness-report.test.js`** with 18 tests:
+   - `generateHtml()`: non-empty output, title/data, fresh status, stale status, date display, null daysAgo, missing quality, empty metrics, metric bars, maxAgeDays, SITE_URL, dark mode, grid layout, semantic HTML, zero records, bar colors (16 tests)
+   - `getReportData()`: object structure, timestamp (2 tests)
+
+### Files Modified
+
+- `scripts/data-quality.js` — Added `module.exports` with 8 functions + 3 constants
+
+### Files Created
+
+- `scripts/data-quality.test.js` — 41 tests covering data quality analysis
+- `scripts/build-performance.test.js` — 47 tests covering build performance tracking
+- `scripts/freshness-report.test.js` — 18 tests covering freshness report generation
+
+### Test Results
+
+- New tests created: 106 (41 + 47 + 18)
+- Total JS tests: 729 (increased from 623)
+- All tests pass: 729/729 ✓
+- Lint checks pass: 0 errors ✓
+- Coverage: Lines 90.55% ✓ (threshold: 80%), Branches 86.85% ✓ (threshold: 75%)
+- Zero regressions introduced
+
+### Test Coverage Summary
+
+| Module | Lines of Code | Tests | Key Functions Tested |
+|--------|:---:|:-----:|------|
+| data-quality.js | 400 | 41 | `analyzeQuality`, `checkThresholds`, `isValidCoordinate`, `isNonEmpty`, `pct`, `createBar`, `formatHuman`, `formatJson` |
+| build-performance.js | 357 | 47 | `BuildPerformanceTracker` (15 methods), `monitorBuild`, `DEFAULT_BUDGETS` |
+| freshness-report.js | 315 | 18 | `generateHtml`, `getReportData` |
+
+### Acceptance Criteria
+
+- [x] Data quality module has comprehensive test coverage (41 tests)
+- [x] Build performance module has comprehensive test coverage (47 tests)
+- [x] Freshness report module has test coverage (18 tests)
+- [x] All 106 new tests pass consistently
+- [x] All 623 existing tests continue to pass (no regressions)
+- [x] Edge cases tested (null/undefined inputs, empty data, boundary values, error paths)
+- [x] Tests readable and maintainable (clear names, focused assertions)
+- [x] Breaking code causes test failure (validated through comprehensive coverage)
+- [x] Lint passes (0 errors)
+- [x] Coverage thresholds met (Lines: 90.55% ≥ 80%, Branches: 86.85% ≥ 75%)
+
+---
+
 ## Template
 
 ```markdown
