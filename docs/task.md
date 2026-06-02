@@ -3961,3 +3961,82 @@ Optimized the schools.json search payload, improved build time by reducing redun
 - `scripts/build-pages.js` - Hoisted `new Date()` outside manifest loop
 - `src/presenters/templates/school-page.js` - Pre-escaped CONFIG.TEXT values
 - `scripts/sitemap.js` - Added `collectUrlsFromSchools()`, updated CLI entry point
+
+---
+
+### [TASK-026] Performance Optimization - schools.json Payload Compression via Single-Letter Keys
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Compressed the schools.json search data payload by replacing verbose key names with single-letter equivalents. The schools.json file (1.2MB) is downloaded by every homepage visitor for client-side search functionality, so reducing its size directly improves page load times for end users.
+
+### Actions Taken
+
+1. **Compressed JSON keys to single-letter format** (`src/presenters/templates/homepage.js`):
+   - Changed `prepareSchoolDataForSearch()` to use single-letter keys:
+     - `npsn` → `n`, `nama` → `a`, `bentuk` → `b`, `status` → `s`
+     - `alamat` → `al`, `kecamatan` → `kc`, `kab_kota` → `kk`
+     - `provinsi` → `p`, `schoolUrl` → `u`
+   - Saves ~49 chars per school × 3474 schools = ~170KB in key overhead alone
+   - Added inline key mapping comment for maintainability
+
+2. **Updated client-side search JavaScript** (`src/presenters/templates/homepage.js`):
+   - Updated `filterSchools()`, `createSchoolResultElement()`, and `downloadCsv()` functions
+   - All `school.nama` → `school.a`, `school.npsn` → `school.n`, etc.
+   - No functional changes - search, filtering, CSV download all unchanged
+
+### Performance Results
+
+**Before Optimization:**
+
+- schools.json: 1,200,647 bytes (1,173 KB)
+- Build time: 956ms for 3474 pages
+- Key overhead per school: ~79 chars of JSON key names
+
+**After Optimization:**
+
+- schools.json: 1,033,895 bytes (1,010 KB) - **166 KB / 14% reduction**
+- Build time: 1.0s (maintained)
+- Key overhead per school: ~30 chars of JSON key names
+- Peak RSS: 117.36 MB (slightly lower)
+
+**Metrics:**
+
+| Metric       | Before         | After          | Improvement          |
+| ------------ | -------------- | -------------- | -------------------- |
+| schools.json | 1,173 KB       | 1,010 KB       | **14% smaller**      |
+| Build time   | 956ms          | 1.0s           | ✅ Maintained        |
+| Tests        | 729 pass       | 729 pass       | ✅ No regression     |
+| Lint         | 0 errors       | 0 errors       | ✅ No regression     |
+| Build pages  | 3474 (0 fail)  | 3474 (0 fail)  | ✅ No regression     |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` - Compressed JSON keys in `prepareSchoolDataForSearch()`, updated client-side JS references
+
+### Impact
+
+**User Experience:**
+
+- 166KB less data downloaded per homepage visit (14% reduction)
+- Faster perceived search loading on mobile and slow connections
+- All existing functionality preserved (search, filter, CSV download, navigation)
+
+**Maintainability:**
+
+- Key mapping documented inline for developer reference
+- Single-letter format is a well-established compression pattern
+- No changes to the server-side build logic or data pipeline
+
+### Acceptance Criteria
+
+- [x] schools.json measurably smaller (1,173 KB → 1,010 KB, 14% reduction)
+- [x] User experience faster (166KB less data per page load)
+- [x] Client-side search functionality fully maintained
+- [x] All tests pass (729/729)
+- [x] Lint passes (0 errors)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Zero regressions introduced
