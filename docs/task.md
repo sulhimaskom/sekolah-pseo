@@ -100,15 +100,15 @@ Conducted comprehensive security audit and hardening of the Indonesian School PS
 
 ### Security Fixes Summary
 
-| # | Issue | Severity | Files |
-|---|-------|----------|-------|
-| 1 | Sitemap URLs not XML-encoded (potential XML injection) | Low | sitemap.js |
-| 2 | robots.txt had hardcoded placeholder URL | Medium | build-pages.js, robots.txt |
-| 3 | Workflow exposed duplicate/incorrect secret mappings | Medium | on-push.yml |
-| 4 | Deprecated X-XSS-Protection header in all pages | Low | 3 template files |
-| 5 | Outdated lint-staged version (17.0.5 → 17.0.7) | Low | package.json |
-| 6 | Empty SECURITY_AUDIT_NOTE.md placeholder | Low | SECURITY_AUDIT_NOTE.md |
-| 7 | Duplicate lint-staged config entry in package.json | Low | package.json |
+| #   | Issue                                                  | Severity | Files                      |
+| --- | ------------------------------------------------------ | -------- | -------------------------- |
+| 1   | Sitemap URLs not XML-encoded (potential XML injection) | Low      | sitemap.js                 |
+| 2   | robots.txt had hardcoded placeholder URL               | Medium   | build-pages.js, robots.txt |
+| 3   | Workflow exposed duplicate/incorrect secret mappings   | Medium   | on-push.yml                |
+| 4   | Deprecated X-XSS-Protection header in all pages        | Low      | 3 template files           |
+| 5   | Outdated lint-staged version (17.0.5 → 17.0.7)         | Low      | package.json               |
+| 6   | Empty SECURITY_AUDIT_NOTE.md placeholder               | Low      | SECURITY_AUDIT_NOTE.md     |
+| 7   | Duplicate lint-staged config entry in package.json     | Low      | package.json               |
 
 ### Verification
 
@@ -3233,19 +3233,25 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 
 ### [REFACTOR] Code Readability - Simplify Concurrency Control Pattern
 
-- Location: scripts/build-pages.js (lines 93-116) and scripts/validate-links.js (lines 73-113)
-- Issue: Both scripts implement nearly identical concurrency control pattern using for-loop with batch slicing and Promise.allSettled. This pattern is duplicated and could be abstracted into a reusable utility.
-- Suggestion: Extract concurrency control pattern into a utility function `processConcurrently(items, processor, limit)` in scripts/utils.js. Refactor both scripts to use this utility.
-- Priority: Low
-- Effort: Medium
+**Status**: Complete
+**Verified by**: Code Reviewer
+
+- Location: scripts/build-pages.js, scripts/validate-links.js
+- Issue: Duplicated concurrency control pattern across both scripts.
+- Resolution: Consolidated into `processConcurrently()` utility via [CONSOLIDATE] entry (line 3380). Both scripts now use the shared utility.
+- Priority: Low (Resolved)
+- Effort: Medium (Complete)
 
 ### [REFACTOR] Dead Code - Remove Unused Utility Function
 
-- Location: scripts/utils.js (lines 132-137)
-- Issue: The `addNumbers(a, b)` function appears to be unused throughout the codebase. It was likely added during initial development but serves no purpose in the current system. Having unused code increases cognitive load and maintenance burden.
-- Suggestion: Remove the `addNumbers` function and its JSDoc documentation. If arithmetic operations are needed in the future, they should be added inline or as part of a more comprehensive math utility module.
-- Priority: Low
-- Effort: Small
+**Status**: Complete
+**Verified by**: Code Reviewer
+
+- Location: scripts/utils.js
+- Issue: The `addNumbers(a, b)` function was unused.
+- Resolution: Removed via [REMOVE] entry (line 3384). Function no longer exists in utils.js or utils.test.js.
+- Priority: Low (Resolved)
+- Effort: Small (Complete)
 
 ### [REFACTOR] Design Consistency - Centralize Process Exit Handling
 
@@ -3271,43 +3277,99 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 - Priority: Low
 - Effort: Small
 
----
+### [REVIEW-001] Test Coverage Gap - Untested Data Quality and Reporting Modules
 
-### [TASK-020] DRY Violation - Extract Duplicated Client-Side JavaScript to Shared Module
-
-- **Location**: `src/presenters/templates/school-page.js` (lines 163-198), `src/presenters/templates/province-page.js` (lines 160-180), `src/presenters/templates/homepage.js` (lines 290-311)
-- **Issue**: The back-to-top button scroll logic (~15-18 lines of JavaScript) is duplicated identically across all 3 template files. Every template includes its own `handleScroll()`, `scrollToTop()`, event listener setup, and visibility toggle logic. The copy-to-clipboard logic in `school-page.js` (~12 lines) is also a candidate for extraction. This violates DRY and makes maintenance harder (a bug fix or enhancement must be applied in 3 places).
-- **Suggestion**: Extract the shared client-side JavaScript into a single file (e.g., `public/js/main.js` or `src/presenters/client-scripts.js`) that is referenced via `<script src="...">` in all templates. This reduces code duplication, enables browser caching of the script, and simplifies maintenance. The scroll-to-top, clipboard copy, and any future shared client logic should be consolidated here.
+- **Location**: `scripts/build-performance.js` (357 lines), `scripts/data-quality.js` (~400 lines), `scripts/freshness-report.js` (315 lines)
+- **Issue**: Three source modules (~1072 combined lines) have zero test coverage. These modules contain critical data quality analysis, build performance monitoring, and freshness reporting logic. Without tests, regressions in these modules go undetected and refactoring is risky.
+- **Suggestion**:
+  1. Add test suite for `scripts/data-quality.js` covering `analyzeQuality()`, `checkThresholds()`, and `isValidCoordinate()` functions.
+  2. Add test suite for `scripts/build-performance.js` covering `monitorBuild()`, budget enforcement, and metrics collection.
+  3. Add test suite for `scripts/freshness-report.js` covering report generation and data freshness calculations.
+  4. Target minimum 80% line coverage for each module.
 - **Priority**: Medium
 - **Effort**: Medium
 
+### [REVIEW-002] Logger Inconsistency - console.\* Used in data-quality.js Despite Logger Module
+
+- **Location**: `scripts/data-quality.js` (lines 369-395)
+- **Issue**: The script imports the pino-based `logger` module (line 30) but uses raw `console.log()` and `console.error()` for all output (10+ calls). This bypasses structured logging, timestamping, and log level control that the logger provides. The logger module even includes convenience methods matching the `console.*` API for easy migration.
+- **Suggestion**: Replace all `console.log()` calls with `logger.info()` and `console.error()` with `logger.error()` in `scripts/data-quality.js`. This enables consistent log formatting, log level filtering, and aligns with the rest of the codebase patterns.
+- **Priority**: Low
+- **Effort**: Small
+
+### [REVIEW-003] Hardcoded String - '.html' in walkDirectory Despite Config Constant
+
+- **Location**: `scripts/utils.js` (line 33)
+- **Issue**: The `walkDirectory()` function uses a hardcoded string `'.html'` to filter files: `entry.endsWith('.html')`. However, `scripts/config.js` (line 64) already defines `HTML_EXTENSION: '.html'` as a named constant. This is both a magic string violation and a missed opportunity to use the centralized config.
+- **Suggestion**: Replace `entry.endsWith('.html')` with `entry.endsWith(CONFIG.HTML_EXTENSION)` in `scripts/utils.js`. Import CONFIG at the top of utils.js if not already imported. Verify no other hardcoded `'.html'` strings remain in source files.
+- **Priority**: Low
+- **Effort**: Small
+
+### [REVIEW-004] Dead Agent Documentation Files - Orphaned Workflow Docs
+
+- **Location**: `docs/` directory
+- **Issue**: Multiple files in `docs/` appear to be agent prompt templates or workflow documentation that are not referenced by any project documentation or workflow: `docs/RnD.md`, `docs/ai-agent-engineer.md`, `docs/frontend-engineer.md`, `docs/platform-engineer.md`, `docs/quality-assurance.md`, `docs/technical-writer.md`. These files accumulate as dead documentation and create confusion about which docs are project-relevant vs. agent configuration.
+- **Suggestion**:
+  1. Audit each `docs/*.md` file to determine if it is project documentation or agent configuration.
+  2. Move agent configuration docs to a dedicated directory (e.g., `.omo/agents/` or `.github/agents/`).
+  3. For truly unused docs, archive or delete them.
+  4. Add appropriate patterns to `.prettierignore` if agent prompt files should maintain custom formatting.
+- **Priority**: Low
+- **Effort**: Small
+
+### [REVIEW-005] Inline Client-Side Script Block - No Browser Caching for Shared JS
+
+- **Location**: `src/presenters/templates/school-page.js` (lines 163-198), `src/presenters/templates/province-page.js` (lines 156-180), `src/presenters/templates/homepage.js` (lines 290-318)
+- **Issue**: While the back-to-top button logic was successfully extracted to `shared/back-to-top.js`, the scripts are still injected inline into each HTML page via `<script>` tags. This means every page load includes the full script content, and browser caching cannot be leveraged. The province-page template inlines ~68 lines of JS, the school-page includes scroll/clipboard logic, and the homepage includes search functionality.
+- **Suggestion**:
+  1. Extract inline `<script>` blocks from all templates into a single external `.js` file (e.g., `public/js/main.js`).
+  2. Reference it via `<script src="/js/main.js" defer>` in all templates.
+  3. This enables browser caching (script downloaded once across all pages), reduces HTML payload per page, and centralizes client-side logic.
+  4. Ensure any page-specific initialization is handled via DOMContentLoaded or data attributes.
+- **Priority**: Low
+- **Effort**: Large
+  **Verified by**: Code Reviewer
+
+- **Location**: `src/presenters/templates/shared/back-to-top.js`
+- **Issue**: The back-to-top button scroll logic was duplicated across all 3 template files.
+- **Resolution**: Extracted `generateBackToTopHtml()` and `generateBackToTopScript()` into `src/presenters/templates/shared/back-to-top.js`. All 3 templates now import and use this shared module.
+- **Files Verified**: `homepage.js`, `province-page.js`, `school-page.js` - all import and use the shared module.
+- **Priority**: Medium (Resolved)
+- **Effort**: Medium (Complete)
+
 ### [TASK-021] Resilience Gap - Add safeUnlink to fs-safe and Fix manifest.js
 
-- **Location**: `scripts/fs-safe.js`, `scripts/manifest.js` (line 163)
-- **Issue**: `scripts/manifest.js` uses raw `fs.promises.unlink(manifestPath)` (line 163) for deleting the build manifest file, bypassing the resilience wrappers (timeout, retry, circuit breaker) that every other file operation uses. The `fs-safe.js` module lacks a `safeUnlink()` function entirely. This is the only remaining raw fs operation outside `fetch-data.js` (which is intentionally synchronous for git operations).
-- **Suggestion**:
-  1. Add `safeUnlink(filePath)` to `scripts/fs-safe.js` following the same pattern as `safeWriteFile` (timeout + retry + circuit breaker).
-  2. Update `scripts/manifest.js` to import and use `safeUnlink` instead of `fs.promises.unlink`.
-  3. Add tests for `safeUnlink` in `scripts/fs-safe.test.js`.
-  4. Remove the unused `const fs = require('fs')` import from `manifest.js` (currently only used for this one call).
-- **Priority**: Medium
-- **Effort**: Small
+**Status**: Complete
+**Verified by**: Code Reviewer
+
+- **Location**: `scripts/fs-safe.js`
+- **Issue**: `manifest.js` was using raw `fs.promises.unlink` and `fs-safe.js` lacked `safeUnlink`.
+- **Resolution**: `safeUnlink()` exists in `fs-safe.js` (line 159) and is exported (lines 180, 198, 214). `manifest.js` no longer contains any raw `fs.*` calls.
+- **Priority**: Medium (Resolved)
+- **Effort**: Small (Complete)
 
 ### [TASK-022] Dependency Cleanup - Remove Unused picomatch DevDependency
 
-- **Location**: `package.json` (devDependencies)
-- **Issue**: The `picomatch` package (`^2.3.2`) is listed as a devDependency but is never imported, required, or referenced anywhere in the codebase. This is dead weight in `node_modules` and unnecessary maintenance burden. No configuration file (ESLint, Prettier, etc.) references it either.
-- **Suggestion**: Remove `"picomatch": "^2.3.2"` from `devDependencies` in `package.json`. Run `npm install` to verify no other packages depend on it and that `npm test` still passes.
-- **Priority**: Low
-- **Effort**: Small
+**Status**: Complete
+**Verified by**: Code Reviewer
+
+- **Location**: `package.json`
+- **Issue**: `picomatch` was listed as a devDependency but never used.
+- **Resolution**: `picomatch` is no longer present in `package.json` dependencies.
+- **Priority**: Low (Resolved)
+- **Effort**: Small (Complete)
 
 ### [TASK-023] Prettier Formatting Drift - Fix 15 Files Failing format:check
 
-- **Location**: `.github/workflows/prompt/00.md` through `11.md` (12 files), `.github/workflows/prompt/README.md` (1 file), `.github/workflows/template.md` (1 file), `docs/task.md` (1 file) - 15 files total
-- **Issue**: `npm run format:check` reports code style issues in 15 files (all workflow prompt markdown files and docs/task.md). These files have drifted from the project's Prettier formatting standards. While these are primarily documentation/workflow files, inconsistent formatting reduces professionalism and makes diffs harder to review.
-- **Suggestion**: Run `npx prettier --write` on the affected files to fix formatting. Update `.prettierignore` if any file should be excluded from formatting (e.g., auto-generated prompt files). Verify with `npm run format:check`.
-- **Priority**: Low
-- **Effort**: Small
+**Status**: Complete
+**Verified by**: Code Reviewer
+
+- **Location**: `docs/task.md`, `docs/technical-writer.md`
+- **Issue**: 15 files were failing `npm run format:check`. 13 were previously fixed.
+- **Resolution**: Ran `npx prettier --write docs/task.md docs/technical-writer.md`. All files now pass `npm run format:check` with 0 warnings.
+- **Verification**: ✅ `npm run format:check` - All matched files use Prettier code style.
+- **Priority**: Low (Resolved)
+- **Effort**: Small (Complete)
 
 ---
 
@@ -3791,18 +3853,18 @@ Optimized the schools.json search payload, improved build time by reducing redun
 
 **Metrics:**
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Build time | 1.2s (1232ms) | 981ms | **18.3% faster** |
-| Throughput | 2852 p/s | 3541 p/s | **24.1% better** |
-| schools.json | 1,277 KB | 1,173 KB | **8.1% smaller** |
-| Redundant slugify calls | 13896 | 0 | **100% eliminated** |
-| Redundant Date objects | 3475 | 1 | **99.97% eliminated** |
-| escapeHtml per build | ~42,000 | 0 static | **100% pre-escaped** |
-| Filesystem stat calls | 3478+ | 0 | **100% eliminated** |
-| Tests | 623 pass | 623 pass | ✅ No regression |
-| Lint | 0 errors | 0 errors | ✅ No regression |
-| Build pages | 3474 (0 failed) | 3474 (0 failed) | ✅ No regression |
+| Metric                  | Before          | After           | Improvement           |
+| ----------------------- | --------------- | --------------- | --------------------- |
+| Build time              | 1.2s (1232ms)   | 981ms           | **18.3% faster**      |
+| Throughput              | 2852 p/s        | 3541 p/s        | **24.1% better**      |
+| schools.json            | 1,277 KB        | 1,173 KB        | **8.1% smaller**      |
+| Redundant slugify calls | 13896           | 0               | **100% eliminated**   |
+| Redundant Date objects  | 3475            | 1               | **99.97% eliminated** |
+| escapeHtml per build    | ~42,000         | 0 static        | **100% pre-escaped**  |
+| Filesystem stat calls   | 3478+           | 0               | **100% eliminated**   |
+| Tests                   | 623 pass        | 623 pass        | ✅ No regression      |
+| Lint                    | 0 errors        | 0 errors        | ✅ No regression      |
+| Build pages             | 3474 (0 failed) | 3474 (0 failed) | ✅ No regression      |
 
 ### Files Modified
 
