@@ -355,8 +355,6 @@ function main() {
 
   if (!fs.existsSync(csvPath)) {
     logger.error({ path: csvPath }, 'Schools CSV not found. Run ETL first.');
-    console.error(`\n  ❌ File not found: ${csvPath}`);
-    console.error('  Run "npm run etl" first to generate school data.\n');
     process.exit(1);
   }
 
