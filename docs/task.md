@@ -1948,11 +1948,11 @@ Added comprehensive test coverage for three untested production modules totaling
 
 ### Test Coverage Summary
 
-| Module | Lines of Code | Tests | Key Functions Tested |
-|--------|:---:|:-----:|------|
-| data-quality.js | 400 | 41 | `analyzeQuality`, `checkThresholds`, `isValidCoordinate`, `isNonEmpty`, `pct`, `createBar`, `formatHuman`, `formatJson` |
-| build-performance.js | 357 | 47 | `BuildPerformanceTracker` (15 methods), `monitorBuild`, `DEFAULT_BUDGETS` |
-| freshness-report.js | 315 | 18 | `generateHtml`, `getReportData` |
+| Module               | Lines of Code | Tests | Key Functions Tested                                                                                                    |
+| -------------------- | :-----------: | :---: | ----------------------------------------------------------------------------------------------------------------------- |
+| data-quality.js      |      400      |  41   | `analyzeQuality`, `checkThresholds`, `isValidCoordinate`, `isNonEmpty`, `pct`, `createBar`, `formatHuman`, `formatJson` |
+| build-performance.js |      357      |  47   | `BuildPerformanceTracker` (15 methods), `monitorBuild`, `DEFAULT_BUDGETS`                                               |
+| freshness-report.js  |      315      |  18   | `generateHtml`, `getReportData`                                                                                         |
 
 ### Acceptance Criteria
 
@@ -4005,13 +4005,13 @@ Compressed the schools.json search data payload by replacing verbose key names w
 
 **Metrics:**
 
-| Metric       | Before         | After          | Improvement          |
-| ------------ | -------------- | -------------- | -------------------- |
-| schools.json | 1,173 KB       | 1,010 KB       | **14% smaller**      |
-| Build time   | 956ms          | 1.0s           | ✅ Maintained        |
-| Tests        | 729 pass       | 729 pass       | ✅ No regression     |
-| Lint         | 0 errors       | 0 errors       | ✅ No regression     |
-| Build pages  | 3474 (0 fail)  | 3474 (0 fail)  | ✅ No regression     |
+| Metric       | Before        | After         | Improvement      |
+| ------------ | ------------- | ------------- | ---------------- |
+| schools.json | 1,173 KB      | 1,010 KB      | **14% smaller**  |
+| Build time   | 956ms         | 1.0s          | ✅ Maintained    |
+| Tests        | 729 pass      | 729 pass      | ✅ No regression |
+| Lint         | 0 errors      | 0 errors      | ✅ No regression |
+| Build pages  | 3474 (0 fail) | 3474 (0 fail) | ✅ No regression |
 
 ### Files Modified
 
@@ -4040,3 +4040,104 @@ Compressed the schools.json search data payload by replacing verbose key names w
 - [x] Lint passes (0 errors)
 - [x] Build succeeds (3474 pages, 0 failed)
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-027] Data Architecture - Schema Integrity Constraints and Logging Consistency
+
+**Status**: Complete
+**Agent**: Principal Data Architect (Sisyphus)
+
+### Description
+
+Enhanced data schema integrity by adding categorical field validation to the ETL pipeline, centralized schema constants, replaced hardcoded magic strings with config references, and standardized logging in the data quality module.
+
+### Actions Taken
+
+1. **Schema Design - Added field constraint validation** (`scripts/config.js`, `scripts/etl.js`):
+   - Added `ALLOWED_STATUS_VALUES: ['N', 'S']` and `ALLOWED_BENTUK_PENDIDIKAN: ['SD', 'SMP', 'SMA', 'SMK', 'SLB', 'SDLB', 'SMLB', 'SMPLB']` to config.js
+   - Integrated `validateCategoricalField()` into `validateRecord()` in etl.js
+   - Invalid status values (e.g., 'X', 'NEGERI') are now rejected at the ETL boundary
+   - Invalid bentuk_pendidikan values (e.g., 'TK', 'UNIVERSITAS') are now rejected at the ETL boundary
+   - Empty status is still allowed (optional field)
+
+2. **Added comprehensive tests** (`scripts/etl.test.js`):
+   - 4 new tests covering valid/invalid status and bentuk_pendidikan values
+   - All 8 valid education types verified (SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB)
+
+3. **Logger consistency fix** (`scripts/data-quality.js`):
+   - Replaced all `console.log()` calls with `logger.info()`
+   - Replaced all `console.error()` calls with `logger.error()`
+   - Aligns with codebase standard (REVIEW-002 resolution)
+
+4. **Config extraction - hardcoded string** (`scripts/utils.js`):
+   - Added `CONFIG` import to utils.js
+   - Replaced hardcoded `entry.endsWith('.html')` with `entry.endsWith(CONFIG.HTML_EXTENSION)`
+   - Aligns with codebase standard (REVIEW-003 resolution)
+
+### Files Modified
+
+- `scripts/config.js` — Added `ALLOWED_STATUS_VALUES`, `ALLOWED_BENTUK_PENDIDIKAN` constants
+- `scripts/etl.js` — Added categorical validation to `validateRecord()`
+- `scripts/etl.test.js` — Added 4 tests for new validation
+- `scripts/data-quality.js` — Replaced `console.*` with `logger.*`
+- `scripts/utils.js` — Added CONFIG import, replaced hardcoded `.html`
+
+### Test Results
+
+- JS Tests: 733/733 pass ✓
+- Lint: 0 errors ✓
+- Build: 3474 pages, 0 failed ✓
+- All existing tests continue to pass (no regressions)
+
+### Acceptance Criteria
+
+- [x] Schema constraints centralized in config.js (single source of truth)
+- [x] validateRecord() rejects invalid categorical field values at ETL boundary
+- [x] Console.log/error replaced with structured logger in data-quality.js
+- [x] Hardcoded '.html' replaced with CONFIG.HTML_EXTENSION in utils.js
+- [x] All tests pass (733/733)
+- [x] Lint passes (0 errors)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Zero regressions introduced
+
+---
+
+### [TASK-028] CI Reliability - Flaky Integration Test Fix
+
+**Status**: Complete
+**Agent**: Principal DevOps Engineer (Sisyphus)
+
+### Description
+
+Fixed a flaky integration test in `build-pages.test.js` where the full-build test (`build creates dist directory and generates files`) occasionally failed under parallel test execution due to filesystem propagation delays when multiple test workers contended for disk I/O simultaneously.
+
+### Root Cause
+
+The test ran `build()` (generating 3474 pages to `dist/`) and immediately checked `index.html` existence via `fs.access()`. Under parallel `node --test` execution (test files run concurrently via worker threads), the filesystem write from `safeWriteFile` resolved but the file was not immediately visible to `fs.access`, causing a false negative.
+
+### Actions Taken
+
+1. **Added `waitForFile()` retry helper** (`scripts/build-pages.test.js`):
+   - Retries file existence checks up to 5 times with 100ms backoff
+   - Applied to all file assertions in the integration test (dist dir, index.html, manifest)
+   - Only affects this single integration test; unit tests unchanged
+   - Documents the root cause to prevent future regression
+
+### Files Modified
+
+- `scripts/build-pages.test.js` — Added `waitForFile()` retry, applied to 3 assertions
+
+### Verification
+
+- JS Tests: 733/733 pass ✓
+- Lint: 0 errors ✓
+- Build: 3474 pages, 0 failed ✓
+- Test passes consistently under full parallel suite (previously flaky)
+
+### Acceptance Criteria
+
+- [x] Integration test no longer flakes under parallel CI execution
+- [x] Zero regressions in other tests
+- [x] Lint passes (0 errors)
+- [x] Root cause documented in test code
