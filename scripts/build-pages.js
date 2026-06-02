@@ -34,12 +34,31 @@ const { BuildPerformanceTracker } = require('./build-performance');
 const { loadEnrichmentData } = require('./enrichment');
 
 // Export functions for testing
+/**
+ * Generate robots.txt with the actual SITE_URL.
+ * @param {string} siteUrl - Base URL for the site
+ */
+async function generateRobotsTxt(siteUrl) {
+  const normalizedUrl = siteUrl.replace(/\/$/, '');
+  const content = [
+    'User-agent: *',
+    'Allow: /',
+    '',
+    `Sitemap: ${normalizedUrl}/sitemap-index.xml`,
+    '',
+  ].join('\n');
+
+  await safeWriteFile(path.join(distDir, 'robots.txt'), content);
+  logger.info(`Generated robots.txt with sitemap URL: ${normalizedUrl}/sitemap-index.xml`);
+}
+
 module.exports = {
   writeSchoolPage,
   writeSchoolPagesConcurrently,
   ensureDistDir,
   loadSchools,
   generateExternalStyles,
+  generateRobotsTxt,
   generateProvincePages,
   preCreateProvinceDirectories,
   writeSearchDataFile,
@@ -334,6 +353,8 @@ async function build(options = {}) {
 
     await generateExternalStyles();
 
+    await generateRobotsTxt(CONFIG.SITE_URL);
+
     const schools = await loadSchools();
     logger.info(`Loaded ${schools.length} schools from CSV`);
 
@@ -403,6 +424,8 @@ async function buildIncremental(tracker) {
   await ensureDistDir();
 
   await generateExternalStyles();
+
+  await generateRobotsTxt(CONFIG.SITE_URL);
 
   const schools = await loadSchools();
   logger.info(`Loaded ${schools.length} schools from CSV`);

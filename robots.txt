@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 
-# Sitemap placeholder
+# Sitemap is auto-generated during build with the correct SITE_URL
+# See: scripts/build-pages.js (generateRobotsTxt)
 Sitemap: https://example.com/sitemap-index.xml
