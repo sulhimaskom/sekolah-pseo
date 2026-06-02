@@ -304,13 +304,8 @@ async function main() {
       daysOld: freshness.daysAgo,
       recordCount: freshness.recordCount,
     },
-    'Freshness report generated'
+    `Freshness report generated: ${REPORT_FILE}`
   );
-  console.log(`✅ Freshness report generated: ${REPORT_FILE}`);
-  console.log(
-    `   Status: ${freshness.isFresh ? 'Fresh' : 'Stale'} (${freshness.daysAgo} days old)`
-  );
-  console.log(`   Records: ${freshness.recordCount.toLocaleString()}`);
 }
 
 module.exports = { generateHtml, getReportData };
