@@ -45,16 +45,19 @@ function prepareSchoolDataForSearch(schools) {
     // getSchoolRelativePath returns 'provinsi/.../npsn-slug.html'
     // client-side schoolUrl needs '/provinsi/.../npsn-slug.html'
     const relPath = getSchoolRelativePath(school);
+    // Compact single-letter keys reduce JSON payload size by ~170KB
+    // Key map: n=npsn, a=nama, b=bentuk_pendidikan, s=status,
+    //          al=alamat, kc=kecamatan, kk=kab_kota, p=provinsi, u=schoolUrl
     return {
-      npsn: school.npsn || '',
-      nama: school.nama || '',
-      bentuk: school.bentuk_pendidikan || '',
-      status: school.status || '',
-      alamat: school.alamat || '',
-      kecamatan: school.kecamatan || '',
-      kab_kota: school.kab_kota || '',
-      provinsi: school.provinsi || '',
-      schoolUrl: '/' + relPath,
+      n: school.npsn || '',
+      a: school.nama || '',
+      b: school.bentuk_pendidikan || '',
+      s: school.status || '',
+      al: school.alamat || '',
+      kc: school.kecamatan || '',
+      kk: school.kab_kota || '',
+      p: school.provinsi || '',
+      u: '/' + relPath,
     };
   });
 }
@@ -364,19 +367,19 @@ function generateHomepageHtml(schools) {
         return schools.filter(function(school) {
           // Text search
           if (q) {
-            var searchText = (school.nama + ' ' + school.npsn + ' ' + school.alamat + ' ' + school.kab_kota + ' ' + school.kecamatan).toLowerCase();
+            var searchText = (school.a + ' ' + school.n + ' ' + school.al + ' ' + school.kk + ' ' + school.kc).toLowerCase();
             if (searchText.indexOf(q) === -1) {
               return false;
             }
           }
           
           // Province filter
-          if (province && school.provinsi !== province) {
+            if (province && school.p !== province) {
             return false;
           }
           
           // Type filter
-          if (type && school.bentuk !== type) {
+            if (type && school.b !== type) {
             return false;
           }
           
@@ -386,15 +389,15 @@ function generateHomepageHtml(schools) {
       
       // Generate DOM element for school result (safe alternative to innerHTML)
       function createSchoolResultElement(school) {
-        var statusLabel = school.status === 'S' ? 'Swasta' : 'Negeri';
-        var statusClass = school.status === 'S' ? 'badge-s' : 'badge-n';
+        var statusLabel = school.s === 'S' ? 'Swasta' : 'Negeri';
+        var statusClass = school.s === 'S' ? 'badge-s' : 'badge-n';
         
         // Create container elements using DOM APIs (textContent escapes HTML)
         var li = document.createElement('li');
         li.className = 'school-result-item';
         
         var a = document.createElement('a');
-        a.href = school.schoolUrl || '/provinsi/' + school.provinceSlug + '/';
+        a.href = school.u || '/provinsi/' + school.provinceSlug + '/';
         a.className = 'school-result-link';
         
         var header = document.createElement('div');
@@ -402,7 +405,7 @@ function generateHomepageHtml(schools) {
         
         var nameSpan = document.createElement('span');
         nameSpan.className = 'school-result-name';
-        nameSpan.textContent = school.nama; // textContent escapes HTML
+        nameSpan.textContent = school.a; // textContent escapes HTML
         
         var statusSpan = document.createElement('span');
         statusSpan.className = 'badge ' + statusClass;
@@ -416,11 +419,11 @@ function generateHomepageHtml(schools) {
         
         var npsnSpan = document.createElement('span');
         npsnSpan.className = 'school-result-npsn';
-        npsnSpan.textContent = 'NPSN: ' + school.npsn;
+        npsnSpan.textContent = 'NPSN: ' + school.n;
         
         var typeSpan = document.createElement('span');
         typeSpan.className = 'school-result-type badge badge-education';
-        typeSpan.textContent = school.bentuk;
+        typeSpan.textContent = school.b;
         
         details.appendChild(npsnSpan);
         details.appendChild(typeSpan);
@@ -429,7 +432,7 @@ function generateHomepageHtml(schools) {
         location.className = 'school-result-location';
         
         var locationSpan = document.createElement('span');
-        locationSpan.textContent = school.kab_kota + ', ' + school.kecamatan;
+        locationSpan.textContent = school.kk + ', ' + school.kc;
         
         location.appendChild(locationSpan);
         
@@ -518,14 +521,14 @@ function generateHomepageHtml(schools) {
         var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\n';
         
         results.forEach(function(s) {
-          var npsn = '"' + (s.npsn || '') + '"';
-          var nama = '"' + (s.nama || '').replace(/"/g, '""') + '"';
-          var status = '"' + (s.status === 'S' ? 'Swasta' : 'Negeri') + '"';
-          var bentuk = '"' + (s.bentuk || '') + '"';
-          var provinsi = '"' + (s.provinsi || '').replace(/"/g, '""') + '"';
-          var kabkota = '"' + (s.kab_kota || '').replace(/"/g, '""') + '"';
-          var kecamatan = '"' + (s.kecamatan || '').replace(/"/g, '""') + '"';
-          var alamat = '"' + (s.alamat || '').replace(/"/g, '""') + '"';
+          var npsn = '"' + (s.n || '') + '"';
+          var nama = '"' + (s.a || '').replace(/"/g, '""') + '"';
+          var status = '"' + (s.s === 'S' ? 'Swasta' : 'Negeri') + '"';
+          var bentuk = '"' + (s.b || '') + '"';
+          var provinsi = '"' + (s.p || '').replace(/"/g, '""') + '"';
+          var kabkota = '"' + (s.kk || '').replace(/"/g, '""') + '"';
+          var kecamatan = '"' + (s.kc || '').replace(/"/g, '""') + '"';
+          var alamat = '"' + (s.al || '').replace(/"/g, '""') + '"';
           csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\n';
         });
         

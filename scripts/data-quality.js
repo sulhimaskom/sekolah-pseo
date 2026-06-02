@@ -397,4 +397,18 @@ function main() {
   }
 }
 
+module.exports = {
+  analyzeQuality,
+  checkThresholds,
+  isValidCoordinate,
+  isNonEmpty,
+  pct,
+  createBar,
+  formatHuman,
+  formatJson,
+  REQUIRED_FIELDS,
+  INDONESIA_BOUNDS,
+  DEFAULT_THRESHOLDS,
+};
+
 main();
