@@ -306,9 +306,10 @@ async function writeSchoolPagesConcurrently(
  * @param {Array<Object>} schools - School records
  */
 function createManifestFromSchools(schools) {
+  const nowISO = new Date().toISOString();
   const manifest = {
     version: 1,
-    lastBuild: new Date().toISOString(),
+    lastBuild: nowISO,
     schools: {},
   };
 
@@ -318,7 +319,7 @@ function createManifestFromSchools(schools) {
 
     manifest.schools[npsn] = {
       hash,
-      builtAt: new Date().toISOString(),
+      builtAt: nowISO,
       path: getSchoolRelativePath(school),
     };
   }

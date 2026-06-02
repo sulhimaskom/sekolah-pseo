@@ -2,8 +2,14 @@ const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 
-// Hoisted constant - computed once at module load, not per school page
+// Module-level constants - computed once at module load, not per school page
 const CURRENT_YEAR = new Date().getFullYear();
+
+// Pre-escape static CONFIG.TEXT values to avoid ~38K redundant escapeHtml calls
+// during full build (each escapeHtml does 5 regex replacements)
+const T = Object.fromEntries(
+  Object.entries(CONFIG.TEXT).map(([key, value]) => [key, escapeHtml(value)])
+);
 
 /**
  * Generate canonical URL for the school page
@@ -114,7 +120,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   
   <header role="banner">
     <nav aria-label="Navigasi utama">
-      <a href="/">${escapeHtml(CONFIG.TEXT.HOME)}</a>
+      <a href="/">${T.HOME}</a>
       <span aria-hidden="true"> / </span>
       <span aria-current="page">${escapeHtml(school.nama)}</span>
     </nav>
@@ -128,36 +134,36 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
         <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
         <dl class="school-details-list">
           <div class="details-group">
-            <dt>${escapeHtml(CONFIG.TEXT.NPSN)}</dt>
+            <dt>${T.NPSN}</dt>
             <dd>
               <span id="npsn-value">${escapeHtml(school.npsn)}</span>
-              <button class="btn-copy" aria-label="${escapeHtml(CONFIG.TEXT.COPY_NPSN)}" data-copy-target="npsn-value">
+              <button class="btn-copy" aria-label="${T.COPY_NPSN}" data-copy-target="npsn-value">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
-                <span class="copy-feedback">${escapeHtml(CONFIG.TEXT.COPIED)}</span>
+                <span class="copy-feedback">${T.COPIED}</span>
               </button>
             </dd>
             
-            <dt>${escapeHtml(CONFIG.TEXT.LEVEL)}</dt>
+            <dt>${T.LEVEL}</dt>
             <dd><span class="badge badge-education">${escapeHtml(school.bentuk_pendidikan)}</span></dd>
             
-            <dt>${escapeHtml(CONFIG.TEXT.STATUS)}</dt>
+            <dt>${T.STATUS}</dt>
             <dd><span class="badge badge-status badge-${escapeHtml(school.status).toLowerCase()}">${escapeHtml(formatStatus(school.status))}</span></dd>
           </div>
           
           <div class="details-group">
-            <dt>${escapeHtml(CONFIG.TEXT.ADDRESS)}</dt>
+            <dt>${T.ADDRESS}</dt>
             <dd>${escapeHtml(school.alamat)}</dd>
             
-            <dt>${escapeHtml(CONFIG.TEXT.PROVINCE)}</dt>
+            <dt>${T.PROVINCE}</dt>
             <dd>${escapeHtml(school.provinsi)}</dd>
             
-            <dt>${escapeHtml(CONFIG.TEXT.CITY_REGENCY)}</dt>
+            <dt>${T.CITY_REGENCY}</dt>
             <dd>${escapeHtml(school.kab_kota)}</dd>
             
-            <dt>${escapeHtml(CONFIG.TEXT.DISTRICT)}</dt>
+            <dt>${T.DISTRICT}</dt>
             <dd>${escapeHtml(school.kecamatan)}</dd>
           </div>
         </dl>
@@ -168,7 +174,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   </main>
   
   <footer role="contentinfo">
-    <p>&copy; ${CURRENT_YEAR} ${escapeHtml(CONFIG.TEXT.SITE_NAME)}. Data sekolah berasal dari Dapodik.</p>
+    <p>&copy; ${CURRENT_YEAR} ${T.SITE_NAME}. Data sekolah berasal dari Dapodik.</p>
   </footer>
   
   ${generateBackToTopHtml()}
