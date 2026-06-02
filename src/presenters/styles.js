@@ -900,6 +900,27 @@ footer[role="contentinfo"] {
 .search-results-info {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.download-csv-btn {
+  font-size: var(--font-size-sm);
+  padding: 0.25rem 0.75rem;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  white-space: nowrap;
+}
+
+.download-csv-btn:hover,
+.download-csv-btn:focus {
+  opacity: 0.85;
 }
 
 /* Search Results */

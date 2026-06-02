@@ -272,6 +272,7 @@ function generateHomepageHtml(schools) {
         
         <div class="search-results-info" aria-live="polite">
           <span id="result-count">Menampilkan ${totalSchools.toLocaleString('id-ID')} sekolah</span>
+          <button id="download-csv" class="download-csv-btn" hidden aria-label="Unduh hasil pencarian sebagai CSV">Unduh CSV</button>
         </div>
       </div>
       
@@ -441,6 +442,8 @@ function generateHomepageHtml(schools) {
         var count = results.length;
         var total = schools.length;
         
+        var csvBtn = document.getElementById('download-csv');
+        
         if (isSearching) {
           resultCountEl.textContent = 'Menampilkan ' + count.toLocaleString('id-ID') + ' dari ' + total.toLocaleString('id-ID') + ' sekolah';
           
@@ -453,16 +456,19 @@ function generateHomepageHtml(schools) {
             searchResultsEl.hidden = false;
             noResultsEl.hidden = true;
             provinceListEl.hidden = true;
+            if (csvBtn) csvBtn.hidden = false;
           } else {
             searchResultsEl.hidden = true;
             noResultsEl.hidden = false;
             provinceListEl.hidden = true;
+            if (csvBtn) csvBtn.hidden = true;
           }
         } else {
           resultCountEl.textContent = 'Menampilkan ' + total.toLocaleString('id-ID') + ' sekolah';
           searchResultsEl.hidden = true;
           noResultsEl.hidden = true;
           provinceListEl.hidden = false;
+          if (csvBtn) csvBtn.hidden = true;
         }
       }
       
@@ -496,10 +502,49 @@ function generateHomepageHtml(schools) {
         };
       }
       
+      function downloadCsv() {
+        if (!schools || !isSearching) return;
+        var query = searchInput.value;
+        var province = provinceFilter.value;
+        var type = typeFilter.value;
+        var results = filterSchools(query, province, type);
+        
+        if (results.length === 0) return;
+        
+        var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\n';
+        
+        results.forEach(function(s) {
+          var npsn = '"' + (s.npsn || '') + '"';
+          var nama = '"' + (s.nama || '').replace(/"/g, '""') + '"';
+          var status = '"' + (s.status === 'S' ? 'Swasta' : 'Negeri') + '"';
+          var bentuk = '"' + (s.bentuk || '') + '"';
+          var provinsi = '"' + (s.provinsi || '').replace(/"/g, '""') + '"';
+          var kabkota = '"' + (s.kab_kota || '').replace(/"/g, '""') + '"';
+          var kecamatan = '"' + (s.kecamatan || '').replace(/"/g, '""') + '"';
+          var alamat = '"' + (s.alamat || '').replace(/"/g, '""') + '"';
+          csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\n';
+        });
+        
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'sekolah-pseo-hasil-pencarian.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      
       // Event listeners
       searchInput.addEventListener('input', debounce(handleSearch, 150));
       provinceFilter.addEventListener('change', handleSearch);
       typeFilter.addEventListener('change', handleSearch);
+      
+      var downloadBtn = document.getElementById('download-csv');
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadCsv);
+      }
       
       // Keyboard shortcuts
       document.addEventListener('keydown', function(e) {
