@@ -5,6 +5,10 @@
  * respecting the 50,000 URL and 50MB limits, and writes a sitemap-index.xml
  * that references them. Assumes the `dist` directory has been populated with
  * HTML files.
+ *
+ * Two URL collection strategies are available:
+ * 1. collectUrls(distDir, baseUrl) - walks filesystem for HTML files (slower but always accurate)
+ * 2. collectUrlsFromSchools(schools, baseUrl) - generates URLs from school data (faster, avoids I/O)
  */
 
 const path = require('path');
@@ -12,10 +16,12 @@ const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeWriteFile } = require('./fs-safe');
 const { walkDirectory } = require('./utils');
+const { getSchoolRelativePath, getUniqueProvinces } = require('../src/services/PageBuilder');
 
 // Export functions for testing
 module.exports = {
   collectUrls,
+  collectUrlsFromSchools,
   writeSitemapFiles,
   writeSitemapIndex,
   escapeXml,
@@ -57,6 +63,43 @@ async function collectUrls(dir, baseUrl) {
       lastmod: stat.mtime.toISOString().split('T')[0],
     };
   });
+}
+
+/**
+ * Collect URLs from school data directly, avoiding filesystem walk.
+ * Generates homepage, province pages, and individual school page URLs.
+ *
+ * @param {Array<Object>} schools - School data objects
+ * @param {string} baseUrl - Base URL for the site (e.g. https://example.com)
+ * @returns {Array<{url: string, lastmod: string}>} Array of URL entries
+ */
+function collectUrlsFromSchools(schools, baseUrl) {
+  const now = new Date().toISOString().split('T')[0];
+  const urls = [];
+  const normalizedBase = baseUrl.replace(/\/$/, '');
+
+  // Homepage
+  urls.push({ url: `${normalizedBase}/`, lastmod: now });
+
+  // Province pages
+  const provinces = getUniqueProvinces(schools);
+  for (const province of provinces) {
+    urls.push({
+      url: `${normalizedBase}/provinsi/${province.slug}/`,
+      lastmod: now,
+    });
+  }
+
+  // Individual school pages
+  for (const school of schools) {
+    const relPath = getSchoolRelativePath(school);
+    urls.push({
+      url: `${normalizedBase}/${relPath}`,
+      lastmod: now,
+    });
+  }
+
+  return urls;
 }
 
 /**
@@ -123,22 +166,46 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
 
 /**
  * Main function to generate all sitemaps.
- * Collects URLs from dist directory and generates sitemap files and index.
- * @returns {Promise<void>}
+ * When schools data is provided, uses data-driven URL generation (faster, avoids filesystem walk).
+ * Otherwise falls back to walking the dist directory for HTML files.
+ *
+ * @param {Array<Object>} [schools] - Optional school data for data-driven URL generation
+ * @returns {Promise<{urls: Array, files: Array}>}
  */
-async function generateSitemaps() {
+async function generateSitemaps(schools) {
   const distDir = CONFIG.DIST_DIR;
-  const outDir = distDir; // put sitemap files in dist
+  const outDir = distDir;
   const baseUrl = CONFIG.SITE_URL;
-  const urls = await collectUrls(distDir, baseUrl);
+
+  let urls;
+  if (schools && schools.length > 0) {
+    urls = collectUrlsFromSchools(schools, baseUrl);
+  } else {
+    urls = await collectUrls(distDir, baseUrl);
+  }
+
   const sitemapFiles = await writeSitemapFiles(urls, outDir);
   await writeSitemapIndex(sitemapFiles, outDir, baseUrl);
   logger.info(`Generated ${sitemapFiles.length} sitemap files with ${urls.length} URLs total`);
+  return { urls, files: sitemapFiles };
 }
 
 if (require.main === module) {
-  generateSitemaps().catch(error => {
-    logger.error('Sitemap generation failed:', error);
-    process.exit(1);
-  });
+  // Try to load schools data for faster sitemap generation
+  const { safeReadFile } = require('./fs-safe');
+  const { parseCsv } = require('./utils');
+
+  safeReadFile(CONFIG.SCHOOLS_CSV_PATH)
+    .then(text => {
+      const schools = parseCsv(text);
+      if (schools.length > 0) {
+        return generateSitemaps(schools);
+      }
+      return generateSitemaps();
+    })
+    .catch(() => generateSitemaps())
+    .catch(error => {
+      logger.error('Sitemap generation failed:', error);
+      process.exit(1);
+    });
 }

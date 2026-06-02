@@ -1,5 +1,6 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
+const { getSchoolRelativePath } = require('../../services/PageBuilder');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 
 // Hoisted constant - computed once at module load
@@ -39,19 +40,23 @@ function prepareSchoolDataForSearch(schools) {
     return [];
   }
 
-  return schools.map(school => ({
-    npsn: school.npsn || '',
-    nama: school.nama || '',
-    bentuk: school.bentuk_pendidikan || '',
-    status: school.status || '',
-    alamat: school.alamat || '',
-    kecamatan: school.kecamatan || '',
-    kab_kota: school.kab_kota || '',
-    provinsi: school.provinsi || '',
-    slug: slugify(school.nama || ''),
-
-    schoolUrl: `/provinsi/${slugify(school.provinsi || '')}/kabupaten/${slugify(school.kab_kota || '')}/kecamatan/${slugify(school.kecamatan || '')}/${school.npsn || ''}-${slugify(school.nama || '')}.html`,
-  }));
+  return schools.map(school => {
+    // Compute the relative path once and reuse for URL
+    // getSchoolRelativePath returns 'provinsi/.../npsn-slug.html'
+    // client-side schoolUrl needs '/provinsi/.../npsn-slug.html'
+    const relPath = getSchoolRelativePath(school);
+    return {
+      npsn: school.npsn || '',
+      nama: school.nama || '',
+      bentuk: school.bentuk_pendidikan || '',
+      status: school.status || '',
+      alamat: school.alamat || '',
+      kecamatan: school.kecamatan || '',
+      kab_kota: school.kab_kota || '',
+      provinsi: school.provinsi || '',
+      schoolUrl: '/' + relPath,
+    };
+  });
 }
 
 /**
