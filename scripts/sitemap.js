@@ -18,6 +18,7 @@ module.exports = {
   collectUrls,
   writeSitemapFiles,
   writeSitemapIndex,
+  escapeXml,
 };
 
 /**
@@ -26,6 +27,22 @@ module.exports = {
  * @property {string} url - Full URL of the page
  * @property {string} [lastmod] - Last modified date (ISO format)
  */
+
+/**
+ * Escape XML special characters to prevent XML injection.
+ * Handles: & < > " '
+ * @param {string} text - Text to escape
+ * @returns {string} XML-escaped text
+ */
+function escapeXml(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
 
 /**
  * Collects URLs from HTML files in a directory.
@@ -61,11 +78,13 @@ async function writeSitemapFiles(urls, outDir) {
     ];
 
     // Process URLs in batches for better memory usage
+    // URLs are XML-escaped to prevent XML injection from special characters
     const urlParts = chunk.map(u => {
+      const encodedUrl = escapeXml(u.url);
       if (u.lastmod) {
-        return `  <url><loc>${u.url}</loc><lastmod>${u.lastmod}</lastmod></url>`;
+        return `  <url><loc>${encodedUrl}</loc><lastmod>${u.lastmod}</lastmod></url>`;
       }
-      return `  <url><loc>${u.url}</loc></url>`;
+      return `  <url><loc>${encodedUrl}</loc></url>`;
     });
     contentParts.push(...urlParts);
     contentParts.push('</urlset>');
@@ -92,7 +111,9 @@ async function writeSitemapIndex(files, outDir, baseUrl) {
   ];
 
   // Process files in batches for better memory usage
-  const sitemapParts = files.map(f => `  <sitemap><loc>${baseUrl}/${f}</loc></sitemap>`);
+  const sitemapParts = files.map(
+    f => `  <sitemap><loc>${escapeXml(baseUrl)}/${escapeXml(f)}</loc></sitemap>`
+  );
   contentParts.push(...sitemapParts);
   contentParts.push('</sitemapindex>');
 

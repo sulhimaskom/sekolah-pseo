@@ -273,3 +273,21 @@ test('sitemap generation integration test', async () => {
     .catch(() => false);
   assert.strictEqual(indexExists, true);
 });
+
+test('escapeXml escapes XML special characters', () => {
+  const { escapeXml } = require('./sitemap');
+
+  assert.strictEqual(escapeXml('hello'), 'hello');
+  assert.strictEqual(escapeXml('a & b'), 'a &amp; b');
+  assert.strictEqual(escapeXml('<script>'), '&lt;script&gt;');
+  assert.strictEqual(escapeXml('"quoted"'), '&quot;quoted&quot;');
+  assert.strictEqual(escapeXml("it's"), 'it&apos;s');
+  assert.strictEqual(
+    escapeXml('<a href="url">test</a>'),
+    '&lt;a href=&quot;url&quot;&gt;test&lt;/a&gt;'
+  );
+  assert.strictEqual(escapeXml(123), '');
+  assert.strictEqual(escapeXml(null), '');
+  assert.strictEqual(escapeXml(undefined), '');
+  assert.strictEqual(escapeXml(''), '');
+});

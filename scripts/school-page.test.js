@@ -130,7 +130,8 @@ describe('generateSchoolPageHtml', () => {
     assert.ok(html.includes('X-Content-Type-Options'));
     assert.ok(html.includes('X-Frame-Options'));
     assert.ok(html.includes('Referrer-Policy'));
-    assert.ok(html.includes('X-XSS-Protection'));
+    assert.ok(html.includes('Strict-Transport-Security'));
+    // X-XSS-Protection is intentionally removed (deprecated in all modern browsers)
   });
 
   it('includes viewport meta tag for mobile responsiveness', () => {
