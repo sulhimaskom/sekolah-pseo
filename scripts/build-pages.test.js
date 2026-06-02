@@ -283,27 +283,33 @@ test('build creates dist directory and generates files', async () => {
   // Run build to test it
   await build();
 
+  // Retry file existence checks with backoff to handle transient
+  // filesystem delays under parallel CI I/O load (parallel test workers
+  // sharing the same disk can cause fs.access to not immediately see
+  // files after fs.writeFile resolves).
+  async function waitForFile(filePath, maxRetries = 5, delayMs = 100) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const exists = await fs.access(filePath).then(() => true).catch(() => false);
+      if (exists) return true;
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+    return false;
+  }
+
   // Verify dist directory exists
-  const distExists = await fs
-    .access(CONFIG.DIST_DIR)
-    .then(() => true)
-    .catch(() => false);
+  const distExists = await waitForFile(CONFIG.DIST_DIR);
   assert.ok(distExists, 'dist directory should exist');
 
   // Verify index.html was created
   const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
-  const indexExists = await fs
-    .access(indexPath)
-    .then(() => true)
-    .catch(() => false);
+  const indexExists = await waitForFile(indexPath);
   assert.ok(indexExists, 'index.html should be created');
 
   // Verify manifest was created
   const manifestPath = path.join(CONFIG.ROOT_DIR, '.build-manifest.json');
-  const manifestExists = await fs
-    .access(manifestPath)
-    .then(() => true)
-    .catch(() => false);
+  const manifestExists = await waitForFile(manifestPath);
   assert.ok(manifestExists, 'manifest should be created');
 });
 
