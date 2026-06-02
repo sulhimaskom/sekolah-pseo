@@ -7,9 +7,9 @@ Static site generator for Indonesian school directory (Sekolah PSEO).
 ## Tech Stack
 
 | Component       | Technology            | Purpose                          |
-| --------------- | --------------------- | -------------------------------- | ---------------- | ---------------------- |
+| --------------- | --------------------- | -------------------------------- |
 | Build System    | Node.js               | Build automation                 |
-| NW              |                       | Template Engine                  | Node.js (custom) | Static site generation |
+| Template Engine | Node.js (custom)      | Static site generation           |
 | Data Processing | Node.js               | ETL pipeline                     |
 | Resilience      | Custom implementation | Timeout, retry, circuit breaker  |
 | Testing         | Node.js Test, pytest  | Test framework                   |

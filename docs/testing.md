@@ -60,6 +60,8 @@ Located in `scripts/*.test.js`:
 - `check-freshness.test.js` - Data freshness tests
 - `manifest.test.js` - Build manifest tests
 - `province-page.test.js` - Province page template tests
+- `enrichment.test.js` - Data enrichment tests
+- `interactive.test.js` - Interactive CLI menu tests
 
 ### Python Tests
 
@@ -195,8 +197,8 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 20 test files, 110+ test cases
-- Python: 18 test cases (standalone runner)
+- JavaScript: 22 test files, 623 test cases
+- Python: 13 test cases (standalone runner)
 - Total: 100% pass rate
 
 ## Test Output Examples
