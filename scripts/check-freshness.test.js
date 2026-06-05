@@ -1,7 +1,5 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
 
 const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');

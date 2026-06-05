@@ -289,7 +289,10 @@ test('build creates dist directory and generates files', async () => {
   // files after fs.writeFile resolves).
   async function waitForFile(filePath, maxRetries = 5, delayMs = 100) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const exists = await fs.access(filePath).then(() => true).catch(() => false);
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
       if (exists) return true;
       if (attempt < maxRetries) {
         await new Promise(r => setTimeout(r, delayMs));

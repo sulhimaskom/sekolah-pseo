@@ -1,4 +1,4 @@
-const { describe, it, beforeEach, afterEach, mock } = require('node:test');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
@@ -8,7 +8,6 @@ const {
   enrichSchool,
   enrichSchoolViaWikipedia,
   enrichSchools,
-  saveEnrichmentData,
   loadEnrichmentData,
   logEnrichmentSummary,
   buildWikipediaSearchUrl,
@@ -189,7 +188,7 @@ describe('saveEnrichmentData and loadEnrichmentData', () => {
     // Clean up any test file
     try {
       fs.unlinkSync(testDataPath);
-    } catch (_) {
+    } catch {
       /* ignore */
     }
   });
@@ -198,7 +197,7 @@ describe('saveEnrichmentData and loadEnrichmentData', () => {
     // Clean up test file
     try {
       fs.unlinkSync(testDataPath);
-    } catch (_) {
+    } catch {
       /* ignore */
     }
   });
@@ -249,7 +248,7 @@ describe('saveEnrichmentData and loadEnrichmentData', () => {
     } finally {
       try {
         fs.unlinkSync(tempPath);
-      } catch (_) {
+      } catch {
         /* ignore */
       }
     }

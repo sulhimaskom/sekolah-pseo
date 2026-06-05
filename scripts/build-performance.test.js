@@ -2,11 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const {
-  BuildPerformanceTracker,
-  monitorBuild,
-  DEFAULT_BUDGETS,
-} = require('./build-performance');
+const { BuildPerformanceTracker, monitorBuild, DEFAULT_BUDGETS } = require('./build-performance');
 
 // ── Constructor ─────────────────────────────────────────────────────────────
 
@@ -187,7 +183,12 @@ test('getPeakRss returns actual peak RSS after start/stop', () => {
 // ── checkBudgets ────────────────────────────────────────────────────────────
 
 test('checkBudgets returns no violations when within budgets', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 60000,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 5,
+  });
   tracker.startTime = Date.now() - 100;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 0);
@@ -196,7 +197,12 @@ test('checkBudgets returns no violations when within budgets', () => {
 });
 
 test('checkBudgets detects build time violations', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 1, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 1,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 5,
+  });
   tracker.startTime = Date.now() - 10000;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 0);
@@ -205,7 +211,12 @@ test('checkBudgets detects build time violations', () => {
 });
 
 test('checkBudgets detects throughput violations', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 1000, MAX_FAILED_PAGES: 5 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 60000,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 1000,
+    MAX_FAILED_PAGES: 5,
+  });
   tracker.startTime = Date.now() - 5000;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(5, 0);
@@ -214,7 +225,12 @@ test('checkBudgets detects throughput violations', () => {
 });
 
 test('checkBudgets detects failed pages violations', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 0 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 60000,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 0,
+  });
   tracker.startTime = Date.now() - 100;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 3);
@@ -223,7 +239,12 @@ test('checkBudgets detects failed pages violations', () => {
 });
 
 test('checkBudgets stores violations on tracker', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 0 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 60000,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 0,
+  });
   tracker.startTime = Date.now() - 100;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 3);
@@ -233,7 +254,12 @@ test('checkBudgets stores violations on tracker', () => {
 });
 
 test('checkBudgets clears previous violations on each call', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 0 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 60000,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 0,
+  });
   tracker.startTime = Date.now() - 100;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 3);
@@ -340,7 +366,12 @@ test('generateReport includes all metrics fields', () => {
 });
 
 test('generateReport shows violations when budgets exceed', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 1, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 1,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 5,
+  });
   tracker.startTime = Date.now() - 10000;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 0);
@@ -372,7 +403,12 @@ test('getGitHubSummary returns markdown string', () => {
 });
 
 test('getGitHubSummary shows violations when present', () => {
-  const tracker = new BuildPerformanceTracker({ MAX_BUILD_TIME_MS: 1, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 });
+  const tracker = new BuildPerformanceTracker({
+    MAX_BUILD_TIME_MS: 1,
+    MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+    MIN_THROUGHPUT: 0,
+    MAX_FAILED_PAGES: 5,
+  });
   tracker.startTime = Date.now() - 10000;
   tracker.endTime = Date.now();
   tracker.recordPageCounts(100, 0);
@@ -384,10 +420,20 @@ test('getGitHubSummary shows violations when present', () => {
 // ── monitorBuild ────────────────────────────────────────────────────────────
 
 test('monitorBuild wraps build function and returns report', async () => {
-  const result = await monitorBuild(async (tracker) => {
-    tracker.recordPageCounts(50, 1);
-    return { built: true };
-  }, { budgets: { MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 } });
+  const result = await monitorBuild(
+    async tracker => {
+      tracker.recordPageCounts(50, 1);
+      return { built: true };
+    },
+    {
+      budgets: {
+        MAX_BUILD_TIME_MS: 60000,
+        MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+        MIN_THROUGHPUT: 0,
+        MAX_FAILED_PAGES: 5,
+      },
+    }
+  );
 
   assert.ok(result.report);
   assert.strictEqual(result.report.metrics.totalPages, 50);
@@ -396,10 +442,21 @@ test('monitorBuild wraps build function and returns report', async () => {
 });
 
 test('monitorBuild supports custom build type', async () => {
-  const result = await monitorBuild(async (tracker) => {
-    tracker.recordPageCounts(100, 0);
-    return { done: true };
-  }, { buildType: 'incremental', budgets: { MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 } });
+  const result = await monitorBuild(
+    async tracker => {
+      tracker.recordPageCounts(100, 0);
+      return { done: true };
+    },
+    {
+      buildType: 'incremental',
+      budgets: {
+        MAX_BUILD_TIME_MS: 60000,
+        MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+        MIN_THROUGHPUT: 0,
+        MAX_FAILED_PAGES: 5,
+      },
+    }
+  );
 
   assert.strictEqual(result.report.buildType, 'incremental');
 });
@@ -410,31 +467,56 @@ test('monitorBuild handles build function errors', async () => {
   };
 
   await assert.rejects(
-    () => monitorBuild(buildFn, { budgets: { MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 5 } }),
+    () =>
+      monitorBuild(buildFn, {
+        budgets: {
+          MAX_BUILD_TIME_MS: 60000,
+          MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+          MIN_THROUGHPUT: 0,
+          MAX_FAILED_PAGES: 5,
+        },
+      }),
     /Build failed/
   );
 });
 
 test('monitorBuild throws on violation when throwOnViolation is true', async () => {
   await assert.rejects(
-    () => monitorBuild(
-      async (tracker) => {
-        tracker.recordPageCounts(100, 10);
-        return { built: true };
-      },
-      { budgets: { MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 0 }, throwOnViolation: true }
-    ),
+    () =>
+      monitorBuild(
+        async tracker => {
+          tracker.recordPageCounts(100, 10);
+          return { built: true };
+        },
+        {
+          budgets: {
+            MAX_BUILD_TIME_MS: 60000,
+            MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+            MIN_THROUGHPUT: 0,
+            MAX_FAILED_PAGES: 0,
+          },
+          throwOnViolation: true,
+        }
+      ),
     /Performance budget violation/
   );
 });
 
 test('monitorBuild does not throw on violation when throwOnViolation is false', async () => {
   const result = await monitorBuild(
-    async (tracker) => {
+    async tracker => {
       tracker.recordPageCounts(100, 10);
       return { built: true };
     },
-    { budgets: { MAX_BUILD_TIME_MS: 60000, MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024, MIN_THROUGHPUT: 0, MAX_FAILED_PAGES: 0 }, throwOnViolation: false }
+    {
+      budgets: {
+        MAX_BUILD_TIME_MS: 60000,
+        MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+        MIN_THROUGHPUT: 0,
+        MAX_FAILED_PAGES: 0,
+      },
+      throwOnViolation: false,
+    }
   );
 
   assert.ok(result.report);

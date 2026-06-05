@@ -50,10 +50,10 @@ test('isValidCoordinate accepts valid Indonesia coordinates', () => {
 });
 
 test('isValidCoordinate rejects out-of-bounds values', () => {
-  assert.strictEqual(isValidCoordinate('-12', -11, 6), false);   // below lat min
-  assert.strictEqual(isValidCoordinate('7', -11, 6), false);      // above lat max
-  assert.strictEqual(isValidCoordinate('94', 95, 141), false);    // below lon min
-  assert.strictEqual(isValidCoordinate('142', 95, 141), false);   // above lon max
+  assert.strictEqual(isValidCoordinate('-12', -11, 6), false); // below lat min
+  assert.strictEqual(isValidCoordinate('7', -11, 6), false); // above lat max
+  assert.strictEqual(isValidCoordinate('94', 95, 141), false); // below lon min
+  assert.strictEqual(isValidCoordinate('142', 95, 141), false); // above lon max
 });
 
 test('isValidCoordinate rejects zero (unset marker)', () => {
@@ -142,8 +142,24 @@ test('analyzeQuality returns empty report for empty array', () => {
 
 test('analyzeQuality computes field completeness correctly', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', status: 'N' },
-    { npsn: '002', nama: '', bentuk_pendidikan: 'SMP', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', status: 'S' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: 'N',
+    },
+    {
+      npsn: '002',
+      nama: '',
+      bentuk_pendidikan: 'SMP',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: 'S',
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -156,10 +172,46 @@ test('analyzeQuality computes field completeness correctly', () => {
 
 test('analyzeQuality tracks coordinate validity', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '-6.2', lon: '106.8' },
-    { npsn: '002', nama: 'B', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '', lon: '' },
-    { npsn: '003', nama: 'C', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '0', lon: '0' },
-    { npsn: '004', nama: 'D', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '-20', lon: '200' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '-6.2',
+      lon: '106.8',
+    },
+    {
+      npsn: '002',
+      nama: 'B',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '',
+      lon: '',
+    },
+    {
+      npsn: '003',
+      nama: 'C',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '0',
+      lon: '0',
+    },
+    {
+      npsn: '004',
+      nama: 'D',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '-20',
+      lon: '200',
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -172,9 +224,30 @@ test('analyzeQuality tracks coordinate validity', () => {
 
 test('analyzeQuality detects duplicate NPSNs', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
-    { npsn: '001', nama: 'B', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
-    { npsn: '002', nama: 'C', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '001',
+      nama: 'B',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '002',
+      nama: 'C',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -188,9 +261,33 @@ test('analyzeQuality detects duplicate NPSNs', () => {
 
 test('analyzeQuality tracks categorical distribution', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'Jawa Barat', kab_kota: 'Y', kecamatan: 'Z', status: 'N' },
-    { npsn: '002', nama: 'B', bentuk_pendidikan: 'SMP', provinsi: 'Jawa Barat', kab_kota: 'Y', kecamatan: 'Z', status: 'S' },
-    { npsn: '003', nama: 'C', bentuk_pendidikan: 'SD', provinsi: 'Jawa Timur', kab_kota: 'Y', kecamatan: 'Z', status: 'N' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: 'N',
+    },
+    {
+      npsn: '002',
+      nama: 'B',
+      bentuk_pendidikan: 'SMP',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: 'S',
+    },
+    {
+      npsn: '003',
+      nama: 'C',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: 'N',
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -204,7 +301,15 @@ test('analyzeQuality tracks categorical distribution', () => {
 
 test('analyzeQuality handles schools with unknown status', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', status: null },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: null,
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -213,8 +318,26 @@ test('analyzeQuality handles schools with unknown status', () => {
 
 test('analyzeQuality computes overall score correctly', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '-6.2', lon: '106.8' },
-    { npsn: '002', nama: 'B', bentuk_pendidikan: 'SMP', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '-7.2', lon: '112.7' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '-6.2',
+      lon: '106.8',
+    },
+    {
+      npsn: '002',
+      nama: 'B',
+      bentuk_pendidikan: 'SMP',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '-7.2',
+      lon: '112.7',
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -248,7 +371,14 @@ test('analyzeQuality handles large dataset efficiently', () => {
 
 test('analyzeQuality handles missing optional fields gracefully', () => {
   const schools = [
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
   ];
 
   const report = analyzeQuality(schools);
@@ -331,7 +461,15 @@ test('checkThresholds fails on duplicate NPSNs', () => {
       kecamatan: { completenessPct: 100 },
     },
     coordinates: { valid: 100 },
-    npsnUniqueness: { duplicates: 2, duplicateCount: 5, unique: 95, duplicateNpsns: [{ npsn: '001', count: 3 }, { npsn: '002', count: 2 }] },
+    npsnUniqueness: {
+      duplicates: 2,
+      duplicateCount: 5,
+      unique: 95,
+      duplicateNpsns: [
+        { npsn: '001', count: 3 },
+        { npsn: '002', count: 2 },
+      ],
+    },
   };
 
   const result = checkThresholds(report);
@@ -384,7 +522,14 @@ test('checkThresholds handles empty totalSchools gracefully', () => {
 
 test('formatHuman returns non-empty string', () => {
   const report = analyzeQuality([
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
   ]);
   const output = formatHuman(report);
   assert.strictEqual(typeof output, 'string');
@@ -395,7 +540,16 @@ test('formatHuman returns non-empty string', () => {
 
 test('formatHuman includes coordinate info when present', () => {
   const report = analyzeQuality([
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', lat: '-6.2', lon: '106.8' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      lat: '-6.2',
+      lon: '106.8',
+    },
   ]);
   const output = formatHuman(report);
   assert.ok(output.includes('Coordinate Validity'));
@@ -404,7 +558,14 @@ test('formatHuman includes coordinate info when present', () => {
 
 test('formatHuman shows no duplicates message', () => {
   const report = analyzeQuality([
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
   ]);
   const output = formatHuman(report);
   assert.ok(output.includes('No duplicate NPSNs'));
@@ -412,7 +573,15 @@ test('formatHuman shows no duplicates message', () => {
 
 test('formatHuman shows categorical distribution', () => {
   const report = analyzeQuality([
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z', status: 'N' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+      status: 'N',
+    },
   ]);
   const output = formatHuman(report);
   assert.ok(output.includes('Categorical Distribution'));
@@ -424,7 +593,14 @@ test('formatHuman shows categorical distribution', () => {
 
 test('formatJson produces valid JSON', () => {
   const report = analyzeQuality([
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
   ]);
   const json = formatJson(report);
   const parsed = JSON.parse(json);
@@ -437,7 +613,14 @@ test('formatJson produces valid JSON', () => {
 
 test('formatJson includes all required sections', () => {
   const report = analyzeQuality([
-    { npsn: '001', nama: 'A', bentuk_pendidikan: 'SD', provinsi: 'X', kab_kota: 'Y', kecamatan: 'Z' },
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
   ]);
   const parsed = JSON.parse(formatJson(report));
   assert.ok('summary' in parsed);
