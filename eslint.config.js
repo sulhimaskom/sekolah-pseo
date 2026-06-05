@@ -19,7 +19,7 @@ module.exports = [
 
       // Style
       semi: ['error', 'always'],
-      quotes: ['error', 'single'],
+      quotes: ['error', 'single', { avoidEscape: true }],
       'no-var': 'error',
       'prefer-const': 'error',
 
@@ -62,7 +62,7 @@ module.exports = [
 
       // Style
       semi: ['error', 'always'],
-      quotes: ['error', 'single'],
+      quotes: ['error', 'single', { avoidEscape: true }],
       'no-var': 'error',
       'prefer-const': 'error',
 
