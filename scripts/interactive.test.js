@@ -2,7 +2,6 @@
 
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert');
-const path = require('path');
 
 // Save original TTY state
 const originalIsTTY = process.stdin.isTTY;

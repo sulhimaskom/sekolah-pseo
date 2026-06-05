@@ -117,8 +117,6 @@ test('generateHtml includes SITE_URL when configured', () => {
   // The module reads CONFIG.SITE_URL at render time inside generateHtml
   const freshness = makeMockFreshness();
   const html = generateHtml(freshness, makeMockQuality());
-  // If SITE_URL is set, it appears as a link
-  const hasUrl = html.includes('href=') || html.includes('sekolah-pseo');
   // Just verify it renders without error regardless
   assert.ok(html.length > 0);
 });
