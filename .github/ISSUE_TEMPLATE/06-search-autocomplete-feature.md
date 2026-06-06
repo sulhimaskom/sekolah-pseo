@@ -1,7 +1,7 @@
 ---
 name: Search Autocomplete Feature
 about: Implement autocomplete suggestions in the school search box
-title: "[FEAT-002] Add autocomplete suggestions to school search"
+title: '[FEAT-002] Add autocomplete suggestions to school search'
 labels: feature, P2
 assignees: ''
 ---
