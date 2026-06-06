@@ -58,6 +58,36 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build & Test Gate
+        shell: bash
+        run: |
+          set +e
+          FAILED=0
+          echo "::group::Build"
+          npm run build 2>&1
+          BUILD_EXIT=$?
+          echo "::endgroup::"
+          echo "::group::Lint"
+          npm run lint 2>&1
+          LINT_EXIT=$?
+          echo "::endgroup::"
+          echo "::group::Tests"
+          npm run test:js 2>&1
+          TEST_EXIT=$?
+          echo "::endgroup::"
+          if [ $BUILD_EXIT -ne 0 ] || [ $LINT_EXIT -ne 0 ] || [ $TEST_EXIT -ne 0 ]; then
+            echo "::warning::Build/Lint/Test gate FAILED. Build=$BUILD_EXIT Lint=$LINT_EXIT Test=$TEST_EXIT"
+            FAILED=1
+          fi
+          if [ $FAILED -ne 0 ]; then
+            echo "Aborting expensive agent pipeline due to gate failure."
+            exit 1
+          fi
+          echo "Build/Lint/Test gate passed."
+
       - name: Install OpenCode
         run: |
           curl -fsSL https://opencode.ai/install | bash

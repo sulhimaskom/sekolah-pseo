@@ -205,9 +205,14 @@ if (require.main === module) {
       }
       return generateSitemaps();
     })
-    .catch(() => generateSitemaps())
+    .catch(err => {
+      // Log the error but fall back to generating sitemaps without pre-loaded data.
+      // This ensures sitemaps are always generated even if the CSV is missing or parsing fails.
+      logger.warn({ err }, 'Could not load schools data for sitemap, generating without data');
+      return generateSitemaps();
+    })
     .catch(error => {
-      logger.error('Sitemap generation failed:', error);
+      logger.error({ err: error }, 'Sitemap generation failed');
       process.exit(1);
     });
 }
