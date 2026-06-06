@@ -846,6 +846,7 @@ footer[role="contentinfo"] {
 
 .search-input-wrapper {
   margin-bottom: var(--spacing-md);
+  position: relative;
 }
 
 .search-input {
@@ -897,6 +898,54 @@ footer[role="contentinfo"] {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
+}
+
+/* Search Autocomplete Dropdown */
+.search-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-index-dropdown);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.autocomplete-item:hover,
+.autocomplete-item-active {
+  background-color: var(--color-bg-secondary);
+}
+
+.autocomplete-item-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.autocomplete-item-meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  white-space: nowrap;
 }
 
 .search-results-info {

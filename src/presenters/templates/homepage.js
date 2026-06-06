@@ -255,8 +255,14 @@ function generateHomepageHtml(schools) {
             class="search-input" 
             placeholder="Cari sekolah... (Tekan / untuk fokus)"
             aria-describedby="search-hint"
+            role="combobox"
+            aria-expanded="false"
+            aria-controls="search-autocomplete"
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
           >
           <span id="search-hint" class="sr-only">Ketik untuk mencari. Gunakan tombol panah untuk navigasi hasil.</span>
+          <div id="search-autocomplete" class="search-autocomplete" role="listbox" aria-label="Saran pencarian sekolah" hidden></div>
         </div>
         
         <div class="filter-group">
@@ -350,8 +356,13 @@ function generateHomepageHtml(schools) {
       var noResultsEl = document.getElementById('no-results');
       var provinceListEl = document.querySelector('.province-list');
       
+      // Autocomplete elements
+      var autocompleteEl = document.getElementById('search-autocomplete');
+      
       // State
       var isSearching = false;
+      var selectedIndex = -1;
+      var suggestions = [];
       
       // Escape HTML for safe display
       function escapeHtml(text) {
@@ -543,10 +554,96 @@ function generateHomepageHtml(schools) {
         URL.revokeObjectURL(url);
       }
       
-      // Event listeners
-      searchInput.addEventListener('input', debounce(handleSearch, 150));
-      provinceFilter.addEventListener('change', handleSearch);
-      typeFilter.addEventListener('change', handleSearch);
+      // ===== Autocomplete =====
+      function updateAutocomplete() {
+        if (!schools || !searchInput.value.trim()) {
+          clearAutocomplete();
+          return;
+        }
+        var query = searchInput.value.toLowerCase().trim();
+        var province = provinceFilter.value;
+        var type = typeFilter.value;
+        var filtered = filterSchools(query, province, type);
+        suggestions = filtered.slice(0, 10);
+        if (suggestions.length === 0) {
+          clearAutocomplete();
+          return;
+        }
+        autocompleteEl.innerHTML = '';
+        for (var i = 0; i < suggestions.length; i++) {
+          var school = suggestions[i];
+          var item = document.createElement('div');
+          item.className = 'autocomplete-item';
+          item.setAttribute('role', 'option');
+          item.setAttribute('id', 'autocomplete-option-' + i);
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'autocomplete-item-name';
+          nameSpan.textContent = school.a;
+          var metaSpan = document.createElement('span');
+          metaSpan.className = 'autocomplete-item-meta';
+          metaSpan.textContent = school.b + ' \u00B7 ' + school.kk;
+          item.appendChild(nameSpan);
+          item.appendChild(metaSpan);
+          item.addEventListener('mousedown', function(s) {
+            return function(e) {
+              e.preventDefault();
+              window.location.href = s.u;
+            };
+          }(school));
+          autocompleteEl.appendChild(item);
+        }
+        selectedIndex = -1;
+        searchInput.setAttribute('aria-expanded', 'true');
+        searchInput.setAttribute('aria-activedescendant', '');
+        autocompleteEl.hidden = false;
+      }
+      
+      function clearAutocomplete() {
+        autocompleteEl.hidden = true;
+        searchInput.setAttribute('aria-expanded', 'false');
+        searchInput.setAttribute('aria-activedescendant', '');
+        selectedIndex = -1;
+        suggestions = [];
+      }
+      
+      function highlightSuggestion(index) {
+        var items = autocompleteEl.querySelectorAll('.autocomplete-item');
+        for (var i = 0; i < items.length; i++) {
+          items[i].classList.remove('autocomplete-item-active');
+          items[i].removeAttribute('aria-selected');
+        }
+        if (index >= 0 && index < items.length) {
+          items[index].classList.add('autocomplete-item-active');
+          items[index].setAttribute('aria-selected', 'true');
+          searchInput.setAttribute('aria-activedescendant', 'autocomplete-option-' + index);
+        } else {
+          searchInput.setAttribute('aria-activedescendant', '');
+        }
+      }
+      
+      function selectSuggestion(index) {
+        if (index >= 0 && index < suggestions.length) {
+          window.location.href = suggestions[index].u;
+        }
+      }
+      
+      // ===== Event Listeners =====
+      searchInput.addEventListener('input', debounce(function() {
+        handleSearch();
+        updateAutocomplete();
+      }, 150));
+      provinceFilter.addEventListener('change', function() {
+        handleSearch();
+        updateAutocomplete();
+      });
+      typeFilter.addEventListener('change', function() {
+        handleSearch();
+        updateAutocomplete();
+      });
+      
+      searchInput.addEventListener('blur', function() {
+        setTimeout(clearAutocomplete, 200);
+      });
       
       var downloadBtn = document.getElementById('download-csv');
       if (downloadBtn) {
@@ -561,8 +658,32 @@ function generateHomepageHtml(schools) {
           searchInput.focus();
         }
         
+        // Arrow Down: next autocomplete suggestion
+        if (e.key === 'ArrowDown' && !autocompleteEl.hidden) {
+          e.preventDefault();
+          selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+          highlightSuggestion(selectedIndex);
+          return;
+        }
+        
+        // Arrow Up: previous autocomplete suggestion
+        if (e.key === 'ArrowUp' && !autocompleteEl.hidden) {
+          e.preventDefault();
+          selectedIndex = Math.max(selectedIndex - 1, -1);
+          highlightSuggestion(selectedIndex);
+          return;
+        }
+        
+        // Enter: select highlighted suggestion
+        if (e.key === 'Enter' && !autocompleteEl.hidden && selectedIndex >= 0) {
+          e.preventDefault();
+          selectSuggestion(selectedIndex);
+          return;
+        }
+        
         // "Escape" to clear search and close
         if (e.key === 'Escape') {
+          clearAutocomplete();
           if (document.activeElement === searchInput) {
             searchInput.blur();
           }
