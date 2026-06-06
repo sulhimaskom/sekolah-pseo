@@ -11,6 +11,8 @@
  *   node scripts/fetch-data.js --output custom/path.csv
  */
 
+'use strict';
+
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');

@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const slugify = require('../../scripts/slugify');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');

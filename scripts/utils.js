@@ -2,6 +2,8 @@
  * Shared utility functions for the Indonesian School PSEO project
  */
 
+'use strict';
+
 const path = require('path');
 const { safeReaddir, safeStat, safeWriteFile } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');

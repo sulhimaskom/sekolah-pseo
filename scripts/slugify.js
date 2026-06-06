@@ -5,6 +5,8 @@
  * from npm.
  */
 
+'use strict';
+
 const CONFIG = require('./config');
 const slugCache = new Map();
 const MAX_CACHE_SIZE = CONFIG.CACHE_DEFAULTS.MAX_CACHE_SIZE;

@@ -19,6 +19,8 @@
  * or `papaparse`.
  */
 
+'use strict';
+
 const { parseCsv, writeCsv } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');

@@ -1,3 +1,5 @@
+'use strict';
+
 const DESIGN_TOKENS = {
   colors: {
     primary: '#2563eb',

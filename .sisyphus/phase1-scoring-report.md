@@ -1,224 +1,254 @@
-# Phase 1 — Comprehensive Scoring Report
+# Phase 1 — Comprehensive Scoring Report (ULW Loop)
 
-**Date**: 2026-05-30  
-**Evaluator**: Sisyphus (ULW Loop)  
+**Evaluation Date**: 2026-06-06
+**Evaluator**: Sisyphus (ULW Loop)
 **Repository**: sulhimaskom/sekolah-pseo
+**Default Branch**: main
 
 ---
 
-## Global Penalties Applied
+## Executive Summary
+
+| Domain                                | Score        | Grade |
+| ------------------------------------- | ------------ | ----- |
+| **A. Code Quality**                   | **87/100**   | B+    |
+| **B. System Quality**                 | **83/100**   | B     |
+| **C. Experience Quality**             | **85/100**   | B     |
+| **D. Delivery & Evolution Readiness** | **72/100**   | C+    |
+| **OVERALL**                           | **82/100**   | B     |
+
+---
+
+## Global Penalties
 
 | Rule                   | Penalty | Justification                                  |
 | ---------------------- | ------- | ---------------------------------------------- |
-| Build failure          | —       | ✅ Build passes (3474 pages, 0 failed, 380ms)  |
-| Test failure           | —       | ✅ All 596 JS + 27 Python tests pass           |
-| Critical vulnerability | —       | ⚠️ Secrets exposed in CI config (see Security) |
+| Build failure          | —       | ✅ Build passes (3474 pages, 0 failed, 986ms)  |
+| Test failure           | —       | ✅ All 729 JS + 27 Python tests pass           |
+| Critical vulnerability | —       | ✅ 0 npm vulnerabilities                       |
 
 ---
 
-## A. CODE QUALITY (Score: 89/100)
+## A. CODE QUALITY (Weighted: 87/100)
 
-### Correctness (Weight: 15) — Score: 14
+| Criterion                    | Weight  | Score | Weighted |
+| ---------------------------- | ------- | ----- | -------- |
+| Correctness                  | 15      | 95    | 14.25    |
+| Readability & Naming         | 10      | 90    | 9.00     |
+| Simplicity                   | 10      | 85    | 8.50     |
+| Modularity & SRP             | 15      | 78    | 11.70    |
+| Consistency                  | 5       | 80    | 4.00     |
+| Testability                  | 15      | 85    | 12.75    |
+| Maintainability              | 10      | 80    | 8.00     |
+| Error Handling               | 10      | 85    | 8.50     |
+| Dependency Discipline        | 5       | 95    | 4.75     |
+| Determinism & Predictability | 5       | 95    | 4.75     |
+| **TOTAL**                    | **100** |       | **86.20** |
 
-- **Observations**: All tests pass. Build generates 3474 pages with 0 failures.
-- **Evidence**: `npm test` → 596 JS pass, 27 Python pass; `npm run build` → 3474 pages, 0 failed
-- **Impact**: High confidence in output correctness.
-- **Deductions**: Minor — ESLint config uses flat config format but no custom rules for project-specific patterns.
+### A1. Correctness (95/100)
+- **Observations**: All 729 JS + 27 Python tests pass. Build generates 3474 pages with 0 failures.
+- **Evidence**: `npm run test:js` → 729 pass; `npm run build` → 3474 pages, 0 failed
+- **Risk**: Low
 
-### Readability & Naming (Weight: 10) — Score: 9
+### A2. Readability & Naming (90/100)
+- **Observations**: Consistent camelCase, JSDoc on major modules, descriptive filenames
+- **Evidence**: All modules reviewed
+- **Risk**: Low
 
-- **Observations**: Consistent camelCase, JSDoc comments on major modules (config, resilience, logger, fs-safe).
-- **Evidence**: All modules have descriptive names (fs-safe.js, rate-limiter.js, check-freshness.js, etc.)
-- **Impact**: Good developer onboarding experience.
-- **Deductions**: Some modules (interactive.js) lack module-level JSDoc.
+### A3. Simplicity (85/100)
+- **Observations**: Straightforward CSV→HTML pipeline, clean separation of concerns
+- **Evidence**: Project structure, module responsibilities
+- **Risk**: Low
 
-### Simplicity (Weight: 10) — Score: 9
+### A4. Modularity & SRP (78/100) ⚠️
+- **Observations**: `src/presenters/styles.js` at 1202 lines violates SRP. 23 well-sized modules (200-500 lines each)
+- **Evidence**: `wc -l src/presenters/styles.js` → 1202 lines
+- **Risk**: Medium — single module handles ALL CSS generation
 
-- **Observations**: Clean separation of concerns. Single-responsibility modules.
-- **Evidence**: config.js handles config only, logger.js handles logging only, etc.
-- **Impact**: Easy to reason about.
-- **Deductions**: Some modules (validate-links.js) have moderately complex regex patterns without inline explanation.
+### A5. Consistency (80/100) ⚠️
+- **Observations**: `scripts/data-quality.js` uses `console.log` (11 calls) instead of the structured `logger.*` API. All other modules use logger consistently.
+- **Evidence**: `grep -c "console.log" scripts/data-quality.js` → 11
+- **Risk**: Low — operational, not functional
 
-### Modularity & SRP (Weight: 15) — Score: 14
+### A6. Testability (85/100)
+- **Observations**: 90.9% statement coverage, 87.48% branch coverage. Meets 80/75 thresholds.
+- **Evidence**: `npm run test:js:coverage` output
+- **Risk**: Low — coverage thresholds met
 
-- **Observations**: Excellent modularity. Factory pattern for fs-safe.createFsSafe(). Independent modules with clear boundaries.
-- **Evidence**: src/ has presenters/ and services/ separation. Scripts are independent controllers.
-- **Impact**: High testability, low coupling.
-- **Deductions**: Some cross-module dependencies (config.js used by almost everything).
+### A7. Maintainability (80/100)
+- **Observations**: Modular architecture limits blast radius. styles.js (1202L) is main concern.
+- **Evidence**: File size analysis, architecture review
+- **Risk**: Medium
 
-### Consistency (Weight: 5) — Score: 5
+### A8. Error Handling (85/100)
+- **Observations**: IntegrationError class, consistent try-catch, path traversal protection
+- **Evidence**: `scripts/config.js`, `scripts/resilience.js`
+- **Risk**: Low
 
-- **Observations**: Very consistent patterns across modules. Same error handling pattern, same import style, same module structure.
-- **Evidence**: All scripts use 'use strict', require() style, JSDoc on exports.
-- **Impact**: Predictable codebase.
+### A9. Dependency Discipline (95/100)
+- **Observations**: 1 runtime dep (pino), 6 dev deps. 0 vulnerabilities.
+- **Evidence**: `package.json`, `npm audit`
+- **Risk**: Low
 
-### Testability (Weight: 15) — Score: 14
-
-- **Observations**: Factory functions enable isolated testing. 596 JS tests cover most modules.
-- **Evidence**: createFsSafe() pattern, separate test files per module.
-- **Impact**: Safe refactoring.
-- **Deductions**: interactive.js tests only added today. Some tests rely on timers (resilience.test.js has timing-sensitive tests that occasionally flake).
-
-### Maintainability (Weight: 10) — Score: 9
-
-- **Observations**: Well-structured code with clear patterns. Easy to navigate.
-- **Evidence**: Consistent file organization, clear naming.
-- **Impact**: Low maintenance burden.
-- **Deductions**: Some large workflow files (on-pull.yml: 437 lines).
-
-### Error Handling (Weight: 10) — Score: 10
-
-- **Observations**: Comprehensive error handling with IntegrationError, error codes, circuit breakers, retry with backoff, timeouts.
-- **Evidence**: resilience.js, fs-safe.js, config.js validatePath()
-- **Impact**: Production-grade error handling.
-
-### Dependency Discipline (Weight: 5) — Score: 5
-
-- **Observations**: Minimal dependencies. Only `pino` as runtime dependency.
-- **Evidence**: package.json → dependencies: { pino: "^10.3.1" }
-- **Impact**: Low supply chain risk.
-
-### Determinism & Predictability (Weight: 5) — Score: 5
-
-- **Observations**: Pure functions where possible, no global state, deterministic builds via content hashing.
-- **Evidence**: Build manifest for incremental builds, factory functions for test isolation.
-- **Impact**: Reproducible builds.
-
-**Code Quality Total**: 14+9+9+14+5+14+9+10+5+5 = **94** (weighted: **89/100**)
+### A10. Determinism & Predictability (95/100)
+- **Observations**: Content-hash-based incremental builds, no global state
+- **Evidence**: Build manifest pattern, factory functions
+- **Risk**: Low
 
 ---
 
-## B. SYSTEM QUALITY (Score: 85/100)
+## B. SYSTEM QUALITY (RUNTIME) (Weighted: 83/100)
 
-### Stability (Weight: 20) — Score: 18
+| Criterion                    | Weight  | Score | Weighted |
+| ---------------------------- | ------- | ----- | -------- |
+| Stability                    | 20      | 88    | 17.6     |
+| Performance Efficiency       | 15      | 90    | 13.5     |
+| Security Practices           | 20      | 70    | 14.0     |
+| Scalability Readiness        | 15      | 80    | 12.0     |
+| Resilience & Fault Tolerance | 15      | 88    | 13.2     |
+| Observability                | 15      | 78    | 11.7     |
+| **TOTAL**                    | **100** |       | **82.0** |
 
-- **Observations**: Resilience patterns in place. Circuit breakers, retry logic, timeouts.
-- **Evidence**: resilience.js provides retry(), withTimeout(), CircuitBreaker
-- **Impact**: Handles transient failures gracefully.
-- **Deductions**: -2 for timing-sensitive test in resilience.test.js (retry with maxDelayMs test occasionally fails)
+### B1. Stability (88/100)
+- **Observations**: Build consistently passes (986ms full build). Tests are deterministic. Resilience patterns (circuit breaker, retry, timeout) prevent cascading failures.
+- **Evidence**: Build output, test suite
+- **Deductions**: -2 for CI pipeline not enforcing build/test gates before AI agent runs (on-push.yml)
 
-### Performance Efficiency (Weight: 15) — Score: 15
+### B2. Performance Efficiency (90/100)
+- **Observations**: 3523 pages/sec throughput, 986ms full build, 107MB RSS peak. Concurrency controls in place.
+- **Evidence**: Build performance report
+- **Risk**: Low
 
-- **Observations**: Excellent performance. 9142 pages/sec throughput, 380ms full build.
-- **Evidence**: Build report: "Throughput: 9142.11 pages/sec", "Status: PASS", "All performance budgets met"
-- **Impact**: Fast builds enable rapid iteration.
+### B3. Security Practices (70/100) ⚠️
+- **Observations**: Good path traversal protection, XSS prevention, 0 vulns. BUT secret variable names exposed in 6 workflow files.
+- **Evidence**: `grep -r "secrets\." .github/workflows/` shows IFLOW_API_KEY, CLOUDFLARE_API_TOKEN, GEMINI_API_KEY, SUPABASE_SECRET_KEY, VITE_SUPABASE_KEY in plaintext
+- **Impact**: CWE-200 exposure. Attackers learn service architecture.
+- **Deductions**: -20 for secret variable name exposure across 6 files, -10 for template.md containing secret patterns
+- **Risk**: Medium
 
-### Security Practices (Weight: 20) — Score: 14
+### B4. Scalability Readiness (80/100)
+- **Observations**: Concurrency controls, rate limiting, sitemap splitting at 50K URLs. No distributed processing.
+- **Evidence**: config.js, sitemap.js
+- **Risk**: Low-Medium
 
-- **Observations**: Good path traversal protection, but CI workflows expose secret variable names.
-- **Evidence**:
-  - config.js validatePath() prevents path traversal ✅
-  - SECURITY.md exists ✅
-  - CI workflows expose IFLOW_API_KEY, SUPABASE_SECRET_KEY, VITE_SUPABASE_KEY, VITE_SUPABASE_URL ❌
-  - Unused secrets in CI configs ❌
-- **Impact**: Low direct risk (GitHub encrypts values), but unnecessary disclosure of architecture.
-- **Deductions**: -3 for unused secrets in workflow, -3 for visible secret names in 6 workflow files.
+### B5. Resilience & Fault Tolerance (88/100)
+- **Observations**: Circuit breaker, retry with exponential backoff, rate limiter, graceful error handling
+- **Evidence**: resilience.js, rate-limiter.js, fs-safe.js
+- **Risk**: Low
 
-### Scalability Readiness (Weight: 15) — Score: 13
-
-- **Observations**: Handles 3474 schools efficiently. Concurrency controls in place.
-- **Evidence**: BUILD_CONCURRENCY_LIMIT, VALIDATION_CONCURRENCY_LIMIT in config.js. Rate limiter module.
-- **Impact**: Can handle 10x+ data volume.
-- **Deductions**: -2 for lack of benchmarking/profiling infrastructure beyond build metrics.
-
-### Resilience & Fault Tolerance (Weight: 15) — Score: 14
-
-- **Observations**: Circuit breaker, retry with exponential backoff, timeout patterns.
-- **Evidence**: resilience.js, fs-safe.js
-- **Impact**: Graceful degradation under failure.
-- **Deductions**: -1 for error propagation in some edge cases (none observed but no formal chaos testing).
-
-### Observability (Weight: 15) — Score: 12
-
-- **Observations**: Pino structured logging, build metrics, freshness reporting.
-- **Evidence**: logger.js (pino), build-performance.js, check-freshness.js
-- **Impact**: Good operational visibility.
-- **Deductions**: -3 for lack of centralized monitoring/alerting infrastructure (beyond build logs).
-
-**System Quality Total**: 18+15+14+13+14+12 = **86** (weighted: **85/100**)
+### B6. Observability (78/100) ⚠️
+- **Observations**: Pino structured logging in most modules, but data-quality.js uses console.log (11 calls). No centralized monitoring.
+- **Evidence**: logger.js, data-quality.js
+- **Risk**: Medium
 
 ---
 
-## C. EXPERIENCE QUALITY (Score: 82/100)
+## C. EXPERIENCE QUALITY (UX/DX) (85/100)
 
-### UX
+### UX Criteria
 
-- **Accessibility**: Good. WCAG 2.1 Level A documented. Semantic HTML, ARIA labels. (Score: 14/20)
-- **User Flow Clarity**: Good. Clean navigation, province → school drill-down. (Score: 8/10)
-- **Feedback & Error Messaging**: Good. Structured error messages with codes. (Score: 8/10)
-- **Responsiveness**: Good. Responsive design, mobile-friendly. (Score: 9/10)
+| Criterion                  | Score | Notes                                                                  |
+| -------------------------- | ----- | ---------------------------------------------------------------------- |
+| Accessibility              | 92    | ARIA landmarks, skip links, sr-only, semantic HTML, prefers-reduced-motion |
+| User Flow Clarity          | 85    | Clear navigation, breadcrumbs, search/filter, province drill-down        |
+| Feedback & Error Messaging | 78    | Status messages during build, but limited user-facing error feedback    |
+| Responsiveness             | 88    | Mobile-first, responsive breakpoints, system font stack                |
 
-### DX
+### DX Criteria
 
-- **API Clarity**: Good. Well-documented exports, consistent patterns. (Score: 8/10)
-- **Local Dev Setup**: Good. `npm install && npm run dev` works. (Score: 9/10)
-- **Documentation Accuracy**: Good. README, API docs, blueprint. (Score: 8/10)
-- **Debuggability**: Good. Structured logging with context. (Score: 7/10)
-- **Build/Test Feedback Loop**: Excellent. 380ms build, fast tests. (Score: 9/10)
+| Criterion                | Score | Notes                                                         |
+| ------------------------ | ----- | ------------------------------------------------------------- |
+| API Clarity              | 88    | Well-documented functions, JSDoc, clear exports               |
+| Local Dev Setup          | 90    | Clear README, npm scripts, automated CLI menu                 |
+| Documentation Accuracy   | 82    | 23 docs files, extensive. Some AI-generated content.             |
+| Debuggability            | 80    | Structured logging, named errors, build performance metrics   |
+| Build/Test Feedback Loop | 95    | Build 986ms, tests <4s — exceptionally fast                   |
 
-**Experience Quality Total**: 14+8+8+9+8+9+8+7+9 = **80** (weighted: **82/100**)
-
----
-
-## D. DELIVERY & EVOLUTION READINESS (Score: 78/100)
-
-### CI/CD Health (Weight: 20) — Score: 15
-
-- **Observations**: Multiple workflows, but complex (437-line on-pull.yml). Secrets exposed in configs. Some workflows have redundant or overlapping triggers.
-- **Evidence**: 8 workflow files, some with continue-on-error: true on checkout steps
-- **Deductions**: -3 for workflow complexity, -2 for redundant configurations
-
-### Release & Rollback Safety (Weight: 20) — Score: 17
-
-- **Observations**: Static site generation is inherently safe. Git-based rollbacks.
-- **Evidence**: Static HTML output, no database, no state.
-- **Deductions**: -3 for no formal release process documented.
-
-### Config & Env Parity (Weight: 15) — Score: 13
-
-- **Observations**: .env.example present, env vars documented.
-- **Evidence**: .env.example with all vars, config.js reads from env
-- **Deductions**: -2 for no validation that all required env vars are set at startup.
-
-### Migration Safety (Weight: 15) — Score: 12
-
-- **Observations**: ETL pipeline handles data transformation. No database migrations.
-- **Evidence**: etl.js processes CSV data idempotently.
-- **Deductions**: -3 for no schema validation on input data.
-
-### Technical Debt Exposure (Weight: 15) — Score: 12
-
-- **Observations**: Clean codebase with minimal debt. Some timing-sensitive tests, large workflow files.
-- **Evidence**: resilience.test.js has occasional flaky tests, on-pull.yml at 437 lines
-- **Deductions**: -3 for observable test fragility.
-
-### Change Velocity & Blast Radius (Weight: 15) — Score: 14
-
-- **Observations**: Modular architecture limits blast radius. Fast build/test cycle.
-- **Evidence**: 380ms build, <4s test suite. Independent modules.
-- **Deductions**: -1 for tight coupling between config.js and most other modules.
-
-**Delivery Total**: 15+17+13+12+12+14 = **83** (weighted: **78/100**)
+**UX Total**: 92+85+78+88 = 85.75
+**DX Total**: 88+90+82+80+95 = 87.0
+**Experience Quality Average**: (85.75+87.0)/2 = **86.4/100**
 
 ---
 
-## Summary Scoring
+## D. DELIVERY & EVOLUTION READINESS (Weighted: 72/100)
 
-| Domain                            | Score  | Grade |
-| --------------------------------- | ------ | ----- |
-| A. Code Quality                   | 89     | B+    |
-| B. System Quality                 | 85     | B     |
-| C. Experience Quality             | 82     | B-    |
-| D. Delivery & Evolution Readiness | 78     | C+    |
-| **Overall**                       | **84** | **B** |
+| Criterion                      | Weight  | Score | Weighted |
+| ------------------------------ | ------- | ----- | -------- |
+| CI/CD Health                   | 20      | 65    | 13.0     |
+| Release & Rollback Safety      | 20      | 65    | 13.0     |
+| Config & Env Parity            | 15      | 80    | 12.0     |
+| Migration Safety               | 15      | 70    | 10.5     |
+| Technical Debt Exposure        | 15      | 72    | 10.8     |
+| Change Velocity & Blast Radius | 15      | 85    | 12.75    |
+| **TOTAL**                      | **100** |       | **72.05** |
+
+### D1. CI/CD Health (65/100) ⚠️
+- **Observations**: 
+  - on-push.yml (533 lines): 12 sequential AI agent flows with 120-min timeout each, NO build/lint/test verification before AI pipeline
+  - on-pull.yml (437 lines): Complex PR handler with embedded prompt
+  - parallel.yml (456 lines): Multi-stage orchestration
+  - No standard CI gate that runs build/lint/test on push
+- **Evidence**: Workflow files in `.github/workflows/`
+- **Deductions**: -15 for missing build/lint/test verification gate, -10 for workflow complexity (3 files over 400 lines), -10 for 12 sequential AI flows without early failure detection
+- **Risk**: High — broken code detected only after hours of AI agent processing
+
+### D2. Release & Rollback Safety (65/100) ⚠️
+- **Observations**: No release workflow, no version tags, no automated deployment pipeline. Static site output but no formal release process.
+- **Evidence**: No release config in `.github/workflows/`, version stays at 1.0.0
+- **Deductions**: -20 for no release workflow or version tags, -15 for no rollback procedure documented
+- **Risk**: Medium
+
+### D3. Config & Env Parity (80/100)
+- **Observations**: Centralized config with env variable support, path validation. No startup validation that required env vars are set.
+- **Evidence**: `scripts/config.js` — stateless config, good defaults
+- **Deductions**: -20 for no startup validation of required environment variables
+- **Risk**: Low (defaults exist for everything)
+
+### D4. Migration Safety (70/100)
+- **Observations**: Data in CSV format. ETL processes idempotently. No formal migration scripts.
+- **Evidence**: `scripts/etl.js`, data pipeline design
+- **Risk**: Medium — schema changes require reprocessing
+
+### D5. Technical Debt Exposure (72/100) ⚠️
+- **Observations**: styles.js at 1202 lines, data-quality.js uses console.log, on-push.yml at 533 lines. `.editorconfig` has corrupted text (merge artifact on line 2).
+- **Evidence**: File analysis, `.editorconfig` line 2
+- **Deductions**: -10 for styles.js (1202L), -10 for .editorconfig corruption, -8 for console.log in data-quality.js
+
+### D6. Change Velocity & Blast Radius (85/100)
+- **Observations**: Modular architecture, atomic commits, fast build/test cycle (986ms / <4s)
+- **Evidence**: Module structure, build performance
+- **Risk**: Low
 
 ---
 
-## Key Findings
+## Summary of Findings
 
-1. **P2 — Security**: CI workflows expose secret variable names across 6 files. Recommendation: remove unused secrets, use GitHub Environments.
-2. **P2 — Testing**: Timing-sensitive test in resilience.test.js (retry maxDelayMs) occasionally flakes. Recommendation: Use fake timers or increase tolerance.
-3. **P3 — DX**: Missing module-level JSDoc in interactive.js. Recommendation: Add JSDoc block.
-4. **P3 — Workflow**: on-pull.yml at 437 lines is overly complex. Recommendation: Extract reusable steps to composite actions.
-5. **P3 — Config**: No env var validation at startup. Recommendation: Add startup validation for required env vars.
-6. **P3 — CI**: Unused secrets (IFLOW_API_KEY, SUPABASE_SECRET_KEY) in workflow files. Recommendation: Remove unused secret references.
+### P1 (High Priority)
+1. **CI/CD**: No build/lint/test verification gate in on-push.yml — 12 sequential AI flows waste hours on broken code
+2. **Security**: Secret variable names exposed across 6 CI workflow files
+3. **Release**: No release workflow, versioning, or rollback process
+
+### P2 (Medium Priority)
+4. **Logging Inconsistency**: data-quality.js uses console.log (11 calls) instead of structured logger
+5. **Workflow Complexity**: on-push.yml (533 lines), on-pull.yml (437 lines) — need modularization
+6. **EditorConfig Corrupted**: Line 2 has merge artifact ("different editors# across and IDEs")
+7. **Oversized Module**: styles.js at 1202 lines needs modularization
+8. **Env Validation**: No startup validation for required environment variables
+
+### P3 (Low Priority)
+9. **Python Test Depth**: Python tests only check file/structure existence, not logic
+10. **Documentation**: Some AI-generated docs need manual review for accuracy
+
+---
+
+## Previous Score Comparison
+
+| Domain                        | 2026-05-30 | 2026-06-02 | 2026-06-06 (Current) | Delta |
+| ----------------------------- | ---------- | ---------- | -------------------- | ----- |
+| A. Code Quality               | 89         | 84.5       | 87                   | +2.5  |
+| B. System Quality             | 85         | 86.4       | 83                   | -3.4  |
+| C. Experience Quality         | 82         | 86.0       | 85                   | -1.0  |
+| D. Delivery & Evolution       | 78         | 74.0       | 72                   | -2.0  |
+| **OVERALL**                   | **84**     | **83.0**   | **82**               | **-1** |
+
+**Note**: The decrease from May 30 is primarily due to more conservative scoring of security exposure and CI/CD health, not regressions in code quality.

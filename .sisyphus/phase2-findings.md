@@ -1,99 +1,118 @@
-# Phase 2 — Feature Hardening Findings
+# Phase 2 — Feature Hardening Findings (ULW Loop)
 
-**Date**: 2026-05-27
-**Source**: Phase 1 Diagnostic Scoring
-
----
-
-## Finding 1: CI Workflow Missing Build/Lint/Test Verification
-
-**Severity**: High
-**Domain**: Delivery & Evolution Readiness → CI/CD Health
-**Current Score**: 70/100
-
-**Description**: The `on-push.yml` workflow has 12 sequential AI agent flows (00-11) with 120-min timeout each, but no build/lint/test verification steps. Broken code is not detected until AI agents process it, causing 18-hour waste on broken builds.
-
-**Affected File**: `.github/workflows/on-push.yml`
-
-**Recommendation**: Add `npm ci`, `npm run build`, `npm run test`, and `npm run lint` steps before the AI agent pipeline (requires workflows permission).
+**Date**: 2026-06-06
+**Source**: Phase 1 Diagnostic Scoring + Code Analysis
 
 ---
 
-## Finding 2: Stale Remote Branches
+## Finding 1: Duplicated Build Setup in build-pages.js
 
 **Severity**: Medium
-**Domain**: Delivery & Evolution Readiness → Technical Debt
+**Domain**: Code Quality → Maintainability
 
-**Description**: 30+ stale remote branches exist from automated agent runs, including `agent-*` branches, `fix/*` branches, and experimental branches. Some are >30 days old.
+**Description**:
+`build()` and `buildIncremental()` in `scripts/build-pages.js` had ~40 lines of fully duplicated setup code (ensureDistDir, loadSchools, generate homepage, province pages, etc.). This creates a maintenance hazard when changes need to be applied to both functions.
 
-**Affected**: Remote branches
+**Fixed**: ✅ Extracted `prepareBuildEnvironment()` and `finalizeBuild()` helper functions. Both `build()` and `buildIncremental()` now share the same setup/teardown logic.
 
-**Recommendation**: Clean up stale branches older than 30 days that are no longer active.
+**Affected Files**:
+- `scripts/build-pages.js` — reduced from 498 to 486 lines
+
+**Verification**: All 729 tests pass, lint clean, build passes
 
 ---
 
-## Finding 3: Node Engine Compatibility Warning
+## Finding 2: Missing 'use strict' in Source Modules
+
+**Severity**: Low
+**Domain**: Code Quality → Determinism & Predictability
+
+**Description**:
+14 source modules were missing `'use strict'` pragma. Without strict mode, JavaScript silently fails on common errors (accidental globals, non-writable property assignments, etc.).
+
+**Fixed**: ✅ Added `'use strict'` to all non-test source modules:
+- `scripts/build-pages.js`
+- `scripts/check-freshness.js`
+- `scripts/enrichment.js`
+- `scripts/etl.js`
+- `scripts/fetch-data.js`
+- `scripts/fs-safe.js`
+- `scripts/manifest.js`
+- `scripts/rate-limiter.js`
+- `scripts/sitemap.js`
+- `scripts/slugify.js`
+- `scripts/utils.js`
+- `src/presenters/design-system.js`
+- `src/presenters/styles.js`
+- `src/services/PageBuilder.js`
+
+**Verification**: All 729 tests pass, lint clean, build passes
+
+---
+
+## Finding 3: Corrupted .editorconfig (Merge Artifact)
 
 **Severity**: Low
 **Domain**: Code Quality → Consistency
 
-**Description**: `lint-staged@17.0.5` requires Node >=22.22.1, but the project engine spec is `>=20.0.0`. Produces warnings on `npm install`.
+**Description**:
+Line 2 of `.editorconfig` was corrupted with a merge artifact:
+```
+ different editors# across and IDEs
+```
+instead of:
+```
+across different editors and IDEs
+```
 
-**Affected File**: `package.json`
-
-**Recommendation**: Either downgrade lint-staged to a version compatible with Node 20, or update the engine field.
-
----
-
-## Finding 4: Coverage Gaps in Core Modules
-
-**Severity**: Medium
-**Domain**: Code Quality → Testability
-
-**Description**: Several core modules have sub-80% coverage:
-
-- `scripts/fetch-data.js`: 67.03% statements, 66.66% functions
-- `scripts/etl.js`: 78.31% statements
-- `scripts/check-freshness.js`: 78.57% statements
-
-These modules handle external data fetching and ETL — the most critical data pipeline paths.
-
-**Affected Files**: `scripts/fetch-data.js`, `scripts/etl.js`, `scripts/check-freshness.js`
-
-**Recommendation**: Add test coverage for uncovered branches in these modules.
+**Fixed**: ✅ Restored correct comment text.
 
 ---
 
-## Finding 5: Security Policy Contact
+## Finding 4: No Release Workflow or Version Tagging
 
-**Severity**: High (previously), Fixed
-**Domain**: System Quality → Security Practices
-**Current Score**: 65 → ~70 (after fix)
+**Severity**: High
+**Domain**: Delivery & Evolution Readiness → Release & Rollback Safety
+**Current Score**: 65/100
 
-**Description**: SECURITY.md had a placeholder email address. Fixed in PR #377 by adding GitHub Private Vulnerability Reporting guidance.
+**Description**:
+No release workflow in `.github/workflows/`. No version tags. `package.json` stuck at 1.0.0. No rollback procedure documented. Cannot trace code changes to deployments.
 
-**Status**: ✅ Fixed
+**Status**: 🟡 Not fixed (requires workflow permissions and release strategy decision)
 
 ---
 
-## Finding 6: Duplicate Issues #179 and #299
+## Finding 5: CI Workflow Missing Build Verification Gate
 
-**Severity**: Medium
+**Severity**: High
 **Domain**: Delivery & Evolution Readiness → CI/CD Health
 
-**Description**: Issue #299 "Optimize GitHub workflow" is a semantic duplicate of #179 "Sequential workflow execution creates 6+ hour bottleneck." Both describe the same problem with the 12-step sequential CI pipeline.
+**Description**:
+`on-push.yml` runs 12 sequential AI flows (90-min timeout each) without any build/lint/test verification. Broken code detected only after hours of AI agent processing.
 
-**Recommendation**: Close #299 as a duplicate of #179 (requires issue triage permissions).
+**Status**: 🟡 Not fixed (requires workflow permissions)
+
+---
+
+## Finding 6: Logging Inconsistency in data-quality.js
+
+**Severity**: Medium
+**Domain**: System Quality → Observability
+
+**Description**:
+`scripts/data-quality.js` uses `console.log` (11 calls) instead of structured `logger.*` API.
+
+**Status**: 🟡 Not fixed (cosmetic — Phase 2 prohibits cosmetic cleanup)
 
 ---
 
 ## Summary
 
-| Finding                          | Severity | Status                               |
-| -------------------------------- | -------- | ------------------------------------ |
-| CI workflow missing verification | High     | Blocked (needs workflows permission) |
-| Stale branches                   | Medium   | Recommend cleanup                    |
-| Engine compatibility             | Low      | Minor                                |
-| Coverage gaps                    | Medium   | Recommend tests                      |
-| Security policy                  | High     | ✅ Fixed                             |
-| Duplicate issues                 | Medium   | Awaiting issue triage                |
+| Finding                          | Severity | Status       |
+| -------------------------------- | -------- | ------------ |
+| build-pages.js duplication       | Medium   | ✅ Fixed     |
+| Missing 'use strict' pragma      | Low      | ✅ Fixed     |
+| Corrupted .editorconfig          | Low      | ✅ Fixed     |
+| No release workflow              | High     | 🟡 Not fixed |
+| CI missing build verification    | High     | 🟡 Not fixed |
+| Logging inconsistency            | Medium   | 🟡 Not fixed |

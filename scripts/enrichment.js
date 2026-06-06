@@ -15,6 +15,8 @@
  *   ENRICHMENT_ENABLED=true node scripts/etl.js  # Env var approach
  */
 
+'use strict';
+
 const logger = require('./logger');
 const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
 const { withTimeout } = require('./resilience');

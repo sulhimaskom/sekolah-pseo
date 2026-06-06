@@ -1,3 +1,5 @@
+'use strict';
+
 const { getCssVariables, DESIGN_TOKENS } = require('./design-system');
 const { safeWriteFile, safeMkdir } = require('../../scripts/fs-safe');
 const path = require('path');
