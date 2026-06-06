@@ -11,6 +11,8 @@
  * 2. collectUrlsFromSchools(schools, baseUrl) - generates URLs from school data (faster, avoids I/O)
  */
 
+'use strict';
+
 const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');

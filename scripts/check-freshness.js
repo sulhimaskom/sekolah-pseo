@@ -10,6 +10,8 @@
  *   node scripts/check-freshness.js --verbose  // Detailed output
  */
 
+'use strict';
+
 const fs = require('fs');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 const CONFIG = require('./config');

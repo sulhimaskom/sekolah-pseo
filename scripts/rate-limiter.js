@@ -4,6 +4,8 @@
  * Implements a queue-based rate limiter with metrics tracking.
  */
 
+'use strict';
+
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 const CONFIG = require('./config');
 

@@ -1,5 +1,4 @@
-# EditorConfig helps maintain consistent coding styles
- different editors# across and IDEs
+# EditorConfig helps maintain consistent coding styles across different editors and IDEs
 # https://editorconfig.org
 
 root = true

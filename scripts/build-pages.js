@@ -10,6 +10,8 @@
  * - File I/O (fs-safe wrappers)
  */
 
+'use strict';
+
 const path = require('path');
 const { parseCsv, processConcurrently } = require('./utils');
 const logger = require('./logger');
@@ -328,6 +330,68 @@ function createManifestFromSchools(schools) {
 }
 
 /**
+ * Prepare the build environment and generate shared pages.
+ * Extracted to eliminate duplication between full and incremental builds.
+ *
+ * @returns {Promise<{schools: Array, enrichmentMap: Object}>}
+ */
+async function prepareBuildEnvironment() {
+  await ensureDistDir();
+  await generateExternalStyles();
+  await generateRobotsTxt(CONFIG.SITE_URL);
+
+  const schools = await loadSchools();
+  logger.info(`Loaded ${schools.length} schools from CSV`);
+
+  if (schools.length === 0) {
+    throw new IntegrationError(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+      ERROR_CODES.FILE_EMPTY,
+      { path: CONFIG.SCHOOLS_CSV_PATH }
+    );
+  }
+
+  const enrichmentMap = await loadEnrichmentData();
+  const enrichedCount = Object.keys(enrichmentMap).length;
+  if (enrichedCount > 0) {
+    logger.info(`Loaded enrichment data for ${enrichedCount} schools`);
+  }
+
+  // Generate homepage (always regenerate as it lists all schools)
+  logger.info('Generating homepage...');
+  const homepageHtml = generateHomepageHtml(schools);
+  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
+  logger.info('Generated homepage (index.html)');
+
+  // Generate external search data for lazy-loaded client-side search
+  await writeSearchDataFile(schools);
+
+  // Generate province pages (always regenerate)
+  await generateProvincePages(schools);
+
+  return { schools, enrichmentMap };
+}
+
+/**
+ * Log the build performance report with optional GITHUB_STEP_SUMMARY.
+ *
+ * @param {BuildPerformanceTracker} tracker
+ */
+function finalizeBuild(tracker) {
+  tracker.stop();
+  tracker.logReport();
+
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    try {
+      const fs = require('fs');
+      fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, tracker.getGitHubSummary() + '\n');
+    } catch (summaryError) {
+      logger.debug(`Could not write to GITHUB_STEP_SUMMARY: ${summaryError.message}`);
+    }
+  }
+}
+
+/**
  * Main build function. Orchestrates the build process by:
  * 1. Ensuring dist directory exists
  * 2. Loading school data
@@ -350,40 +414,8 @@ async function build(options = {}) {
     }
 
     tracker.setBuildType('full');
-    await ensureDistDir();
 
-    await generateExternalStyles();
-
-    await generateRobotsTxt(CONFIG.SITE_URL);
-
-    const schools = await loadSchools();
-    logger.info(`Loaded ${schools.length} schools from CSV`);
-
-    if (schools.length === 0) {
-      throw new IntegrationError(
-        'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
-        ERROR_CODES.FILE_EMPTY,
-        { path: CONFIG.SCHOOLS_CSV_PATH }
-      );
-    }
-
-    const enrichmentMap = await loadEnrichmentData();
-    const enrichedCount = Object.keys(enrichmentMap).length;
-    if (enrichedCount > 0) {
-      logger.info(`Loaded enrichment data for ${enrichedCount} schools`);
-    }
-
-    // Generate homepage
-    logger.info('Generating homepage...');
-    const homepageHtml = generateHomepageHtml(schools);
-    await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
-    logger.info('Generated homepage (index.html)');
-
-    // Generate external search data for lazy-loaded client-side search
-    await writeSearchDataFile(schools);
-
-    // Generate province pages
-    await generateProvincePages(schools);
+    const { schools, enrichmentMap } = await prepareBuildEnvironment();
 
     const { successful, failed } = await writeSchoolPagesConcurrently(
       schools,
@@ -400,17 +432,7 @@ async function build(options = {}) {
 
     tracker.recordPageCounts(successful + failed, failed);
   } finally {
-    tracker.stop();
-    tracker.logReport();
-
-    if (process.env.GITHUB_STEP_SUMMARY) {
-      try {
-        const fs = require('fs');
-        fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, tracker.getGitHubSummary() + '\n');
-      } catch (summaryError) {
-        logger.debug(`Could not write to GITHUB_STEP_SUMMARY: ${summaryError.message}`);
-      }
-    }
+    finalizeBuild(tracker);
   }
 }
 
@@ -422,28 +444,8 @@ async function build(options = {}) {
  */
 async function buildIncremental(tracker) {
   if (tracker) tracker.setBuildType('incremental');
-  await ensureDistDir();
 
-  await generateExternalStyles();
-
-  await generateRobotsTxt(CONFIG.SITE_URL);
-
-  const schools = await loadSchools();
-  logger.info(`Loaded ${schools.length} schools from CSV`);
-
-  if (schools.length === 0) {
-    throw new IntegrationError(
-      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
-      ERROR_CODES.FILE_EMPTY,
-      { path: CONFIG.SCHOOLS_CSV_PATH }
-    );
-  }
-
-  const enrichmentMap = await loadEnrichmentData();
-  const enrichedCount = Object.keys(enrichmentMap).length;
-  if (enrichedCount > 0) {
-    logger.info(`Loaded enrichment data for ${enrichedCount} schools`);
-  }
+  const { schools, enrichmentMap } = await prepareBuildEnvironment();
 
   // Load manifest to check for changes
   const manifest = await loadManifest();
@@ -457,18 +459,6 @@ async function buildIncremental(tracker) {
   } else {
     logger.info('No manifest found, performing full build');
   }
-
-  // Generate homepage (always regenerate as it lists all schools)
-  logger.info('Generating homepage...');
-  const homepageHtml = generateHomepageHtml(schools);
-  await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
-  logger.info('Generated homepage (index.html)');
-
-  // Generate external search data for lazy-loaded client-side search
-  await writeSearchDataFile(schools);
-
-  // Generate province pages (always regenerate)
-  await generateProvincePages(schools);
 
   if (schoolsToBuild.length === 0) {
     logger.info('No pages to rebuild');
