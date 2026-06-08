@@ -121,9 +121,9 @@ npm run validate-links
 | `npm run dev`                     | Run lint and JavaScript tests (development workflow)             |
 | `npm run etl`                     | Process raw CSV data into cleaned school data                    |
 | `npm run build`                   | Generate static HTML pages for all schools (full build)          |
-| `npm run build:incremental`       | Build only changed pages using build manifest                   |
+| `npm run build:incremental`       | Build only changed pages using build manifest                    |
 | `npm run fetch-data`              | Fetch external school data from GitHub repository                |
-| `npm run check-freshness`         | Check school data freshness age                                 |
+| `npm run check-freshness`         | Check school data freshness age                                  |
 | `npm run freshness-report`        | Generate detailed freshness report                               |
 | `npm run data-quality`            | Check school data quality metrics                                |
 | `npm run data-quality:json`       | Check data quality with JSON output                              |

@@ -3446,20 +3446,20 @@ All integration errors use `IntegrationError` with consistent structure:
 
 ### Error Code Mapping
 
-| Code                   | Module                | Scenario                         |
-| ---------------------- | --------------------- | -------------------------------- |
-| `FILE_READ_ERROR`      | File operations       | File reading failed              |
-| `FILE_WRITE_ERROR`     | File operations       | File writing failed              |
-| `FILE_EMPTY`           | File operations       | File exists but is empty         |
-| `VALIDATION_ERROR`     | Data processing       | Data validation failed           |
-| `INVALID_URL`          | Data processing       | URL format validation failed     |
-| `INVALID_COORDINATES`  | Data processing       | Coordinate out of Indonesia bounds |
-| `INVALID_INPUT`        | Data processing       | Invalid input provided           |
-| `CONFIGURATION_ERROR`  | Configuration         | Configuration issue              |
-| `MISSING_REQUIRED_FIELD` | Data processing     | Required field is missing        |
-| `TIMEOUT`              | All operations        | Operation exceeded time limit    |
-| `RETRY_EXHAUSTED`      | All retries           | All retry attempts failed        |
-| `CIRCUIT_BREAKER_OPEN` | File I/O              | Circuit breaker is blocking      |
+| Code                     | Module          | Scenario                           |
+| ------------------------ | --------------- | ---------------------------------- |
+| `FILE_READ_ERROR`        | File operations | File reading failed                |
+| `FILE_WRITE_ERROR`       | File operations | File writing failed                |
+| `FILE_EMPTY`             | File operations | File exists but is empty           |
+| `VALIDATION_ERROR`       | Data processing | Data validation failed             |
+| `INVALID_URL`            | Data processing | URL format validation failed       |
+| `INVALID_COORDINATES`    | Data processing | Coordinate out of Indonesia bounds |
+| `INVALID_INPUT`          | Data processing | Invalid input provided             |
+| `CONFIGURATION_ERROR`    | Configuration   | Configuration issue                |
+| `MISSING_REQUIRED_FIELD` | Data processing | Required field is missing          |
+| `TIMEOUT`                | All operations  | Operation exceeded time limit      |
+| `RETRY_EXHAUSTED`        | All retries     | All retry attempts failed          |
+| `CIRCUIT_BREAKER_OPEN`   | File I/O        | Circuit breaker is blocking        |
 
 ### Error Handling Patterns
 
