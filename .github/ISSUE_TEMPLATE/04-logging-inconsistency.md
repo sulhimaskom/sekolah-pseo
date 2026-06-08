@@ -8,7 +8,7 @@ assignees: ''
 
 ## Evaluation Date
 
-2026-06-06
+2026-06-08 (Updated)
 
 ## Domain Score Table
 
@@ -20,7 +20,7 @@ assignees: ''
 ### Consistency (Weight: 5)
 
 **Observations**:
-`scripts/data-quality.js` uses `console.log` and `console.error` for output (11 calls) instead of the project's established structured logging via `pino` (`logger.js`).
+`scripts/data-quality.js` uses `console.log` and `console.error` for output (8 calls remaining, down from 11) instead of the project's established structured logging via `pino` (`logger.js`). Partial fix applied but incomplete.
 
 All other modules consistently use the logger API from `scripts/logger.js` which provides:
 
@@ -33,7 +33,7 @@ All other modules consistently use the logger API from `scripts/logger.js` which
 
 ```bash
 grep -c "console.log\|console.error" scripts/data-quality.js
-# Result: 11
+# Result: 8 (was 11 on 2026-06-06)
 ```
 
 Lines using console.log/console.error (non-exhaustive):
