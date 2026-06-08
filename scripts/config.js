@@ -7,6 +7,7 @@
 
 const path = require('path');
 const logger = require('./logger');
+const { ERROR_CODES } = require('./resilience');
 
 /**
  * Validates that a target path is within a base directory (prevents path traversal attacks).
@@ -34,29 +35,6 @@ if (!validatePath(resolvedRawPath, ROOT_DIR)) {
   logger.warn('RAW_DATA_PATH falls outside project directory, using default');
   rawPath = path.join(EXTERNAL_DIR, 'raw.csv');
 }
-
-// Error codes for IntegrationError (consistent across modules)
-const ERROR_CODES = {
-  // File operation errors
-  FILE_READ_ERROR: 'FILE_READ_ERROR',
-  FILE_WRITE_ERROR: 'FILE_WRITE_ERROR',
-  FILE_EMPTY: 'FILE_EMPTY',
-
-  // Validation errors
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  INVALID_URL: 'INVALID_URL',
-  INVALID_COORDINATES: 'INVALID_COORDINATES',
-  INVALID_INPUT: 'INVALID_INPUT',
-
-  // Configuration errors
-  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
-  MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
-
-  // System errors
-  TIMEOUT: 'TIMEOUT',
-  RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
-  CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
-};
 
 // Environment variables with defaults
 const CONFIG = {
