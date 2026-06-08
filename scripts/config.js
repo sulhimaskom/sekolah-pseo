@@ -123,7 +123,5 @@ const CONFIG = {
 // Attach ERROR_CODES to CONFIG for backward compatibility
 CONFIG.ERROR_CODES = ERROR_CODES;
 
-// Also export ERROR_CODES directly for convenience
 module.exports = CONFIG;
-module.exports.ERROR_CODES = ERROR_CODES;
 module.exports.validatePath = validatePath;
