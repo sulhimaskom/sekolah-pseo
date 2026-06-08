@@ -35,17 +35,18 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
 
 ### Features
 
-- [FEAT-002] Search Functionality
-  - Real-time search with autocomplete
-  - Multi-filter search (location, type, name)
-  - Mobile-optimized search interface
+- ✅ **[FEAT-002] Search Functionality (IMPLEMENTED)**
+  - ✅ Real-time search with autocomplete
+  - ✅ Multi-filter search (location, type, name)
+  - ✅ Mobile-optimized search interface
+  - Implemented in commit `46e2b0b` (2026-06-08)
 
-- **FEAT-004** Advanced Filtering
-  - Filter by accreditation status
-  - Filter by facilities and programs
-  - Save search preferences
+- **[FEAT-004] Advanced Filtering**
+  - Filter by education level (SD/SMP/SMA/SMK)
+  - Filter by status (Negeri/Swasta)
+  - Combined search + filter interface
 
-- **FEAT-005** Comparison Tool
+- **[FEAT-005] Comparison Tool**
   - Compare up to 3 schools side-by-side
   - Visual comparison of key metrics
   - Share comparison results
@@ -217,11 +218,11 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
 
 ## Milestones
 
-| Milestone           | Target Date | Status      |
-| ------------------- | ----------- | ----------- |
-| Foundation Complete | 2026-01     | ✅ Complete |
-| Phase 1 Launch      | 2026-03     | 📋 Planned  |
-| Phase 2 Launch      | 2026-06     | 📋 Planned  |
-| Phase 3 Launch      | 2026-09     | 📋 Planned  |
-| Phase 4 Launch      | 2026-12     | 📋 Planned  |
-| Phase 5 Launch      | 2027-03     | 📋 Planned  |
+| Milestone           | Target Date | Status                                     |
+| ------------------- | ----------- | ------------------------------------------ |
+| Foundation Complete | 2026-01     | ✅ Complete                                |
+| Phase 1 Launch      | 2026-06     | 🔄 In Progress (FEAT-002 ✅, FEAT-004 WIP) |
+| Phase 2 Launch      | 2026-09     | 📋 Planned                                 |
+| Phase 3 Launch      | 2026-12     | 📋 Planned                                 |
+| Phase 4 Launch      | 2027-03     | 📋 Planned                                 |
+| Phase 5 Launch      | 2027-06     | 📋 Planned                                 |
