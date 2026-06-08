@@ -2,6 +2,57 @@
 
 ## Completed Tasks
 
+### [TASK-026] Code Sanitization - ERROR_CODES Consolidation (DRY Fix)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Consolidated duplicate `ERROR_CODES` definitions that existed in two places (`resilience.js` and `config.js`) into a single source of truth in `resilience.js`. This eliminates a DRY violation where the two definitions could drift apart over time.
+
+### Actions Taken
+
+1. **Consolidated `ERROR_CODES` in `scripts/resilience.js`**:
+   - Added missing error codes: `FILE_EMPTY`, `INVALID_COORDINATES`, `INVALID_INPUT`, `MISSING_REQUIRED_FIELD`
+   - Now contains all 12 error codes as the canonical source of truth
+   - Organized into logical groups (File operation, Validation, Configuration, System)
+
+2. **Updated `scripts/config.js`**:
+   - Removed duplicate `ERROR_CODES` definition (was 22 lines)
+   - Now imports `{ ERROR_CODES }` from `./resilience` directly
+   - Maintains backward compatibility via `CONFIG.ERROR_CODES` reference
+
+3. **Updated `scripts/build-pages.js`**:
+   - Changed `const { ERROR_CODES } = CONFIG` to `const { IntegrationError, ERROR_CODES } = require('./resilience')`
+   - Now uses the canonical ERROR_CODES source like all other modules
+
+### Files Modified
+
+- `scripts/resilience.js` - Added 4 missing error codes to canonical ERROR_CODES
+- `scripts/config.js` - Removed duplicate ERROR_CODES definition, imported from resilience.js
+- `scripts/build-pages.js` - Updated import to use canonical ERROR_CODES from resilience.js
+
+### Verification
+
+- Lint: 0 errors ✓
+- JS Tests: 729/729 pass ✓
+- Build: 3474 pages, 0 failed ✓
+- Prettier: All files formatted ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] ERROR_CODES has single source of truth (resilience.js)
+- [x] config.js no longer defines ERROR_CODES (imports instead)
+- [x] build-pages.js imports ERROR_CODES from canonical source
+- [x] Backward compatible (CONFIG.ERROR_CODES still works)
+- [x] All tests pass (729/729)
+- [x] Lint passes (0 errors)
+- [x] Build succeeds (3474 pages, 0 failed)
+
+---
+
 ### [TASK-021] Code Sanitization - Prettier Formatting Resolution and CI Workflow Exclusion
 
 **Status**: Complete

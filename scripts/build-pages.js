@@ -16,8 +16,7 @@ const path = require('path');
 const { parseCsv, processConcurrently } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
-const { ERROR_CODES } = CONFIG;
-const { IntegrationError } = require('./resilience');
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
 const {
   buildSchoolPageData,
