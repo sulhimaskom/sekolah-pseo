@@ -456,13 +456,25 @@ new IntegrationError(message, code, details);
 
 ```javascript
 ERROR_CODES = {
+  // File operation errors
+  FILE_READ_ERROR: 'FILE_READ_ERROR',
+  FILE_WRITE_ERROR: 'FILE_WRITE_ERROR',
+  FILE_EMPTY: 'FILE_EMPTY',
+
+  // Validation errors
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INVALID_URL: 'INVALID_URL',
+  INVALID_COORDINATES: 'INVALID_COORDINATES',
+  INVALID_INPUT: 'INVALID_INPUT',
+
+  // Configuration errors
+  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
+  MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
+
+  // System errors
   TIMEOUT: 'TIMEOUT',
   RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
   CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
-  FILE_READ_ERROR: 'FILE_READ_ERROR',
-  FILE_WRITE_ERROR: 'FILE_WRITE_ERROR',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
 };
 ```
 
@@ -3434,15 +3446,20 @@ All integration errors use `IntegrationError` with consistent structure:
 
 ### Error Code Mapping
 
-| Code                   | Module          | Scenario                      |
-| ---------------------- | --------------- | ----------------------------- |
-| `TIMEOUT`              | All operations  | Operation exceeded time limit |
-| `RETRY_EXHAUSTED`      | All retries     | All retry attempts failed     |
-| `CIRCUIT_BREAKER_OPEN` | File I/O        | Circuit breaker is blocking   |
-| `FILE_READ_ERROR`      | File operations | File reading failed           |
-| `FILE_WRITE_ERROR`     | File operations | File writing failed           |
-| `VALIDATION_ERROR`     | Data processing | Data validation failed        |
-| `CONFIGURATION_ERROR`  | Configuration   | Configuration issue           |
+| Code                   | Module                | Scenario                         |
+| ---------------------- | --------------------- | -------------------------------- |
+| `FILE_READ_ERROR`      | File operations       | File reading failed              |
+| `FILE_WRITE_ERROR`     | File operations       | File writing failed              |
+| `FILE_EMPTY`           | File operations       | File exists but is empty         |
+| `VALIDATION_ERROR`     | Data processing       | Data validation failed           |
+| `INVALID_URL`          | Data processing       | URL format validation failed     |
+| `INVALID_COORDINATES`  | Data processing       | Coordinate out of Indonesia bounds |
+| `INVALID_INPUT`        | Data processing       | Invalid input provided           |
+| `CONFIGURATION_ERROR`  | Configuration         | Configuration issue              |
+| `MISSING_REQUIRED_FIELD` | Data processing     | Required field is missing        |
+| `TIMEOUT`              | All operations        | Operation exceeded time limit    |
+| `RETRY_EXHAUSTED`      | All retries           | All retry attempts failed        |
+| `CIRCUIT_BREAKER_OPEN` | File I/O              | Circuit breaker is blocking      |
 
 ### Error Handling Patterns
 
