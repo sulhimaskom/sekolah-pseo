@@ -3565,11 +3565,12 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 
 ### [REFACTOR] Code Duplication - Extract File Extension Constant
 
+- **Status**: Complete (Resolved by TASK-027)
 - Location: scripts/validate-links.js (line 30), scripts/utils.js (line 30), scripts/sitemap.js (line 11), scripts/sitemap.js (line 22)
 - Issue: The string literal `.html` is hardcoded in multiple locations throughout the codebase. This magic string makes the code brittle to change (e.g., if adding support for other file extensions) and violates the DRY principle.
-- Suggestion: Extract file extension to a constant `HTML_EXTENSION = '.html'` in scripts/config.js. Update all references to use this constant. This provides a single source of truth and makes future extensions easier.
-- Priority: Low
-- Effort: Small
+- Resolution: CONFIG.HTML_EXTENSION now used in utils.js walkDirectory. Verified by TASK-027.
+- Priority: Low (Resolved)
+- Effort: Small (Complete)
 
 ### [REFACTOR] Code Reusability - Extract Link Filtering Logic
 
@@ -3581,31 +3582,30 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 
 ### [REVIEW-001] Test Coverage Gap - Untested Data Quality and Reporting Modules
 
+- **Status**: Complete (Resolved by TASK-025)
 - **Location**: `scripts/build-performance.js` (357 lines), `scripts/data-quality.js` (~400 lines), `scripts/freshness-report.js` (315 lines)
-- **Issue**: Three source modules (~1072 combined lines) have zero test coverage. These modules contain critical data quality analysis, build performance monitoring, and freshness reporting logic. Without tests, regressions in these modules go undetected and refactoring is risky.
-- **Suggestion**:
-  1. Add test suite for `scripts/data-quality.js` covering `analyzeQuality()`, `checkThresholds()`, and `isValidCoordinate()` functions.
-  2. Add test suite for `scripts/build-performance.js` covering `monitorBuild()`, budget enforcement, and metrics collection.
-  3. Add test suite for `scripts/freshness-report.js` covering report generation and data freshness calculations.
-  4. Target minimum 80% line coverage for each module.
-- **Priority**: Medium
-- **Effort**: Medium
+- **Issue**: Three source modules (~1072 combined lines) had zero test coverage.
+- **Resolution**: 106 tests added across 3 test files (data-quality.test.js: 41, build-performance.test.js: 47, freshness-report.test.js: 18). Coverage: Lines 90.55%, Branches 86.85%.
+- **Priority**: Medium (Resolved)
+- **Effort**: Medium (Complete)
 
 ### [REVIEW-002] Logger Inconsistency - console.\* Used in data-quality.js Despite Logger Module
 
+- **Status**: Complete (Resolved by TASK-027)
 - **Location**: `scripts/data-quality.js` (lines 369-395)
-- **Issue**: The script imports the pino-based `logger` module (line 30) but uses raw `console.log()` and `console.error()` for all output (10+ calls). This bypasses structured logging, timestamping, and log level control that the logger provides. The logger module even includes convenience methods matching the `console.*` API for easy migration.
-- **Suggestion**: Replace all `console.log()` calls with `logger.info()` and `console.error()` with `logger.error()` in `scripts/data-quality.js`. This enables consistent log formatting, log level filtering, and aligns with the rest of the codebase patterns.
-- **Priority**: Low
-- **Effort**: Small
+- **Issue**: The script imported the pino-based `logger` module but used raw `console.log()` and `console.error()` for output.
+- **Resolution**: All `console.log()` calls replaced with `logger.info()`, all `console.error()` with `logger.error()`. Verified by TASK-027.
+- **Priority**: Low (Resolved)
+- **Effort**: Small (Complete)
 
 ### [REVIEW-003] Hardcoded String - '.html' in walkDirectory Despite Config Constant
 
+- **Status**: Complete (Resolved by TASK-027)
 - **Location**: `scripts/utils.js` (line 33)
-- **Issue**: The `walkDirectory()` function uses a hardcoded string `'.html'` to filter files: `entry.endsWith('.html')`. However, `scripts/config.js` (line 64) already defines `HTML_EXTENSION: '.html'` as a named constant. This is both a magic string violation and a missed opportunity to use the centralized config.
-- **Suggestion**: Replace `entry.endsWith('.html')` with `entry.endsWith(CONFIG.HTML_EXTENSION)` in `scripts/utils.js`. Import CONFIG at the top of utils.js if not already imported. Verify no other hardcoded `'.html'` strings remain in source files.
-- **Priority**: Low
-- **Effort**: Small
+- **Issue**: The `walkDirectory()` function used a hardcoded string `'.html'` instead of the config constant.
+- **Resolution**: Replaced `entry.endsWith('.html')` with `entry.endsWith(CONFIG.HTML_EXTENSION)` in utils.js. Verified by TASK-027.
+- **Priority**: Low (Resolved)
+- **Effort**: Small (Complete)
 
 ### [REVIEW-004] Dead Agent Documentation Files - Orphaned Workflow Docs
 
@@ -3620,6 +3620,8 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 - **Effort**: Small
 
 ### [REVIEW-005] Inline Client-Side Script Block - No Browser Caching for Shared JS
+
+- **Status**: Partial (Back-to-top resolved, main inline JS issue open)
 
 - **Location**: `src/presenters/templates/school-page.js` (lines 163-198), `src/presenters/templates/province-page.js` (lines 156-180), `src/presenters/templates/homepage.js` (lines 290-318)
 - **Issue**: While the back-to-top button logic was successfully extracted to `shared/back-to-top.js`, the scripts are still injected inline into each HTML page via `<script>` tags. This means every page load includes the full script content, and browser caching cannot be leveraged. The province-page template inlines ~68 lines of JS, the school-page includes scroll/clipboard logic, and the homepage includes search functionality.
@@ -3638,6 +3640,30 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 - **Files Verified**: `homepage.js`, `province-page.js`, `school-page.js` - all import and use the shared module.
 - **Priority**: Medium (Resolved)
 - **Effort**: Medium (Complete)
+
+### [REVIEW-006] Module-Level Side Effect - data-quality.js Auto-Executes main() on Import Without require.main Guard
+
+- **Location**: `scripts/data-quality.js` (line 414)
+- **Issue**: The script calls `main()` at module level (line 414) without the `if (require.main === module)` guard. This means requiring the module for testing also triggers execution of `main()` (parsing CLI args, checking CSV existence, filesystem reads, process.exit calls). All other CLI scripts in the codebase (build-pages.js line 508, sitemap.js line 195, validate-links.js line 164, etl.js line 417, check-freshness.js line 226, fetch-data.js line 254) use this guard.
+- **Suggestion**: Wrap `main()` call with `if (require.main === module) { main(); }` to prevent side effects when the module is imported for test access to its exported functions.
+- **Priority**: Medium
+- **Effort**: Small
+
+### [REVIEW-007] Redundant ERROR_CODES Export - config.js Exports Same Object in 3 Ways
+
+- **Location**: `scripts/config.js` (lines 123-128)
+- **Issue**: `ERROR_CODES` is exported from config.js in three redundant ways: (1) attached to CONFIG object at line 124, (2) via `module.exports = CONFIG` at line 127, and (3) via `module.exports.ERROR_CODES = ERROR_CODES` at line 128. Since `module.exports` aliases the same CONFIG object (line 127), line 128 is effectively duplicating a property that already exists on the exported object. This creates confusion about the canonical import path.
+- **Suggestion**: Remove line 128 (`module.exports.ERROR_CODES = ERROR_CODES`) since CONFIG already carries ERROR_CODES. Verify no code imports using `require('./config').ERROR_CODES` direct path — if any exist, redirect them to use `require('./resilience')` for the canonical source.
+- **Priority**: Low
+- **Effort**: Trivial
+
+### [REVIEW-008] Catch Block Inconsistency - validate-links.js Uses catch {} Without Error Parameter
+
+- **Location**: `scripts/validate-links.js` (line 104)
+- **Issue**: The `catch {` block at line 104 does not capture the error parameter, while every other catch block in the codebase explicitly captures it as `error` or `err`. This inconsistency makes it harder to debug unexpected errors and goes against the error-handling pattern used throughout the rest of the project.
+- **Suggestion**: Change `catch {` to `catch (error) {` at validate-links.js line 104. The error variable need not be used in the catch body, but capturing it enables debugging if the error type is unexpected.
+- **Priority**: Low
+- **Effort**: Trivial
 
 ### [TASK-021] Resilience Gap - Add safeUnlink to fs-safe and Fix manifest.js
 
