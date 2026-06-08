@@ -1,10 +1,14 @@
 ---
-name: Search Autocomplete Feature
-about: Implement autocomplete suggestions in the school search box
+name: Search Autocomplete Feature — IMPLEMENTED
+about: Autocomplete suggestions in the school search box (IMPLEMENTED)
 title: '[FEAT-002] Add autocomplete suggestions to school search'
 labels: feature, P2
 assignees: ''
 ---
+
+## Status: ✅ IMPLEMENTED
+
+This feature was implemented in commit `46e2b0b` (2026-06-08).
 
 ## User Story
 
@@ -12,17 +16,17 @@ As a parent searching for schools,
 I want to see autocomplete suggestions as I type in the search box,
 So that I can quickly find my target school without typing the full name or navigating results manually.
 
-## Acceptance Criteria
+## Acceptance Criteria (All Met ✅)
 
-- [ ] As the user types in the search box, a dropdown list of matching school suggestions appears within 300ms
-- [ ] Suggestions are filtered by the currently selected province and type filters
-- [ ] Each suggestion shows: school name, type (SD/SMP/SMA/etc.), and location (kab_kota)
-- [ ] The user can navigate suggestions with keyboard (arrow keys, Enter, Escape)
-- [ ] Clicking or pressing Enter on a suggestion navigates to the school's page
-- [ ] No external dependencies — uses the already-embedded `#school-data` JSON
-- [ ] Works on mobile (touch-friendly, properly sized)
-- [ ] Falls back to current search behavior if JavaScript fails
-- [ ] Accessible: ARIA attributes for screen readers (combobox pattern)
+- [x] As the user types in the search box, a dropdown list of matching school suggestions appears within 300ms
+- [x] Suggestions are filtered by the currently selected province and type filters
+- [x] Each suggestion shows: school name, type (SD/SMP/SMA/etc.), and location (kab_kota)
+- [x] The user can navigate suggestions with keyboard (arrow keys, Enter, Escape)
+- [x] Clicking or pressing Enter on a suggestion navigates to the school's page
+- [x] No external dependencies — uses the already-embedded `#school-data` JSON
+- [x] Works on mobile (touch-friendly, properly sized)
+- [x] Falls back to current search behavior if JavaScript fails
+- [x] Accessible: ARIA attributes for screen readers (combobox pattern)
 
 ## Value Justification
 

@@ -5,6 +5,8 @@ const slugify = require('../../scripts/slugify');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 
+const REQUIRED_SCHOOL_FIELDS = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
+
 /**
  * Compute the relative path for a school page without generating HTML.
  * Lightweight alternative to buildSchoolPageData() for cases where only the path is needed.
@@ -16,8 +18,7 @@ function getSchoolRelativePath(school) {
     throw new Error('Invalid school object provided');
   }
 
-  const requiredFields = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
-  const missingFields = requiredFields.filter(field => !school[field]);
+  const missingFields = REQUIRED_SCHOOL_FIELDS.filter(field => !school[field]);
 
   if (missingFields.length > 0) {
     throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
@@ -44,8 +45,7 @@ function buildSchoolPageData(school, enrichment) {
     throw new Error('Invalid school object provided');
   }
 
-  const requiredFields = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
-  const missingFields = requiredFields.filter(field => !school[field]);
+  const missingFields = REQUIRED_SCHOOL_FIELDS.filter(field => !school[field]);
 
   if (missingFields.length > 0) {
     throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
