@@ -29,6 +29,7 @@ So that I can discover schools near my location and visually compare their geogr
 ## Acceptance Criteria
 
 ### Core Map (P0 — Must Have)
+
 - [ ] Interactive map displays all schools as markers, clustered at lower zoom levels
 - [ ] Each marker shows school name, type, and address on click (popup/info window)
 - [ ] Markers are color-coded by education type (SD/SMP/SMA/SMK)
@@ -36,17 +37,20 @@ So that I can discover schools near my location and visually compare their geogr
 - [ ] Current filter selections (province, type) are applied to map markers
 
 ### Geolocation (P1 — Should Have)
+
 - [ ] "Find Schools Near Me" button requests browser geolocation
 - [ ] Shows schools within configurable radius (5km, 10km, 20km)
 - [ ] Graceful fallback if geolocation is denied or unavailable
 
 ### Performance (P1 — Should Have)
+
 - [ ] Map loads within 2 seconds on broadband
 - [ ] Marker clustering up to 5000+ points without jank
 - [ ] Lazy-load map library (not in initial page bundle)
 - [ ] Total JS payload for map feature < 100KB gzipped
 
 ### Accessibility (P2 — Nice to Have)
+
 - [ ] Map is keyboard-navigable
 - [ ] Screen reader announces marker information
 - [ ] Text alternative available for map view (school list)
@@ -67,12 +71,12 @@ So that I can discover schools near my location and visually compare their geogr
 
 ### Technology Choices
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| Map library | Leaflet.js 1.9+ | 40KB gzipped, no API key needed, OSM tiles |
-| Marker clustering | Leaflet.markercluster | Handles 10K+ points |
-| Geolocation | `navigator.geolocation` API | Native browser API, no deps |
-| Tile source | OpenStreetMap (default) / Mapbox (optional) | Free tier sufficient |
+| Concern           | Choice                                      | Rationale                                  |
+| ----------------- | ------------------------------------------- | ------------------------------------------ |
+| Map library       | Leaflet.js 1.9+                             | 40KB gzipped, no API key needed, OSM tiles |
+| Marker clustering | Leaflet.markercluster                       | Handles 10K+ points                        |
+| Geolocation       | `navigator.geolocation` API                 | Native browser API, no deps                |
+| Tile source       | OpenStreetMap (default) / Mapbox (optional) | Free tier sufficient                       |
 
 ### Architecture
 
@@ -108,7 +112,10 @@ Leaflet and its plugins will be loaded via CDN with `async` scripts:
 ```html
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9/dist/leaflet.js" defer></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5/dist/leaflet.markercluster.js" defer></script>
+<script
+  src="https://unpkg.com/leaflet.markercluster@1.5/dist/leaflet.markercluster.js"
+  defer
+></script>
 ```
 
 This avoids adding npm dependencies and keeps the build system unchanged.
@@ -117,21 +124,21 @@ This avoids adding npm dependencies and keeps the build system unchanged.
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/presenters/templates/homepage.js` | Add "Map View" / "List View" toggle, embed map container |
-| `src/presenters/styles.js` | Add ~100 lines of map-specific CSS |
-| `src/presenters/templates/map.js` (NEW) | ~200 lines of Leaflet integration |
-| `docs/roadmap.md` | Update FEAT-003 status to "In Progress" |
+| File                                    | Change                                                   |
+| --------------------------------------- | -------------------------------------------------------- |
+| `src/presenters/templates/homepage.js`  | Add "Map View" / "List View" toggle, embed map container |
+| `src/presenters/styles.js`              | Add ~100 lines of map-specific CSS                       |
+| `src/presenters/templates/map.js` (NEW) | ~200 lines of Leaflet integration                        |
+| `docs/roadmap.md`                       | Update FEAT-003 status to "In Progress"                  |
 
 ---
 
 ## Risks and Mitigations
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| OpenStreetMap tile rate limiting | Low | Cache tiles via service worker, add Mapbox fallback |
-| Geolocation API not supported | Low | Feature-detect, show manual location input |
-| Leaflet API breaking changes | Low | Pin to specific version (1.9.x) |
-| Performance with 3474 markers | Medium | Use clustering, viewport-filtering |
-| CSP blocks CDN scripts | Medium | Add CDN to CSP allowlist, or bundle statically |
+| Risk                             | Likelihood | Mitigation                                          |
+| -------------------------------- | ---------- | --------------------------------------------------- |
+| OpenStreetMap tile rate limiting | Low        | Cache tiles via service worker, add Mapbox fallback |
+| Geolocation API not supported    | Low        | Feature-detect, show manual location input          |
+| Leaflet API breaking changes     | Low        | Pin to specific version (1.9.x)                     |
+| Performance with 3474 markers    | Medium     | Use clustering, viewport-filtering                  |
+| CSP blocks CDN scripts           | Medium     | Add CDN to CSP allowlist, or bundle statically      |
