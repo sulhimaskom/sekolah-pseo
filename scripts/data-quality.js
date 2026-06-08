@@ -406,9 +406,12 @@ module.exports = {
   createBar,
   formatHuman,
   formatJson,
+  main,
   REQUIRED_FIELDS,
   INDONESIA_BOUNDS,
   DEFAULT_THRESHOLDS,
 };
 
-main();
+if (require.main === module) {
+  main();
+}

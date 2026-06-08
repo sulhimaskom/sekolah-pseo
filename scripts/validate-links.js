@@ -101,8 +101,8 @@ async function validateLinks() {
 
   try {
     await safeAccess(distDir);
-  } catch {
-    logger.warn(`Dist directory not found at ${distDir}. Nothing to validate.`);
+  } catch (error) {
+    logger.warn({ err: error }, `Dist directory not found at ${distDir}. Nothing to validate.`);
     return true;
   }
 
