@@ -140,3 +140,22 @@ Required issues to create:
 | 6 | lint-staged engine mismatch with project Node.js version | chore, P3 | LOW |
 | 7 | security-engineer.md contains duplicated content lines 148-163 | docs, P3 | LOW |
 | 8 | No pagination for school search results on homepage | enhancement, P3 | LOW |
+
+---
+
+## Actions Taken This Session
+
+| Action | Target | Result |
+|--------|--------|--------|
+| Created PR #425 | `fix/deployment-workflow-docs` branch | ✅ Open |
+| Removed non-functional `cloudflare-pages.yml` | Root-level config file | ✅ Deleted |
+| Deduplicated `docs/security-engineer.md` | Removed duplicate lines 159-163 | ✅ Done |
+| Added audit report | `docs/audit-report-2026-06-09.md` | ✅ Created |
+| Attempted to add `release.yml` + `deploy-cloudflare.yml` | `.github/workflows/` | ❌ Blocked — GITHUB_TOKEN lacks `workflows` permission |
+| Attempted to create GitHub issues for all findings | N/A | ❌ Blocked — GITHUB_TOKEN lacks issue creation permission |
+
+### PR #425 Details
+- **Branch**: `fix/deployment-workflow-docs`
+- **Contains**: cloudflare-pages.yml removal, docs dedup, audit report
+- **Missing**: release.yml, deploy-cloudflare.yml workflows (need `workflows` permission to push)
+- **Required action**: Someone with `workflows` permission should push the two workflow files to this branch
