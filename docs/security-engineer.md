@@ -156,12 +156,6 @@ TH|6. ~~**Least-Privilege Permissions**~~: Reduce workflow permissions ✅ (Done
 YM|7. ~~**Self-Hosted Runner Security**~~: Document runner security requirements ✅ (Done)
 JK|8. **Subresource Integrity**: Add SRI hashes if external resources are added
 
-1. ~~**Security.txt**~~: Add `public/security.txt` for security researcher coordination ✅ (Done)
-2. ~~**npm audit**~~: Add to CI pipeline ✅ (Done)
-3. ~~**Modern Security Headers**~~: Add Permissions-Policy, COOP, CORP headers ✅ (Done)
-4. ~~**Command Injection Protection**~~: Add URL validation for git operations ✅ (Done)
-5. **Subresource Integrity**: Add SRI hashes if external resources are added
-
 ### Contact
 
 For security issues, please contact the project maintainers through GitHub issues with "security" label.
