@@ -8,14 +8,14 @@
 
 ## Diagnostic Results
 
-| Check | Result | Details |
-|-------|--------|---------|
-| ESLint | ✅ PASS | 0 errors, 0 warnings |
-| Prettier | ✅ PASS | All files formatted |
-| JS Tests | ✅ PASS | 729 pass, 0 fail, 0 skip |
-| Python Tests | ✅ PASS | 13 pass, 0 fail |
-| Full Build | ✅ PASS | 3474 pages in 1.6s, 0 failed |
-| npm audit | ✅ PASS | 0 vulnerabilities |
+| Check         | Result  | Details                                                          |
+| ------------- | ------- | ---------------------------------------------------------------- |
+| ESLint        | ✅ PASS | 0 errors, 0 warnings                                             |
+| Prettier      | ✅ PASS | All files formatted                                              |
+| JS Tests      | ✅ PASS | 729 pass, 0 fail, 0 skip                                         |
+| Python Tests  | ✅ PASS | 13 pass, 0 fail                                                  |
+| Full Build    | ✅ PASS | 3474 pages in 1.6s, 0 failed                                     |
+| npm audit     | ✅ PASS | 0 vulnerabilities                                                |
 | Coverage (JS) | ✅ PASS | Statements 90.8%, Branches 88.05%, Functions 91.01%, Lines 90.8% |
 
 ---
@@ -24,18 +24,18 @@
 
 ### Criteria Breakdown
 
-| Criterion | Weight | Score | Weighted | Key Evidence |
-|-----------|--------|-------|----------|-------------|
-| Correctness | 15% | 95 | 14.25 | All 729 tests pass, build produces correct output |
-| Readability & Naming | 10% | 90 | 9.00 | JSDoc, consistent naming; mixed Indonesian/English in codebase |
-| Simplicity | 10% | 90 | 9.00 | Clean layers; some functions in utils.js do too much |
-| Modularity & SRP | 15% | 92 | 13.80 | Good architecture; utils.js violates SRP |
-| Consistency | 5% | 95 | 4.75 | Very consistent CommonJS patterns |
-| Testability | 15% | 85 | 12.75 | 729 tests, 90.8% coverage; interactive.js (60%), sitemap.js (68%) |
-| Maintainability | 10% | 88 | 8.80 | Good modularity; utils.js high complexity |
-| Error Handling | 10% | 92 | 9.20 | IntegrationError, retry, circuit breaker; some bare catch blocks |
-| Dependency Discipline | 5% | 98 | 4.90 | Only pino runtime dep; lint-staged engine mismatch |
-| Determinism | 5% | 92 | 4.60 | Pure functions; Date-dependent output in templates |
+| Criterion             | Weight | Score | Weighted | Key Evidence                                                      |
+| --------------------- | ------ | ----- | -------- | ----------------------------------------------------------------- |
+| Correctness           | 15%    | 95    | 14.25    | All 729 tests pass, build produces correct output                 |
+| Readability & Naming  | 10%    | 90    | 9.00     | JSDoc, consistent naming; mixed Indonesian/English in codebase    |
+| Simplicity            | 10%    | 90    | 9.00     | Clean layers; some functions in utils.js do too much              |
+| Modularity & SRP      | 15%    | 92    | 13.80    | Good architecture; utils.js violates SRP                          |
+| Consistency           | 5%     | 95    | 4.75     | Very consistent CommonJS patterns                                 |
+| Testability           | 15%    | 85    | 12.75    | 729 tests, 90.8% coverage; interactive.js (60%), sitemap.js (68%) |
+| Maintainability       | 10%    | 88    | 8.80     | Good modularity; utils.js high complexity                         |
+| Error Handling        | 10%    | 92    | 9.20     | IntegrationError, retry, circuit breaker; some bare catch blocks  |
+| Dependency Discipline | 5%     | 98    | 4.90     | Only pino runtime dep; lint-staged engine mismatch                |
+| Determinism           | 5%     | 92    | 4.60     | Pure functions; Date-dependent output in templates                |
 
 ### Findings
 
@@ -53,14 +53,14 @@
 
 ### Criteria Breakdown
 
-| Criterion | Weight | Score | Weighted | Key Evidence |
-|-----------|--------|-------|----------|-------------|
-| Stability | 20% | 95 | 19.00 | Builds always succeed, circuit breakers prevent cascading failures |
-| Performance Efficiency | 15% | 95 | 14.25 | 3474 pages in 1.6s (2238 pages/sec), 105MB peak RSS |
-| Security Practices | 20% | 92 | 18.40 | XSS, path traversal, CSV injection protection; secrets over-exposed in CI |
-| Scalability Readiness | 15% | 90 | 13.50 | Static site = inherently scalable; no CDN config, no caching layer |
-| Resilience & Fault Tolerance | 15% | 92 | 13.80 | Retry, circuit breaker, timeouts, rate limiting; no CSV corruption fallback |
-| Observability | 15% | 85 | 12.75 | Pino structured logging, build performance tracking; no metrics/monitoring |
+| Criterion                    | Weight | Score | Weighted | Key Evidence                                                                |
+| ---------------------------- | ------ | ----- | -------- | --------------------------------------------------------------------------- |
+| Stability                    | 20%    | 95    | 19.00    | Builds always succeed, circuit breakers prevent cascading failures          |
+| Performance Efficiency       | 15%    | 95    | 14.25    | 3474 pages in 1.6s (2238 pages/sec), 105MB peak RSS                         |
+| Security Practices           | 20%    | 92    | 18.40    | XSS, path traversal, CSV injection protection; secrets over-exposed in CI   |
+| Scalability Readiness        | 15%    | 90    | 13.50    | Static site = inherently scalable; no CDN config, no caching layer          |
+| Resilience & Fault Tolerance | 15%    | 92    | 13.80    | Retry, circuit breaker, timeouts, rate limiting; no CSV corruption fallback |
+| Observability                | 15%    | 85    | 12.75    | Pino structured logging, build performance tracking; no metrics/monitoring  |
 
 ### Findings
 
@@ -74,17 +74,17 @@
 
 ### Criteria Breakdown
 
-| Criterion | Score | Key Evidence |
-|-----------|-------|-------------|
-| Accessibility | 92 | ARIA landmarks, skip links, semantic HTML, screen reader classes |
-| User Flow Clarity | 88 | Search + filter works; no pagination for 3474 schools |
-| Feedback & Error Messaging | 80 | 404.html exists; no inline validation, no toast/notifications |
-| Responsiveness | 90 | Mobile/tablet/desktop breakpoints, dark mode, prefers-reduced-motion |
-| API Clarity | 90 | docs/api.md with signatures, types, examples |
-| Local Dev Setup | 95 | README guide, npm install, .env.example, scripts documented |
-| Documentation Accuracy | 85 | Blueprint mostly current; security-engineer.md has duplicate content |
-| Debuggability | 85 | Structured logging, error codes; no source maps |
-| Build/Test Feedback Loop | 95 | Build: 1.6s, JS tests: 3.7s, Python tests: 0.1s |
+| Criterion                  | Score | Key Evidence                                                         |
+| -------------------------- | ----- | -------------------------------------------------------------------- |
+| Accessibility              | 92    | ARIA landmarks, skip links, semantic HTML, screen reader classes     |
+| User Flow Clarity          | 88    | Search + filter works; no pagination for 3474 schools                |
+| Feedback & Error Messaging | 80    | 404.html exists; no inline validation, no toast/notifications        |
+| Responsiveness             | 90    | Mobile/tablet/desktop breakpoints, dark mode, prefers-reduced-motion |
+| API Clarity                | 90    | docs/api.md with signatures, types, examples                         |
+| Local Dev Setup            | 95    | README guide, npm install, .env.example, scripts documented          |
+| Documentation Accuracy     | 85    | Blueprint mostly current; security-engineer.md has duplicate content |
+| Debuggability              | 85    | Structured logging, error codes; no source maps                      |
+| Build/Test Feedback Loop   | 95    | Build: 1.6s, JS tests: 3.7s, Python tests: 0.1s                      |
 
 ### Findings
 
@@ -96,14 +96,14 @@
 
 ### Criteria Breakdown
 
-| Criterion | Weight | Score | Weighted | Key Evidence |
-|-----------|--------|-------|----------|-------------|
-| CI/CD Health | 20% | 88 | 17.60 | Multiple workflows, dependabot; cloudflare-pages.yml misplaced |
-| Release & Rollback Safety | 20% | 75 | 15.00 | CHANGELOG exists; no automated release, no versioning strategy |
-| Config & Env Parity | 15% | 85 | 12.75 | .env.example, validation; no dev/prod config separation |
-| Migration Safety | 15% | 80 | 12.00 | ADRs exist; no CSV migration path documented |
-| Technical Debt Exposure | 15% | 78 | 11.70 | utils.js SRP violation, misplaced config, doc duplication, engine mismatch |
-| Change Velocity & Blast Radius | 15% | 88 | 13.20 | Well-tested modules; utils.js changes risky due to broad usage |
+| Criterion                      | Weight | Score | Weighted | Key Evidence                                                               |
+| ------------------------------ | ------ | ----- | -------- | -------------------------------------------------------------------------- |
+| CI/CD Health                   | 20%    | 88    | 17.60    | Multiple workflows, dependabot; cloudflare-pages.yml misplaced             |
+| Release & Rollback Safety      | 20%    | 75    | 15.00    | CHANGELOG exists; no automated release, no versioning strategy             |
+| Config & Env Parity            | 15%    | 85    | 12.75    | .env.example, validation; no dev/prod config separation                    |
+| Migration Safety               | 15%    | 80    | 12.00    | ADRs exist; no CSV migration path documented                               |
+| Technical Debt Exposure        | 15%    | 78    | 11.70    | utils.js SRP violation, misplaced config, doc duplication, engine mismatch |
+| Change Velocity & Blast Radius | 15%    | 88    | 13.20    | Well-tested modules; utils.js changes risky due to broad usage             |
 
 ### Findings
 
@@ -115,13 +115,13 @@
 
 ## Summary Scores
 
-| Domain | Score |
-|--------|-------|
-| A. Code Quality | **91.05 / 100** |
-| B. System Quality | **91.70 / 100** |
-| C. Experience Quality | **88.00 / 100** |
+| Domain                  | Score           |
+| ----------------------- | --------------- |
+| A. Code Quality         | **91.05 / 100** |
+| B. System Quality       | **91.70 / 100** |
+| C. Experience Quality   | **88.00 / 100** |
 | D. Delivery & Evolution | **82.25 / 100** |
-| **Overall** | **88.25 / 100** |
+| **Overall**             | **88.25 / 100** |
 
 ---
 
@@ -145,16 +145,17 @@ Required issues to create:
 
 ## Actions Taken This Session
 
-| Action | Target | Result |
-|--------|--------|--------|
-| Created PR #425 | `fix/deployment-workflow-docs` branch | ✅ Open |
-| Removed non-functional `cloudflare-pages.yml` | Root-level config file | ✅ Deleted |
-| Deduplicated `docs/security-engineer.md` | Removed duplicate lines 159-163 | ✅ Done |
-| Added audit report | `docs/audit-report-2026-06-09.md` | ✅ Created |
-| Attempted to add `release.yml` + `deploy-cloudflare.yml` | `.github/workflows/` | ❌ Blocked — GITHUB_TOKEN lacks `workflows` permission |
-| Attempted to create GitHub issues for all findings | N/A | ❌ Blocked — GITHUB_TOKEN lacks issue creation permission |
+| Action                                                   | Target                                | Result                                                    |
+| -------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------- |
+| Created PR #425                                          | `fix/deployment-workflow-docs` branch | ✅ Open                                                   |
+| Removed non-functional `cloudflare-pages.yml`            | Root-level config file                | ✅ Deleted                                                |
+| Deduplicated `docs/security-engineer.md`                 | Removed duplicate lines 159-163       | ✅ Done                                                   |
+| Added audit report                                       | `docs/audit-report-2026-06-09.md`     | ✅ Created                                                |
+| Attempted to add `release.yml` + `deploy-cloudflare.yml` | `.github/workflows/`                  | ❌ Blocked — GITHUB_TOKEN lacks `workflows` permission    |
+| Attempted to create GitHub issues for all findings       | N/A                                   | ❌ Blocked — GITHUB_TOKEN lacks issue creation permission |
 
 ### PR #425 Details
+
 - **Branch**: `fix/deployment-workflow-docs`
 - **Contains**: cloudflare-pages.yml removal, docs dedup, audit report
 - **Missing**: release.yml, deploy-cloudflare.yml workflows (need `workflows` permission to push)
