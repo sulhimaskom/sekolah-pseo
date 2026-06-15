@@ -184,6 +184,36 @@ describe('check-freshness', () => {
         assert.ok(result.metrics.province.count <= result.totalRecords);
       }
     });
+
+    it('metrics counts are consistent with totalRecords', () => {
+      const result = getDataQualityMetrics();
+      if (result.totalRecords > 0) {
+        for (const metric of ['coordinates', 'address', 'npsn', 'province']) {
+          assert.ok(
+            result.metrics[metric].count <= result.totalRecords,
+            `${metric} count (${result.metrics[metric].count}) exceeds totalRecords (${result.totalRecords})`
+          );
+        }
+        const totalWithAny = Object.values(result.metrics).reduce((sum, m) => sum + m.count, 0);
+        assert.ok(totalWithAny > 0, 'Expected at least one metric with non-zero count');
+      }
+    });
+
+    it('percentages are consistent with counts', () => {
+      const result = getDataQualityMetrics();
+      if (result.totalRecords > 0) {
+        for (const metric of ['coordinates', 'address', 'npsn', 'province']) {
+          const expectedPct = ((result.metrics[metric].count / result.totalRecords) * 100).toFixed(
+            2
+          );
+          assert.strictEqual(
+            result.metrics[metric].percentage,
+            expectedPct,
+            `${metric} percentage ${result.metrics[metric].percentage} does not match expected ${expectedPct}`
+          );
+        }
+      }
+    });
   });
 
   describe('main() via CLI', () => {

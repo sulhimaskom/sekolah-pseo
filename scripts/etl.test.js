@@ -229,6 +229,19 @@ test('generateDataQualityReport calculates coordinate stats', () => {
   const report = generateDataQualityReport(records);
   assert.strictEqual(report.coordinateStats.validCoordinates, 2);
   assert.strictEqual(report.coordinateStats.missingCoordinates, 1);
+  assert.strictEqual(report.coordinateStats.invalidCoordinates, 0);
+});
+
+test('generateDataQualityReport counts invalid coordinates', () => {
+  const records = [
+    { npsn: '12345', nama: 'School 1', lat: '-20', lon: '106.8' },
+    { npsn: '67890', nama: 'School 2', lat: '-6.2', lon: '50.0' },
+    { npsn: '11111', nama: 'School 3', lat: '', lon: '' },
+  ];
+  const report = generateDataQualityReport(records);
+  assert.strictEqual(report.coordinateStats.validCoordinates, 0);
+  assert.strictEqual(report.coordinateStats.invalidCoordinates, 2);
+  assert.strictEqual(report.coordinateStats.missingCoordinates, 1);
 });
 
 test('generateDataQualityReport calculates NPSN uniqueness', () => {

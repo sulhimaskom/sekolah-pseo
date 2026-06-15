@@ -518,6 +518,46 @@ test('checkThresholds handles empty totalSchools gracefully', () => {
   assert.strictEqual(result.failures.length, 1); // only coordinate failure
 });
 
+test('checkThresholds passes when metrics exactly at threshold boundary', () => {
+  const report = {
+    summary: { totalSchools: 100, overallScore: 90 },
+    fieldCompleteness: {
+      npsn: { completenessPct: 90 },
+      nama: { completenessPct: 90 },
+      bentuk_pendidikan: { completenessPct: 90 },
+      provinsi: { completenessPct: 90 },
+      kab_kota: { completenessPct: 90 },
+      kecamatan: { completenessPct: 90 },
+    },
+    coordinates: { valid: 50 },
+    npsnUniqueness: { duplicates: 0, duplicateCount: 0, unique: 100, duplicateNpsns: [] },
+  };
+
+  const result = checkThresholds(report);
+  assert.strictEqual(result.passed, true);
+  assert.deepStrictEqual(result.failures, []);
+});
+
+test('checkThresholds fails when completeness just below threshold', () => {
+  const report = {
+    summary: { totalSchools: 100, overallScore: 89 },
+    fieldCompleteness: {
+      npsn: { completenessPct: 89 },
+      nama: { completenessPct: 100 },
+      bentuk_pendidikan: { completenessPct: 100 },
+      provinsi: { completenessPct: 100 },
+      kab_kota: { completenessPct: 100 },
+      kecamatan: { completenessPct: 100 },
+    },
+    coordinates: { valid: 100 },
+    npsnUniqueness: { duplicates: 0, duplicateCount: 0, unique: 100, duplicateNpsns: [] },
+  };
+
+  const result = checkThresholds(report);
+  assert.strictEqual(result.passed, false);
+  assert.ok(result.failures.some(f => f.includes('npsn')));
+});
+
 // ── formatHuman ─────────────────────────────────────────────────────────────
 
 test('formatHuman returns non-empty string', () => {
@@ -587,6 +627,67 @@ test('formatHuman shows categorical distribution', () => {
   assert.ok(output.includes('Categorical Distribution'));
   assert.ok(output.includes('Education types'));
   assert.ok(output.includes('Negeri'));
+});
+
+test('formatHuman lists duplicate NPSN details when duplicates exist', () => {
+  const schools = [
+    {
+      npsn: '001',
+      nama: 'A',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '001',
+      nama: 'B',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '002',
+      nama: 'C',
+      bentuk_pendidikan: 'SMP',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '003',
+      nama: 'D',
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '003',
+      nama: 'E',
+      bentuk_pendidikan: 'SMA',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+    {
+      npsn: '003',
+      nama: 'F',
+      bentuk_pendidikan: 'SMK',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    },
+  ];
+  const report = analyzeQuality(schools);
+  const output = formatHuman(report);
+  assert.ok(output.includes('Duplicate NPSN groups: 2'));
+  assert.ok(output.includes('Records with duplicate NPSN: 5'));
+  assert.ok(output.includes('NPSN 001'));
+  assert.ok(output.includes('NPSN 003'));
+  assert.ok(output.includes('→ 2 records'));
+  assert.ok(output.includes('→ 3 records'));
 });
 
 // ── formatJson ──────────────────────────────────────────────────────────────
