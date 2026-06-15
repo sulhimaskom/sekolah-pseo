@@ -1617,7 +1617,7 @@ Generates complete HTML page for school.
 - `<!DOCTYPE html>` declaration
 - `<html lang="id">` - Indonesian language
 - `<meta name="description">` for SEO
-- Security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection, Strict-Transport-Security, Permissions-Policy, Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy)
+- Security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Strict-Transport-Security, Permissions-Policy, Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy)
 - Theme color meta tags (light/dark mode support)
 - Viewport meta tag for mobile responsiveness
 - Open Graph meta tags for social sharing
@@ -1935,8 +1935,10 @@ module.exports = {
   ensureDistDir: function,
   loadSchools: function,
   generateExternalStyles: function,
+  generateRobotsTxt: function,
   generateProvincePages: function,
   preCreateProvinceDirectories: function,
+  writeSearchDataFile: function,
   build: function,
   buildIncremental: function,
   computeSchoolHash: function,
@@ -2039,6 +2041,64 @@ Generates the external CSS file for all school pages.
 ```javascript
 await generateExternalStyles();
 console.log('Generated styles.css');
+```
+
+---
+
+#### `generateRobotsTxt(siteUrl)`
+
+Generates a dynamic `robots.txt` file with the correct sitemap URL and writes it to the distribution directory.
+
+**Parameters:**
+
+- `siteUrl` (string): Base URL for the site (used to construct sitemap URL)
+
+**Returns:** `Promise<void>`
+
+**Throws:**
+
+- `IntegrationError` if file write fails
+
+**Output:** `dist/robots.txt`
+
+**Dependencies:**
+
+- `safeWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+await generateRobotsTxt('https://example.com');
+// Creates: dist/robots.txt with sitemap reference
+```
+
+---
+
+#### `writeSearchDataFile(schools)`
+
+Generates a searchable JSON data file (`schools.json`) from school records for client-side search functionality.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+
+**Returns:** `Promise<void>`
+
+**Throws:**
+
+- `IntegrationError` if file write fails
+
+**Output:** `dist/schools.json` - Compact JSON payload for client-side search
+
+**Dependencies:**
+
+- `safeWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+await writeSearchDataFile(schools);
+// Creates: dist/schools.json (~1.1 MB for 3474 schools)
 ```
 
 ---
@@ -2238,8 +2298,11 @@ Generates XML sitemap files respecting Google sitemap limits (50,000 URLs per fi
 ```javascript
 module.exports = {
   collectUrls: function,
+  collectUrlsFromSchools: function,
   writeSitemapFiles: function,
-  writeSitemapIndex: function
+  writeSitemapIndex: function,
+  escapeXml: function,
+  generateSitemaps: function
 };
 ```
 
@@ -2271,6 +2334,65 @@ Collects all HTML file URLs from the distribution directory.
 ```javascript
 const urls = await collectUrls(CONFIG.DIST_DIR, 'https://example.com');
 console.log(`Collected ${urls.length} URLs`);
+```
+
+---
+
+#### `collectUrlsFromSchools(schools, baseUrl)`
+
+Collects URLs from school data directly, avoiding filesystem walk. Generates homepage, province pages, and individual school page URLs.
+
+**Parameters:**
+
+- `schools` (Array<Object>): School data objects
+- `baseUrl` (string): Base URL for the site (e.g. `https://example.com`)
+
+**Returns:** `Array<Object>` - Array of URL entries with `url` and `lastmod` fields
+
+**Behavior:**
+
+- Generates homepage URL (`/`)
+- Generates province page URLs (`/provinsi/{slug}/`)
+- Generates individual school page URLs using `getSchoolRelativePath`
+- Uses current date as lastmod for all entries
+
+**Dependencies:**
+
+- `getSchoolRelativePath` (from `src/services/PageBuilder.js`)
+- `getUniqueProvinces` (from `src/services/PageBuilder.js`)
+
+**Usage:**
+
+```javascript
+const urls = collectUrlsFromSchools(schools, 'https://example.com');
+console.log(`Generated ${urls.length} URLs`);
+```
+
+---
+
+#### `escapeXml(text)`
+
+Escapes XML special characters to prevent XML injection attacks.
+
+**Parameters:**
+
+- `text` (string): Text to escape
+
+**Returns:** `string` - XML-escaped text (returns `''` for non-string input)
+
+**Escaped Characters:**
+
+- `&` → `&amp;`
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `"` → `&quot;`
+- `'` → `&apos;`
+
+**Usage:**
+
+```javascript
+const safe = escapeXml('<url>https://example.com&test</url>');
+// Returns: '&lt;url&gt;https://example.com&amp;test&lt;/url&gt;'
 ```
 
 ---
@@ -2356,22 +2478,27 @@ await writeSitemapIndex(
 
 ---
 
-#### `generateSitemaps()`
+#### `generateSitemaps(schools)`
 
-Main function that orchestrates sitemap generation.
+Main function that orchestrates sitemap generation. Uses school data to generate URLs directly (faster, avoids filesystem I/O).
+
+**Parameters:**
+
+- `schools` (Array<Object>, optional): School data objects. If provided, uses `collectUrlsFromSchools` for URL generation. If omitted, falls back to filesystem walk via `collectUrls`.
 
 **Returns:** `Promise<void>`
 
 **Process:**
 
-1. Collects all HTML file URLs from `dist/` directory
+1. Collects all HTML file URLs (from school data or `dist/` directory)
 2. Writes sitemap XML files (split by URL limit)
 3. Writes sitemap index XML file
 4. Logs summary with file count and total URLs
 
 **Dependencies:**
 
-- `collectUrls()`
+- `collectUrlsFromSchools()` (data-driven path)
+- `collectUrls()` (filesystem walk fallback)
 - `writeSitemapFiles()`
 - `writeSitemapIndex()`
 

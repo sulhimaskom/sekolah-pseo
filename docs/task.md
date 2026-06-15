@@ -28,14 +28,14 @@ Optimized three CPU and memory bottlenecks in the build pipeline: added a bounde
      - Once in `prepareSchoolDataForSearch()` (schools.json generation)
      - Once in `buildSchoolPageData()` (page HTML generation)
      - Once in `createManifestFromSchools()` (manifest creation)
-   - After cache: computed once, returned from cache on subsequent calls
-   - WeakMap ensures automatic cleanup when school objects are garbage collected
+    - After cache: computed once, returned from cache on subsequent calls
+    - WeakMap ensures automatic cleanup when school objects are garbage collected
 
 3. **Fixed duplicate `getUniqueProvinces()` call** (`scripts/build-pages.js`):
-   - `generateProvincePages()` called `getUniqueProvinces(schools)` explicitly, then `preCreateProvinceDirectories(schools)` called it again internally
-   - Modified `preCreateProvinceDirectories()` to accept optional pre-computed `provinces` parameter
-   - `generateProvincePages()` now passes the already-computed provinces array
-   - Eliminates one redundant O(n) iteration over 3474 schools
+    - `generateProvincePages()` called `getUniqueProvinces(schools)` explicitly, then `preCreateProvinceDirectories(schools)` called it again internally
+    - Modified `preCreateProvinceDirectories()` to accept optional pre-computed `provinces` parameter
+    - `generateProvincePages()` now passes the already-computed provinces array
+    - Eliminates one redundant O(n) iteration over 3474 schools
 
 ### Performance Results
 
@@ -76,6 +76,46 @@ Optimized three CPU and memory bottlenecks in the build pipeline: added a bounde
 - `scripts/build-pages.js` — Updated `preCreateProvinceDirectories()` to accept optional provinces param, `generateProvincePages()` passes pre-computed provinces
 - `docs/blueprint.md` — Updated decisions log
 - `docs/task.md` — This entry
+
+### [TASK-033] Documentation Fix - Missing Exports, Stale Counts, Duplicate Decisions, Misleading Security Header
+
+**Status**: Complete
+**Agent**: Senior Technical Writer (Sisyphus)
+
+### Description
+
+Fixed actively misleading and stale documentation across 4 files. The most critical fix was removing a reference to the deprecated `X-XSS-Protection` security header that was removed from templates in TASK-022 but still documented as present. Also fixed missing module exports, stale test counts, and duplicate decision log entries.
+
+### Actions Taken
+
+1. **Fixed X-XSS-Protection reference in `docs/api.md`** (CRITICAL):
+   - Removed `X-XSS-Protection` from the security headers list in School Page Template docs
+   - This header was removed from all templates in TASK-022 (security audit)
+   - Document was actively misleading, claiming the header was still present
+
+2. **Added missing sitemap.js exports to `docs/api.md`**:
+   - Added `collectUrlsFromSchools` - data-driven URL collection (avoids filesystem walk)
+   - Added `escapeXml` - XML injection prevention
+   - Updated `generateSitemaps` docs to reflect data-driven URL generation strategy
+   - Updated function dependency lists
+
+3. **Added missing build-pages.js exports to `docs/api.md`**:
+   - Added `generateRobotsTxt` - dynamic robots.txt generation
+   - Added `writeSearchDataFile` - schools.json generation for client-side search
+
+4. **Fixed stale test count in `docs/testing.md`**:
+   - Updated `729 test cases` → `758 test cases`
+
+5. **Removed duplicate decision log entries in `docs/blueprint.md`**:
+   - Removed duplicate `getSchoolRelativePath WeakMap cache` entry (appeared under both 2026-06-08 and 2026-06-15)
+   - Removed duplicate `Fixed duplicate getUniqueProvinces() call` entry (same)
+
+### Files Modified
+
+- `docs/api.md` - Removed X-XSS-Protection, added missing exports, updated function docs
+- `docs/testing.md` - Updated test count 729→758
+- `docs/blueprint.md` - Removed 2 duplicate decision log entries
+- `docs/task.md` - This entry
 
 ### Verification
 
@@ -162,6 +202,29 @@ Conducted follow-up security audit of the Indonesian School PSEO project. Fixed 
 - [x] npm audit clean (0 vulnerabilities)
 - [x] Secret exposure surface reduced
 - [x] Zero regressions
+
+### Verification
+
+- Lint: 0 errors ✓
+- JS Tests: 758/758 pass ✓
+- Python Tests: 27/27 pass ✓
+- Build: 3474 pages, 0 failed ✓
+- All changes are documentation only (zero code changes) ✓
+- X-XSS-Protection no longer listed in security headers ✓
+- Sitemap exports now match actual implementation ✓
+- Build-pages exports now match actual implementation ✓
+- Test counts verified against actual test run ✓
+- Decision log duplicates removed ✓
+
+### Acceptance Criteria
+
+- [x] X-XSS-Protection removed from api.md security headers (actively misleading)
+- [x] sitemap.js exports documented completely (6 exports)
+- [x] build-pages.js exports documented completely (13 exports)
+- [x] testing.md test counts match actual test run (758)
+- [x] blueprint.md decision log has no duplicate entries
+- [x] All lint/tests/build pass with zero regressions
+- [x] Zero code changes (documentation only)
 
 ---
 
