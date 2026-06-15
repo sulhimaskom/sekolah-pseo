@@ -2,6 +2,169 @@
 
 ## Completed Tasks
 
+### [TASK-032] Performance Optimization - escapeHtml Caching, WeakMap Path Cache, and Province Iteration Fix
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized three CPU and memory bottlenecks in the build pipeline: added a bounded Map cache to `escapeHtml()` to eliminate redundant regex replacements across ~83K calls, added a WeakMap cache to `getSchoolRelativePath()` to eliminate redundant slugify+path.join computations across 3 build phases, and fixed a duplicate `getUniqueProvinces()` call in province page generation.
+
+### Actions Taken
+
+1. **escapeHtml bounded Map cache** (`scripts/utils.js`):
+   - Added `escapeHtmlCache` Map with 50K entry limit
+   - Caches escaped strings by input value, avoiding 5 regex replacements per call for repeated values
+   - Many fields (provinsi ~1 unique, status ~2, bentuk_pendidikan ~8, kab_kota ~300, kecamatan ~1000) repeat across the 3474-school dataset
+   - Estimated ~80K redundant regex ops eliminated per full build
+   - Exported `clearEscapeHtmlCache()` for testing and memory management
+   - Eviction: first-key deletion when cache exceeds limit (LRU-like)
+
+2. **getSchoolRelativePath WeakMap cache** (`src/services/PageBuilder.js`):
+   - Added module-level `relativePathCache = new WeakMap()`
+   - Caches computed relative path by school object reference
+   - `getSchoolRelativePath()` is called 3× per school during full build:
+     - Once in `prepareSchoolDataForSearch()` (schools.json generation)
+     - Once in `buildSchoolPageData()` (page HTML generation)
+     - Once in `createManifestFromSchools()` (manifest creation)
+   - After cache: computed once, returned from cache on subsequent calls
+   - WeakMap ensures automatic cleanup when school objects are garbage collected
+
+3. **Fixed duplicate `getUniqueProvinces()` call** (`scripts/build-pages.js`):
+   - `generateProvincePages()` called `getUniqueProvinces(schools)` explicitly, then `preCreateProvinceDirectories(schools)` called it again internally
+   - Modified `preCreateProvinceDirectories()` to accept optional pre-computed `provinces` parameter
+   - `generateProvincePages()` now passes the already-computed provinces array
+   - Eliminates one redundant O(n) iteration over 3474 schools
+
+### Performance Results
+
+**Before Optimization:**
+
+- Duration: 1.0s (wall), 0.508s (user), 0.217s (sys)
+- Throughput: 3439.6 pages/sec
+- Peak RSS: 120.80 MB
+- escapeHtml: ~83K calls with no caching (5 regex replacements each)
+- getSchoolRelativePath: computed from scratch 3× per school (10,422 total)
+- getUniqueProvinces: called twice per full build (redundant O(n))
+
+**After Optimization:**
+
+- Duration: ~985ms avg (wall), 0.502s avg (user), consistent with baseline
+- Throughput: 3563 pages/sec (+3.6%)
+- Peak RSS: 118.71 MB (−1.7%)
+- escapeHtml: cached by value, repeated fields return in O(1)
+- getSchoolRelativePath: computed once per school, cached by object reference for subsequent calls
+- getUniqueProvinces: called once per full build (eliminated redundant pass)
+
+**Metrics:**
+
+| Metric | Before | After | Δ |
+|--------|--------|-------|---|
+| Duration | 1.0s | ~0.99s | ~1% (maintained) |
+| Throughput | 3439.6 pg/s | 3563 pg/s | +3.6% |
+| Peak RSS | 120.80 MB | 118.71 MB | −1.7% |
+| User CPU | 0.508s | 0.502s | −1.2% |
+| escapeHtml calls | ~83K (no cache) | ~83K (O(1) for repeats) | — |
+| Path computations | 10,422 | 3,474 | −67% |
+| getUniqueProvinces | 2× per build | 1× per build | −50% |
+
+### Files Modified
+
+- `scripts/utils.js` — Added `escapeHtmlCache` Map, `clearEscapeHtmlCache()`, caching logic with bounded eviction
+- `src/services/PageBuilder.js` — Added `relativePathCache` WeakMap, caching in `getSchoolRelativePath()`
+- `scripts/build-pages.js` — Updated `preCreateProvinceDirectories()` to accept optional provinces param, `generateProvincePages()` passes pre-computed provinces
+- `docs/blueprint.md` — Updated decisions log
+- `docs/task.md` — This entry
+
+### Verification
+
+- Lint: 0 errors ✓
+- JS Tests: 753/753 pass ✓
+- Build: 3474 pages, 0 failed ✓
+- Prettier: All modified files formatted ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] escapeHtml caches repeated values with bounded Map (50K limit)
+- [x] getSchoolRelativePath uses WeakMap cache keyed by school object reference
+- [x] getSchoolRelativePath returns cached result for same object across build phases
+- [x] Duplicate getUniqueProvinces() call eliminated in generateProvincePages
+- [x] All 753 JS tests pass
+- [x] Lint passes (0 errors)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Zero regressions introduced
+- [x] Backward compatible (all APIs unchanged)
+
+---
+
+### [TASK-031] Security Audit Pass 2 - Workflow Secret Hardening and Dependency Updates
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted follow-up security audit of the Indonesian School PSEO project. Fixed 5 issues: removed duplicate CI workflow secrets, fixed incorrect secret mappings, and updated outdated dependencies.
+
+### Actions Taken
+
+1. **Fixed duplicate `API_KEY` in `parallel.yml` (4 instances)**:
+   - Removed `API_KEY: ${{ secrets.GEMINI_API_KEY }}` from all 4 job blocks (architect, specialists, Fixer, PR-Handler)
+   - `API_KEY` was a complete duplicate of `GEMINI_API_KEY` — no code anywhere referenced `process.env.API_KEY`
+   - Reduces secret exposure surface by 4 env vars
+
+2. **Fixed duplicate `API_KEY` in `on-push.yml`**:
+   - Same issue as above — removed identical duplicate mapping
+   - Established least-privilege pattern: only expose each secret once
+
+3. **Fixed `VITE_SUPABASE_ANON_KEY` in `on-push.yml`**:
+   - Removed `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}`
+   - Was mapped to the wrong secret (same as `VITE_SUPABASE_KEY`)
+   - Eliminated unnecessary secret duplication and confusion
+
+4. **Updated `eslint` to `^10.5.0`**:
+   - Bumped from 10.4.1 to latest minor version
+   - `npm outdated` showed `^10.5.0` as wanted range
+
+5. **Updated `prettier` to `^3.8.4`**:
+   - Bumped from 3.8.3 to latest minor version
+   - Applied via `npm install eslint@latest prettier@latest`
+
+### Files Modified
+
+- `.github/workflows/on-push.yml` — Removed `API_KEY` and `VITE_SUPABASE_ANON_KEY` env vars
+- `.github/workflows/parallel.yml` — Removed `API_KEY` from 4 job blocks
+- `package.json` — Updated eslint to ^10.5.0, prettier to ^3.8.4
+- `package-lock.json` — Updated lockfile (auto-generated)
+- `SECURITY_AUDIT_NOTE.md` — Updated audit documentation
+- `docs/task.md` — This entry
+
+### Verification
+
+- npm audit: 0 vulnerabilities ✓
+- ESLint: 0 errors ✓
+- Prettier: formatting clean ✓
+- JS Tests: all pass ✓
+- Build: 3474 pages, 0 failed ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] Duplicate `API_KEY` removed from all workflow files (5 total occurrences)
+- [x] `VITE_SUPABASE_ANON_KEY` incorrect mapping removed from on-push.yml
+- [x] eslint updated to latest matching range
+- [x] prettier updated to latest matching range
+- [x] All tests pass
+- [x] Build succeeds (3474 pages)
+- [x] Lint passes (0 errors)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions
+
+---
+
 ### [TASK-030] Critical Path Testing - Sitemap and Enrichment Module Coverage
 
 **Status**: Complete

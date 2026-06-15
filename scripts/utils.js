@@ -127,17 +127,46 @@ function parseCsvLine(line) {
   return result;
 }
 
+// Bounded cache for escapeHtml results - avoids redundant regex replacements
+// for repeated values (provinsi, bentuk_pendidikan, kab_kota, etc.)
+// With ~83K escapeHtml calls during a full build and many repeated field values,
+// this cache significantly reduces regex operations.
+const escapeHtmlCache = new Map();
+const ESCAPE_HTML_CACHE_MAX = 50000;
+
 function escapeHtml(text) {
   if (text === null || text === undefined) {
     return '';
   }
   const str = String(text);
-  return str
+
+  if (escapeHtmlCache.has(str)) {
+    return escapeHtmlCache.get(str);
+  }
+
+  const escaped = str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+
+  // Store in cache with size limit (LRU-like eviction via first-key deletion)
+  if (escapeHtmlCache.size >= ESCAPE_HTML_CACHE_MAX) {
+    const firstKey = escapeHtmlCache.keys().next().value;
+    escapeHtmlCache.delete(firstKey);
+  }
+  escapeHtmlCache.set(str, escaped);
+
+  return escaped;
+}
+
+/**
+ * Clear the escapeHtml cache. Useful for testing or between build phases
+ * if memory pressure is a concern.
+ */
+function clearEscapeHtmlCache() {
+  escapeHtmlCache.clear();
 }
 
 function formatStatus(status) {
@@ -320,6 +349,7 @@ function generateMetaDescription(school) {
 module.exports = {
   parseCsv,
   escapeHtml,
+  clearEscapeHtmlCache,
   escapeCsvField,
   walkDirectory,
   writeCsv,

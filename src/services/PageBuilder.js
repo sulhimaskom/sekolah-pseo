@@ -7,15 +7,28 @@ const { generateProvincePageHtml } = require('../presenters/templates/province-p
 
 const REQUIRED_SCHOOL_FIELDS = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
 
+// WeakMap cache for getSchoolRelativePath - caches computed path by school object reference.
+// This eliminates redundant slugify+path.join calls when the same school object is
+// processed across multiple build phases (search data generation, page writing, manifest creation).
+// WeakMap ensures automatic cleanup when school objects are garbage collected.
+const relativePathCache = new WeakMap();
+
 /**
  * Compute the relative path for a school page without generating HTML.
  * Lightweight alternative to buildSchoolPageData() for cases where only the path is needed.
+ * Results are cached via WeakMap keyed by school object reference.
  * @param {Object} school - School data object
  * @returns {string} Relative path for the school page
  */
 function getSchoolRelativePath(school) {
   if (!school || typeof school !== 'object') {
     throw new Error('Invalid school object provided');
+  }
+
+  // Check WeakMap cache first
+  const cached = relativePathCache.get(school);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const missingFields = REQUIRED_SCHOOL_FIELDS.filter(field => !school[field]);
@@ -29,7 +42,7 @@ function getSchoolRelativePath(school) {
   const kecamatanSlug = slugify(school.kecamatan);
   const namaSlug = slugify(school.nama);
 
-  return path.join(
+  const result = path.join(
     'provinsi',
     provinsiSlug,
     'kabupaten',
@@ -38,6 +51,10 @@ function getSchoolRelativePath(school) {
     kecamatanSlug,
     `${school.npsn}-${namaSlug}.html`
   );
+
+  // Cache by school object reference
+  relativePathCache.set(school, result);
+  return result;
 }
 
 function buildSchoolPageData(school, enrichment) {

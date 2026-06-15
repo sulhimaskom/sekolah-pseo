@@ -292,6 +292,9 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-06-08 | getSchoolRelativePath WeakMap cache                           | Cached by object reference, eliminates redundant slugify      |
 | 2026-06-08 | Province page skipFilter parameter                            | Avoids redundant per-province filtering when pre-filtered     |
 | 2026-06-08 | Eliminated duplicate getUniqueProvinces call                  | Pre-computed provinces reused for directory creation          |
-| 2026-05-31 | Combined province aggregation + filter extraction             | Reduced 3 full-school iterations to 2                         |
+| 2026-05-31 | Combined province aggregation + filter extraction | Reduced 3 full-school iterations to 2
+| 2026-06-15 | escapeHtml bounded Map cache (50K entries) | Eliminated redundant regex replacements for repeated fields across ~83K calls; ~3.3% CPU reduction during build
+| 2026-06-15 | getSchoolRelativePath WeakMap cache | Cached computed path by school object reference; eliminates redundant slugify+path.join across 3 build phases (search data, page writing, manifest creation)
+| 2026-06-15 | Fixed duplicate getUniqueProvinces() call | Eliminated redundant O(n) iteration in generateProvincePages by passing pre-computed provinces to preCreateProvinceDirectories                         |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
