@@ -2,6 +2,92 @@
 
 ## Completed Tasks
 
+### [TASK-030] Critical Path Testing - Sitemap and Enrichment Module Coverage
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Added comprehensive test coverage for uncovered critical paths in `scripts/sitemap.js` and `scripts/enrichment.js`. Sitemap module was at 68.34% statement coverage - the lowest in the codebase. Enrichment module had uncovered paths in `saveEnrichmentData()` and `enrichSchools()` edge cases.
+
+### Actions Taken
+
+1. **Enhanced `scripts/sitemap.js` exports**:
+   - Added `generateSitemaps` to `module.exports` so the main orchestrator function is testable
+
+2. **Added 16 new tests to `scripts/sitemap.test.js`**:
+   - `collectUrlsFromSchools()` edge cases:
+     - Empty schools array → returns only homepage URL
+     - Null input → throws with descriptive error
+     - Undefined input → throws with descriptive error
+     - Single school → homepage + 1 province + 1 school page (3 total)
+     - Base URL with trailing slash → normalizes correctly
+     - Multiple schools in same province → homepage + 1 province + N schools
+     - Multiple schools in different provinces → homepage + N provinces + N schools
+     - School missing required fields → throws as expected by PageBuilder
+     - Large mixed dataset → correct URL counts (10 URLs for 5 schools / 4 provinces)
+   - `writeSitemapFiles()` else branch:
+     - URLs without `lastmod` field → generates URLs without `<lastmod>` tags
+   - XML injection protection:
+     - Tests XML escaping in URLs with `&`, `<`, `>`, `"`, `'` in `writeSitemapFiles`
+     - Tests escaping in else branch (URLs without lastmod)
+   - `generateSitemaps()` orchestrator:
+     - Generates correct number of URLs from school data
+     - Creates valid sitemap XML files on disk
+     - Creates valid sitemap-index.xml referencing all sitemap files
+     - Consistent structure with single school
+     - Uses data-driven path when schools are provided
+
+3. **Added 8 new tests to `scripts/enrichment.test.js`**:
+   - `saveEnrichmentData()` function (3 tests):
+     - Round-trip persistence: save → load verifies data integrity
+     - Overwrite existing data: new data replaces old
+     - Empty data: saves empty object successfully
+   - `enrichSchools()` edge cases (5 tests):
+     - Skips schools without NPSN in batch processing
+     - Handles all-schools-missing-NPSN gracefully (returns `{}`)
+     - Mixed null/undefined entries in schools array
+     - Progress callback called correctly across batches
+     - Graceful handling when no progress callback provided
+
+### Files Modified
+
+- `scripts/sitemap.js` — Added `generateSitemaps` to module.exports
+- `scripts/sitemap.test.js` — 16 new tests
+- `scripts/enrichment.test.js` — 8 new tests
+- `docs/task.md` — This entry
+
+### Test Results
+
+- JS Tests: 753/753 pass (up from 729, +24 new tests)
+- Sitemap tests: 30/30 pass
+- Enrichment tests: 34/34 pass
+- Lint: 0 errors
+- Zero regressions introduced
+
+### Coverage Impact
+
+| Module               | Before     | After      | Δ     |
+| -------------------- | :--------: | :--------: | :---: |
+| sitemap.js (statements) | 68.34%  | ~87%       | +19%  |
+| enrichment.js (branches) | 79.24% | ~85%       | +6%   |
+
+### Acceptance Criteria
+
+- [x] `generateSitemaps` exported and testable
+- [x] `collectUrlsFromSchools` edge cases covered (empty, null, missing fields, large sets)
+- [x] `writeSitemapFiles` else branch (no lastmod) covered
+- [x] XML injection prevention tested in sitemap output
+- [x] `generateSitemaps` orchestrator tested (URL generation, file I/O)
+- [x] `saveEnrichmentData` function directly tested (persist, overwrite, empty)
+- [x] `enrichSchools` edge cases covered (missing NPSN, null entries, progress callbacks)
+- [x] All 753 tests pass consistently
+- [x] Lint passes (0 errors)
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-029] Code Sanitization - Missing Dependencies Fix and Stale File Cleanup
 
 **Status**: Complete
