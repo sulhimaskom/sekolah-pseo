@@ -2,6 +2,82 @@
 
 ## Completed Tasks
 
+### [TASK-037] Performance Optimization - schools.json.gz Pre-compression and Province Page Pre-grouping
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized two key areas: added gzip pre-compression of schools.json for 86.8% reduction in transfer size (1010KB → 133KB), and fixed a missing province page pre-grouping optimization to eliminate O(n×p) filtering during province page generation.
+
+### Actions Taken
+
+1. **Pre-compressed schools.json.gz during build** (`scripts/build-pages.js`):
+   - Added `zlib.gzipSync()` call in `writeSearchDataFile()` to generate `schools.json.gz`
+   - Uncompressed: 1,033,895 bytes (1010 KB)
+   - Gzipped: 136,619 bytes (133 KB) — **86.8% reduction**
+   - Enables servers with `gzip_static on` to serve pre-compressed content
+   - Added `zlib` import at module top
+
+2. **Province page pre-grouping (O(n×p) → O(n))** (`src/services/PageBuilder.js`, `scripts/build-pages.js`, `src/presenters/templates/province-page.js`):
+   - Added `groupSchoolsByProvince()` function — single O(n) pass groups all schools by province using a `Map<string, Array>`
+   - Refactored `generateProvincePages()` to pre-group schools once, then pass pre-filtered arrays with `skipFilter=true`
+   - Updated `buildProvincePageData()` to accept optional `skipFilter` parameter (backward-compatible, defaults to `false`)
+   - Updated `generateProvincePageHtml()` to accept optional `skipFilter` parameter
+   - Province metadata derived from grouped data instead of separate `getUniqueProvinces()` call
+   - Eliminated redundant per-province filtering of full schools array
+
+### Performance Results
+
+**gzip Pre-compression:**
+
+| Metric | Before | After | Δ |
+|--------|--------|-------|---|
+| schools.json size | 1,033,895 B (1010 KB) | 1,033,895 B (1010 KB) | — |
+| schools.json.gz size | — | 136,619 B (133 KB) | New artifact |
+| Transfer reduction | — | **86.8%** | — |
+
+**Province Page Pre-grouping:**
+
+| Metric | Before | After | Δ |
+|--------|--------|-------|---|
+| Province filtering | O(n×p) per province | O(n) single pass | Provinces: 1× instead of p× |
+| Redundant filtering | filterSchoolsByProvince for each province | Pre-grouped + skipFilter=true | 0 redundant iterations |
+| getUniqueProvinces calls | 1 per province page setup | 0 (derived from grouped data) | Eliminated |
+
+**Build Integrity:**
+
+| Check | Result |
+|-------|--------|
+| Build | 3474 pages, 0 failed, 964ms |
+| Throughput | 3603.73 pages/sec |
+| Peak RSS | 121.14 MB |
+| JS Tests | 764/764 pass |
+| Lint | 0 errors |
+| Performance budgets | All met |
+
+### Files Modified
+
+- `scripts/build-pages.js` — Added `zlib` import, gzip compression in `writeSearchDataFile()`, added `slugify` import, refactored `generateProvincePages()` to use `groupSchoolsByProvince()`, imported `groupSchoolsByProvince`
+- `src/services/PageBuilder.js` — Added `groupSchoolsByProvince()` function, updated `buildProvincePageData()` with `skipFilter` parameter, exported `groupSchoolsByProvince`
+- `src/presenters/templates/province-page.js` — Added `skipFilter` parameter to `generateProvincePageHtml()`
+- `docs/blueprint.md` — Updated decisions log
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] schools.json.gz generated during build with valid gzip format
+- [x] 86.8% transfer size reduction when server supports gzip_static (1010KB → 133KB)
+- [x] Province pages generated from pre-grouped data with skipFilter=true
+- [x] Backward-compatible API (all new parameters default to old behavior)
+- [x] All 764 JS tests pass
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-035] Critical Path Testing - ETL Invalid Coordinates, Data Quality Duplicate Formatting, Freshness Edge Cases
 
 **Status**: Complete
@@ -5164,3 +5240,37 @@ Standardized error handling patterns across the codebase: centralized all scatte
 - [x] Lint passes (0 errors)
 - [x] Build succeeds (3474 pages, 0 failed)
 - [x] Zero regressions introduced
+
+---
+
+### [REVIEW-009] Sync fs Calls in CLI Scripts Bypass Resilient Wrappers
+
+- **Location**: `scripts/check-freshness.js` (lines 31, 41), `scripts/data-quality.js` (lines 356, 360), `scripts/fetch-data.js` (lines 134, 182, 186, 211)
+- **Issue**: 3 CLI scripts use raw `fs.existsSync()`, `fs.readFileSync()`, and `fs.readdirSync()` instead of the project's established resilient wrappers (`safeAccess`, `safeReadFile`, `safeReaddir`) from `fs-safe.js`. These wrappers provide timeout, retry with exponential backoff, and circuit breaker protection. Other CLI scripts (build-pages.js, sitemap.js, validate-links.js) correctly use async resilient wrappers even in their `main()` CLI entry points. These 3 scripts were left behind during the TASK-005 migration.
+- **Suggestion**: Convert `main()` functions to async, import `safeAccess`/`safeReadFile`/`safeReaddir` from `./fs-safe`, and replace all sync `fs.*` calls. This ensures consistent resilience across all CLI entry points.
+- **Priority**: Medium
+- **Effort**: Medium
+
+### [REVIEW-010] Bare Catch Blocks Without Error Parameter in manifest.js and enrichment.js
+
+- **Location**: `scripts/manifest.js` (lines 62, 165), `scripts/enrichment.js` (line 288)
+- **Issue**: Three bare `catch {}` blocks don't capture the error parameter, preventing debug logging and making root-cause analysis harder during failures. TASK-033 systematically fixed this pattern across 10 other files (15 catch blocks), but these 3 locations were missed.
+- **Suggestion**: Change `catch {}` to `catch (error) {}` at all 3 locations. For manifest.js (expected: file-not-found), add `logger.debug` with error context. For enrichment.js, log the error at debug level.
+- **Priority**: Low
+- **Effort**: Trivial
+
+### [REVIEW-011] Dead Re-export of computeSchoolHash from build-pages.js
+
+- **Location**: `scripts/build-pages.js` (line 71)
+- **Issue**: `computeSchoolHash` is imported from `manifest.js` (line 36) and re-exported unchanged from build-pages.js (line 71). No code anywhere imports `computeSchoolHash` from build-pages.js — it is a dead re-export that creates confusion about the canonical import path (`require('./manifest')` vs `require('./build-pages')`).
+- **Suggestion**: Remove `computeSchoolHash` from `build-pages.js`'s `module.exports`. Any future callers should import directly from `manifest.js`, which is the canonical source.
+- **Priority**: Low
+- **Effort**: Trivial
+
+### [REVIEW-012] Redundant Raw pino Instance Export from logger.js
+
+- **Location**: `scripts/logger.js` (line 42)
+- **Issue**: The logger module exports both the raw pino instance (`module.exports.logger`) and convenience methods (`module.exports.info`, `module.exports.warn`, etc.). This dual export creates two potential usage patterns across the codebase (`logger.logger.info()` vs `logger.info()`). The raw pino instance is redundant since all behavior is available through the convenience methods — and `logger.info` is preferred everywhere. Only `logger.test.js` references `logger.logger`.
+- **Suggestion**: Remove `logger` property from `module.exports` in `logger.js`. Update `logger.test.js` if it directly references the raw `logger` property.
+- **Priority**: Low
+- **Effort**: Trivial
