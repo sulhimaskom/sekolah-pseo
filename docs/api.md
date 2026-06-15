@@ -183,6 +183,31 @@ const safe = escapeHtml('<script>alert("XSS")</script>');
 
 ---
 
+#### `clearEscapeHtmlCache()`
+
+Clears the internal `escapeHtml` bounded Map cache. Used in testing to reset cached escape results between test cases, and for memory management when cache is no longer needed.
+
+**Parameters:** None
+
+**Returns:** `void`
+
+**Throws:** N/A
+
+**Notes:**
+
+- Cache is a bounded Map (50,000 entry limit) — LRU-like eviction via first-key deletion
+- Automatically populated on `escapeHtml()` calls — no manual priming needed
+- Typically called in test `beforeEach` or `afterEach` hooks to prevent cross-test contamination
+
+**Usage:**
+
+```javascript
+// Clear cache between test cases
+clearEscapeHtmlCache();
+```
+
+---
+
 #### `addNumbers(a, b)`
 
 Adds two finite numbers with validation.
@@ -1377,6 +1402,7 @@ module.exports = {
   getUniqueDirectories: function,
   getUniqueProvinces: function,
   buildProvincePageData: function,
+  groupSchoolsByProvince: function,
 };
 ```
 
@@ -1573,6 +1599,40 @@ const pageData = buildProvincePageData('DKI Jakarta', schools);
 //   content: '<!DOCTYPE html>...'
 // }
 ```
+
+---
+
+#### `groupSchoolsByProvince(schools)`
+
+Groups all schools by province in a single O(n) pass. Used to eliminate O(n×p) filtering during province page generation.
+
+**Parameters:**
+
+- `schools` (Object[]): Array of school data objects
+
+**Returns:** `Map<string, Array>` - Map keyed by province name, each value is array of schools in that province
+
+**Throws:**
+
+- `Error` if `schools` is not an array
+
+**Dependencies:**
+
+- None (standalone utility function)
+
+**Usage:**
+
+```javascript
+const grouped = groupSchoolsByProvince(schools);
+// Returns Map:
+// {
+//   'DKI Jakarta' => [school1, school2, ...],
+//   'Jawa Barat' => [school3, school4, ...],
+// }
+const jakartaSchools = grouped.get('DKI Jakarta'); // Array of schools in Jakarta
+```
+
+**Performance:** Single pass O(n) — processes the entire schools array once. Province pages can then receive pre-filtered arrays with `skipFilter=true` to avoid redundant filtering.
 
 ---
 
