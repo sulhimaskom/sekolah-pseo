@@ -364,3 +364,67 @@ test('generateHomepageHtml includes current page indicator', () => {
   assert.ok(html.includes('aria-current="page"'));
   assert.ok(html.includes('Beranda'));
 });
+
+test('extractFilterOptions returns statuses when schools have status field', () => {
+  const { extractFilterOptions } = require('../src/presenters/templates/homepage');
+
+  const schools = [
+    { npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA', status: 'N' },
+    { npsn: '2', nama: 'B', provinsi: 'JT', bentuk_pendidikan: 'SMP', status: 'S' },
+    { npsn: '3', nama: 'C', provinsi: 'JB', bentuk_pendidikan: 'SD', status: 'N' },
+  ];
+
+  const result = extractFilterOptions(schools);
+
+  assert.deepStrictEqual(result.statuses, ['N', 'S']);
+});
+
+test('extractFilterOptions returns empty statuses when no schools have status', () => {
+  const { extractFilterOptions } = require('../src/presenters/templates/homepage');
+
+  const schools = [
+    { npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA' },
+  ];
+
+  const result = extractFilterOptions(schools);
+
+  assert.deepStrictEqual(result.statuses, []);
+});
+
+test('extractFilterOptions returns empty arrays for non-array input', () => {
+  const { extractFilterOptions } = require('../src/presenters/templates/homepage');
+
+  assert.deepStrictEqual(extractFilterOptions(null), { provinces: [], types: [], statuses: [] });
+  assert.deepStrictEqual(extractFilterOptions(undefined), { provinces: [], types: [], statuses: [] });
+  assert.deepStrictEqual(extractFilterOptions('invalid'), { provinces: [], types: [], statuses: [] });
+});
+
+test('generateHomepageHtml includes status filter dropdown when schools have status data', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+
+  const schools = [
+    { npsn: '12345678', nama: 'SMA Negeri 1', provinsi: 'Jawa Barat', bentuk_pendidikan: 'SMA', status: 'N' },
+    { npsn: '87654321', nama: 'SMP Swasta 1', provinsi: 'Jawa Timur', bentuk_pendidikan: 'SMP', status: 'S' },
+  ];
+
+  const html = generateHomepageHtml(schools);
+
+  assert.ok(html.includes('status-filter'), 'Should have status filter select element');
+  assert.ok(html.includes('Semua Status'), 'Should have default option for all statuses');
+  assert.ok(html.includes('Negeri'), 'Should include Negeri option');
+  assert.ok(html.includes('Swasta'), 'Should include Swasta option');
+});
+
+test('aggregateProvinceAndFilters includes statuses in filterOptions', () => {
+  const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+
+  const schools = [
+    { npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA', status: 'N' },
+    { npsn: '2', nama: 'B', provinsi: 'JT', bentuk_pendidikan: 'SMP', status: 'S' },
+  ];
+
+  const result = aggregateProvinceAndFilters(schools);
+
+  assert.ok(result.filterOptions.statuses, 'filterOptions should have statuses');
+  assert.deepStrictEqual(result.filterOptions.statuses, ['N', 'S']);
+});
