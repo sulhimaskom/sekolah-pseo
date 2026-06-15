@@ -8,6 +8,7 @@ const {
   enrichSchool,
   enrichSchoolViaWikipedia,
   enrichSchools,
+  saveEnrichmentData,
   loadEnrichmentData,
   logEnrichmentSummary,
   buildWikipediaSearchUrl,
@@ -293,5 +294,164 @@ describe('enrichSchool integration with multiple source types', () => {
       assert.ok(result.wikipedia.source === 'wikipedia');
       assert.ok(result.wikipedia.enrichedAt);
     }
+  });
+});
+
+describe('saveEnrichmentData', () => {
+  afterEach(() => {
+    try {
+      fs.unlinkSync(ENRICHMENT_DATA_PATH);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  it('persists enrichment data that can be loaded back', async () => {
+    const testData = {
+      '00001': {
+        wikipedia: {
+          wikipediaUrl: 'https://id.wikipedia.org/wiki/Test',
+          wikipediaTitle: 'Test School',
+          wikipediaExtract: 'A test school for testing save function.',
+          enrichedAt: '2026-06-15T00:00:00.000Z',
+          source: 'wikipedia',
+        },
+      },
+    };
+
+    try {
+      await saveEnrichmentData(testData);
+
+      const loaded = await loadEnrichmentData();
+
+      assert.ok(loaded['00001']);
+      assert.strictEqual(loaded['00001'].wikipedia.source, 'wikipedia');
+      assert.strictEqual(loaded['00001'].wikipedia.wikipediaTitle, 'Test School');
+      assert.strictEqual(loaded['00001'].wikipedia.wikipediaExtract, 'A test school for testing save function.');
+    } finally {
+      try {
+        fs.unlinkSync(ENRICHMENT_DATA_PATH);
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+
+  it('overwrites existing enrichment data file', async () => {
+    try {
+      // Save initial data
+      await saveEnrichmentData({
+        '00001': { wikipedia: { source: 'wikipedia', title: 'Initial' } },
+      });
+
+      // Overwrite with new data
+      await saveEnrichmentData({
+        '00002': { wikipedia: { source: 'wikipedia', title: 'Updated' } },
+      });
+
+      const loaded = await loadEnrichmentData();
+
+      // Initial data should be gone
+      assert.ok(!loaded['00001']);
+      // New data should exist
+      assert.ok(loaded['00002']);
+      assert.strictEqual(loaded['00002'].wikipedia.title, 'Updated');
+    } finally {
+      try {
+        fs.unlinkSync(ENRICHMENT_DATA_PATH);
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+
+  it('saves empty enrichment data successfully', async () => {
+    try {
+      await saveEnrichmentData({});
+
+      const loaded = await loadEnrichmentData();
+      assert.deepStrictEqual(loaded, {});
+    } finally {
+      try {
+        fs.unlinkSync(ENRICHMENT_DATA_PATH);
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+});
+
+describe('enrichSchools edge cases', () => {
+  it('skips schools without NPSN in batch processing', async () => {
+    const schools = [
+      { npsn: '00001', nama: 'SD Test A', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+      { nama: 'School No NPSN', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+      { npsn: '00003', nama: 'SD Test B', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+    ];
+
+    const result = await enrichSchools(schools, { concurrency: 1 });
+
+    assert.ok(typeof result === 'object');
+    // School without NPSN should not be in results
+    assert.ok(!result['undefined']);
+  });
+
+  it('processes batch with all schools missing NPSN', async () => {
+    const schools = [
+      { nama: 'No NPSN 1', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+      { nama: 'No NPSN 2', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+    ];
+
+    // Should not throw and return empty result
+    const result = await enrichSchools(schools, { concurrency: 1 });
+    assert.deepStrictEqual(result, {});
+  });
+
+  it('handles mixed null/undefined entries in schools array', async () => {
+    const schools = [
+      null,
+      undefined,
+      { npsn: '00001', nama: 'SD Test', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+    ];
+
+    const result = await enrichSchools(schools, { concurrency: 1 });
+
+    assert.ok(typeof result === 'object');
+    // Null and undefined entries should be skipped without throwing
+  });
+
+  it('calls progress callback correctly across batches', async () => {
+    const schools = Array.from({ length: 5 }, (_, i) => ({
+      npsn: String(10000 + i).padStart(5, '0'),
+      nama: `SD Test ${i}`,
+      provinsi: 'Test',
+      kab_kota: 'Test',
+      kecamatan: 'Test',
+    }));
+
+    const progressCalls = [];
+    const result = await enrichSchools(schools, {
+      concurrency: 2,
+      onProgress: (processed, total) => {
+        progressCalls.push({ processed, total });
+      },
+    });
+
+    assert.ok(progressCalls.length >= 3, 'should have at least 3 progress calls for 5 items with concurrency 2');
+    // Last call should report all processed
+    const lastCall = progressCalls[progressCalls.length - 1];
+    assert.strictEqual(lastCall.processed, 5);
+    assert.strictEqual(lastCall.total, 5);
+    assert.ok(typeof result === 'object');
+  });
+
+  it('handles empty progress callback gracefully', async () => {
+    const schools = [
+      { npsn: '00001', nama: 'SD Test', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
+    ];
+
+    // Should not throw even without onProgress
+    const result = await enrichSchools(schools);
+    assert.ok(typeof result === 'object');
   });
 });

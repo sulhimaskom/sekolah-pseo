@@ -27,6 +27,7 @@ module.exports = {
   writeSitemapFiles,
   writeSitemapIndex,
   escapeXml,
+  generateSitemaps,
 };
 
 /**
