@@ -13,7 +13,7 @@
 'use strict';
 
 const path = require('path');
-const { parseCsv, processConcurrently } = require('./utils');
+const { parseCsv, processConcurrently, terminate } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
@@ -136,15 +136,18 @@ async function preCreateDirectories(schools) {
 
 /**
  * Pre-create all unique province directories.
+ * Accepts an optional pre-computed provinces array to avoid
+ * redundant getUniqueProvinces() calls.
  *
- * @param {Array<Object>} schools
+ * @param {Array<Object>} schools - School records (used if provinces not provided)
+ * @param {Array<Object>} [provinces] - Pre-computed province objects with slug/name/count
  */
-async function preCreateProvinceDirectories(schools) {
-  const provinces = getUniqueProvinces(schools);
+async function preCreateProvinceDirectories(schools, provinces) {
+  const provinceList = provinces || getUniqueProvinces(schools);
 
-  logger.info(`Creating ${provinces.length} province directories...`);
+  logger.info(`Creating ${provinceList.length} province directories...`);
 
-  const dirPromises = provinces.map(province => {
+  const dirPromises = provinceList.map(province => {
     const fullPath = path.join(distDir, 'provinsi', province.slug);
     return safeMkdir(fullPath).catch(err => {
       logger.error({ err, path: fullPath }, 'Failed to create province directory');
@@ -161,7 +164,7 @@ async function preCreateProvinceDirectories(schools) {
  */
 async function generateProvincePages(schools) {
   const provinces = getUniqueProvinces(schools);
-  await preCreateProvinceDirectories(schools);
+  await preCreateProvinceDirectories(schools, provinces);
 
   logger.info(`Generating ${provinces.length} province pages...`);
 
@@ -479,7 +482,6 @@ async function buildIncremental(tracker) {
 
 if (require.main === module) {
   build().catch(error => {
-    logger.error('Build failed:', error);
-    process.exit(1);
+    terminate(`Build failed: ${error.message}`);
   });
 }

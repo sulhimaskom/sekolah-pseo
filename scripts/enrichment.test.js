@@ -327,7 +327,10 @@ describe('saveEnrichmentData', () => {
       assert.ok(loaded['00001']);
       assert.strictEqual(loaded['00001'].wikipedia.source, 'wikipedia');
       assert.strictEqual(loaded['00001'].wikipedia.wikipediaTitle, 'Test School');
-      assert.strictEqual(loaded['00001'].wikipedia.wikipediaExtract, 'A test school for testing save function.');
+      assert.strictEqual(
+        loaded['00001'].wikipedia.wikipediaExtract,
+        'A test school for testing save function.'
+      );
     } finally {
       try {
         fs.unlinkSync(ENRICHMENT_DATA_PATH);
@@ -437,7 +440,10 @@ describe('enrichSchools edge cases', () => {
       },
     });
 
-    assert.ok(progressCalls.length >= 3, 'should have at least 3 progress calls for 5 items with concurrency 2');
+    assert.ok(
+      progressCalls.length >= 3,
+      'should have at least 3 progress calls for 5 items with concurrency 2'
+    );
     // Last call should report all processed
     const lastCall = progressCalls[progressCalls.length - 1];
     assert.strictEqual(lastCall.processed, 5);

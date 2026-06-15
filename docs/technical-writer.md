@@ -137,3 +137,8 @@
 - README is intentionally in Indonesian as this is an Indonesian school directory project
 - All other technical documentation is in English for broader accessibility
 - Task.md serves as the primary project history/change log
+- When checking documentation accuracy, always verify module.exports against actual source code, not just by reading the docs
+- The X-XSS-Protection header was removed in TASK-022 - any references to it in docs are actively misleading
+- build-pages.js has 13 exports; sitemap.js has 6 exports - keep this in mind when updating api.md
+- Always verify test counts by running `npm run test:js` - they drift quickly as tests are added
+- The blueprint.md decisions log had duplicate entries for the same decisions (province page optimization appeared under both 2026-06-08 and 2026-06-15) - watch for this pattern

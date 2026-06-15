@@ -382,9 +382,7 @@ test('extractFilterOptions returns statuses when schools have status field', () 
 test('extractFilterOptions returns empty statuses when no schools have status', () => {
   const { extractFilterOptions } = require('../src/presenters/templates/homepage');
 
-  const schools = [
-    { npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA' },
-  ];
+  const schools = [{ npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA' }];
 
   const result = extractFilterOptions(schools);
 
@@ -395,16 +393,36 @@ test('extractFilterOptions returns empty arrays for non-array input', () => {
   const { extractFilterOptions } = require('../src/presenters/templates/homepage');
 
   assert.deepStrictEqual(extractFilterOptions(null), { provinces: [], types: [], statuses: [] });
-  assert.deepStrictEqual(extractFilterOptions(undefined), { provinces: [], types: [], statuses: [] });
-  assert.deepStrictEqual(extractFilterOptions('invalid'), { provinces: [], types: [], statuses: [] });
+  assert.deepStrictEqual(extractFilterOptions(undefined), {
+    provinces: [],
+    types: [],
+    statuses: [],
+  });
+  assert.deepStrictEqual(extractFilterOptions('invalid'), {
+    provinces: [],
+    types: [],
+    statuses: [],
+  });
 });
 
 test('generateHomepageHtml includes status filter dropdown when schools have status data', () => {
   const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 
   const schools = [
-    { npsn: '12345678', nama: 'SMA Negeri 1', provinsi: 'Jawa Barat', bentuk_pendidikan: 'SMA', status: 'N' },
-    { npsn: '87654321', nama: 'SMP Swasta 1', provinsi: 'Jawa Timur', bentuk_pendidikan: 'SMP', status: 'S' },
+    {
+      npsn: '12345678',
+      nama: 'SMA Negeri 1',
+      provinsi: 'Jawa Barat',
+      bentuk_pendidikan: 'SMA',
+      status: 'N',
+    },
+    {
+      npsn: '87654321',
+      nama: 'SMP Swasta 1',
+      provinsi: 'Jawa Timur',
+      bentuk_pendidikan: 'SMP',
+      status: 'S',
+    },
   ];
 
   const html = generateHomepageHtml(schools);

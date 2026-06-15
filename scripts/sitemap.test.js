@@ -325,7 +325,13 @@ test('collectUrlsFromSchools returns homepage, province and school URLs for sing
   const { collectUrlsFromSchools } = require('./sitemap');
 
   const schools = [
-    { npsn: '12345678', nama: 'SMA Negeri 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
+    {
+      npsn: '12345678',
+      nama: 'SMA Negeri 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
   ];
 
   const result = collectUrlsFromSchools(schools, 'https://example.com');
@@ -341,7 +347,13 @@ test('collectUrlsFromSchools handles baseUrl with trailing slash', () => {
   const { collectUrlsFromSchools } = require('./sitemap');
 
   const schools = [
-    { npsn: '12345678', nama: 'SMA Negeri 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
+    {
+      npsn: '12345678',
+      nama: 'SMA Negeri 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
   ];
 
   const result = collectUrlsFromSchools(schools, 'https://example.com/');
@@ -356,8 +368,20 @@ test('collectUrlsFromSchools generates URLs for multiple schools in same provinc
   const { collectUrlsFromSchools } = require('./sitemap');
 
   const schools = [
-    { npsn: '11111111', nama: 'SDN 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
-    { npsn: '22222222', nama: 'SMPN 2', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Cicendo' },
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
+    {
+      npsn: '22222222',
+      nama: 'SMPN 2',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Cicendo',
+    },
   ];
 
   const result = collectUrlsFromSchools(schools, 'https://example.com');
@@ -375,8 +399,20 @@ test('collectUrlsFromSchools generates URLs for multiple provinces', () => {
   const { collectUrlsFromSchools } = require('./sitemap');
 
   const schools = [
-    { npsn: '11111111', nama: 'SDN 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
-    { npsn: '22222222', nama: 'SDN 2', provinsi: 'Jawa Timur', kab_kota: 'Surabaya', kecamatan: 'Gubeng' },
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
+    {
+      npsn: '22222222',
+      nama: 'SDN 2',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Gubeng',
+    },
   ];
 
   const result = collectUrlsFromSchools(schools, 'https://example.com');
@@ -393,7 +429,13 @@ test('collectUrlsFromSchools throws for schools without required fields', () => 
   const { collectUrlsFromSchools } = require('./sitemap');
 
   const schools = [
-    { npsn: '11111111', nama: 'SDN 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
     { npsn: '22222222', nama: 'SDN 2', kab_kota: 'Surabaya', kecamatan: 'Gubeng' }, // No provinsi
   ];
 
@@ -409,9 +451,27 @@ test('collectUrlsFromSchools generates all URLs for large school set', () => {
   const schools = [
     { npsn: '00001', nama: 'SDN A', provinsi: 'Aceh', kab_kota: 'Kota A', kecamatan: 'Kec A' },
     { npsn: '00002', nama: 'SDN B', provinsi: 'Bali', kab_kota: 'Kota B', kecamatan: 'Kec B' },
-    { npsn: '00003', nama: 'SDN C', provinsi: 'Jawa Barat', kab_kota: 'Kota C', kecamatan: 'Kec C' },
-    { npsn: '00004', nama: 'SDN D', provinsi: 'Jawa Timur', kab_kota: 'Kota D', kecamatan: 'Kec D' },
-    { npsn: '00005', nama: 'SDN E', provinsi: 'Jawa Barat', kab_kota: 'Kota E', kecamatan: 'Kec E' },
+    {
+      npsn: '00003',
+      nama: 'SDN C',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Kota C',
+      kecamatan: 'Kec C',
+    },
+    {
+      npsn: '00004',
+      nama: 'SDN D',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Kota D',
+      kecamatan: 'Kec D',
+    },
+    {
+      npsn: '00005',
+      nama: 'SDN E',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Kota E',
+      kecamatan: 'Kec E',
+    },
   ];
 
   const result = collectUrlsFromSchools(schools, 'https://example.com');
@@ -451,9 +511,7 @@ test('writeSitemapFiles escapes XML special characters in URLs', async () => {
   const testDir = path.join(process.env.TEST_TEMP_DIR, 'write-test-xml');
   await fs.mkdir(testDir, { recursive: true });
 
-  const urls = [
-    { url: 'https://example.com/page&test<script>.html', lastmod: '2024-01-15' },
-  ];
+  const urls = [{ url: 'https://example.com/page&test<script>.html', lastmod: '2024-01-15' }];
 
   const files = await writeSitemapFiles(urls, testDir);
   const content = await fs.readFile(path.join(testDir, files[0]), 'utf8');
@@ -474,9 +532,7 @@ test('writeSitemapFiles escapes XML in URLs without lastmod', async () => {
   await fs.mkdir(testDir, { recursive: true });
 
   // URL with quotes and apostrophes, no lastmod (testing the else branch)
-  const urls = [
-    { url: "https://example.com/page?q=it's&title=\"hello\"" },
-  ];
+  const urls = [{ url: 'https://example.com/page?q=it\'s&title="hello"' }];
 
   const files = await writeSitemapFiles(urls, testDir);
   const content = await fs.readFile(path.join(testDir, files[0]), 'utf8');
@@ -491,8 +547,20 @@ test('generateSitemaps generates sitemaps from schools data', async () => {
   const CONFIG = require('./config');
 
   const schools = [
-    { npsn: '11111111', nama: 'SDN 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
-    { npsn: '22222222', nama: 'SDN 2', provinsi: 'Jawa Timur', kab_kota: 'Surabaya', kecamatan: 'Gubeng' },
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
+    {
+      npsn: '22222222',
+      nama: 'SDN 2',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Gubeng',
+    },
   ];
 
   const result = await generateSitemaps(schools);
@@ -567,7 +635,13 @@ test('generateSitemaps with single school produces consistent structure', async 
   const CONFIG = require('./config');
 
   const schools = [
-    { npsn: '99999999', nama: 'TK Negeri 1', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Selatan', kecamatan: 'Kebayoran Baru' },
+    {
+      npsn: '99999999',
+      nama: 'TK Negeri 1',
+      provinsi: 'DKI Jakarta',
+      kab_kota: 'Jakarta Selatan',
+      kecamatan: 'Kebayoran Baru',
+    },
   ];
 
   const { urls, files } = await generateSitemaps(schools);
