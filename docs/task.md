@@ -28,14 +28,14 @@ Optimized three CPU and memory bottlenecks in the build pipeline: added a bounde
      - Once in `prepareSchoolDataForSearch()` (schools.json generation)
      - Once in `buildSchoolPageData()` (page HTML generation)
      - Once in `createManifestFromSchools()` (manifest creation)
-    - After cache: computed once, returned from cache on subsequent calls
-    - WeakMap ensures automatic cleanup when school objects are garbage collected
+   - After cache: computed once, returned from cache on subsequent calls
+   - WeakMap ensures automatic cleanup when school objects are garbage collected
 
 3. **Fixed duplicate `getUniqueProvinces()` call** (`scripts/build-pages.js`):
-    - `generateProvincePages()` called `getUniqueProvinces(schools)` explicitly, then `preCreateProvinceDirectories(schools)` called it again internally
-    - Modified `preCreateProvinceDirectories()` to accept optional pre-computed `provinces` parameter
-    - `generateProvincePages()` now passes the already-computed provinces array
-    - Eliminates one redundant O(n) iteration over 3474 schools
+   - `generateProvincePages()` called `getUniqueProvinces(schools)` explicitly, then `preCreateProvinceDirectories(schools)` called it again internally
+   - Modified `preCreateProvinceDirectories()` to accept optional pre-computed `provinces` parameter
+   - `generateProvincePages()` now passes the already-computed provinces array
+   - Eliminates one redundant O(n) iteration over 3474 schools
 
 ### Performance Results
 
@@ -59,15 +59,15 @@ Optimized three CPU and memory bottlenecks in the build pipeline: added a bounde
 
 **Metrics:**
 
-| Metric | Before | After | Δ |
-|--------|--------|-------|---|
-| Duration | 1.0s | ~0.99s | ~1% (maintained) |
-| Throughput | 3439.6 pg/s | 3563 pg/s | +3.6% |
-| Peak RSS | 120.80 MB | 118.71 MB | −1.7% |
-| User CPU | 0.508s | 0.502s | −1.2% |
-| escapeHtml calls | ~83K (no cache) | ~83K (O(1) for repeats) | — |
-| Path computations | 10,422 | 3,474 | −67% |
-| getUniqueProvinces | 2× per build | 1× per build | −50% |
+| Metric             | Before          | After                   | Δ                |
+| ------------------ | --------------- | ----------------------- | ---------------- |
+| Duration           | 1.0s            | ~0.99s                  | ~1% (maintained) |
+| Throughput         | 3439.6 pg/s     | 3563 pg/s               | +3.6%            |
+| Peak RSS           | 120.80 MB       | 118.71 MB               | −1.7%            |
+| User CPU           | 0.508s          | 0.502s                  | −1.2%            |
+| escapeHtml calls   | ~83K (no cache) | ~83K (O(1) for repeats) | —                |
+| Path computations  | 10,422          | 3,474                   | −67%             |
+| getUniqueProvinces | 2× per build    | 1× per build            | −50%             |
 
 ### Files Modified
 
@@ -573,7 +573,6 @@ Audited CI/CD pipeline health, identified critical gaps, and created a fast CI w
 2. Re-run PR #433 checks after CI workflow is in place
 3. Consider removing `pull_request` trigger from `on-pull.yml` (reduce double-triggering)
 4. Monitor the transient build failure — if reproducible, add retry logic to `writeSchoolPagesConcurrently`
-
 
 ### Impact
 

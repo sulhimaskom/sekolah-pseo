@@ -187,8 +187,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
@@ -210,6 +210,7 @@ jobs:
 ```
 
 **Why this matters:**
+
 - Provides sub-10s CI feedback on every push (vs 6.5h for the current OpenCode flows)
 - Verifies lint, formatting, tests, and build before code reaches `main`
 - Required to unblock PRs that currently show `action_required` on the heavy workflows
