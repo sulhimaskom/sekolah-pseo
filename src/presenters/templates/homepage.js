@@ -13,20 +13,23 @@ const CURRENT_YEAR = new Date().getFullYear();
  */
 function extractFilterOptions(schools) {
   if (!Array.isArray(schools)) {
-    return { provinces: [], types: [] };
+    return { provinces: [], types: [], statuses: [] };
   }
 
   const provinceSet = new Set();
   const typeSet = new Set();
+  const statusSet = new Set();
 
   for (const school of schools) {
     if (school.provinsi) provinceSet.add(school.provinsi);
     if (school.bentuk_pendidikan) typeSet.add(school.bentuk_pendidikan);
+    if (school.status) statusSet.add(school.status);
   }
 
   return {
     provinces: Array.from(provinceSet).sort((a, b) => a.localeCompare(b, 'id')),
     types: Array.from(typeSet).sort((a, b) => a.localeCompare(b, 'id')),
+    statuses: Array.from(statusSet).sort(),
   };
 }
 
@@ -115,6 +118,11 @@ function generateTypeOptionsHtml(types) {
   return types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
 }
 
+function generateStatusOptionsHtml(statuses) {
+  const statusLabels = { N: 'Negeri', S: 'Swasta' };
+  return statuses.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(statusLabels[s] || s)}</option>`).join('');
+}
+
 /**
  * Generate homepage HTML
  * @param {Array<Object>} schools - Array of school data objects
@@ -132,12 +140,13 @@ function generateTypeOptionsHtml(types) {
  */
 function aggregateProvinceAndFilters(schools) {
   if (!Array.isArray(schools)) {
-    return { provinces: [], filterOptions: { provinces: [], types: [] } };
+    return { provinces: [], filterOptions: { provinces: [], types: [], statuses: [] } };
   }
 
   const provinceMap = new Map();
   const provinceSet = new Set();
   const typeSet = new Set();
+  const statusSet = new Set();
 
   for (const school of schools) {
     // Aggregate by province
@@ -155,6 +164,7 @@ function aggregateProvinceAndFilters(schools) {
 
     // Extract filter options
     if (school.bentuk_pendidikan) typeSet.add(school.bentuk_pendidikan);
+    if (school.status) statusSet.add(school.status);
   }
 
   const provinces = Array.from(provinceMap.values());
@@ -165,6 +175,7 @@ function aggregateProvinceAndFilters(schools) {
     filterOptions: {
       provinces: Array.from(provinceSet).sort((a, b) => a.localeCompare(b, 'id')),
       types: Array.from(typeSet).sort((a, b) => a.localeCompare(b, 'id')),
+      statuses: Array.from(statusSet).sort(),
     },
   };
 }
@@ -173,6 +184,7 @@ function generateHomepageHtml(schools) {
   const { provinces, filterOptions } = aggregateProvinceAndFilters(schools);
   const provinceOptionsHtml = generateProvinceOptionsHtml(filterOptions.provinces);
   const typeOptionsHtml = generateTypeOptionsHtml(filterOptions.types);
+  const statusOptionsHtml = generateStatusOptionsHtml(filterOptions.statuses);
 
   const totalSchools = schools.length;
 
@@ -281,6 +293,14 @@ function generateHomepageHtml(schools) {
               ${typeOptionsHtml}
             </select>
           </div>
+
+          <div class="filter-item">
+            <label for="status-filter" class="sr-only">Filter berdasarkan status</label>
+            <select id="status-filter" class="filter-select">
+              <option value="">Semua Status</option>
+              ${statusOptionsHtml}
+            </select>
+          </div>
         </div>
         
         <div class="search-results-info" aria-live="polite">
@@ -339,7 +359,7 @@ function generateHomepageHtml(schools) {
         schools = d;
         searchLoaded = true;
         // Re-run search if input already has value
-        if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value)) {
+        if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value || statusFilter.value)) {
           handleSearch();
         }
       }).catch(function() {
@@ -350,6 +370,7 @@ function generateHomepageHtml(schools) {
       var searchInput = document.getElementById('school-search');
       var provinceFilter = document.getElementById('province-filter');
       var typeFilter = document.getElementById('type-filter');
+      var statusFilter = document.getElementById('status-filter');
       var resultCountEl = document.getElementById('result-count');
       var searchResultsEl = document.getElementById('search-results');
       var searchResultsListEl = document.getElementById('search-results-list');
@@ -372,7 +393,7 @@ function generateHomepageHtml(schools) {
       }
       
       // Filter schools based on search query and filters
-      function filterSchools(query, province, type) {
+      function filterSchools(query, province, type, status) {
         var q = query.toLowerCase().trim();
         
         return schools.filter(function(school) {
@@ -391,6 +412,11 @@ function generateHomepageHtml(schools) {
           
           // Type filter
             if (type && school.b !== type) {
+            return false;
+          }
+          
+          // Status filter
+          if (status && school.s !== status) {
             return false;
           }
           
@@ -500,10 +526,11 @@ function generateHomepageHtml(schools) {
         var query = searchInput.value;
         var province = provinceFilter.value;
         var type = typeFilter.value;
-        
-        isSearching = query.length > 0 || province.length > 0 || type.length > 0;
-        
-        var results = filterSchools(query, province, type);
+        var status = statusFilter.value;
+
+        isSearching = query.length > 0 || province.length > 0 || type.length > 0 || status.length > 0;
+
+        var results = filterSchools(query, province, type, status);
         updateSearchResults(results);
       }
       
@@ -522,10 +549,12 @@ function generateHomepageHtml(schools) {
       
       function downloadCsv() {
         if (!schools || !isSearching) return;
-        var query = searchInput.value;
-        var province = provinceFilter.value;
-        var type = typeFilter.value;
-        var results = filterSchools(query, province, type);
+          var query = searchInput.value;
+          var province = provinceFilter.value;
+          var type = typeFilter.value;
+          var status = statusFilter.value;
+
+          var results = filterSchools(query, province, type, status);
         
         if (results.length === 0) return;
         
@@ -563,7 +592,8 @@ function generateHomepageHtml(schools) {
         var query = searchInput.value.toLowerCase().trim();
         var province = provinceFilter.value;
         var type = typeFilter.value;
-        var filtered = filterSchools(query, province, type);
+        var status = statusFilter.value;
+        var filtered = filterSchools(query, province, type, status);
         suggestions = filtered.slice(0, 10);
         if (suggestions.length === 0) {
           clearAutocomplete();
@@ -640,6 +670,10 @@ function generateHomepageHtml(schools) {
         handleSearch();
         updateAutocomplete();
       });
+      statusFilter.addEventListener('change', function() {
+        handleSearch();
+        updateAutocomplete();
+      });
       
       searchInput.addEventListener('blur', function() {
         setTimeout(clearAutocomplete, 200);
@@ -690,6 +724,7 @@ function generateHomepageHtml(schools) {
           searchInput.value = '';
           provinceFilter.value = '';
           typeFilter.value = '';
+          statusFilter.value = '';
           isSearching = false;
           handleSearch();
         }
