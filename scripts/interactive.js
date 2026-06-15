@@ -15,6 +15,7 @@
 
 const { execSync } = require('child_process');
 const readline = require('readline');
+const { terminate } = require('./utils');
 
 const SCRIPTS = {
   Development: [
@@ -277,7 +278,7 @@ async function main() {
   } catch (err) {
     console.error('Error:', err.message);
     rl.close();
-    process.exit(1);
+    terminate(`Interactive menu error: ${err.message}`);
   }
 }
 

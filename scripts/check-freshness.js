@@ -16,6 +16,7 @@ const fs = require('fs');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 const CONFIG = require('./config');
 const logger = require('./logger');
+const { terminate } = require('./utils');
 
 const DEFAULT_MAX_AGE_DAYS = 7;
 
@@ -196,8 +197,7 @@ function main() {
 
   // Human-readable output
   if (!freshness.exists) {
-    logger.warn('No schools.csv found. Run ETL first.');
-    process.exit(1);
+    terminate('No schools.csv found. Run ETL first.');
   }
 
   logger.info('=== Data Freshness Report ===');
@@ -221,10 +221,9 @@ function main() {
   }
 
   if (!freshness.isFresh) {
-    logger.warn(
-      `\n⚠️ Data is stale! Last update was ${freshness.daysAgo} days ago (threshold: ${DEFAULT_MAX_AGE_DAYS} days)`
+    terminate(
+      `Data is stale! Last update was ${freshness.daysAgo} days ago (threshold: ${DEFAULT_MAX_AGE_DAYS} days)`
     );
-    process.exit(1);
   }
 
   logger.info('\n✅ Data is fresh');

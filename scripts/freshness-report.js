@@ -18,6 +18,7 @@ const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness')
 const { safeWriteFile, safeMkdir } = require('./fs-safe');
 const CONFIG = require('./config');
 const logger = require('./logger');
+const { terminate } = require('./utils');
 const { DESIGN_TOKENS } = require('../src/presenters/design-system');
 
 const REPORT_DIR = path.join(CONFIG.DIST_DIR, 'freshness-report');
@@ -285,8 +286,7 @@ async function main() {
   const quality = getDataQualityMetrics();
 
   if (!freshness.exists) {
-    logger.error('No schools.csv found. Run ETL first.');
-    process.exit(1);
+    terminate('No schools.csv found. Run ETL first.');
   }
 
   if (args.includes('--stdout')) {

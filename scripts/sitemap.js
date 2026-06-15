@@ -17,7 +17,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeWriteFile } = require('./fs-safe');
-const { walkDirectory } = require('./utils');
+const { walkDirectory, terminate } = require('./utils');
 const { getSchoolRelativePath, getUniqueProvinces } = require('../src/services/PageBuilder');
 
 // Export functions for testing
@@ -214,6 +214,6 @@ if (require.main === module) {
     })
     .catch(error => {
       logger.error({ err: error }, 'Sitemap generation failed');
-      process.exit(1);
+      terminate('Sitemap generation failed');
     });
 }

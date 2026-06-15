@@ -10,7 +10,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
-const { walkDirectory, processConcurrently } = require('./utils');
+const { walkDirectory, processConcurrently, terminate } = require('./utils');
 
 // Export functions for testing
 module.exports = {
@@ -163,7 +163,6 @@ async function validateLinks() {
 
 if (require.main === module) {
   validateLinks().catch(error => {
-    logger.error('Link validation failed:', error);
-    process.exit(1);
+    terminate(`Link validation failed: ${error.message}`);
   });
 }

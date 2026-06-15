@@ -28,7 +28,7 @@
 const fs = require('fs');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { parseCsv } = require('./utils');
+const { parseCsv, terminate } = require('./utils');
 
 // ── Configuration ───────────────────────────────────────────────────────────
 
@@ -354,8 +354,7 @@ function main() {
   const csvPath = CONFIG.SCHOOLS_CSV_PATH;
 
   if (!fs.existsSync(csvPath)) {
-    logger.error({ path: csvPath }, 'Schools CSV not found. Run ETL first.');
-    process.exit(1);
+    terminate('Schools CSV not found. Run ETL first.');
   }
 
   const csvData = fs.readFileSync(csvPath, 'utf-8');
@@ -384,12 +383,8 @@ function main() {
     const result = checkThresholds(report);
     if (!result.passed) {
       logger.warn({ failures: result.failures }, 'Quality thresholds not met');
-      console.error('\n  ❌ Quality thresholds FAILED:');
-      for (const failure of result.failures) {
-        console.error(`    • ${failure}`);
-      }
-      console.error('');
-      process.exit(1);
+      const failureDetail = result.failures.join('; ');
+      terminate(`Quality thresholds not met: ${failureDetail}`);
     }
     if (!useJson) {
       console.log('  ✅ All quality thresholds met.\n');

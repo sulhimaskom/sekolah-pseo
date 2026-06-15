@@ -18,6 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
+const { terminate } = require('./utils');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 // Default external data configuration
@@ -244,15 +245,13 @@ function main() {
   const csvPath = fetchFromGitHub(sourceRepo);
 
   if (!csvPath) {
-    logger.warn('Could not fetch external data. Manual intervention required.');
-    process.exit(1);
+    terminate('Could not fetch external data. Manual intervention required.');
   }
 
   const success = copyToRaw(csvPath, outputPath);
 
   if (!success) {
-    logger.error('Failed to copy external data');
-    process.exit(1);
+    terminate('Failed to copy external data');
   }
 
   logger.info('✅ External data fetched successfully');

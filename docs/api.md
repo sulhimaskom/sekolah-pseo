@@ -106,8 +106,8 @@ Shared utility functions for CSV parsing, HTML escaping, arithmetic operations, 
 module.exports = {
   parseCsv: function,
   escapeHtml: function,
+  clearEscapeHtmlCache: function,
   escapeCsvField: function,
-  addNumbers: function,
   walkDirectory: function,
   writeCsv: function,
   formatStatus: function,
@@ -115,6 +115,7 @@ module.exports = {
   hasCoordinateData: function,
   terminate: function,
   processConcurrently: function,
+  generateMetaDescription: function,
 };
 ```
 
@@ -412,6 +413,35 @@ hasCoordinateData({ lat: '-6.2088', lon: '106.8456' }); // true
 hasCoordinateData({ lat: '0', lon: '0' }); // false
 hasCoordinateData({ lat: '', lon: '' }); // false
 hasCoordinateData(null); // false
+```
+
+---
+
+#### `terminate(message, code)`
+
+Logs a message and terminates the process with the given exit code. Centralizes process exit handling across all scripts for consistent error reporting.
+
+**Parameters:**
+
+- `message` (string): Message to log
+- `code` (number, optional): Exit code (default: `1`)
+
+**Behavior:**
+
+- `code = 0`: Logs via `logger.info()` (success exit)
+- `code = 1` (default): Logs via `logger.error()` and calls `process.exit(1)`
+- All scripts should use this function instead of calling `process.exit()` directly
+
+**Usage:**
+
+```javascript
+terminate('Schools CSV not found. Run ETL first.');
+// Logs: ERROR: Schools CSV not found. Run ETL first.
+// Then: process.exit(1)
+
+terminate('Build completed successfully', 0);
+// Logs: INFO: Build completed successfully
+// Then: process.exit(0)
 ```
 
 ---

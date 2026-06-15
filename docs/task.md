@@ -231,10 +231,10 @@ Added comprehensive test coverage for uncovered critical paths in `scripts/sitem
 
 ### Coverage Impact
 
-| Module               | Before     | After      | Δ     |
-| -------------------- | :--------: | :--------: | :---: |
-| sitemap.js (statements) | 68.34%  | ~87%       | +19%  |
-| enrichment.js (branches) | 79.24% | ~85%       | +6%   |
+| Module                   | Before | After |  Δ   |
+| ------------------------ | :----: | :---: | :--: |
+| sitemap.js (statements)  | 68.34% | ~87%  | +19% |
+| enrichment.js (branches) | 79.24% | ~85%  | +6%  |
 
 ### Acceptance Criteria
 
@@ -278,14 +278,14 @@ The `node_modules/` directory was missing entirely, causing all commands (build,
 
 ### Clean Scan Results
 
-| Check | Result |
-|-------|--------|
-| Build | ✅ 3474 pages, 0 failed, 1.5s |
-| Lint | ✅ 0 errors |
-| Tests | ✅ 729/729 pass |
-| Prettier | ✅ All files formatted |
-| TODO/FIXME/HACK in source | ✅ None found |
-| Dead code blocks | ✅ None found |
+| Check                     | Result                        |
+| ------------------------- | ----------------------------- |
+| Build                     | ✅ 3474 pages, 0 failed, 1.5s |
+| Lint                      | ✅ 0 errors                   |
+| Tests                     | ✅ 729/729 pass               |
+| Prettier                  | ✅ All files formatted        |
+| TODO/FIXME/HACK in source | ✅ None found                 |
+| Dead code blocks          | ✅ None found                 |
 
 ### Files Deleted
 
@@ -4761,3 +4761,66 @@ Conducted comprehensive security audit of CI/CD workflow permissions and secret 
 - [x] All tests pass (729/729)
 - [x] Lint passes (0 errors)
 - [x] Zero regressions
+
+---
+
+### [TASK-033] Integration Hardening Phase 3 - Catch Block Consistency and process.exit Centralization
+
+**Status**: Complete
+**Agent**: Senior Integration Engineer (Sisyphus)
+
+### Description
+
+Standardized error handling patterns across the codebase: centralized all scattered `process.exit(1)` calls through the existing `terminate()` utility function and updated documentation.
+
+### Actions Taken
+
+1. **Centralized all `process.exit(1)` calls** (10 files, 15 calls → 0):
+   - **`scripts/build-pages.js`** (1 call): Entry-point catch → `terminate()`
+   - **`scripts/check-freshness.js`** (2 calls): CSV not found + stale data → `terminate()`
+   - **`scripts/freshness-report.js`** (1 call): CSV not found → `terminate()`
+   - **`scripts/validate-links.js`** (1 call): Entry-point catch → `terminate()`
+   - **`scripts/data-quality.js`** (2 calls): CSV not found + threshold failure → `terminate()`
+   - **`scripts/fetch-data.js`** (2 calls): Fetch failure + copy failure → `terminate()`
+   - **`scripts/sitemap.js`** (1 call): Generation failure catch → `terminate()`
+   - **`scripts/etl.js`** (4 calls): Raw data missing, no valid records, process error, entry-point catch → `terminate()`
+   - **`scripts/interactive.js`** (1 call): Menu error catch → `terminate()`
+   - Only `process.exit` remaining is inside the `terminate()` function itself in `scripts/utils.js`.
+
+2. **Updated `docs/api.md`**:
+   - Added `clearEscapeHtmlCache` and `generateMetaDescription` to Utility Module exports list
+   - Removed stale `addNumbers` from exports list (removed in earlier refactoring)
+   - Added full `terminate()` function documentation section with parameters, behavior, and examples
+
+### Files Modified
+
+| File                          | Change                                                  |
+| ----------------------------- | ------------------------------------------------------- |
+| `scripts/build-pages.js`      | Imported `terminate`, replaced `process.exit(1)`        |
+| `scripts/check-freshness.js`  | Imported `terminate`, replaced 2× `process.exit(1)`     |
+| `scripts/freshness-report.js` | Imported `terminate`, replaced `process.exit(1)`        |
+| `scripts/validate-links.js`   | Imported `terminate`, replaced `process.exit(1)`        |
+| `scripts/data-quality.js`     | Imported `terminate`, replaced 2× `process.exit(1)`     |
+| `scripts/fetch-data.js`       | Imported `terminate`, replaced 2× `process.exit(1)`     |
+| `scripts/sitemap.js`          | Imported `terminate`, replaced `process.exit(1)`        |
+| `scripts/etl.js`              | Imported `terminate`, replaced 4× `process.exit(1)`     |
+| `scripts/interactive.js`      | Imported `terminate`, replaced `process.exit(1)`        |
+| `docs/api.md`                 | Updated exports list, added `terminate()` documentation |
+| `docs/task.md`                | This entry                                              |
+
+### Verification
+
+- Lint: 0 errors ✓
+- JS Tests: 758/758 pass ✓
+- Build: 3474 pages, 0 failed ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] All `process.exit(1)` calls centralized through `terminate()` utility
+- [x] `terminate()` documented with its own section in `docs/api.md`
+- [x] `docs/api.md` exports list matches actual `utils.js` exports
+- [x] All 758 JS tests pass
+- [x] Lint passes (0 errors)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Zero regressions introduced

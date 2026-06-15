@@ -120,7 +120,9 @@ function generateTypeOptionsHtml(types) {
 
 function generateStatusOptionsHtml(statuses) {
   const statusLabels = { N: 'Negeri', S: 'Swasta' };
-  return statuses.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(statusLabels[s] || s)}</option>`).join('');
+  return statuses
+    .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(statusLabels[s] || s)}</option>`)
+    .join('');
 }
 
 /**

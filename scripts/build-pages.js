@@ -13,7 +13,7 @@
 'use strict';
 
 const path = require('path');
-const { parseCsv, processConcurrently } = require('./utils');
+const { parseCsv, processConcurrently, terminate } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
@@ -482,7 +482,6 @@ async function buildIncremental(tracker) {
 
 if (require.main === module) {
   build().catch(error => {
-    logger.error('Build failed:', error);
-    process.exit(1);
+    terminate(`Build failed: ${error.message}`);
   });
 }
