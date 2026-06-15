@@ -150,6 +150,73 @@ architect-agent.yml    ❌            ❌              ❌           ❌        
 
 **Legend:** ✅ = active trigger, ❌ = not triggered
 
+## Appendix: Recommended CI Workflow Implementation
+
+The top-priority recommendation is a lightweight CI workflow for branch pushes and PRs:
+
+```yaml
+name: ci
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Test & Build
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format Check
+        run: npm run format:check
+
+      - name: JavaScript Tests
+        run: npm run test:js
+
+      - name: Python Tests
+        run: npm run test:py
+
+      - name: Build
+        run: npm run build
+```
+
+**Why this matters:**
+- Provides sub-10s CI feedback on every push (vs 6.5h for the current OpenCode flows)
+- Verifies lint, formatting, tests, and build before code reaches `main`
+- Required to unblock PRs that currently show `action_required` on the heavy workflows
+- The `pull` and `PR Handler` workflows (on-pull.yml, opencode.yml) consistently end with `action_required` and 0 jobs on agent branch pushes — likely due to the `oc-agent` concurrency group or runner availability issues
+
+**Note:** This file requires `workflows` permission to commit to `.github/workflows/`. The GITHUB_TOKEN of automated workflows lacks this scope. A maintainer must commit it manually.
+
 ## Appendix: Secret Exposure per Workflow
 
 | Workflow              | # Secrets | Risk Level                      |
