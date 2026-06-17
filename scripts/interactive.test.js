@@ -1,10 +1,12 @@
 'use strict';
 
-const { describe, it, before, after } = require('node:test');
+const { describe, it, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
-// Save original TTY state
+// Save originals
 const originalIsTTY = process.stdin.isTTY;
+const originalArgv = process.argv;
+const originalStdoutWrite = process.stdout.write;
 
 describe('interactive CLI', () => {
   let mod;
@@ -18,6 +20,106 @@ describe('interactive CLI', () => {
 
   after(() => {
     process.stdin.isTTY = originalIsTTY;
+    process.argv = originalArgv;
+    process.stdout.write = originalStdoutWrite;
+  });
+
+  describe('printListAsJson', () => {
+    let captured;
+
+    beforeEach(() => {
+      captured = [];
+      process.stdout.write = chunk => { captured.push(chunk.toString()); };
+    });
+
+    it('should output valid JSON', () => {
+      mod.printListAsJson();
+      const output = captured.join('');
+      assert.doesNotThrow(() => JSON.parse(output));
+    });
+
+    it('should contain all category keys', () => {
+      mod.printListAsJson();
+      const parsed = JSON.parse(captured.join(''));
+      assert.ok(parsed.Development);
+      assert.ok(parsed['Data Pipeline']);
+      assert.ok(parsed.Testing);
+      assert.ok(parsed.Validation);
+      assert.ok(parsed.Utilities);
+    });
+
+    it('each category should have items with label, desc, cmd', () => {
+      mod.printListAsJson();
+      const parsed = JSON.parse(captured.join(''));
+      for (const [category, items] of Object.entries(parsed)) {
+        assert.ok(Array.isArray(items), `${category} should be array`);
+        for (const item of items) {
+          assert.ok(typeof item.label === 'string');
+          assert.ok(typeof item.desc === 'string');
+          assert.ok(typeof item.cmd === 'string');
+        }
+      }
+    });
+  });
+
+  describe('printFlatList', () => {
+    let captured;
+
+    beforeEach(() => {
+      captured = [];
+      process.stdout.write = chunk => { captured.push(chunk.toString()); };
+    });
+
+    it('should output valid JSON array', () => {
+      mod.printFlatList();
+      const output = captured.join('');
+      assert.doesNotThrow(() => {
+        const parsed = JSON.parse(output);
+        assert.ok(Array.isArray(parsed));
+      });
+    });
+
+    it('every entry should have category, label, desc, cmd', () => {
+      mod.printFlatList();
+      const parsed = JSON.parse(captured.join(''));
+      for (const entry of parsed) {
+        assert.ok(typeof entry.category === 'string');
+        assert.ok(typeof entry.label === 'string');
+        assert.ok(typeof entry.desc === 'string');
+        assert.ok(typeof entry.cmd === 'string');
+      }
+    });
+
+    it('should flatten all categories into one array', () => {
+      mod.printFlatList();
+      const parsed = JSON.parse(captured.join(''));
+      const categoryCount = new Set(parsed.map(e => e.category)).size;
+      assert.equal(categoryCount, Object.keys(mod.SCRIPTS).length);
+    });
+  });
+
+  describe('printHelp', () => {
+    let captured;
+
+    beforeEach(() => {
+      captured = [];
+      process.stdout.write = chunk => { captured.push(chunk.toString()); };
+    });
+
+    it('should mention --help and --list flags', () => {
+      mod.printHelp();
+      const text = captured.join('');
+      assert.ok(text.includes('--help'));
+      assert.ok(text.includes('--list'));
+    });
+
+    it('should list all category names', () => {
+      mod.printHelp();
+      const text = captured.join('');
+      for (const category of Object.keys(mod.SCRIPTS)) {
+        assert.ok(text.includes(category), `Help should mention ${category}`);
+      }
+    });
   });
 
   describe('SCRIPTS data structure', () => {

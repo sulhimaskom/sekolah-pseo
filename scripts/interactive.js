@@ -252,9 +252,67 @@ async function mainMenu(rl) {
   }
 }
 
+// --- Helper: print SCRIPTS data as JSON ---
+
+function printListAsJson() {
+  process.stdout.write(JSON.stringify(SCRIPTS, null, 2) + '\n');
+}
+
+// --- Helper: print help text ---
+
+function printHelp() {
+  process.stdout.write(`Sekolah PSEO Interactive CLI
+
+Usage:
+  node scripts/interactive.js              Start interactive menu
+  node scripts/interactive.js --help       Show this help
+  node scripts/interactive.js --list       List commands as JSON (machine-parseable)
+  node scripts/interactive.js --list=flat  List commands as flat JSON array
+
+Categories:
+${Object.keys(SCRIPTS).map(cat => `  - ${cat}`).join('\n')}
+
+For each category, run with --list to see available commands.
+`);
+}
+
+// --- Helper: print flat command list as JSON ---
+
+function printFlatList() {
+  const commands = [];
+  for (const [category, items] of Object.entries(SCRIPTS)) {
+    for (const item of items) {
+      commands.push({
+        category,
+        label: item.label,
+        desc: item.desc,
+        cmd: item.cmd,
+      });
+    }
+  }
+  process.stdout.write(JSON.stringify(commands, null, 2) + '\n');
+}
+
 // --- Entry point ---
 
 async function main() {
+  const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h')) {
+    printHelp();
+    return;
+  }
+
+  if (args.includes('--list=flat')) {
+    printFlatList();
+    return;
+  }
+
+  if (args.includes('--list')) {
+    printListAsJson();
+    return;
+  }
+
   if (!process.stdin.isTTY) {
     // Non-interactive mode: print help
     console.log('Sekolah PSEO Interactive CLI');
@@ -284,4 +342,4 @@ async function main() {
 
 main();
 
-module.exports = { SCRIPTS, runCommand, pickFromList };
+module.exports = { SCRIPTS, runCommand, pickFromList, printListAsJson, printFlatList, printHelp };
