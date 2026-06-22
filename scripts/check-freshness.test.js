@@ -219,13 +219,19 @@ describe('check-freshness', () => {
   describe('main() via CLI', () => {
     function extractJsonFromPino(raw) {
       // pino logs the stringified JSON in the msg field
-      const line = raw
+      const lines = raw
         .trim()
         .split('\n')
-        .find(l => l.includes('"msg"'));
-      if (!line) return null;
-      const parsed = JSON.parse(line);
-      return JSON.parse(parsed.msg);
+        .filter(l => l.includes('"msg"'));
+      for (const line of lines) {
+        try {
+          const parsed = JSON.parse(line);
+          return JSON.parse(parsed.msg);
+        } catch {
+          continue; // skip lines where msg is not JSON (e.g. log warnings)
+        }
+      }
+      return null;
     }
 
     it('outputs JSON with --json flag', () => {
