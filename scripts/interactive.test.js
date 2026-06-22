@@ -29,7 +29,9 @@ describe('interactive CLI', () => {
 
     beforeEach(() => {
       captured = [];
-      process.stdout.write = chunk => { captured.push(chunk.toString()); };
+      process.stdout.write = chunk => {
+        captured.push(chunk.toString());
+      };
     });
 
     it('should output valid JSON', () => {
@@ -67,7 +69,9 @@ describe('interactive CLI', () => {
 
     beforeEach(() => {
       captured = [];
-      process.stdout.write = chunk => { captured.push(chunk.toString()); };
+      process.stdout.write = chunk => {
+        captured.push(chunk.toString());
+      };
     });
 
     it('should output valid JSON array', () => {
@@ -103,7 +107,9 @@ describe('interactive CLI', () => {
 
     beforeEach(() => {
       captured = [];
-      process.stdout.write = chunk => { captured.push(chunk.toString()); };
+      process.stdout.write = chunk => {
+        captured.push(chunk.toString());
+      };
     });
 
     it('should mention --help and --list flags', () => {

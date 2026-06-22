@@ -270,7 +270,9 @@ Usage:
   node scripts/interactive.js --list=flat  List commands as flat JSON array
 
 Categories:
-${Object.keys(SCRIPTS).map(cat => `  - ${cat}`).join('\n')}
+${Object.keys(SCRIPTS)
+  .map(cat => `  - ${cat}`)
+  .join('\n')}
 
 For each category, run with --list to see available commands.
 `);
