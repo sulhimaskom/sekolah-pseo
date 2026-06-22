@@ -28,7 +28,6 @@ This document serves as the security reference for the Sekolah PSEO project.
   - X-Content-Type-Options: nosniff
   - X-Frame-Options: SAMEORIGIN
   - Referrer-Policy: strict-origin-when-cross-origin
-  - X-XSS-Protection: 1; mode=block
   - Strict-Transport-Security (HSTS): max-age=31536000; includeSubDomains
   - Permissions-Policy: Disables accelerometer, camera, geolocation, gyroscope, magnetometer, microphone, payment, usb
   - Cross-Origin-Opener-Policy (COOP): same-origin
