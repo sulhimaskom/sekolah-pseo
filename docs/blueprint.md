@@ -294,5 +294,8 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-06-08 | Eliminated duplicate getUniqueProvinces call                  | Pre-computed provinces reused for directory creation                                                            |
 | 2026-05-31 | Combined province aggregation + filter extraction             | Reduced 3 full-school iterations to 2                                                                           |
 | 2026-06-15 | escapeHtml bounded Map cache (50K entries)                    | Eliminated redundant regex replacements for repeated fields across ~83K calls; ~3.3% CPU reduction during build |
+| 2026-06-22 | Flat array format for schools.json                            | 13.2% payload reduction (1010KB → 877KB) by eliminating per-object key overhead                                 |
+| 2026-06-22 | Restored gzip pre-compression (schools.json.gz)               | Added zlib.gzipSync to writeSearchDataFile — 125KB gzip for 86% transfer reduction                              |
+| 2026-06-22 | Parallelized build finalization                               | saveManifest + exportSchoolsCsv run concurrently via Promise.all                                                |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
