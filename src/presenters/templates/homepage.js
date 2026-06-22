@@ -36,7 +36,18 @@ function extractFilterOptions(schools) {
 /**
  * Prepare minimal school data for client-side search
  * @param {Array<Object>} schools - Array of school data objects
- * @returns {Array<Object>} - Array of school objects with search-relevant fields
+ * @returns {Array<Array<string>>} - Array of school data arrays (flat array format saves ~13% payload)
+ *
+ * Array index map (compact flat array eliminates per-object key overhead):
+ *   [0] = n (npsn)
+ *   [1] = a (nama)
+ *   [2] = b (bentuk_pendidikan)
+ *   [3] = s (status)
+ *   [4] = al (alamat)
+ *   [5] = kc (kecamatan)
+ *   [6] = kk (kab_kota)
+ *   [7] = p (provinsi)
+ *   [8] = u (schoolUrl)
  */
 function prepareSchoolDataForSearch(schools) {
   if (!Array.isArray(schools)) {
@@ -48,20 +59,19 @@ function prepareSchoolDataForSearch(schools) {
     // getSchoolRelativePath returns 'provinsi/.../npsn-slug.html'
     // client-side schoolUrl needs '/provinsi/.../npsn-slug.html'
     const relPath = getSchoolRelativePath(school);
-    // Compact single-letter keys reduce JSON payload size by ~170KB
-    // Key map: n=npsn, a=nama, b=bentuk_pendidikan, s=status,
-    //          al=alamat, kc=kecamatan, kk=kab_kota, p=provinsi, u=schoolUrl
-    return {
-      n: school.npsn || '',
-      a: school.nama || '',
-      b: school.bentuk_pendidikan || '',
-      s: school.status || '',
-      al: school.alamat || '',
-      kc: school.kecamatan || '',
-      kk: school.kab_kota || '',
-      p: school.provinsi || '',
-      u: '/' + relPath,
-    };
+    // Flat array format eliminates per-object key overhead (~39 bytes/school saved)
+    // Client-side code converts back to named properties after loading
+    return [
+      school.npsn || '',                  // [0] n (npsn)
+      school.nama || '',                   // [1] a (nama)
+      school.bentuk_pendidikan || '',      // [2] b (bentuk_pendidikan)
+      school.status || '',                 // [3] s (status)
+      school.alamat || '',                 // [4] al (alamat)
+      school.kecamatan || '',              // [5] kc (kecamatan)
+      school.kab_kota || '',               // [6] kk (kab_kota)
+      school.provinsi || '',               // [7] p (provinsi)
+      '/' + relPath,                       // [8] u (schoolUrl)
+    ];
   });
 }
 
@@ -354,11 +364,24 @@ function generateHomepageHtml(schools) {
       
       // Lazy-load school search data from external JSON file
       // Reduces initial HTML payload from 1.3MB to ~14KB
+      // The data is stored as flat arrays for compactness (~13% smaller payload)
+      // Convert to named properties after loading for maintainable client code
       fetch('/schools.json').then(function(r) {
         if (!r.ok) throw new Error('Failed to load search data');
         return r.json();
       }).then(function(d) {
-        schools = d;
+        // Convert from compact flat array format to named properties
+        // Array index map: [0]=npsn, [1]=nama, [2]=bentuk, [3]=status,
+        //                  [4]=alamat, [5]=kecamatan, [6]=kab_kota,
+        //                  [7]=provinsi, [8]=url
+        if (d.length > 0 && Array.isArray(d[0])) {
+          schools = d.map(function(s) {
+            return { n: s[0], a: s[1], b: s[2], s: s[3], al: s[4], kc: s[5], kk: s[6], p: s[7], u: s[8] };
+          });
+        } else {
+          // Backward compatibility: support legacy object format
+          schools = d;
+        }
         searchLoaded = true;
         // Re-run search if input already has value
         if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value || statusFilter.value)) {

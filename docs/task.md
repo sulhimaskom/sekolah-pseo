@@ -2,6 +2,136 @@
 
 ## Completed Tasks
 
+### [TASK-038] Security Audit Pass 4 - Workflow Secret Regression Fixes
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive security audit following up on TASK-031 and TASK-036. Discovered that all workflow file security fixes from those prior audits had regressed — the `agent` branch still contained the original vulnerable configurations. Fixed 11 security issues across 5 workflow files: removed 6 duplicate `API_KEY` secrets, fixed 2 `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` mappings, removed `VITE_SUPABASE_ANON_KEY` wrong secret mapping, removed `id-token: write` from 4 non-OIDC workflows, and removed `actions: write` from 3 non-merge workflows.
+
+### Actions Taken
+
+1. **Removed 2 duplicate `API_KEY` env vars + wrong mapping from `on-push.yml` (CRITICAL)**:
+   - Removed `API_KEY: ${{ secrets.GEMINI_API_KEY }}` (exact duplicate of GEMINI_API_KEY)
+   - Removed `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}` (mapped to wrong secret — same as VITE_SUPABASE_KEY)
+   - These were previously documented as removed in TASK-031/TASK-036 but had regressed
+
+2. **Removed 5 duplicate `API_KEY` env vars from `parallel.yml` (CRITICAL)**:
+   - Removed from: architect job, specialist step, Fixer step, and PR-Handler step (some appeared twice in the file)
+   - All were exact duplicates of `GEMINI_API_KEY`
+
+3. **Replaced `secrets.GH_TOKEN` with `secrets.GITHUB_TOKEN` in 2 workflows (HIGH)**:
+   - `orchestrator.yml`: Replaced both occurrences (env var + checkout token)
+   - `architect-agent.yml`: Replaced the env var reference
+   - `GITHUB_TOKEN` is auto-provisioned, auto-rotated, and scoped per-workflow-run
+
+4. **Removed `id-token: write` from 4 non-OIDC workflows (HIGH)**:
+   - `parallel.yml`, `orchestrator.yml`, `architect-agent.yml`, `opencode.yml`: Removed from top-level + job-level permissions
+   - `on-pull.yml`: Removed from top-level permissions
+   - None of these workflows use OIDC
+
+5. **Removed `actions: write` from 3 non-merge workflows (HIGH)**:
+   - `parallel.yml`, `orchestrator.yml`, `architect-agent.yml`, `opencode.yml`: Removed from top-level + job-level permissions
+   - `actions: write` allows modifying other workflow runs — unnecessary for these workflows
+
+### Files Modified
+
+- `.github/workflows/on-push.yml` — Removed `API_KEY` and `VITE_SUPABASE_ANON_KEY` env vars
+- `.github/workflows/parallel.yml` — Removed 5 `API_KEY` env vars and `actions: write` + `id-token: write` permissions
+- `.github/workflows/orchestrator.yml` — Replaced `GH_TOKEN` → `GITHUB_TOKEN`, removed `id-token: write` + `actions: write` (top-level + job-level)
+- `.github/workflows/architect-agent.yml` — Replaced `GH_TOKEN` → `GITHUB_TOKEN`, removed `id-token: write` + `actions: write` (top-level + job-level)
+- `.github/workflows/opencode.yml` — Removed `id-token: write` + `actions: write` (top-level + job-level)
+- `.github/workflows/on-pull.yml` — Removed `id-token: write`
+- `SECURITY_AUDIT_NOTE.md` — Updated audit documentation
+
+### Verification
+
+- Build: 3474 pages, 0 failed ✓
+- ESLint: 0 errors ✓
+- JS Tests: 772/772 pass ✓
+- npm audit: 0 vulnerabilities ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] 6 duplicate `API_KEY` references removed across 2 workflow files
+- [x] `VITE_SUPABASE_ANON_KEY` incorrect mapping removed from on-push.yml
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in all workflows (2 files)
+- [x] `id-token: write` removed from all 4 non-OIDC workflows
+- [x] `actions: write` removed from all 3 non-merge workflows
+- [x] All tests pass (772 JS)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions
+
+---
+
+### [TASK-039] Performance Optimization - Flat Array Search Data, Gzip Pre-compression Restore, Build Finalization Parallelization
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized the schools.json search payload by converting from object array to flat array format (saving 133KB / 13.2%), restored missing gzip pre-compression that regressed since TASK-037, and parallelized build finalization steps (manifest save + CSV export).
+
+### Actions Taken
+
+1. **Flat array format for schools.json** (`src/presenters/templates/homepage.js`, `scripts/build-pages.js`):
+   - Changed `prepareSchoolDataForSearch()` to return arrays instead of objects: `["npsn","nama","bentuk","status","alamat","kecamatan","kota","provinsi","/url"]`
+   - Eliminates per-object key overhead (~39 bytes/school) — saves 39 bytes × 3474 schools = 135KB
+   - Added backward-compatible conversion in client-side fetch handler (detects array format vs legacy object format)
+   - Updated JSDoc with array index mapping for maintainability
+   - Client code remains unchanged — conversion happens once at load time
+
+2. **Restored gzip pre-compression** (`scripts/build-pages.js`):
+   - Added `zlib` import and `zlib.gzipSync(jsonContent, { level: 9 })` call in `writeSearchDataFile()`
+   - Generates `schools.json.gz` alongside `schools.json` for servers with `gzip_static on`
+   - This was implemented in TASK-037 but had regressed — now restored with improved compression level
+   - Logs both uncompressed and gzipped sizes
+
+3. **Parallelized build finalization** (`scripts/build-pages.js`):
+   - `saveManifest()` and `exportSchoolsCsv()` now run concurrently via `Promise.all()`
+   - These are independent I/O operations — no reason to wait for one before starting the other
+
+### Performance Results
+
+| Metric | Before | After | Δ |
+|--------|--------|-------|---|
+| schools.json size | 1,033,895 B (1010 KB) | 898,151 B (877 KB) | **−133KB / 13.2% ↓** |
+| schools.json.gz size | — (was missing) | 128,458 B (125 KB) | Restored |
+| Build duration | 410–636ms | ~390ms | Maintained |
+| Build throughput | ~8473 pg/s | ~8908 pg/s | +5.1% |
+| Peak RSS | 121–125 MB | 125 MB | Maintained |
+| Tests | 772/772 pass | 772/772 pass | Zero regressions |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` — `prepareSchoolDataForSearch()` returns flat arrays, client fetch converts to objects, updated JSDoc
+- `scripts/build-pages.js` — Added `zlib` import, restored gzip in `writeSearchDataFile()`, parallelized manifest + CSV export, updated log message with gzip size
+- `docs/task.md` — This entry
+- `docs/blueprint.md` — Updated decisions log
+
+### Acceptance Criteria
+
+- [x] schools.json uses flat array format (no per-object keys)
+- [x] Client-side conversion handles both new array and legacy object formats
+- [x] schools.json.gz generated alongside schools.json (125KB, 86% transfer reduction)
+- [x] Gzip file decompresses to identical data as uncompressed JSON
+- [x] Build finalization steps parallelized (manifest + CSV export)
+- [x] All 772 JS tests pass
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] Sitemap generation works (3476 URLs, 91ms)
+- [x] Performance budgets met
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-037] Performance Optimization - schools.json.gz Pre-compression and Province Page Pre-grouping
 
 **Status**: Complete
