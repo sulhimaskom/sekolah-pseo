@@ -32,30 +32,30 @@ Optimized two key areas: added gzip pre-compression of schools.json for 86.8% re
 
 **gzip Pre-compression:**
 
-| Metric | Before | After | Δ |
-|--------|--------|-------|---|
-| schools.json size | 1,033,895 B (1010 KB) | 1,033,895 B (1010 KB) | — |
-| schools.json.gz size | — | 136,619 B (133 KB) | New artifact |
-| Transfer reduction | — | **86.8%** | — |
+| Metric               | Before                | After                 | Δ            |
+| -------------------- | --------------------- | --------------------- | ------------ |
+| schools.json size    | 1,033,895 B (1010 KB) | 1,033,895 B (1010 KB) | —            |
+| schools.json.gz size | —                     | 136,619 B (133 KB)    | New artifact |
+| Transfer reduction   | —                     | **86.8%**             | —            |
 
 **Province Page Pre-grouping:**
 
-| Metric | Before | After | Δ |
-|--------|--------|-------|---|
-| Province filtering | O(n×p) per province | O(n) single pass | Provinces: 1× instead of p× |
-| Redundant filtering | filterSchoolsByProvince for each province | Pre-grouped + skipFilter=true | 0 redundant iterations |
-| getUniqueProvinces calls | 1 per province page setup | 0 (derived from grouped data) | Eliminated |
+| Metric                   | Before                                    | After                         | Δ                           |
+| ------------------------ | ----------------------------------------- | ----------------------------- | --------------------------- |
+| Province filtering       | O(n×p) per province                       | O(n) single pass              | Provinces: 1× instead of p× |
+| Redundant filtering      | filterSchoolsByProvince for each province | Pre-grouped + skipFilter=true | 0 redundant iterations      |
+| getUniqueProvinces calls | 1 per province page setup                 | 0 (derived from grouped data) | Eliminated                  |
 
 **Build Integrity:**
 
-| Check | Result |
-|-------|--------|
-| Build | 3474 pages, 0 failed, 964ms |
-| Throughput | 3603.73 pages/sec |
-| Peak RSS | 121.14 MB |
-| JS Tests | 764/764 pass |
-| Lint | 0 errors |
-| Performance budgets | All met |
+| Check               | Result                      |
+| ------------------- | --------------------------- |
+| Build               | 3474 pages, 0 failed, 964ms |
+| Throughput          | 3603.73 pages/sec           |
+| Peak RSS            | 121.14 MB                   |
+| JS Tests            | 764/764 pass                |
+| Lint                | 0 errors                    |
+| Performance budgets | All met                     |
 
 ### Files Modified
 
@@ -126,11 +126,11 @@ Added targeted test coverage for uncovered critical business logic paths in the 
 
 ### Coverage Impact
 
-| Module | Before | After | Δ |
-|--------|--------|-------|---|
-| etl.js (branches) | 91.02% | 92.40% | +1.38% |
-| data-quality.js (statements) | 86.40% | 87.86% | +1.46% |
-| Overall (statements) | 92.03% | 91.80% | (run variation) |
+| Module                       | Before | After  | Δ               |
+| ---------------------------- | ------ | ------ | --------------- |
+| etl.js (branches)            | 91.02% | 92.40% | +1.38%          |
+| data-quality.js (statements) | 86.40% | 87.86% | +1.46%          |
+| Overall (statements)         | 92.03% | 91.80% | (run variation) |
 
 ### Acceptance Criteria
 
