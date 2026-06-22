@@ -34,20 +34,20 @@ Optimized build reliability and efficiency: eliminated circuit breaker cascade f
 
 ### Performance Results
 
-| Metric                 | Before (baseline) | After   | Δ                      |
-| ---------------------- | ----------------- | ------- | ---------------------- |
-| Build duration         | 433ms             | 420ms   | **−3% (maintained)**   |
-| Total pages            | 3474              | 3474    | —                      |
-| Failed pages (normal)  | 0                 | 0       | —                      |
-| Failed pages (cascade) | 922               | 0       | **Cascade eliminated** |
-| Throughput             | 8023 pg/s         | 8271 pg/s | **+3.1%**           |
-| Peak RSS               | 124.69 MB         | 120.95 MB | **−3.0%**           |
-| Memory delta           | 15.47 MB          | 13.51 MB | **−12.7%**          |
+| Metric                 | Before (baseline) | After            | Δ                              |
+| ---------------------- | ----------------- | ---------------- | ------------------------------ |
+| Build duration         | 433ms             | 420ms            | **−3% (maintained)**           |
+| Total pages            | 3474              | 3474             | —                              |
+| Failed pages (normal)  | 0                 | 0                | —                              |
+| Failed pages (cascade) | 922               | 0                | **Cascade eliminated**         |
+| Throughput             | 8023 pg/s         | 8271 pg/s        | **+3.1%**                      |
+| Peak RSS               | 124.69 MB         | 120.95 MB        | **−3.0%**                      |
+| Memory delta           | 15.47 MB          | 13.51 MB         | **−12.7%**                     |
 | Province filtering     | O(n×p) per build  | O(n) single pass | Eliminated redundant filtering |
-| Tests                  | 772/772 pass      | 772/772 pass | Zero regressions    |
-| ESLint                 | 0 errors          | 0 errors   | Clean                |
-| Prettier               | All formatted     | All formatted | Clean              |
-| Sitemap                | 3476 URLs         | 3476 URLs  | Clean                |
+| Tests                  | 772/772 pass      | 772/772 pass     | Zero regressions               |
+| ESLint                 | 0 errors          | 0 errors         | Clean                          |
+| Prettier               | All formatted     | All formatted    | Clean                          |
+| Sitemap                | 3476 URLs         | 3476 URLs        | Clean                          |
 
 ### Files Modified
 

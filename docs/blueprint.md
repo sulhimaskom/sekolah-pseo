@@ -274,30 +274,30 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 
 ## Decisions Log
 
-| Date       | Decision                                                      | Rationale                                                                                                       |
-| ---------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 2026-01-07 | Use Node.js for templating                                    | Custom JavaScript templates with PageBuilder service                                                            |
-| 2026-01-07 | CSV over database                                             | Simple, portable, low overhead                                                                                  |
-| 2026-01-07 | Node.js scripts                                               | Cross-platform, easy to maintain                                                                                |
-| 2026-01-07 | Implement resilience patterns                                 | Prevent cascading failures, handle transient errors                                                             |
-| 2026-01-07 | Implement layer separation (controller/service/presentation)  | Better separation of concerns, testability, maintainability                                                     |
-| 2026-01-07 | Extract HTML templates to separate modules                    | Templates testable in isolation, reusable, easy to modify                                                       |
-| 2026-01-07 | Create PageBuilder service layer                              | Business logic isolated from file I/O and presentation                                                          |
-| 2026-01-10 | Implement rate limiting for concurrent operations             | Controlled concurrency, backpressure, metrics for operations                                                    |
-| 2026-01-10 | Performance optimization (homepage payload, build efficiency) | 15% homepage size reduction, eliminated duplicate iterations                                                    |
-| 2026-05-31 | Lazy-load homepage search JSON (separate schools.json)        | 98.8% homepage size reduction (1.3MB → 15KB), memory -9%                                                        |
-| 2026-05-31 | Lightweight path computation in manifest creation             | Eliminated 3474 unnecessary HTML generations for paths                                                          |
-| 2026-05-31 | Module-level CURRENT_YEAR constants                           | Eliminated 3476+ redundant Date allocations                                                                     |
-| 2026-06-08 | Province page pre-grouping (O(n×p) → O(n))                    | Pre-group schools by province once, eliminate 95% filter work                                                   |
-| 2026-06-08 | getSchoolRelativePath WeakMap cache                           | Cached by object reference, eliminates redundant slugify                                                        |
-| 2026-06-08 | Province page skipFilter parameter                            | Avoids redundant per-province filtering when pre-filtered                                                       |
-| 2026-06-08 | Eliminated duplicate getUniqueProvinces call                  | Pre-computed provinces reused for directory creation                                                            |
-| 2026-05-31 | Combined province aggregation + filter extraction             | Reduced 3 full-school iterations to 2                                                                           |
-| 2026-06-15 | escapeHtml bounded Map cache (50K entries)                    | Eliminated redundant regex replacements for repeated fields across ~83K calls; ~3.3% CPU reduction during build |
-| 2026-06-22 | Flat array format for schools.json                            | 13.2% payload reduction (1010KB → 877KB) by eliminating per-object key overhead                                 |
-| 2026-06-22 | Restored gzip pre-compression (schools.json.gz)               | Added zlib.gzipSync to writeSearchDataFile — 125KB gzip for 86% transfer reduction                              |
-| 2026-06-22 | Parallelized build finalization                               | saveManifest + exportSchoolsCsv run concurrently via Promise.all                                                |
-| 2026-06-22 | Circuit breaker isolation for bulk file writes                | Added `useCircuitBreaker` option (default true); bulk page writes bypass circuit breaker to prevent cascade failures from isolated write errors |
+| Date       | Decision                                                      | Rationale                                                                                                                                                |
+| ---------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-01-07 | Use Node.js for templating                                    | Custom JavaScript templates with PageBuilder service                                                                                                     |
+| 2026-01-07 | CSV over database                                             | Simple, portable, low overhead                                                                                                                           |
+| 2026-01-07 | Node.js scripts                                               | Cross-platform, easy to maintain                                                                                                                         |
+| 2026-01-07 | Implement resilience patterns                                 | Prevent cascading failures, handle transient errors                                                                                                      |
+| 2026-01-07 | Implement layer separation (controller/service/presentation)  | Better separation of concerns, testability, maintainability                                                                                              |
+| 2026-01-07 | Extract HTML templates to separate modules                    | Templates testable in isolation, reusable, easy to modify                                                                                                |
+| 2026-01-07 | Create PageBuilder service layer                              | Business logic isolated from file I/O and presentation                                                                                                   |
+| 2026-01-10 | Implement rate limiting for concurrent operations             | Controlled concurrency, backpressure, metrics for operations                                                                                             |
+| 2026-01-10 | Performance optimization (homepage payload, build efficiency) | 15% homepage size reduction, eliminated duplicate iterations                                                                                             |
+| 2026-05-31 | Lazy-load homepage search JSON (separate schools.json)        | 98.8% homepage size reduction (1.3MB → 15KB), memory -9%                                                                                                 |
+| 2026-05-31 | Lightweight path computation in manifest creation             | Eliminated 3474 unnecessary HTML generations for paths                                                                                                   |
+| 2026-05-31 | Module-level CURRENT_YEAR constants                           | Eliminated 3476+ redundant Date allocations                                                                                                              |
+| 2026-06-08 | Province page pre-grouping (O(n×p) → O(n))                    | Pre-group schools by province once, eliminate 95% filter work                                                                                            |
+| 2026-06-08 | getSchoolRelativePath WeakMap cache                           | Cached by object reference, eliminates redundant slugify                                                                                                 |
+| 2026-06-08 | Province page skipFilter parameter                            | Avoids redundant per-province filtering when pre-filtered                                                                                                |
+| 2026-06-08 | Eliminated duplicate getUniqueProvinces call                  | Pre-computed provinces reused for directory creation                                                                                                     |
+| 2026-05-31 | Combined province aggregation + filter extraction             | Reduced 3 full-school iterations to 2                                                                                                                    |
+| 2026-06-15 | escapeHtml bounded Map cache (50K entries)                    | Eliminated redundant regex replacements for repeated fields across ~83K calls; ~3.3% CPU reduction during build                                          |
+| 2026-06-22 | Flat array format for schools.json                            | 13.2% payload reduction (1010KB → 877KB) by eliminating per-object key overhead                                                                          |
+| 2026-06-22 | Restored gzip pre-compression (schools.json.gz)               | Added zlib.gzipSync to writeSearchDataFile — 125KB gzip for 86% transfer reduction                                                                       |
+| 2026-06-22 | Parallelized build finalization                               | saveManifest + exportSchoolsCsv run concurrently via Promise.all                                                                                         |
+| 2026-06-22 | Circuit breaker isolation for bulk file writes                | Added `useCircuitBreaker` option (default true); bulk page writes bypass circuit breaker to prevent cascade failures from isolated write errors          |
 | 2026-06-22 | Province page pre-grouping (O(n) → O(n×p)) + skipFilter       | Added `groupSchoolsByProvince()`, `skipFilter` param in `buildProvincePageData`/`generateProvincePageHtml` — eliminates redundant per-province filtering |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
