@@ -47,8 +47,13 @@ const CONFIG = {
   SCHOOLS_CSV_PATH: path.join(DATA_DIR, 'schools.csv'),
   DIST_DIR: DIST_DIR,
 
-  // URLs
-  SITE_URL: process.env.SITE_URL || 'https://example.com',
+  SITE_URL: (() => {
+    const url = process.env.SITE_URL || 'https://example.com';
+    if (url === 'https://example.com' && !process.env.SITE_URL) {
+      logger.warn('SITE_URL is set to default placeholder "https://example.com". Set SITE_URL env var for production deployment.');
+    }
+    return url;
+  })(),
 
   // Concurrency limits with validation
   BUILD_CONCURRENCY_LIMIT: Math.min(
