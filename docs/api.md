@@ -737,12 +737,15 @@ Resilient file system wrappers with timeout, retry, and circuit breaker protecti
 
 ```javascript
 module.exports = {
+  createFsSafe: function,
   safeReadFile: function,
   safeWriteFile: function,
   safeMkdir: function,
   safeAccess: function,
   safeReaddir: function,
   safeStat: function,
+  safeUnlink: function,
+  resetCircuitBreakers: function,
   DEFAULT_FILE_TIMEOUT_MS: number,
   fileReadCircuitBreaker: CircuitBreaker,
   fileWriteCircuitBreaker: CircuitBreaker
@@ -953,6 +956,81 @@ try {
 } catch (error) {
   console.error(error.code, error.message);
 }
+```
+
+---
+
+#### `safeUnlink(filePath, options)`
+
+Deletes a file with timeout and circuit breaker protection.
+
+**Parameters:**
+
+- `filePath` (string): Path to file to delete
+- `options` (Object, optional):
+  - `timeoutMs` (number): Timeout in ms (default: `DEFAULT_FILE_TIMEOUT_MS`)
+  - `maxAttempts` (number): Retry attempts (default: 3)
+
+**Returns:** `Promise<void>`
+
+**Throws:** `IntegrationError` with `FILE_WRITE_ERROR` code
+
+**Usage:**
+
+```javascript
+try {
+  await safeUnlink('/path/to/stale-file.html');
+} catch (error) {
+  console.error(error.code, error.message);
+}
+```
+
+---
+
+#### `resetCircuitBreakers()`
+
+Resets both file read and file write circuit breakers to CLOSED state. Used in testing to ensure clean state between test cases.
+
+**Parameters:** None
+
+**Returns:** `void`
+
+**Usage:**
+
+```javascript
+const { resetCircuitBreakers } = require('./fs-safe');
+resetCircuitBreakers();
+```
+
+---
+
+#### `createFsSafe()`
+
+Creates a fresh isolated instance of all file system safe wrappers with independent circuit breakers. Useful for testing and for creating isolated file system contexts.
+
+**Returns:** `Object` - Object containing all safe file system functions with independent circuit breakers
+
+```javascript
+{
+  (safeReadFile,
+    safeWriteFile,
+    safeMkdir,
+    safeAccess,
+    safeReaddir,
+    safeStat,
+    safeUnlink,
+    fileReadCircuitBreaker,
+    fileWriteCircuitBreaker,
+    resetCircuitBreakers);
+}
+```
+
+**Usage:**
+
+```javascript
+const { createFsSafe } = require('./fs-safe');
+const fsSafe = createFsSafe();
+await fsSafe.safeReadFile('/path/to/file.csv');
 ```
 
 ---
@@ -1647,8 +1725,8 @@ Presentation layer for school page HTML generation.
 ```javascript
 module.exports = {
   generateSchoolPageHtml: function,
-  generateMetaDescription: function,
   generateCanonicalUrl: function,
+  generateEnrichmentSection: function,
 };
 ```
 
@@ -1717,30 +1795,6 @@ const html = generateSchoolPageHtml(
 
 ---
 
-#### `generateMetaDescription(school)`
-
-Generates SEO meta description from school data.
-
-**Parameters:**
-
-- `school` (Object): School data object
-
-**Returns:** `string` - SEO meta description (truncated to ~155 characters)
-
-**Usage:**
-
-```javascript
-const desc = generateMetaDescription({
-  nama: 'SMA Negeri 1',
-  bentuk_pendidikan: 'SMA',
-  kab_kota: 'Jakarta',
-  kecamatan: 'Menteng',
-});
-// Returns: 'SMA Negeri 1 - SMA - di Jakarta - Kec. Menteng'
-```
-
----
-
 #### `generateCanonicalUrl(relativePath)`
 
 Generates full canonical URL from relative path and SITE_URL config.
@@ -1764,6 +1818,32 @@ const url = generateCanonicalUrl('provinsi/dki-jakarta/kabupaten/.../file.html')
 
 ---
 
+#### `generateEnrichmentSection(enrichment)`
+
+Generates an enrichment data section for school pages, displaying additional information (e.g., accreditation, facilities, programs) when available.
+
+**Parameters:**
+
+- `enrichment` (Object|null): Enrichment data object or null if not available
+
+**Returns:** `string` - HTML string for the enrichment section, or empty string if enrichment is null
+
+**Dependencies:**
+
+- `escapeHtml` (from `scripts/utils.js`)
+
+**Usage:**
+
+```javascript
+const html = generateEnrichmentSection({
+  accreditation: 'A',
+  facilities: ['Lab', 'Perpustakaan'],
+});
+// Returns HTML section with enrichment data
+```
+
+---
+
 ## Homepage Template Module (`src/presenters/templates/homepage.js`)
 
 ### Purpose
@@ -1777,6 +1857,8 @@ module.exports = {
   generateHomepageHtml: function,
   aggregateByProvince: function,
   aggregateProvinceAndFilters: function,
+  prepareSchoolDataForSearch: function,
+  extractFilterOptions: function,
 };
 ```
 
@@ -1867,6 +1949,67 @@ Aggregates school data by province and extracts filter options in a single pass.
 ```javascript
 const { aggregateProvinceAndFilters } = require('./templates/homepage');
 const { provinces, types } = aggregateProvinceAndFilters(schools);
+```
+
+---
+
+#### `prepareSchoolDataForSearch(schools)`
+
+Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+
+**Returns:** `Array<Array>` - Array of school records as flat arrays
+
+```javascript
+// Each record: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
+[
+  [
+    '12345678',
+    'SMA Negeri 1',
+    'SMA',
+    'N',
+    'Jl. Sudirman',
+    'Menteng',
+    'Jakarta Pusat',
+    'DKI Jakarta',
+    '/provinsi/...',
+  ],
+];
+```
+
+**Array Indexes:** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url`
+
+**Usage:**
+
+```javascript
+const { prepareSchoolDataForSearch } = require('./templates/homepage');
+const searchData = prepareSchoolDataForSearch(schools);
+```
+
+---
+
+#### `extractFilterOptions(schools)`
+
+Extracts unique filter options (education types) from school data.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+
+**Returns:** `Array<string>` - Sorted array of unique education types
+
+```javascript
+// Returns: ['SD', 'SMA', 'SMK', 'SMP']
+```
+
+**Usage:**
+
+```javascript
+const { extractFilterOptions } = require('./templates/homepage');
+const types = extractFilterOptions(schools);
 ```
 
 ---
@@ -2582,7 +2725,8 @@ Crawls generated HTML files and validates internal hyperlinks to ensure they res
 ```javascript
 module.exports = {
   extractLinks: function,
-  validateLinksInFile: function
+  validateLinksInFile: function,
+  validateLinks: function
 };
 ```
 
@@ -3167,7 +3311,8 @@ module.exports = {
   fetchFromGitHub: function,
   findCsvFiles: function,
   copyToRaw: function,
-  validateRepoUrl: function
+  validateRepoUrl: function,
+  validateBranchName: function
 };
 ```
 
@@ -3291,6 +3436,33 @@ const safeUrl = validateRepoUrl('https://github.com/user/repo.git');
 // Throws for invalid URLs:
 validateRepoUrl('file:///etc/passwd'); // Error: Invalid protocol
 validateRepoUrl('https://evil.com'); // Error: must end with .git
+```
+
+---
+
+#### `validateBranchName(branch)`
+
+Validates a Git branch name to prevent command injection.
+
+**Parameters:**
+
+- `branch` (string): Branch name to validate
+
+**Returns:** `string` - Sanitized branch name
+
+**Throws:** `Error` If branch name contains unsafe characters or patterns
+
+**Security Validation:**
+
+- Allows alphanumeric, hyphens, underscores, dots, and slashes
+- Rejects branch names with special characters, spaces, or path traversal patterns
+
+**Usage:**
+
+```javascript
+const { validateBranchName } = require('./fetch-data');
+const safeBranch = validateBranchName('main'); // 'main'
+validateBranchName('main; rm -rf /'); // Throws Error
 ```
 
 ---

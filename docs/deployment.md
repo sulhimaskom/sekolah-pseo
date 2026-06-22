@@ -29,9 +29,20 @@ The build process generates the following structure:
 
 ```
 dist/
-├── styles.css              # Shared CSS file
+├── index.html              # Homepage with search and filters
+├── styles.css              # Shared CSS (~27 KB)
+├── schools.json            # Search payload (~877 KB, flat array format)
+├── schools.json.gz         # Gzip pre-compressed search payload (~125 KB)
+├── robots.txt              # Dynamic robots.txt with sitemap URL
 ├── sitemap-index.xml       # Sitemap index
 ├── sitemap-001.xml         # Sitemap file(s)
+├── 404.html                # Custom 404 page
+├── favicon.svg             # Site favicon
+├── security.txt            # Security contact info
+├── _headers                # Netlify deploy headers config
+├── _redirects              # Netlify deploy redirects config
+├── data/                   # Search JSON data files
+│   └── schools.json        # (symlink or copy)
 ├── provinsi/               # Province directories
 │   ├── dki-jakarta/
 │   │   └── kabupaten/
