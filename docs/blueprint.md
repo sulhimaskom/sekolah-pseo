@@ -297,5 +297,7 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-06-22 | Flat array format for schools.json                            | 13.2% payload reduction (1010KB → 877KB) by eliminating per-object key overhead                                 |
 | 2026-06-22 | Restored gzip pre-compression (schools.json.gz)               | Added zlib.gzipSync to writeSearchDataFile — 125KB gzip for 86% transfer reduction                              |
 | 2026-06-22 | Parallelized build finalization                               | saveManifest + exportSchoolsCsv run concurrently via Promise.all                                                |
+| 2026-06-22 | Circuit breaker isolation for bulk file writes                | Added `useCircuitBreaker` option (default true); bulk page writes bypass circuit breaker to prevent cascade failures from isolated write errors |
+| 2026-06-22 | Province page pre-grouping (O(n) → O(n×p)) + skipFilter       | Added `groupSchoolsByProvince()`, `skipFilter` param in `buildProvincePageData`/`generateProvincePageHtml` — eliminates redundant per-province filtering |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
