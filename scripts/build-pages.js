@@ -237,7 +237,7 @@ async function writeSearchDataFile(schools) {
 
   logger.info(
     `Generated schools.json (${(Buffer.byteLength(jsonContent, 'utf-8') / 1024).toFixed(0)} KB)` +
-    `, gzip: ${(gzipped.length / 1024).toFixed(0)} KB`
+      `, gzip: ${(gzipped.length / 1024).toFixed(0)} KB`
   );
 }
 
