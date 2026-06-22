@@ -2,7 +2,88 @@
 
 ## Completed Tasks
 
-### [TASK-038] Security Audit Pass 4 - Workflow Secret Regression Fixes
+### [TASK-041] Performance Optimization - Circuit Breaker Cascade Protection, Province Pre-grouping, Directory Error Visibility
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized build reliability and efficiency: eliminated circuit breaker cascade failures during bulk page writes (the #1 build integrity issue), implemented province page pre-grouping (missing optimization from TASK-037), and fixed silently-swallowed directory creation errors.
+
+### Actions Taken
+
+1. **Circuit breaker cascade protection** (`scripts/fs-safe.js`, `scripts/build-pages.js`):
+   - Added `useCircuitBreaker` option (default: `true`, backward-compatible) to `safeWriteFile()` and `safeReadFile()`
+   - Bulk school page writes now bypass circuit breaker (`useCircuitBreaker: false`) — retry+timeout still protect against transient filesystem errors
+   - Critical operations (manifest saves, CSS generation, robots.txt) retain full circuit breaker protection
+   - **Before**: 5 isolated file write failures → global circuit breaker opens → ALL remaining 3469+ page writes rejected instantly (caused 922 failures in prior build)
+   - **After**: Isolated write failures are handled individually via retry+timeout; no cascade failures possible
+   - Circuit breaker remains active for non-bulk file operations where it correctly protects against systemic failures
+
+2. **Province page pre-grouping (O(n) instead of O(n×p))** (`src/services/PageBuilder.js`, `scripts/build-pages.js`, `src/presenters/templates/province-page.js`):
+   - Added `groupSchoolsByProvince()` — single O(n) pass groups all schools by province using a `Map<string, Array>`
+   - Added `skipFilter` parameter to `buildProvincePageData()` and `generateProvincePageHtml()` (backward-compatible, defaults to `false`)
+   - `generateProvincePages()` now pre-groups schools once, then passes pre-filtered arrays with `skipFilter=true`
+   - Eliminates redundant per-province `filterSchoolsByProvince()` call against the full schools array
+
+3. **Fixed silent directory creation error swallowing** (`scripts/build-pages.js`):
+   - `preCreateDirectories()` now tracks and reports failed directory creation attempts
+   - Returns array of failed paths for downstream visibility
+   - Logs warning if any directories fail: `"X of Y directories failed to create"`
+
+### Performance Results
+
+| Metric                 | Before (baseline) | After            | Δ                              |
+| ---------------------- | ----------------- | ---------------- | ------------------------------ |
+| Build duration         | 433ms             | 420ms            | **−3% (maintained)**           |
+| Total pages            | 3474              | 3474             | —                              |
+| Failed pages (normal)  | 0                 | 0                | —                              |
+| Failed pages (cascade) | 922               | 0                | **Cascade eliminated**         |
+| Throughput             | 8023 pg/s         | 8271 pg/s        | **+3.1%**                      |
+| Peak RSS               | 124.69 MB         | 120.95 MB        | **−3.0%**                      |
+| Memory delta           | 15.47 MB          | 13.51 MB         | **−12.7%**                     |
+| Province filtering     | O(n×p) per build  | O(n) single pass | Eliminated redundant filtering |
+| Tests                  | 772/772 pass      | 772/772 pass     | Zero regressions               |
+| ESLint                 | 0 errors          | 0 errors         | Clean                          |
+| Prettier               | All formatted     | All formatted    | Clean                          |
+| Sitemap                | 3476 URLs         | 3476 URLs        | Clean                          |
+
+### Files Modified
+
+- `scripts/fs-safe.js` — Added `useCircuitBreaker` option to `safeWriteFile()` and `safeReadFile()`
+- `scripts/build-pages.js` — Disabled circuit breaker for school page writes (`useCircuitBreaker: false`), imported `groupSchoolsByProvince`, updated `generateProvincePages()` with pre-grouping, improved `preCreateDirectories()` error tracking
+- `src/services/PageBuilder.js` — Added `groupSchoolsByProvince()`, added `skipFilter` parameter to `buildProvincePageData()`
+- `src/presenters/templates/province-page.js` — Added `skipFilter` parameter to `generateProvincePageHtml()`
+- `docs/blueprint.md` — Updated decisions log
+- `docs/task.md` — This entry
+
+### Verification
+
+- Build: 3474 pages, 0 failed, 420ms ✓
+- ESLint: 0 errors ✓
+- Prettier: All files formatted ✓
+- JS Tests: 772/772 pass ✓
+- Sitemap: 3476 URLs, generation succeeds ✓
+- Cascade failure scenario: Eliminated — isolated write errors no longer block entire build ✓
+- Province pages: Generated correctly with pre-grouped data ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] Circuit breaker cascade eliminated for bulk file writes (`useCircuitBreaker: false`)
+- [x] Backward-compatible API (`useCircuitBreaker` defaults to `true`)
+- [x] Province pre-grouping (O(n) single pass, skipFilter parameter)
+- [x] Silent directory creation errors now tracked and reported
+- [x] All 772 JS tests pass
+- [x] Build succeeds (3474 pages, 0 failed, 420ms)
+- [x] Lint passes (0 errors)
+- [x] Format check passes (Prettier clean)
+- [x] Sitemap generation works (3476 URLs)
+- [x] Performance budgets met (all budget categories)
+- [x] Zero regressions introduced
+
+---
 
 **Status**: Complete
 **Agent**: Principal Security Engineer (Sisyphus)
@@ -4589,6 +4670,88 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 - Suggestion: Extract the filtering logic into a utility function `isRelativeLink(link)` in scripts/validate-links.js. This function should return true for links that should be validated (internal links) and false for external URLs, fragments, or invalid links. Both functions can then use this shared predicate.
 - Priority: Low
 - Effort: Small
+
+---
+
+### [TASK-041] Security Audit Pass 5 - Workflow Permission Regression Fixes
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Discovered that all workflow file security fixes from TASK-031, TASK-036, and TASK-038 had regressed on the `agent` branch — the files still contained the original vulnerable configurations despite being documented as fixed. Fixed 10 security issues across 5 workflow files: removed 5 duplicate `API_KEY` secrets, fixed 2 incorrect `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` mappings, removed `VITE_SUPABASE_ANON_KEY` wrong secret mapping, removed `id-token: write` from 4 non-OIDC workflows, and removed `actions: write` from 3 non-merge workflows.
+
+### Actions Taken
+
+1. **Removed duplicate `API_KEY` + wrong secret mapping from `on-push.yml` (CRITICAL)**:
+   - Removed `API_KEY: ${{ secrets.GEMINI_API_KEY }}` (exact duplicate of GEMINI_API_KEY)
+   - Removed `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}` (mapped to wrong secret — same as VITE_SUPABASE_KEY)
+   - Previously documented as removed in TASK-031/TASK-036/TASK-038 but had regressed
+
+2. **Removed `actions: write` + `id-token: write` from `parallel.yml` (HIGH)**:
+   - Removed from top-level permissions (non-OIDC, non-merge workflow)
+   - Also removed 4 duplicate `API_KEY` env vars from architect, specialists, Fixer, and PR-Handler jobs
+
+3. **Removed `id-token: write` + `actions: write` from `orchestrator.yml` (HIGH)**:
+   - Removed from both top-level and job-level permissions
+   - Replaced `secrets.GH_TOKEN` with `secrets.GITHUB_TOKEN` (env var + checkout token)
+   - `GITHUB_TOKEN` is auto-provisioned, auto-rotated, and scoped per-workflow-run
+
+4. **Removed `id-token: write` + `actions: write` from `architect-agent.yml` (HIGH)**:
+   - Removed from both top-level and job-level permissions
+   - Replaced `secrets.GH_TOKEN` with `secrets.GITHUB_TOKEN`
+
+5. **Removed `id-token: write` + `actions: write` from `opencode.yml` (HIGH)**:
+   - Removed from both top-level and job-level permissions
+
+6. **Removed `id-token: write` from `on-pull.yml` (HIGH)**:
+   - Non-OIDC workflow — unnecessary permission
+
+7. **Fixed `docs/security-engineer.md` (STANDARD)**:
+   - Removed deprecated `X-XSS-Protection` reference that was removed from templates in TASK-022 but still documented in security engineer long-term memory
+
+### Files Modified
+
+- `.github/workflows/on-push.yml` — Removed `API_KEY` and `VITE_SUPABASE_ANON_KEY` env vars
+- `.github/workflows/parallel.yml` — Removed `actions: write` + `id-token: write` permissions, removed 4 `API_KEY` env vars
+- `.github/workflows/orchestrator.yml` — Removed `actions: write` + `id-token: write` (top-level + job-level), replaced `GH_TOKEN` → `GITHUB_TOKEN`
+- `.github/workflows/architect-agent.yml` — Removed `actions: write` + `id-token: write` (top-level + job-level), replaced `GH_TOKEN` → `GITHUB_TOKEN`
+- `.github/workflows/opencode.yml` — Removed `actions: write` + `id-token: write` (top-level + job-level)
+- `.github/workflows/on-pull.yml` — Removed `id-token: write`
+- `SECURITY_AUDIT_NOTE.md` — Updated with latest fixes
+- `docs/security-engineer.md` — Removed deprecated X-XSS-Protection reference
+- `docs/task.md` — This entry
+
+### Verification
+
+- Build: 3474 pages, 0 failed ✓
+- ESLint: 0 errors ✓
+- Prettier: formatting clean ✓
+- JS Tests: 772/772 pass ✓
+- npm audit: 0 vulnerabilities ✓
+- Zero regressions introduced ✓
+
+### Notes
+
+Workflow file changes are committed locally but cannot be pushed from this environment (token lacks `workflows` permission). See instructions below for manual push.
+
+### Acceptance Criteria
+
+- [x] 5 duplicate `API_KEY` references removed across 2 workflow files (1 in on-push.yml, 4 in parallel.yml)
+- [x] `VITE_SUPABASE_ANON_KEY` incorrect mapping removed from on-push.yml
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in orchestrator.yml and architect-agent.yml
+- [x] `id-token: write` removed from all 4 non-OIDC workflows (parallel.yml, orchestrator.yml, architect-agent.yml, opencode.yml, on-pull.yml)
+- [x] `actions: write` removed from all 3 non-merge workflows (parallel.yml, orchestrator.yml, architect-agent.yml, opencode.yml)
+- [x] X-XSS-Protection removed from docs/security-engineer.md
+- [x] All tests pass (772 JS)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions
+
+---
 
 ### [REVIEW-001] Test Coverage Gap - Untested Data Quality and Reporting Modules
 

@@ -58,11 +58,13 @@ function aggregateByKabupaten(schools) {
 /**
  * Generate province page HTML
  * @param {string} provinceName - Province name
- * @param {Array<Object>} schools - Array of school data objects for this province
+ * @param {Array<Object>} schools - Array of school data objects
+ * @param {boolean} [skipFilter=false] - When true, skip internal filterSchoolsByProvince
+ *        (schools are assumed to be pre-filtered to this province)
  * @returns {string} - Province page HTML
  */
-function generateProvincePageHtml(provinceName, schools) {
-  const provinceSchools = filterSchoolsByProvince(schools, provinceName);
+function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
+  const provinceSchools = skipFilter ? schools : filterSchoolsByProvince(schools, provinceName);
   const provinceSlug = slugify(provinceName);
   const kabupatenList = aggregateByKabupaten(provinceSchools);
   const totalSchools = provinceSchools.length;

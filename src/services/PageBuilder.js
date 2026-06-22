@@ -137,10 +137,12 @@ function getUniqueProvinces(schools) {
 /**
  * Build province page data
  * @param {string} provinceName - Province name
- * @param {Array<Object>} schools - Array of all school data objects
+ * @param {Array<Object>} schools - Array of school data objects (all schools or pre-filtered)
+ * @param {boolean} [skipFilter=false] - When true, skip internal province filtering
+ *        (schools array is assumed to be already filtered to this province)
  * @returns {Object} - Province page data with relativePath and content
  */
-function buildProvincePageData(provinceName, schools) {
+function buildProvincePageData(provinceName, schools, skipFilter = false) {
   if (!provinceName || typeof provinceName !== 'string') {
     throw new Error('Invalid province name provided');
   }
@@ -154,8 +156,38 @@ function buildProvincePageData(provinceName, schools) {
 
   return {
     relativePath,
-    content: generateProvincePageHtml(provinceName, schools),
+    content: generateProvincePageHtml(provinceName, schools, skipFilter),
   };
+}
+
+/**
+ * Group schools by province in a single O(n) pass.
+ *
+ * Returns a Map of province name → filtered schools array.
+ * Use this to pre-group schools once and then pass pre-filtered arrays
+ * to buildProvincePageData with skipFilter=true, eliminating the
+ * per-province filterSchoolsByProvince call (O(n×p) → O(n)).
+ *
+ * @param {Array<Object>} schools - Array of all school data objects
+ * @returns {Map<string, Array<Object>>} Map of province name → schools in that province
+ */
+function groupSchoolsByProvince(schools) {
+  if (!Array.isArray(schools)) {
+    return new Map();
+  }
+
+  const grouped = new Map();
+
+  for (const school of schools) {
+    if (!school.provinsi) continue;
+
+    if (!grouped.has(school.provinsi)) {
+      grouped.set(school.provinsi, []);
+    }
+    grouped.get(school.provinsi).push(school);
+  }
+
+  return grouped;
 }
 
 module.exports = {
@@ -164,4 +196,5 @@ module.exports = {
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
+  groupSchoolsByProvince,
 };

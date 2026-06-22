@@ -25,6 +25,7 @@ const {
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
+  groupSchoolsByProvince,
 } = require('../src/services/PageBuilder');
 const { writeExternalStylesFile } = require('../src/presenters/styles');
 const {
@@ -105,6 +106,9 @@ async function loadSchools() {
 
 /**
  * Write a single school page using PageBuilder service.
+ * Circuit breaker is disabled for bulk page writes since isolated failures
+ * should not cascade and block all remaining pages. Retry+timeout still
+ * protect against transient filesystem errors.
  *
  * @param {Object} school
  * @param {Object} [enrichment] - Optional enrichment data for this school
@@ -112,27 +116,41 @@ async function loadSchools() {
 async function writeSchoolPage(school, enrichment) {
   const pageData = buildSchoolPageData(school, enrichment);
   const outputPath = path.join(distDir, pageData.relativePath);
-  await safeWriteFile(outputPath, pageData.content);
+  await safeWriteFile(outputPath, pageData.content, { useCircuitBreaker: false });
 }
 
 /**
  * Pre-create all unique directories needed for schools to reduce redundant fs.mkdir calls.
+ * Failed directories are tracked and reported — since this is a bulk operation,
+ * the build continues but downstream file writes to missing directories will fail.
  *
  * @param {Array<Object>} schools
+ * @returns {Promise<string[]>} Array of directory paths that failed to create
  */
 async function preCreateDirectories(schools) {
   const uniqueDirs = getUniqueDirectories(schools);
 
   logger.info(`Creating ${uniqueDirs.length} unique directories...`);
 
-  const dirPromises = uniqueDirs.map(dir => {
+  const failures = [];
+
+  const dirPromises = uniqueDirs.map(async dir => {
     const fullPath = path.join(distDir, dir);
-    return safeMkdir(fullPath).catch(err => {
+    try {
+      await safeMkdir(fullPath);
+    } catch (err) {
       logger.error({ err, path: fullPath }, 'Failed to create directory');
-    });
+      failures.push(fullPath);
+    }
   });
 
   await Promise.all(dirPromises);
+
+  if (failures.length > 0) {
+    logger.warn(`${failures.length} of ${uniqueDirs.length} directories failed to create`);
+  }
+
+  return failures;
 }
 
 /**
@@ -160,11 +178,15 @@ async function preCreateProvinceDirectories(schools, provinces) {
 
 /**
  * Generate all province pages.
+ * Uses province pre-grouping (O(n) single pass) to avoid redundant per-province filtering.
  *
  * @param {Array<Object>} schools
  */
 async function generateProvincePages(schools) {
+  // Pre-group schools by province in a single O(n) pass
+  const grouped = groupSchoolsByProvince(schools);
   const provinces = getUniqueProvinces(schools);
+
   await preCreateProvinceDirectories(schools, provinces);
 
   logger.info(`Generating ${provinces.length} province pages...`);
@@ -173,9 +195,11 @@ async function generateProvincePages(schools) {
     provinces,
     async province => {
       try {
-        const pageData = buildProvincePageData(province.name, schools);
+        // Use pre-filtered schools with skipFilter=true to avoid redundant filtering
+        const provinceSchools = grouped.get(province.name) || [];
+        const pageData = buildProvincePageData(province.name, provinceSchools, true);
         const outputPath = path.join(distDir, pageData.relativePath);
-        await safeWriteFile(outputPath, pageData.content);
+        await safeWriteFile(outputPath, pageData.content, { useCircuitBreaker: false });
         return { success: true, name: province.name };
       } catch (err) {
         logger.error({ err, province: province.name }, 'Failed to generate province page');
