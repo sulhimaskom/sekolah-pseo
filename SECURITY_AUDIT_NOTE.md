@@ -67,12 +67,13 @@ Comprehensive security audit of the Indonesian School PSEO project (static site 
 
 ### CI/CD Security
 
-- ✅ GITHUB_TOKEN: auto-provided, minimal scope (all workflows now use `secrets.GITHUB_TOKEN`)
-- ✅ Overly permissive `id-token: write` removed from all 5 non-OIDC workflows
-- ✅ Overly permissive `actions: write` removed from all non-merge workflows
-- ✅ Duplicate `API_KEY` → `GEMINI_API_KEY` mapping removed (5 occurrences across 2 workflows)
-- ✅ Misconfigured `VITE_SUPABASE_ANON_KEY` → `VITE_SUPABASE_KEY` mapping removed
+- ✅ GITHUB_TOKEN: auto-provisioned, minimal scope (all workflows now use `secrets.GITHUB_TOKEN`)
+- ✅ Overly permissive `id-token: write` removed from all 5 non-OIDC workflows (parallel.yml, orchestrator.yml, architect-agent.yml, opencode.yml, on-pull.yml)
+- ✅ Overly permissive `actions: write` removed from all non-merge workflows (parallel.yml, orchestrator.yml, architect-agent.yml, opencode.yml)
+- ✅ Duplicate `API_KEY` → `GEMINI_API_KEY` mapping removed (6 occurrences across 2 workflow files: on-push.yml + parallel.yml)
+- ✅ Misconfigured `VITE_SUPABASE_ANON_KEY` → `VITE_SUPABASE_KEY` mapping removed from on-push.yml
 - ✅ `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in orchestrator.yml and architect-agent.yml
+- ✅ `docs/security-engineer.md` — Removed deprecated `X-XSS-Protection` reference
 - ⚠️ `on-push.yml` still exposes secrets on every push (by design for AI automation)
 - ✅ No secrets in code or logs
 
