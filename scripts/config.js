@@ -50,7 +50,9 @@ const CONFIG = {
   SITE_URL: (() => {
     const url = process.env.SITE_URL || 'https://example.com';
     if (url === 'https://example.com' && !process.env.SITE_URL) {
-      logger.warn('SITE_URL is set to default placeholder "https://example.com". Set SITE_URL env var for production deployment.');
+      logger.warn(
+        'SITE_URL is set to default placeholder "https://example.com". Set SITE_URL env var for production deployment.'
+      );
     }
     return url;
   })(),

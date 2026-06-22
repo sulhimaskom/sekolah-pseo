@@ -2882,7 +2882,6 @@ await writeExternalStylesFile('/dist');
 
 ---
 
-
 ## Logger Module (`scripts/logger.js`)
 
 ### Purpose

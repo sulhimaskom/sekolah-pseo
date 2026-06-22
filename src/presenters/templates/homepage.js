@@ -62,15 +62,15 @@ function prepareSchoolDataForSearch(schools) {
     // Flat array format eliminates per-object key overhead (~39 bytes/school saved)
     // Client-side code converts back to named properties after loading
     return [
-      school.npsn || '',                  // [0] n (npsn)
-      school.nama || '',                   // [1] a (nama)
-      school.bentuk_pendidikan || '',      // [2] b (bentuk_pendidikan)
-      school.status || '',                 // [3] s (status)
-      school.alamat || '',                 // [4] al (alamat)
-      school.kecamatan || '',              // [5] kc (kecamatan)
-      school.kab_kota || '',               // [6] kk (kab_kota)
-      school.provinsi || '',               // [7] p (provinsi)
-      '/' + relPath,                       // [8] u (schoolUrl)
+      school.npsn || '', // [0] n (npsn)
+      school.nama || '', // [1] a (nama)
+      school.bentuk_pendidikan || '', // [2] b (bentuk_pendidikan)
+      school.status || '', // [3] s (status)
+      school.alamat || '', // [4] al (alamat)
+      school.kecamatan || '', // [5] kc (kecamatan)
+      school.kab_kota || '', // [6] kk (kab_kota)
+      school.provinsi || '', // [7] p (provinsi)
+      '/' + relPath, // [8] u (schoolUrl)
     ];
   });
 }

@@ -132,6 +132,86 @@ Optimized the schools.json search payload by converting from object array to fla
 
 ---
 
+### [TASK-040] Code Sanitization - Prettier Formatting Fix and Stale Sample File Removal
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive code sanitization pass across the entire codebase. Fixed Prettier formatting inconsistencies in 5 files, removed stale duplicate `raw.csv.sample` file, and verified build, lint, and all tests pass with zero regressions.
+
+### Diagnosis Results
+
+| Check | Result |
+|-------|--------|
+| Build | ✅ 3474 pages, 0 failed, 989ms |
+| ESLint | ✅ 0 errors, 0 warnings |
+| Prettier | ✅ All files formatted (5 fixed) |
+| JS Tests | ✅ 772/772 pass |
+| Python Tests | ✅ 27/27 pass |
+| npm audit | ✅ 0 vulnerabilities |
+| Empty catch blocks | ✅ None found |
+| `@ts-ignore` / `as any` | ✅ None found |
+| `eslint-disable` directives | ✅ None found |
+| TODO/FIXME/HACK in source | ✅ None found |
+| Dead/unused files | ✅ 1 stale file removed |
+| Hardcoded secrets | ✅ None found |
+| Hardcoded paths/URLs | ✅ All in config with `.env` overrides |
+| Magic numbers | ✅ All bounded via config or self-documenting |
+| .env.example completeness | ✅ Matches config defaults (5 vars) |
+
+### Actions Taken
+
+1. **Fixed Prettier formatting** in 5 files:
+   - `scripts/config.js` — Formatting inconsistencies
+   - `src/presenters/templates/homepage.js` — Formatting inconsistencies
+   - `docs/api.md` — Formatting inconsistencies
+   - `docs/task.md` — Formatting inconsistencies
+   - `docs/audit-report-2026-06-22.md` — Formatting inconsistencies
+   - All now pass `npm run format:check` clean
+
+2. **Removed stale duplicate file** (`external/raw.csv.sample`):
+   - File was identical to `external/raw.csv` (same content, 304 bytes)
+   - Zero references anywhere in code, tests, or documentation
+   - README.md already documents the expected CSV format
+   - Removing eliminates confusion about which file is authoritative
+
+### Files Deleted
+
+- `external/raw.csv.sample` — Stale duplicate of `external/raw.csv`, zero references
+
+### Files Modified
+
+- `scripts/config.js` — Prettier formatting
+- `src/presenters/templates/homepage.js` — Prettier formatting
+- `docs/api.md` — Prettier formatting
+- `docs/task.md` — Prettier formatting
+- `docs/audit-report-2026-06-22.md` — Prettier formatting
+
+### Verification
+
+- Build: 3474 pages, 0 failed, 989ms ✓
+- ESLint: 0 errors ✓
+- Prettier: All files formatted ✓
+- JS Tests: 772/772 pass ✓
+- Python Tests: 27/27 pass ✓
+- npm audit: 0 vulnerabilities ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] Prettier formatting fixed for all 5 flagged files
+- [x] All matched files use Prettier code style (format:check passes)
+- [x] Stale duplicate file removed (raw.csv.sample — zero references)
+- [x] Build passes (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] All tests pass (772 JS + 27 Python)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-037] Performance Optimization - schools.json.gz Pre-compression and Province Page Pre-grouping
 
 **Status**: Complete
@@ -2486,17 +2566,17 @@ Conducted comprehensive CI/CD pipeline health check and environment synchronizat
 
 ### Verification
 
-| Check | Result |
-|---|---|
-| Format check | ✅ All files Prettier clean |
-| Lint | ✅ 0 errors |
-| JS Tests | ✅ 772/772 pass |
-| Python Tests | ✅ 27/27 pass |
-| Build | ✅ 3474 pages, 0 failed |
-| Sitemap | ✅ 3476 URLs |
-| npm audit | ✅ 0 vulnerabilities |
-| Git merge main | ✅ Clean merge |
-| Working tree | ✅ Changes committed |
+| Check          | Result                      |
+| -------------- | --------------------------- |
+| Format check   | ✅ All files Prettier clean |
+| Lint           | ✅ 0 errors                 |
+| JS Tests       | ✅ 772/772 pass             |
+| Python Tests   | ✅ 27/27 pass               |
+| Build          | ✅ 3474 pages, 0 failed     |
+| Sitemap        | ✅ 3476 URLs                |
+| npm audit      | ✅ 0 vulnerabilities        |
+| Git merge main | ✅ Clean merge              |
+| Working tree   | ✅ Changes committed        |
 
 ### Acceptance Criteria
 
