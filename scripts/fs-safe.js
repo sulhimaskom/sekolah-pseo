@@ -49,55 +49,57 @@ function createFsSafe(options = {}) {
   }
 
   function safeReadFile(filePath, fileOptions = {}) {
-    return fileReadCircuitBreaker
-      .execute(
+    const useCircuitBreaker = fileOptions.useCircuitBreaker !== false; // default true
+
+    const executeOp = () =>
+      retry(
         () =>
-          retry(
-            () =>
-              withTimeout(
-                fs.readFile(filePath, fileOptions.encoding || 'utf8'),
-                fileOptions.timeoutMs || fileTimeoutMs,
-                `readFile: ${filePath}`
-              ),
-            { maxAttempts: fileOptions.maxAttempts || 3 }
+          withTimeout(
+            fs.readFile(filePath, fileOptions.encoding || 'utf8'),
+            fileOptions.timeoutMs || fileTimeoutMs,
+            `readFile: ${filePath}`
           ),
-        `readFile: ${filePath}`
-      )
-      .catch(error => {
-        throw new IntegrationError(`Failed to read file ${filePath}`, ERROR_CODES.FILE_READ_ERROR, {
-          filePath,
-          originalError: error.message,
-          circuitBreakerState: fileReadCircuitBreaker.getState(),
-        });
+        { maxAttempts: fileOptions.maxAttempts || 3 }
+      );
+
+    const promise = useCircuitBreaker
+      ? fileReadCircuitBreaker.execute(executeOp, `readFile: ${filePath}`)
+      : executeOp();
+
+    return promise.catch(error => {
+      throw new IntegrationError(`Failed to read file ${filePath}`, ERROR_CODES.FILE_READ_ERROR, {
+        filePath,
+        originalError: error.message,
+        circuitBreakerState: fileReadCircuitBreaker.getState(),
       });
+    });
   }
 
   function safeWriteFile(filePath, data, fileOptions = {}) {
-    return fileWriteCircuitBreaker
-      .execute(
+    const useCircuitBreaker = fileOptions.useCircuitBreaker !== false; // default true for backward compat
+
+    const executeOp = () =>
+      retry(
         () =>
-          retry(
-            () =>
-              withTimeout(
-                fs.writeFile(filePath, data, fileOptions.encoding || 'utf8'),
-                fileOptions.timeoutMs || fileTimeoutMs,
-                `writeFile: ${filePath}`
-              ),
-            { maxAttempts: fileOptions.maxAttempts || 3 }
+          withTimeout(
+            fs.writeFile(filePath, data, fileOptions.encoding || 'utf8'),
+            fileOptions.timeoutMs || fileTimeoutMs,
+            `writeFile: ${filePath}`
           ),
-        `writeFile: ${filePath}`
-      )
-      .catch(error => {
-        throw new IntegrationError(
-          `Failed to write file ${filePath}`,
-          ERROR_CODES.FILE_WRITE_ERROR,
-          {
-            filePath,
-            originalError: error.message,
-            circuitBreakerState: fileWriteCircuitBreaker.getState(),
-          }
-        );
+        { maxAttempts: fileOptions.maxAttempts || 3 }
+      );
+
+    const promise = useCircuitBreaker
+      ? fileWriteCircuitBreaker.execute(executeOp, `writeFile: ${filePath}`)
+      : executeOp();
+
+    return promise.catch(error => {
+      throw new IntegrationError(`Failed to write file ${filePath}`, ERROR_CODES.FILE_WRITE_ERROR, {
+        filePath,
+        originalError: error.message,
+        circuitBreakerState: fileWriteCircuitBreaker.getState(),
       });
+    });
   }
 
   function safeMkdir(dirPath, fileOptions = {}) {
