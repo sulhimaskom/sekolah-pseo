@@ -147,11 +147,55 @@
 
 ---
 
-## Next Steps (Phase 2)
+## Phase 2 Actions Completed
 
-Highest-impact improvements to pursue in Phase 2:
+| Action | Result |
+|--------|--------|
+| Fix flaky test (`build-pages.test.js`) | PR #445 merged. `waitForFile` retries: 5×100ms → 10×200ms |
+| Audit report | Saved to `docs/audit-report-2026-06-28.md` |
+| Roadmap update | FEAT-004 marked as IMPLEMENTED |
 
-1. **Fix flaky test** — Increase retry parameters in `build-pages.test.js`
-2. **Add release process** — Document and automate versioning
-3. **Split utils.js** — Improve modularity
-4. **Simplify CI** — Add fast gate checks
+---
+
+## Phase 3: Strategic Expansion Proposal — FEAT-005: School Comparison Tool
+
+### User Story
+**As a** parent or student researching schools,
+**I want to** compare up to 3 schools side-by-side,
+**So that** I can make an informed decision about which school best meets my needs.
+
+### Acceptance Criteria
+1. User can select up to 3 schools from search results via a "Compare" checkbox
+2. A "Compare" button appears when ≥2 schools are selected
+3. Comparison view shows schools side-by-side in a table/grid layout
+4. Comparison includes: NPSN, name, status, education level, address, coordinates (if available)
+5. User can remove a school from comparison and replace it
+6. Comparison view is printable (CSS `@media print`)
+7. Works on mobile (responsive table with horizontal scroll)
+8. Shareable comparison URL via query parameters (`?compare=npsn1,npsn2`)
+
+### Out of Scope
+- Star ratings or user reviews (FEAT-008)
+- PDF export (future enhancement)
+- More than 3 schools comparison
+
+### Value Justification
+- **User-facing value**: Addresses a core user need — school selection requires comparison
+- **Technical fit**: All school data is already loaded client-side (`schools.json`). No backend changes needed.
+- **Implementation scope**: Pure frontend JavaScript in `homepage.js`. Low risk, high impact.
+- **Roadmap alignment**: Already documented as FEAT-005 in `docs/roadmap.md`
+
+### Technical Notes
+- Leverages existing `schools.json` payload already loaded at build time
+- Compare state managed via URL `?compare=npsn1,npsn2` for shareability
+- No new data pipeline or build steps required
+- Estimated implementation: ~150-200 lines in `homepage.js` + comparison CSS in `styles.js`
+
+---
+
+## Next Steps
+
+1. Implement FEAT-005 Comparison Tool (estimated ~200 LOC in homepage.js + styles.js)
+2. Add release process automation (versioning + CI release workflow)
+3. Split `scripts/utils.js` into domain-specific modules
+4. Consolidate CI workflows for faster feedback

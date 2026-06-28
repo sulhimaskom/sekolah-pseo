@@ -41,10 +41,11 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
   - ✅ Mobile-optimized search interface
   - Implemented in commit `46e2b0b` (2026-06-08)
 
-- **[FEAT-004] Advanced Filtering**
-  - Filter by education level (SD/SMP/SMA/SMK)
-  - Filter by status (Negeri/Swasta)
-  - Combined search + filter interface
+- ✅ **[FEAT-004] Advanced Filtering (IMPLEMENTED)**
+  - ✅ Filter by education level (SD/SMP/SMA/SMK)
+  - ✅ Filter by status (Negeri/Swasta)
+  - ✅ Combined search + filter interface
+  - Implemented across commits `037b2b7` and `46e2b0b` (2026-06-08)
 
 - **[FEAT-005] Comparison Tool**
   - Compare up to 3 schools side-by-side
