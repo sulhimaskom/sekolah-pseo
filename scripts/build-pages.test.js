@@ -287,7 +287,10 @@ test('build creates dist directory and generates files', async () => {
   // filesystem delays under parallel CI I/O load (parallel test workers
   // sharing the same disk can cause fs.access to not immediately see
   // files after fs.writeFile resolves).
-  async function waitForFile(filePath, maxRetries = 5, delayMs = 100) {
+  // Increased from 5 retries × 100ms to 10 retries × 200ms per audit
+  // finding CQ-01 (2026-06-28): the previous values caused 1/772 flaky
+  // failures under extreme CI I/O contention.
+  async function waitForFile(filePath, maxRetries = 10, delayMs = 200) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const exists = await fs
         .access(filePath)
