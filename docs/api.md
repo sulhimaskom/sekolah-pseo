@@ -1688,14 +1688,15 @@ const provinces = getUniqueProvinces(schools);
 
 ---
 
-#### `buildProvincePageData(provinceName, schools)`
+#### `buildProvincePageData(provinceName, schools, skipFilter)`
 
 Builds province page data with path and HTML content.
 
 **Parameters:**
 
 - `provinceName` (string): Province name
-- `schools` (Array<Object>): Array of all school data objects
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, passes through to `generateProvincePageHtml` to skip internal province filtering. Defaults to `false` for backward compatibility.
 
 **Returns:** `Object`
 
@@ -1721,12 +1722,12 @@ Builds province page data with path and HTML content.
 **Usage:**
 
 ```javascript
+// Default: pass all schools, internal filtering applied
 const pageData = buildProvincePageData('DKI Jakarta', schools);
-// Returns:
-// {
-//   relativePath: 'provinsi/dki-jakarta/index.html',
-//   content: '<!DOCTYPE html>...'
-// }
+
+// Optimized: pass pre-filtered schools via groupSchoolsByProvince
+const grouped = groupSchoolsByProvince(schools);
+const pageData2 = buildProvincePageData('DKI Jakarta', grouped.get('DKI Jakarta'), true);
 ```
 
 ---
@@ -2083,14 +2084,15 @@ module.exports = {
 
 ### Functions
 
-#### `generateProvincePageHtml(provinceName, schools)`
+#### `generateProvincePageHtml(provinceName, schools, skipFilter)`
 
 Generates complete HTML page for a specific province with kabupaten/kota navigation.
 
 **Parameters:**
 
 - `provinceName` (string): Province name to generate page for
-- `schools` (Array<Object>): Array of all school data objects
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, skips internal `filterSchoolsByProvince` call (schools array is assumed to be pre-filtered for this province). Defaults to `false` for backward compatibility.
 
 **Returns:** `string` - Complete HTML document
 
@@ -2106,8 +2108,13 @@ Generates complete HTML page for a specific province with kabupaten/kota navigat
 
 ```javascript
 const { generateProvincePageHtml } = require('./templates/province-page');
+
+// Default: pass all schools, function filters internally
 const html = generateProvincePageHtml('DKI Jakarta', schools);
-// Returns: '<!DOCTYPE html>\n<html lang="id">...'
+
+// Optimized: pass pre-filtered schools, skip redundant filtering
+const grouped = groupSchoolsByProvince(schools);
+const html2 = generateProvincePageHtml('DKI Jakarta', grouped.get('DKI Jakarta'), true);
 ```
 
 ---
@@ -2237,13 +2244,14 @@ console.log(`Loaded ${schools.length} schools`);
 
 ---
 
-#### `writeSchoolPage(school)`
+#### `writeSchoolPage(school, enrichment)`
 
 Writes a single school page to the file system.
 
 **Parameters:**
 
 - `school` (Object): School data object with required fields
+- `enrichment` (Object|null, optional): Optional enrichment data for this school (e.g., Wikipedia extract, accreditation info). Pass `null` or omit when no enrichment is available.
 
 **Returns:** `Promise<void>`
 
@@ -2262,12 +2270,18 @@ Writes a single school page to the file system.
 **Usage:**
 
 ```javascript
+// Without enrichment
 await writeSchoolPage({
   provinsi: 'DKI Jakarta',
   kab_kota: 'Jakarta Pusat',
   kecamatan: 'Menteng',
   npsn: '12345678',
   nama: 'SMA Negeri 1 Jakarta',
+});
+
+// With enrichment data
+await writeSchoolPage(school, {
+  wikipedia: { title: 'SMA Negeri 1 Jakarta', extract: '...', url: '...' },
 });
 ```
 
@@ -2352,7 +2366,8 @@ Generates a searchable JSON data file (`schools.json`) from school records for c
 
 ```javascript
 await writeSearchDataFile(schools);
-// Creates: dist/schools.json (~1.1 MB for 3474 schools)
+// Creates: dist/schools.json (~877 KB for 3474 schools, flat array format)
+// Also creates: dist/schools.json.gz (~125 KB) for gzip_static servers
 ```
 
 ---
@@ -2410,7 +2425,7 @@ console.log(`Generated ${successful} province pages`);
 
 ---
 
-#### `writeSchoolPagesConcurrently(schools, concurrencyLimit)`
+#### `writeSchoolPagesConcurrently(schools, concurrencyLimit, enrichmentMap)`
 
 Writes multiple school pages concurrently with controlled concurrency using `processConcurrently`.
 
@@ -2418,6 +2433,7 @@ Writes multiple school pages concurrently with controlled concurrency using `pro
 
 - `schools` (Array<Object>): Array of school objects
 - `concurrencyLimit` (number, optional): Max concurrent operations (default: `CONFIG.BUILD_CONCURRENCY_LIMIT`)
+- `enrichmentMap` (Map<string, Object>|null, optional): Map of NPSN → enrichment data for each school. Pass `null` or omit when no enrichment data is available.
 
 **Returns:** `Promise<Object>`
 
@@ -2444,8 +2460,12 @@ Writes multiple school pages concurrently with controlled concurrency using `pro
 **Usage:**
 
 ```javascript
+// Without enrichment
 const { successful, failed } = await writeSchoolPagesConcurrently(schools, 100);
 console.log(`Generated ${successful} pages (${failed} failed)`);
+
+// With enrichment map
+const { successful, failed } = await writeSchoolPagesConcurrently(schools, 100, enrichmentMap);
 ```
 
 ---
