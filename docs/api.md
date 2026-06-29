@@ -13,6 +13,7 @@ scripts/           # Controllers and utilities
 ├── resilience.js  # Resilience patterns
 ├── fs-safe.js     # Resilient file system wrappers
 ├── rate-limiter.js # Rate limiting for concurrent operations
+├── data-schema.js # Centralized data schema definition
 ├── slugify.js     # URL slug generation
 ├── etl.js         # ETL operations
 ├── build-pages.js # Page build controller
@@ -91,6 +92,335 @@ Validates that `targetPath` is within `basePath` to prevent path traversal attac
 const isValid = validatePath('/project/data/file.csv', '/project');
 // Returns: true
 ```
+
+---
+
+## Data Schema Module (`scripts/data-schema.js`)
+
+### Purpose
+
+Centralized data schema definition that serves as the single source of truth for the school dataset. Provides field definitions with types, constraints, allowed values, raw field name mappings, and validation functions.
+
+### Exports
+
+```javascript
+module.exports = {
+  SCHEMA_VERSION, // Schema version string
+  INDONESIA_BOUNDS, // Geographic bounding box
+  ALLOWED_VALUES, // Categorical field allowed values
+  FIELDS, // All field definitions
+  CSV_FIELD_ORDER, // Canonical CSV column order
+  REQUIRED_FIELDS, // Required field names
+  isNonEmpty, // Value emptiness check
+  isValidCoordinate, // Coordinate bounds check
+  isValidCategoricalValue, // Categorical value check
+  matchesPattern, // Regex pattern matcher
+  validateRecord, // Full record validator
+  validateCoordinates, // Coordinate validator
+  checkCoordinateQuality, // Coordinate quality assessment
+  mapRawField, // Raw field name mapper
+  getSchemaInfo, // Schema metadata getter
+};
+```
+
+### Constants
+
+#### `SCHEMA_VERSION`
+
+- **Type:** `string`
+- **Value:** `'1.0'`
+- **Description:** Schema version identifier for forward-compatible schema evolution.
+
+#### `INDONESIA_BOUNDS`
+
+- **Type:** `Object`
+- **Properties:**
+  - `LAT_MIN` (number): `-11` — Minimum Indonesia latitude
+  - `LAT_MAX` (number): `6` — Maximum Indonesia latitude
+  - `LON_MIN` (number): `95` — Minimum Indonesia longitude
+  - `LON_MAX` (number): `141` — Maximum Indonesia longitude
+- **Description:** Geographic bounding box for Indonesia coordinate validation.
+
+#### `ALLOWED_VALUES`
+
+- **Type:** `Object<string, string[]>`
+- **Properties:**
+  - `status`: `['N', 'S']` — Negeri (Public) or Swasta (Private)
+  - `bentuk_pendidikan`: `['SD', 'SMP', 'SMA', 'SMK', 'SLB', 'SDLB', 'SMLB', 'SMPLB']`
+- **Description:** Allowed categorical values per field, used for validation at the ETL boundary.
+
+#### `FIELDS`
+
+- **Type:** `Object<string, Object>`
+- **Description:** Registry of all 12 field definitions. Each entry contains:
+  - `type` (string): Data type (`'string'`)
+  - `required` (boolean): Whether the field is mandatory
+  - `description` (string): Human-readable description
+  - `allowedValues` (string[]|undefined): Categorical constraints (only for categorical fields)
+  - `pattern` (RegExp|undefined): Validation regex pattern
+  - `min`/`max` (number|undefined): Numerical bounds (for lat/lon)
+  - `rawMappings` (string[]): Raw CSV column name aliases for ETL normalisation
+
+**Fields:**
+
+| Field               | Required | Type   | Constraints                                        |
+| ------------------- | -------- | ------ | -------------------------------------------------- |
+| `npsn`              | yes      | string | Must be numeric (`/^\d+$/`)                        |
+| `nama`              | yes      | string | —                                                  |
+| `bentuk_pendidikan` | yes      | string | Allowed: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB |
+| `status`            | no       | string | Allowed: N, S                                      |
+| `alamat`            | no       | string | —                                                  |
+| `kelurahan`         | no       | string | —                                                  |
+| `kecamatan`         | yes      | string | —                                                  |
+| `kab_kota`          | yes      | string | —                                                  |
+| `provinsi`          | yes      | string | —                                                  |
+| `lat`               | no       | string | -11 to 6 (Indonesia bounds)                        |
+| `lon`               | no       | string | 95 to 141 (Indonesia bounds)                       |
+| `updated_at`        | no       | string | ISO date (YYYY-MM-DD)                              |
+
+#### `CSV_FIELD_ORDER`
+
+- **Type:** `string[]`
+- **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat', 'kelurahan', 'kecamatan', 'kab_kota', 'provinsi', 'lat', 'lon', 'updated_at']`
+- **Description:** Canonical column order for CSV output files (e.g., `data/schools.csv`).
+
+#### `REQUIRED_FIELDS`
+
+- **Type:** `string[]`
+- **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan']`
+- **Description:** Fields that must be non-empty for a valid school record.
+
+### Functions
+
+#### `isNonEmpty(value)`
+
+Checks if a value is non-empty.
+
+**Parameters:**
+
+- `value` (*): Value to check
+
+**Returns:** `boolean` — `true` if value is not null, not undefined, and (if string) not empty after trimming
+
+**Error Handling:** N/A (returns boolean)
+
+**Usage:**
+
+```javascript
+isNonEmpty(null); // false
+isNonEmpty(''); // false
+isNonEmpty('text'); // true
+```
+
+#### `matchesPattern(value, pattern)`
+
+Validates that a string matches a regex pattern.
+
+**Parameters:**
+
+- `value` (string): String to test
+- `pattern` (RegExp): Regex pattern
+
+**Returns:** `boolean` — `true` if value matches pattern after trimming
+
+**Error Handling:** Returns `false` for non-string input (no throw)
+
+**Usage:**
+
+```javascript
+matchesPattern('12345', /^\d+$/); // true
+matchesPattern('abc', /^\d+$/); // false
+```
+
+#### `isValidCoordinate(value, min, max)`
+
+Validates a coordinate value is within specified numeric bounds.
+
+**Parameters:**
+
+- `value` (string|number): Coordinate value
+- `min` (number): Minimum bound (inclusive)
+- `max` (number): Maximum bound (inclusive)
+
+**Returns:** `boolean` — `true` if value is a non-zero number within [min, max]
+
+**Error Handling:** Returns `false` for null, undefined, NaN, or zero values
+
+**Usage:**
+
+```javascript
+isValidCoordinate('-6.2', -11, 6); // true
+isValidCoordinate('0', -11, 6); // false (zero = unset)
+isValidCoordinate('100', 95, 141); // false (out of bounds)
+```
+
+#### `isValidCategoricalValue(field, value)`
+
+Checks if a value is in the allowed list for a categorical field.
+
+**Parameters:**
+
+- `field` (string): Canonical field name
+- `value` (string): Value to validate
+
+**Returns:** `boolean`
+
+- Returns `true` if the field is not categorical (free-text pass-through)
+- Returns `true` if value is in the allowed list
+- Returns `false` for null/undefined values on categorical fields
+
+**Error Handling:** Returns `true` for non-categorical fields — no throw
+
+**Usage:**
+
+```javascript
+isValidCategoricalValue('status', 'N'); // true
+isValidCategoricalValue('status', 'X'); // false
+isValidCategoricalValue('nama', 'SMA Negeri 1'); // true (free-text field)
+```
+
+#### `validateRecord(record)`
+
+Validates a normalized school record against the schema. Checks required fields, regex patterns, and categorical values.
+
+**Parameters:**
+
+- `record` (Object): Normalized school record
+
+**Returns:** `string[]` — Array of error messages (empty array means record is valid)
+
+**Error Handling:**
+
+- Non-object/null/array input → returns `['Record must be a non-null object']`
+- Missing required fields → returns descriptive error per field
+- Pattern violations → returns format-specific message
+- Invalid categorical values → returns allowed values in message
+
+**Usage:**
+
+```javascript
+const errors = validateRecord({ npsn: '123', nama: 'SDN 1', ... });
+if (errors.length > 0) {
+  errors.forEach(e => console.error(e));
+}
+```
+
+#### `validateCoordinates(record)`
+
+Validates lat/lon fields for a record against Indonesia geographic bounds.
+
+**Parameters:**
+
+- `record` (Object): School record with `lat` and/or `lon` fields
+
+**Returns:** `Object`
+
+```javascript
+{
+  lat: { valid: boolean, error?: string },
+  lon: { valid: boolean, error?: string }
+}
+```
+
+**Error Handling:** Returns `{ valid: true }` for each field if the value is empty or valid. Returns error with bounds range for out-of-range values.
+
+**Usage:**
+
+```javascript
+validateCoordinates({ lat: '-6.2', lon: '106.8' });
+// { lat: { valid: true }, lon: { valid: true } }
+
+validateCoordinates({ lat: '100', lon: '200' });
+// { lat: { valid: false, error: 'Latitude "100" outside Indonesia bounds [-11, 6]' },
+//   lon: { valid: false, error: 'Longitude "200" outside Indonesia bounds [95, 141]' } }
+```
+
+#### `checkCoordinateQuality(record)`
+
+Returns an aggregate quality assessment for coordinate data.
+
+**Parameters:**
+
+- `record` (Object): School record
+
+**Returns:** `Object`
+
+```javascript
+{ hasData: boolean, isValid: boolean }
+```
+
+- `hasData`: `true` if either `lat` or `lon` is non-empty
+- `isValid`: `true` if all present coordinates are within Indonesia bounds
+
+**Usage:**
+
+```javascript
+checkCoordinateQuality({}); // { hasData: false, isValid: false }
+checkCoordinateQuality({ lat: '-6.2', lon: '106.8' }); // { hasData: true, isValid: true }
+```
+
+#### `mapRawField(raw, fieldName)`
+
+Maps a raw input field value to a canonical field name by trying each raw mapping in order.
+
+**Parameters:**
+
+- `raw` (Object): Raw input record from CSV parsing
+- `fieldName` (string): Canonical field name from `FIELDS`
+
+**Returns:** `string` — First non-empty value found from raw mappings, or `''` if none found
+
+**Dependencies:**
+
+- `FIELDS` — reads the field's `rawMappings` array
+
+**Usage:**
+
+```javascript
+mapRawField({ NPSN: '123', latitude: '-6.2' }, 'npsn'); // '123'
+mapRawField({ nama: 'SDN 1' }, 'npsn'); // '' (no matching raw field)
+mapRawField({ alamat_jalan: 'Jl. Merdeka' }, 'alamat'); // 'Jl. Merdeka'
+```
+
+#### `getSchemaInfo()`
+
+Returns schema metadata in a serializable format for documentation and reporting.
+
+**Parameters:** None
+
+**Returns:** `Object`
+
+```javascript
+{
+  version: string,            // SCHEMA_VERSION
+  fields: Array<{             // All field definitions
+    name, type, required, description, allowedValues, constraints
+  }>,
+  csvFieldOrder: string[],    // CSV_FIELD_ORDER
+  requiredFields: string[],   // REQUIRED_FIELDS
+  indonesiaBounds: Object,    // INDONESIA_BOUNDS copy
+}
+```
+
+**Usage:**
+
+```javascript
+const info = getSchemaInfo();
+console.log(info.version); // '1.0'
+console.log(info.fields.length); // 12
+```
+
+### Dependencies
+
+None — this is a standalone module. It is consumed by:
+
+- `scripts/etl.js` — Uses `mapRawField`, `validateRecord` for ETL pipeline validation and field normalisation
+- `scripts/data-quality.js` — Uses `REQUIRED_FIELDS`, `INDONESIA_BOUNDS`, `isNonEmpty`, `isValidCoordinate`
+
+### Source
+
+- `scripts/data-schema.js` (392 lines)
+- `scripts/data-schema.test.js` (33 tests)
 
 ---
 

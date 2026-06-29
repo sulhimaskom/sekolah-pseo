@@ -6480,3 +6480,64 @@ Additionally, the homepage lazy-loads `schools.json` (877KB / 128KB gzipped) via
 - [x] Generated HTML output is correct across all page types
 - [x] Performance budgets met
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-049] API Documentation - Data Schema Module API Contract
+
+**Status**: Complete
+**Agent**: Senior Integration Engineer (Sisyphus)
+
+### Description
+
+Added missing API documentation for `scripts/data-schema.js` — the centralized data schema module created in TASK-047 was the only module without an API contract in `docs/api.md`. The blueprint requires that all internal modules have documented API contracts in `docs/api.md`.
+
+### Changes Made
+
+**1. Updated `docs/api.md` — Module Organization**:
+
+- Added `data-schema.js` to the scripts directory listing (between `rate-limiter.js` and `slugify.js`)
+
+**2. Added Data Schema Module section to `docs/api.md`**:
+
+- **Purpose**: Documents the module as the single source of truth for school data schema
+- **Exports**: All 15 exports documented with types and descriptions
+- **Constants**: SCHEMA_VERSION, INDONESIA_BOUNDS (with Indonesia geographic bounds), ALLOWED_VALUES (status N/S, education levels), FIELDS (12 field definitions with types/constraints/allowed values), CSV_FIELD_ORDER, REQUIRED_FIELDS
+- **Functions**: 9 functions documented with signatures, parameters, return types, error handling, and usage examples:
+  - `isNonEmpty()` — value emptiness check
+  - `matchesPattern()` — regex pattern matching
+  - `isValidCoordinate()` — coordinate bounds validation
+  - `isValidCategoricalValue()` — allowed categorical value check
+  - `validateRecord()` — full record validation (required fields, patterns, categorical values)
+  - `validateCoordinates()` — lat/lon validation with bounds
+  - `checkCoordinateQuality()` — aggregate coordinate quality assessment
+  - `mapRawField()` — raw CSV field name canonicalisation
+  - `getSchemaInfo()` — serializable schema metadata
+- **Dependencies**: Documented as standalone module consumed by etl.js and data-quality.js
+
+### Files Modified
+
+- `docs/api.md` — Added Data Schema Module section (~300 lines) covering all 15 exports, 6 constants, 9 functions with signatures, parameters, return types, error handling, and usage examples; updated Module Organization listing
+- `docs/task.md` — This entry
+
+### Verification
+
+| Check            | Result                             |
+| ---------------- | ---------------------------------- |
+| JS Tests         | 875/875 pass                       |
+| ESLint           | 0 errors (3 pre-existing warnings) |
+| Prettier         | All files formatted                |
+| Zero regressions | Confirmed (documentation only)     |
+
+### Acceptance Criteria
+
+- [x] data-schema.js module organization entry added to docs/api.md
+- [x] All 15 exports documented with types and descriptions
+- [x] All 6 constants documented (SCHEMA_VERSION, INDONESIA_BOUNDS, ALLOWED_VALUES, FIELDS, CSV_FIELD_ORDER, REQUIRED_FIELDS)
+- [x] All 9 functions documented with signatures, parameters, return types, and usage examples
+- [x] Function error handling documented per function
+- [x] Module dependencies documented
+- [x] All 875 JS tests pass
+- [x] Lint passes (0 errors)
+- [x] Prettier format check passes
+- [x] Zero regressions (documentation-only change)
