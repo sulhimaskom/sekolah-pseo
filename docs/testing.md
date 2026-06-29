@@ -65,6 +65,7 @@ Located in `scripts/*.test.js`:
 - `build-performance.test.js` - Build performance tests
 - `freshness-report.test.js` - Freshness report tests
 - `data-quality.test.js` - Data quality tests
+- `data-schema.test.js` - Data schema validation tests
 
 ### Python Tests
 
@@ -200,7 +201,7 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 25 test files, 842 test cases
+- JavaScript: 26 test files, 875 test cases
 - Python: 27 test cases (standalone runner)
 - Total: 100% pass rate
 

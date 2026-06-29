@@ -6632,16 +6632,19 @@ Performed routine CI health maintenance: resolved 3 lingering ESLint warnings fr
 ### Changes Made
 
 **1. Fixed ESLint coverage warnings** (`eslint.config.js`):
+
 - Added global `ignores: ['coverage/**']` pattern as first config entry
 - Previously, `coverage/**` was added inside a `files`-scoped ignores block which ESLint flat config doesn't treat as a global ignore
 - Resolves 3 "Unused eslint-disable directive" warnings from `coverage/lcov-report/*.js` files
 
 **2. Installed Python test dependencies**:
+
 - `pytest` (test runner)
 - `pytest-cov`, `pytest-html`, `pytest-json-report` (plugins)
 - Enables `npm run test:py:pytest` and `npm run test:all` without manual pip install
 
 **3. Known Regression Note** — Workflow file secrets remain:
+
 - `.github/workflows/on-push.yml` still has duplicate `API_KEY` and incorrect `VITE_SUPABASE_ANON_KEY` mappings (documented in TASK-044)
 - This runner's `GITHUB_TOKEN` lacks `workflows` scope — requires manual fix by maintainer with appropriate token
 
@@ -6651,17 +6654,17 @@ Performed routine CI health maintenance: resolved 3 lingering ESLint warnings fr
 
 ### Verification Results
 
-| Check                     | Result                           |
-| ------------------------- | -------------------------------- |
-| ESLint                    | **0 errors, 0 warnings** (fixed) |
-| JS Tests                  | 875/875 pass                     |
-| Python (run_tests.py)     | 27/27 pass                       |
-| Python (pytest)           | 13/13 pass                       |
-| Build                     | 3474 pages, 0 failed, 1.3s      |
-| Prettier                  | All formatted                    |
-| Coverage                  | 92.43% stmts, 90.22% branches   |
-| npm audit                 | 0 vulnerabilities                |
-| Zero regressions          | Confirmed                        |
+| Check                 | Result                           |
+| --------------------- | -------------------------------- |
+| ESLint                | **0 errors, 0 warnings** (fixed) |
+| JS Tests              | 875/875 pass                     |
+| Python (run_tests.py) | 27/27 pass                       |
+| Python (pytest)       | 13/13 pass                       |
+| Build                 | 3474 pages, 0 failed, 1.3s       |
+| Prettier              | All formatted                    |
+| Coverage              | 92.43% stmts, 90.22% branches    |
+| npm audit             | 0 vulnerabilities                |
+| Zero regressions      | Confirmed                        |
 
 ### Acceptance Criteria
 

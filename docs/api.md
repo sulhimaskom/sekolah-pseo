@@ -33,7 +33,10 @@ src/
     └── templates/
         ├── school-page.js    # School page HTML template
         ├── homepage.js       # Homepage HTML template
-        └── province-page.js  # Province page HTML template
+        ├── province-page.js  # Province page HTML template
+        └── shared/
+            ├── head-meta.js      # Shared HTML head prefix (security headers, meta)
+            └── back-to-top.js    # Shared back-to-top button HTML + script
 ```
 
 ## Configuration Module (`scripts/config.js`)
@@ -2511,6 +2514,128 @@ Province pages are generated at:
 
 Example: `/provinsi/dki-jakarta/index.html`
 
+---
+
+## Shared Template Modules (`src/presenters/templates/shared/`)
+
+Shared components extracted from individual templates to eliminate duplication across school pages, province pages, and homepage.
+
+### Head Meta Module (`src/presenters/templates/shared/head-meta.js`)
+
+#### Purpose
+
+Provides the shared HTML document head prefix used by all page templates. Extracting this boilerplate to a single constant eliminates ~1.2KB of duplication per page — saving ~4MB of total output across all 3474+ generated pages while keeping security configuration in one place.
+
+#### Exports
+
+```javascript
+module.exports = {
+  HTML_HEAD_PREFIX: string,
+};
+```
+
+#### Constants
+
+##### `HTML_HEAD_PREFIX`
+
+A constant string containing the shared HTML head tags that are identical across all page types.
+
+**Value (abbreviated):**
+
+```html
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'..." />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), ..." />
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin" />
+    <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+</html>
+```
+
+**Dependencies:** None (standalone constant)
+
+**Usage:**
+
+```javascript
+const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
+
+// Each template appends its own title, description, canonical URL,
+// OG tags, and stylesheet link after this prefix
+const fullHtml = HTML_HEAD_PREFIX + `  <title>School Name</title>\n</head>\n...`;
+```
+
+---
+
+### Back-to-Top Module (`src/presenters/templates/shared/back-to-top.js`)
+
+#### Purpose
+
+Provides the back-to-top button HTML and scroll-to-top JavaScript that appear on all page types. Extracted to eliminate code duplication across school-page, province-page, and homepage templates.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateBackToTopHtml: function,
+  generateBackToTopScript: function,
+};
+```
+
+#### Functions
+
+##### `generateBackToTopHtml()`
+
+Generates the HTML for a back-to-top button with an SVG chevron-up icon.
+
+**Parameters:** None
+
+**Returns:** `string` — HTML string containing a `<button>` element with the `.back-to-top` class and `aria-label="Kembali ke atas"`
+
+**Usage:**
+
+```javascript
+const { generateBackToTopHtml } = require('./shared/back-to-top');
+const html = generateBackToTopHtml();
+// Returns: '<button class="back-to-top" aria-label="Kembali ke atas">...'
+```
+
+---
+
+##### `generateBackToTopScript()`
+
+Generates the JavaScript for scroll-based visibility toggling and smooth scrolling for the back-to-top button.
+
+**Parameters:** None
+
+**Returns:** `string` — Inline `<script>` tag
+
+**Behavior:**
+
+- Shows the button after scrolling past 300px
+- Hides the button when near the top
+- Scrolls smoothly to top on click (respects `prefers-reduced-motion`)
+- Uses a passive scroll listener for performance
+
+**Usage:**
+
+```javascript
+const { generateBackToTopScript } = require('./shared/back-to-top');
+const script = generateBackToTopScript();
+```
+
+---
+
 ## Build Pages Controller (`scripts/build-pages.js`)
 
 ### Purpose
@@ -4179,6 +4304,10 @@ All integration errors use `IntegrationError` with consistent structure:
 | `TIMEOUT`                | All operations  | Operation exceeded time limit      |
 | `RETRY_EXHAUSTED`        | All retries     | All retry attempts failed          |
 | `CIRCUIT_BREAKER_OPEN`   | File I/O        | Circuit breaker is blocking        |
+| `HTTP_ERROR`             | Network         | HTTP request failed                |
+| `NETWORK_ERROR`          | Network         | Network communication failure      |
+| `EXTERNAL_SERVICE_ERROR` | Network         | External service operation failed  |
+| `FETCH_ERROR`            | Network         | Data fetch operation failed        |
 
 ### Error Handling Patterns
 
@@ -4269,8 +4398,22 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 │         src/presenters/templates/school-page.js             │
 │  Depends:                                                   │
 │  - utils.js (escapeHtml)                                    │
+│  - src/presenters/templates/shared/head-meta.js             │
+│  - src/presenters/templates/shared/back-to-top.js           │
 └─────────────────────────────────────────────────────────────┘
+                            │
+                            ├──────────────────┐
+                            ▼                  ▼
+┌─────────────────────────────────┐ ┌─────────────────────────────────┐
+│ src/presenters/templates/shared │ │ src/presenters/templates/shared │
+│    /head-meta.js               │ │    /back-to-top.js              │
+│  Depends: None (standalone)    │ │  Depends: None (standalone)     │
+└─────────────────────────────────┘ └─────────────────────────────────┘
 ```
+
+:::info
+The same shared modules (`head-meta.js`, `back-to-top.js`) are also used by `homepage.js` and `province-page.js` templates.
+:::
 
 ---
 
@@ -4416,6 +4559,13 @@ None.
 ---
 
 ## Changelog
+
+### Version 1.2.0 (2026-06-29)
+
+- Added Shared Template Modules documentation (head-meta.js, back-to-top.js)
+- Updated Module Organization with `shared/` subdirectory
+- Updated Dependency Graph with shared module dependencies
+- Added 4 missing network error codes to Error Code Mapping table (HTTP_ERROR, NETWORK_ERROR, EXTERNAL_SERVICE_ERROR, FETCH_ERROR)
 
 ### Version 1.1.0 (2026-01-10)
 
