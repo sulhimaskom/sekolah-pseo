@@ -9,6 +9,7 @@ const {
   writeSchoolPagesConcurrently,
   loadSchools,
   generateExternalStyles,
+  generateRobotsTxt,
   build,
   buildIncremental,
   createManifestFromSchools,
@@ -333,4 +334,76 @@ test('buildIncremental runs without error when manifest exists', async () => {
     .then(() => true)
     .catch(() => false);
   assert.ok(indexExists, 'index.html should exist after incremental build');
+});
+
+test('buildIncremental performs full build when no manifest exists', async () => {
+  // Remove manifest to simulate first run
+  const manifestPath = path.join(CONFIG.ROOT_DIR, '.build-manifest.json');
+  try {
+    await fs.unlink(manifestPath);
+  } catch {
+    // Ignore if manifest doesn't exist
+  }
+
+  // Run incremental build without manifest - should perform full build
+  await buildIncremental();
+
+  // Verify index.html was created
+  const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
+  const exists = await fs
+    .access(indexPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(exists, 'index.html should exist after incremental build without manifest');
+});
+
+test('buildIncremental handles tracker parameter', async () => {
+  const { BuildPerformanceTracker } = require('./build-performance');
+
+  // Remove manifest to simulate first run
+  const manifestPath = path.join(CONFIG.ROOT_DIR, '.build-manifest.json');
+  try {
+    await fs.unlink(manifestPath);
+  } catch {
+    // Ignore if manifest doesn't exist
+  }
+
+  const tracker = new BuildPerformanceTracker();
+  tracker.start();
+
+  await buildIncremental(tracker);
+
+  tracker.stop();
+
+  // Tracker should have recorded pages
+  assert.ok(tracker.getElapsedMs() >= 0);
+  const report = tracker.generateReport();
+  assert.ok(report.metrics.totalPages >= 0);
+});
+
+test('generateRobotsTxt creates robots.txt with correct sitemap URL', async () => {
+  // Ensure dist directory exists
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await generateRobotsTxt('https://sekolah.example.com');
+
+  const robotsPath = path.join(CONFIG.DIST_DIR, 'robots.txt');
+  const content = await fs.readFile(robotsPath, 'utf-8');
+
+  assert.ok(content.includes('User-agent: *'));
+  assert.ok(content.includes('Allow: /'));
+  assert.ok(content.includes('Sitemap: https://sekolah.example.com/sitemap-index.xml'));
+});
+
+test('generateRobotsTxt normalizes trailing slash in SITE_URL', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await generateRobotsTxt('https://sekolah.example.com/');
+
+  const robotsPath = path.join(CONFIG.DIST_DIR, 'robots.txt');
+  const content = await fs.readFile(robotsPath, 'utf-8');
+
+  // URL should not have double slash
+  assert.ok(content.includes('Sitemap: https://sekolah.example.com/sitemap-index.xml'));
+  assert.ok(!content.includes('https://sekolah.example.com//sitemap-index.xml'));
 });

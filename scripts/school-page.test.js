@@ -1,6 +1,9 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { generateSchoolPageHtml } = require('../src/presenters/templates/school-page');
+const {
+  generateSchoolPageHtml,
+  generateEnrichmentSection,
+} = require('../src/presenters/templates/school-page');
 
 describe('generateSchoolPageHtml', () => {
   const validSchool = {
@@ -456,5 +459,125 @@ describe('generateSchoolPageHtml', () => {
     const html = generateSchoolPageHtml(validSchool);
 
     assert.ok(html.includes('<span aria-hidden="true"> / </span>'));
+  });
+});
+
+describe('generateEnrichmentSection', () => {
+  it('returns empty string for null enrichment', () => {
+    assert.strictEqual(generateEnrichmentSection(null), '');
+  });
+
+  it('returns empty string for undefined enrichment', () => {
+    assert.strictEqual(generateEnrichmentSection(undefined), '');
+  });
+
+  it('returns empty string for string enrichment', () => {
+    assert.strictEqual(generateEnrichmentSection('invalid'), '');
+  });
+
+  it('returns empty string for number enrichment', () => {
+    assert.strictEqual(generateEnrichmentSection(42), '');
+  });
+
+  it('returns empty string for empty enrichment object', () => {
+    assert.strictEqual(generateEnrichmentSection({}), '');
+  });
+
+  it('returns empty string when wikipedia object has no URL', () => {
+    const result = generateEnrichmentSection({ wikipedia: { extract: 'Some text' } });
+    assert.strictEqual(result, '');
+  });
+
+  it('renders wikipedia section with extract and title', () => {
+    const enrichment = {
+      wikipedia: {
+        wikipediaUrl: 'https://id.wikipedia.org/wiki/SMA_Negeri_1_Jakarta',
+        wikipediaExtract: 'SMA Negeri 1 Jakarta adalah sekolah menengah atas di Jakarta.',
+        wikipediaTitle: 'SMA Negeri 1 Jakarta - Wikipedia',
+      },
+    };
+
+    const html = generateEnrichmentSection(enrichment);
+
+    assert.ok(html.includes('Informasi Tambahan'));
+    assert.ok(html.includes('SMA Negeri 1 Jakarta adalah sekolah menengah atas di Jakarta.'));
+    assert.ok(html.includes('https://id.wikipedia.org/wiki/SMA_Negeri_1_Jakarta'));
+    assert.ok(html.includes('SMA Negeri 1 Jakarta - Wikipedia'));
+    assert.ok(html.includes('enrichment-section'));
+    assert.ok(html.includes('enrichment-card'));
+    assert.ok(html.includes('enrichment-badge'));
+  });
+
+  it('renders wikipedia section without extract', () => {
+    const enrichment = {
+      wikipedia: {
+        wikipediaUrl: 'https://id.wikipedia.org/wiki/SMA_Negeri_1_Jakarta',
+        wikipediaTitle: 'SMA Negeri 1 Jakarta',
+      },
+    };
+
+    const html = generateEnrichmentSection(enrichment);
+
+    assert.ok(html.includes('Informasi Tambahan'));
+    assert.ok(html.includes('https://id.wikipedia.org/wiki/SMA_Negeri_1_Jakarta'));
+    assert.ok(html.includes('SMA Negeri 1 Jakarta'));
+    // Should NOT contain extract paragraph
+    assert.ok(!html.includes('enrichment-extract'));
+  });
+
+  it('falls back to Wikipedia label when title is missing', () => {
+    const enrichment = {
+      wikipedia: {
+        wikipediaUrl: 'https://id.wikipedia.org/wiki/SMA_Negeri_1_Jakarta',
+        wikipediaExtract: 'Some extract text.',
+      },
+    };
+
+    const html = generateEnrichmentSection(enrichment);
+
+    assert.ok(html.includes('Wikipedia')); // fallback label
+    assert.ok(html.includes('Some extract text.'));
+  });
+
+  it('escapes HTML in wikipedia URL to prevent XSS', () => {
+    const enrichment = {
+      wikipedia: {
+        wikipediaUrl: 'https://evil.com/<script>alert(1)</script>',
+        wikipediaExtract: 'Safe text',
+      },
+    };
+
+    const html = generateEnrichmentSection(enrichment);
+
+    assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+    assert.ok(!html.includes('<script>alert(1)</script>'));
+  });
+
+  it('escapes HTML in wikipedia title to prevent XSS', () => {
+    const enrichment = {
+      wikipedia: {
+        wikipediaUrl: 'https://id.wikipedia.org/wiki/Test',
+        wikipediaTitle: '<img src=x onerror=alert(1)> Title',
+      },
+    };
+
+    const html = generateEnrichmentSection(enrichment);
+
+    assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'));
+    assert.ok(!html.includes('<img src=x onerror=alert(1)>'));
+  });
+
+  it('escapes HTML in wikipedia extract to prevent XSS', () => {
+    const enrichment = {
+      wikipedia: {
+        wikipediaUrl: 'https://id.wikipedia.org/wiki/Test',
+        wikipediaExtract: '<b>Bold</b> <script>evil()</script> text',
+      },
+    };
+
+    const html = generateEnrichmentSection(enrichment);
+
+    assert.ok(html.includes('&lt;b&gt;Bold&lt;/b&gt;'));
+    assert.ok(!html.includes('<script>evil()</script>'));
   });
 });
