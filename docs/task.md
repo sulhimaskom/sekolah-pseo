@@ -2,6 +2,99 @@
 
 ## Completed Tasks
 
+### [TASK-047] Data Architecture - Centralized Schema Definition, Categorical Validation, and CSV Parsing Hardening
+
+**Status**: Complete
+**Agent**: Principal Data Architect (Sisyphus)
+
+### Description
+
+Designed and implemented a centralized data schema definition as the single source of truth for the school dataset. Previously, field definitions, types, constraints, allowed values, and validation rules were scattered across `etl.js`, `data-quality.js`, and `config.js`. This created risk of drift and made it difficult to enforce data integrity at the ETL boundary.
+
+### Changes Made
+
+**1. Created centralized data schema** (`scripts/data-schema.js`):
+
+- `SCHEMA_VERSION` (`1.0`) for forward-compatible schema evolution
+- `FIELDS` registry with 12 field definitions, each specifying type, required flag, pattern constraints, allowed values (for categorical fields), and raw field name mappings
+- `CSV_FIELD_ORDER` — canonical column order for CSV output
+- `REQUIRED_FIELDS` — 6 fields mandatory for ETL acceptance
+- `ALLOWED_VALUES` — explicit allowed sets for `status` (N/S) and `bentuk_pendidikan` (SD/SMP/SMA/SMK/SLB/SDLB/SMLB/SMPLB)
+- `INDONESIA_BOUNDS` — geographic bounds for coordinate validation
+
+**2. Implemented schema-backed validation functions**:
+
+- `validateRecord(record)` — returns array of error messages, checking required fields, regex patterns, and categorical values (both required and optional)
+- `validateCoordinates(record)` — validates lat/lon independently with per-field error messages
+- `checkCoordinateQuality(record)` — boolean flag for coordinate presence and validity
+- `isValidCategoricalValue(field, value)` — checks against `ALLOWED_VALUES` for categorical fields, passes through for free-text fields
+- `mapRawField(raw, fieldName)` — resolves canonical field names from raw input using the `rawMappings` registry
+
+**3. Enhanced ETL pipeline validation** (`scripts/etl.js`):
+
+- `normaliseRecord()` now uses `SCHEMA.mapRawField()` instead of inline field mapping — field name mappings are centralized
+- ETL `run()` now validates `status` and `bentuk_pendidikan` against allowed values via `SCHEMA.validateRecord()` — previously these categorical fields were accepted without validation
+- ETL logs categorical validation warnings (bad values with NPSN and field information), up to 5 examples shown
+- NPSN uniqueness checked via `generateDataQualityReport()` during ETL output
+- Schema version logged at the end of ETL processing
+
+**4. Refactored data-quality module** (`scripts/data-quality.js`):
+
+- `REQUIRED_FIELDS` and `INDONESIA_BOUNDS` now imported from `data-schema.js` (eliminated local duplicate definitions)
+- `isNonEmpty` and `isValidCoordinate` exported via SCHEMA references (same behavior, single source of truth)
+- Quality report summary now includes `schemaVersion` field
+
+**5. Fixed fragile CSV parsing** (`scripts/check-freshness.js`):
+
+- `getDataQualityMetrics()` replaced index-based field access (`fields[0]`, `fields[4]`, `fields[9]`, etc.) with `parseCsv()` header-based parsing — column-order independent
+- `getDataFreshness()` similarly migrated to `parseCsv()` with field name access for `updated_at`
+- Reduces maintenance burden if CSV column layout changes in the future
+
+### Files Created
+
+- `scripts/data-schema.js` — Centralized data schema definition (287 lines, 12 fields, schema version 1.0)
+
+### Files Modified
+
+- `scripts/etl.js` — Imported SCHEMA, updated `normaliseRecord()` to use `mapRawField()`, enhanced `run()` with categorical validation and schema version logging
+- `scripts/data-quality.js` — Imported SCHEMA for `REQUIRED_FIELDS`, `INDONESIA_BOUNDS`, `isNonEmpty`, `isValidCoordinate`; added `schemaVersion` to report summary
+- `scripts/check-freshness.js` — Migrated `getDataQualityMetrics()` and `getDataFreshness()` from index-based CSV parsing to `parseCsv()` header-based access
+
+### Files Added
+
+- `scripts/data-schema.test.js` — 33 tests covering all schema invariants, validation functions, mapRawField, coordinate checks, and real-world record validation
+
+### Verification Results
+
+| Check            | Result                      |
+| ---------------- | --------------------------- |
+| JS Tests         | 875/875 pass (+33 new)      |
+| Python Tests     | 27/27 pass                  |
+| ESLint           | 0 errors                    |
+| Prettier         | All files formatted         |
+| Build            | 3474 pages, 0 failed, 401ms |
+| Performance      | All budgets met             |
+| Zero regressions | Confirmed                   |
+
+### Acceptance Criteria
+
+- [x] Centralized data schema created with field types, constraints, allowed values, and raw mappings
+- [x] Schema versioned (1.0) for forward compatibility
+- [x] Categorical validation enforced at ETL boundary (status N/S, bentuk_pendidikan SD/SMP/SMA/SMK/etc.)
+- [x] NPSN uniqueness check runs during ETL with warning output
+- [x] data-quality.js imports from centralized schema (no local duplicates)
+- [x] check-freshness.js uses header-based CSV parsing instead of fragile index-based access
+- [x] All 875 JS tests pass
+- [x] All 27 Python tests pass
+- [x] Lint passes (0 errors)
+- [x] Prettier formatting clean
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Performance budgets met
+- [x] Zero regressions introduced
+- [x] Documentation updated (blueprint.md, task.md)
+
+---
+
 ### [TASK-046] Code Sanitization - Full Health Check (Build, Lint, Tests, Dead Code, Secrets, Hardcodes)
 
 **Status**: Complete

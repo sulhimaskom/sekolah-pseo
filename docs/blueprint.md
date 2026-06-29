@@ -139,43 +139,69 @@ All internal modules have documented API contracts in `docs/api.md`:
 
 ### Data Schema
 
-- Province
-- City/Kabupaten
-- District/Kecamatan
-- School ID (NPSN)
-- School Name
-- School Type (SD/SMP/SMA/SMK/etc)
-- Address
-- Contact Information
+The data schema is defined centrally in `scripts/data-schema.js` — the single source of truth for all field definitions, types, constraints, allowed values, and validation rules.
+
+**Schema Version**: `1.0` (defined as `SCHEMA_VERSION` in `data-schema.js`)
+
+**Canonical Field Definitions**:
+
+| Field               | Type   | Required | Constraints                                        | Raw Mappings                    |
+| ------------------- | ------ | -------- | -------------------------------------------------- | ------------------------------- |
+| `npsn`              | string | yes      | Must be numeric (`/^\d+$/`)                        | `npsn`, `NPSN`                  |
+| `nama`              | string | yes      | School name                                        | `nama`, `nama_sekolah`, `Nama`  |
+| `bentuk_pendidikan` | string | yes      | Allowed: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB | `bentuk_pendidikan`, `jenjang`  |
+| `status`            | string | no       | Allowed: N (Negeri), S (Swasta)                    | `status`, `status_sekolah`      |
+| `alamat`            | string | no       | Street address                                     | `alamat`, `alamat_jalan`        |
+| `kelurahan`         | string | no       | Village/urban ward                                 | `kelurahan`, `desa`             |
+| `kecamatan`         | string | yes      | District                                           | `kecamatan`                     |
+| `kab_kota`          | string | yes      | City/regency                                       | `kabupaten`, `kab_kota`, `kota` |
+| `provinsi`          | string | yes      | Province                                           | `provinsi`                      |
+| `lat`               | string | no       | -11 to 6 (Indonesia bounds), 0 = unset             | `lat`, `latitude`               |
+| `lon`               | string | no       | 95 to 141 (Indonesia bounds), 0 = unset            | `lon`, `longitude`              |
+| `updated_at`        | string | no       | ISO date (YYYY-MM-DD)                              | —                               |
+
+**CSV Column Order** (defined in `CSV_FIELD_ORDER`): `npsn, nama, bentuk_pendidikan, status, alamat, kelurahan, kecamatan, kab_kota, provinsi, lat, lon, updated_at`
+
+**Schema Design Principles**:
+
+1. **Centralized Definition**: All field types, constraints, allowed values, and mappings live in `data-schema.js`.
+2. **Backward Compatibility**: The `schema_version` field is tracked for future schema evolution; CSV output format remains stable.
+3. **Categorical Validation**: Fields with `allowedValues` are validated at the ETL boundary — invalid values are rejected with descriptive error messages.
+4. **Coordinate Integrity**: Latitude/longitude validated against Indonesia geographic bounds with zero-as-unset semantics.
+5. **NPSN Uniqueness**: Duplicate detection runs during ETL processing with warning output.
 
 ### Data Validation
 
-**Required Fields** (must be non-empty):
+Validation is defined centrally in `scripts/data-schema.js` and applied at the ETL boundary (`scripts/etl.js`).
 
-- npsn: numeric string (unique identifier)
-- nama: school name
-- bentuk_pendidikan: education level
-- provinsi: province
-- kab_kota: city/regency
-- kecamatan: district
+**Required Fields** (must be non-empty, enforced at ETL boundary):
+
+- `npsn`: numeric string (`/^\d+$/`), unique identifier
+- `nama`: school name
+- `bentuk_pendidikan`: education level
+- `provinsi`: province
+- `kab_kota`: city/regency
+- `kecamatan`: district
 
 **Coordinate Validation**:
 
-- Latitude: -11 to 6 (Indonesia bounds)
-- Longitude: 95 to 141 (Indonesia bounds)
+- Latitude: -11 to 6 (Indonesia bounds), 0 = unset
+- Longitude: 95 to 141 (Indonesia bounds), 0 = unset
 - Format: decimal degrees (e.g., -6.2088)
 
-**Categorical Fields**:
+**Categorical Field Validation** (enforced at ETL boundary):
 
-- status: N (Negeri/Public) or S (Swasta/Private)
-- bentuk_pendidikan: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB
+- `status`: N (Negeri/Public) or S (Swasta/Private) — invalid values rejected during ETL
+- `bentuk_pendidikan`: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB — invalid values rejected during ETL
 
-**Data Quality Metrics**:
+**Data Quality Metrics** (`scripts/data-quality.js`):
 
-- Field completeness percentages
-- Coordinate validity (valid, missing, invalid)
-- NPSN uniqueness detection
-- Categorical distribution analysis
+- Field completeness percentages per required field
+- Coordinate validity (valid, missing, zero, out-of-bounds)
+- NPSN uniqueness detection (duplicate groups)
+- Categorical distribution analysis (province, education type, status)
+- Overall quality score (weighted composite: 40% completeness, 30% coordinates, 30% uniqueness)
+- Schema version tracking in quality report summary
 
 ## Patterns
 
@@ -326,5 +352,8 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-06-29 | Integration hardening for external data fetch                         | Added network error codes (HTTP_ERROR, NETWORK_ERROR, EXTERNAL_SERVICE_ERROR, FETCH_ERROR), extended isTransientError for network/HTTP errors, added withTimeoutSync for sync operations, added retry+circuit-breaker+timeout for git fetch, added cached fallback when external source is unavailable |
 | 2026-06-29 | Shared HTML head prefix module (head-meta.js)                         | Extracted duplicate 1.2KB security header block from 3 templates into shared HTML_HEAD_PREFIX constant — eliminates 3× copy-paste, reduces build template work, ensures consistent security headers across all page types                                                                              |
 | 2026-06-29 | schools.json preload on homepage                                      | Added `<link rel="preload" href="/schools.json" as="fetch" crossorigin="anonymous">` to homepage `<head>` — browser starts fetching search payload earlier, reducing user-perceived time-to-search                                                                                                     |
+| 2026-06-29 | Centralized data schema (data-schema.js)                              | Created single source of truth for field types, constraints, allowed values, and raw field mappings; 33 tests; includes schema versioning                                                                                                                                                              |
+| 2026-06-29 | Categorical validation in ETL pipeline                                | Wired up `validateCategoricalField()` for `status` (N/S) and `bentuk_pendidikan` (SD/SMP/SMA/SMK/SLB/etc.) — invalid values now rejected during ETL with descriptive error messages                                                                                                                    |
+| 2026-06-29 | Header-based CSV parsing in check-freshness.js                        | Replaced fragile index-based field access (`fields[9]`) with `parseCsv()` header-based parsing — column-order independent, field names instead of magic indices                                                                                                                                        |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
