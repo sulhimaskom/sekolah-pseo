@@ -530,6 +530,12 @@ ERROR_CODES = {
   TIMEOUT: 'TIMEOUT',
   RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
   CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
+
+  // Network / External service errors
+  HTTP_ERROR: 'HTTP_ERROR',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+  FETCH_ERROR: 'FETCH_ERROR',
 };
 ```
 
@@ -639,7 +645,7 @@ Manually resets circuit breaker to CLOSED state.
 
 #### `isTransientError(error)`
 
-Checks if error is transient (retryable).
+Checks if error is transient (retryable). Covers file system, network, and HTTP-level transient conditions.
 
 **Parameters:**
 
@@ -647,9 +653,13 @@ Checks if error is transient (retryable).
 
 **Returns:** `boolean` - `true` if error is transient
 
-**Transient Error Codes:** `EAGAIN`, `EIO`, `ENOSPC`, `EBUSY`, `ETIMEDOUT`
+**Transient System Error Codes:** `EAGAIN`, `EIO`, `ENOSPC`, `EBUSY`, `ETIMEDOUT`
 
-**Transient Error Messages:** Contains `timeout`, `ECONNRESET`, `EAGAIN`, `EIO`, `ENOSPC`, or `EBUSY`
+**Transient Network Error Codes:** `ECONNRESET`, `ENOTFOUND`, `ECONNREFUSED`, `ECONNABORTED`, `EPIPE`, `EPROTO`, `EAI_AGAIN`, `ESOCKETTIMEDOUT`
+
+**Transient HTTP Status Codes:** `429`, `500`, `502`, `503`, `504`
+
+**Transient Error Messages:** Contains `timeout`, `ECONNRESET`, `ENOTFOUND`, `ECONNREFUSED`, `ECONNABORTED`, `EPIPE`, `EPROTO`, `EAI_AGAIN`, `ESOCKETTIMEDOUT`, `EAGAIN`, `EIO`, `ENOSPC`, `EBUSY`, `socket hang up`, `socket closed`, `read ETIMEDOUT`, `status 429`, `status 500`, `status 50x`
 
 **Usage:**
 
@@ -683,6 +693,47 @@ try {
 } catch (error) {
   if (error.code === ERROR_CODES.TIMEOUT) {
     console.error('Operation timed out');
+  }
+}
+```
+
+---
+
+#### `withTimeoutSync(syncFn, timeoutMs, operationName)`
+
+Executes a synchronous function with a timeout. Designed for wrapping `execSync`/`execFileSync` calls that may hang indefinitely. Passes `{ timeout, killSignal: 'SIGTERM' }` options to the wrapped function.
+
+**Parameters:**
+
+- `syncFn` (Function): Synchronous function that accepts `{ timeout, killSignal }` options
+- `timeoutMs` (number): Timeout in milliseconds
+- `operationName` (string, optional): Name for this operation
+
+**Returns:** `*` - Result of the synchronous function
+
+**Throws:** `IntegrationError` with `TIMEOUT` code if the child process is killed by timeout, or the original error otherwise
+
+**Behavior:**
+
+- Detects killed processes (`error.killed`, `error.signal === 'SIGTERM'`)
+- Re-throws non-timeout errors (e.g. command not found) unchanged
+- Does NOT wrap the sync function return value
+
+**Usage:**
+
+```javascript
+const { execSync } = require('child_process');
+const { withTimeoutSync } = require('./resilience');
+
+try {
+  const output = withTimeoutSync(
+    opts => execSync('git clone --depth 1 https://github.com/user/repo.git', opts),
+    120000,
+    'git clone repo'
+  );
+} catch (error) {
+  if (error.code === ERROR_CODES.TIMEOUT) {
+    console.error('Git clone timed out after 2 minutes');
   }
 }
 ```
@@ -1637,14 +1688,15 @@ const provinces = getUniqueProvinces(schools);
 
 ---
 
-#### `buildProvincePageData(provinceName, schools)`
+#### `buildProvincePageData(provinceName, schools, skipFilter)`
 
 Builds province page data with path and HTML content.
 
 **Parameters:**
 
 - `provinceName` (string): Province name
-- `schools` (Array<Object>): Array of all school data objects
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, passes through to `generateProvincePageHtml` to skip internal province filtering. Defaults to `false` for backward compatibility.
 
 **Returns:** `Object`
 
@@ -1670,12 +1722,12 @@ Builds province page data with path and HTML content.
 **Usage:**
 
 ```javascript
+// Default: pass all schools, internal filtering applied
 const pageData = buildProvincePageData('DKI Jakarta', schools);
-// Returns:
-// {
-//   relativePath: 'provinsi/dki-jakarta/index.html',
-//   content: '<!DOCTYPE html>...'
-// }
+
+// Optimized: pass pre-filtered schools via groupSchoolsByProvince
+const grouped = groupSchoolsByProvince(schools);
+const pageData2 = buildProvincePageData('DKI Jakarta', grouped.get('DKI Jakarta'), true);
 ```
 
 ---
@@ -2032,14 +2084,15 @@ module.exports = {
 
 ### Functions
 
-#### `generateProvincePageHtml(provinceName, schools)`
+#### `generateProvincePageHtml(provinceName, schools, skipFilter)`
 
 Generates complete HTML page for a specific province with kabupaten/kota navigation.
 
 **Parameters:**
 
 - `provinceName` (string): Province name to generate page for
-- `schools` (Array<Object>): Array of all school data objects
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, skips internal `filterSchoolsByProvince` call (schools array is assumed to be pre-filtered for this province). Defaults to `false` for backward compatibility.
 
 **Returns:** `string` - Complete HTML document
 
@@ -2055,8 +2108,13 @@ Generates complete HTML page for a specific province with kabupaten/kota navigat
 
 ```javascript
 const { generateProvincePageHtml } = require('./templates/province-page');
+
+// Default: pass all schools, function filters internally
 const html = generateProvincePageHtml('DKI Jakarta', schools);
-// Returns: '<!DOCTYPE html>\n<html lang="id">...'
+
+// Optimized: pass pre-filtered schools, skip redundant filtering
+const grouped = groupSchoolsByProvince(schools);
+const html2 = generateProvincePageHtml('DKI Jakarta', grouped.get('DKI Jakarta'), true);
 ```
 
 ---
@@ -2186,13 +2244,14 @@ console.log(`Loaded ${schools.length} schools`);
 
 ---
 
-#### `writeSchoolPage(school)`
+#### `writeSchoolPage(school, enrichment)`
 
 Writes a single school page to the file system.
 
 **Parameters:**
 
 - `school` (Object): School data object with required fields
+- `enrichment` (Object|null, optional): Optional enrichment data for this school (e.g., Wikipedia extract, accreditation info). Pass `null` or omit when no enrichment is available.
 
 **Returns:** `Promise<void>`
 
@@ -2211,12 +2270,18 @@ Writes a single school page to the file system.
 **Usage:**
 
 ```javascript
+// Without enrichment
 await writeSchoolPage({
   provinsi: 'DKI Jakarta',
   kab_kota: 'Jakarta Pusat',
   kecamatan: 'Menteng',
   npsn: '12345678',
   nama: 'SMA Negeri 1 Jakarta',
+});
+
+// With enrichment data
+await writeSchoolPage(school, {
+  wikipedia: { title: 'SMA Negeri 1 Jakarta', extract: '...', url: '...' },
 });
 ```
 
@@ -2301,7 +2366,8 @@ Generates a searchable JSON data file (`schools.json`) from school records for c
 
 ```javascript
 await writeSearchDataFile(schools);
-// Creates: dist/schools.json (~1.1 MB for 3474 schools)
+// Creates: dist/schools.json (~877 KB for 3474 schools, flat array format)
+// Also creates: dist/schools.json.gz (~125 KB) for gzip_static servers
 ```
 
 ---
@@ -2359,7 +2425,7 @@ console.log(`Generated ${successful} province pages`);
 
 ---
 
-#### `writeSchoolPagesConcurrently(schools, concurrencyLimit)`
+#### `writeSchoolPagesConcurrently(schools, concurrencyLimit, enrichmentMap)`
 
 Writes multiple school pages concurrently with controlled concurrency using `processConcurrently`.
 
@@ -2367,6 +2433,7 @@ Writes multiple school pages concurrently with controlled concurrency using `pro
 
 - `schools` (Array<Object>): Array of school objects
 - `concurrencyLimit` (number, optional): Max concurrent operations (default: `CONFIG.BUILD_CONCURRENCY_LIMIT`)
+- `enrichmentMap` (Map<string, Object>|null, optional): Map of NPSN → enrichment data for each school. Pass `null` or omit when no enrichment data is available.
 
 **Returns:** `Promise<Object>`
 
@@ -2393,8 +2460,12 @@ Writes multiple school pages concurrently with controlled concurrency using `pro
 **Usage:**
 
 ```javascript
+// Without enrichment
 const { successful, failed } = await writeSchoolPagesConcurrently(schools, 100);
 console.log(`Generated ${successful} pages (${failed} failed)`);
+
+// With enrichment map
+const { successful, failed } = await writeSchoolPagesConcurrently(schools, 100, enrichmentMap);
 ```
 
 ---
@@ -3299,6 +3370,97 @@ Exit Codes:
 ---
 
 ## Fetch Data Module (`scripts/fetch-data.js`)
+
+### Purpose
+
+Fetches the latest school data from external sources (GitHub) with resilience hardening: timeouts, retries, circuit breaker, and cached fallback.
+
+### Exports
+
+```javascript
+module.exports = {
+  fetchFromGitHub: function,
+  findCsvFiles: function,
+  copyToRaw: function,
+  validateRepoUrl: function,
+  validateBranchName: function,
+  execGitCommand: function,
+  useCachedData: function,
+  fetchCircuitBreaker: CircuitBreaker,
+};
+```
+
+### Resilience Configuration
+
+| Setting                       | Value  | Description                           |
+| ----------------------------- | ------ | ------------------------------------- |
+| GIT_OPERATION_TIMEOUT_MS      | 120000 | Git clone/fetch timeout (2 minutes)   |
+| GIT_RETRY_MAX_ATTEMPTS        | 3      | Max retries on transient git failures |
+| GIT_RETRY_INITIAL_DELAY_MS    | 1000   | Initial backoff delay (1 second)      |
+| GIT_CIRCUIT_BREAKER_THRESHOLD | 3      | Failures before circuit opens         |
+| GIT_CIRCUIT_BREAKER_RESET_MS  | 120000 | Circuit reset timeout (2 minutes)     |
+
+### Functions
+
+#### `execGitCommand(command, execOptions, operationName)`
+
+Executes a git command synchronously with timeout protection.
+
+**Parameters:**
+
+- `command` (string): Git command to execute
+- `execOptions` (Object): Options for execSync (cwd, stdio, etc.)
+- `operationName` (string): Human-readable name for the operation
+
+**Returns:** `Buffer|string` - stdout from the command
+
+**Throws:** `IntegrationError` with `TIMEOUT` code if the command exceeds `GIT_OPERATION_TIMEOUT_MS`
+
+**Usage:**
+
+```javascript
+const output = execGitCommand(
+  'git fetch origin',
+  { cwd: '/path/to/repo', stdio: 'inherit' },
+  'git fetch origin'
+);
+```
+
+---
+
+#### `useCachedData(destPath)`
+
+Attempts to use cached (previously fetched) data as fallback when the external source is unavailable.
+
+**Parameters:**
+
+- `destPath` (string): Path where raw data should be written
+
+**Returns:** `boolean` - Whether cached data was found and used. Checks the destination path first, then falls back to CSV files in the `external-data/` directory.
+
+**Usage:**
+
+```javascript
+if (!useCachedData('/path/to/raw.csv')) {
+  console.error('No cached data available either');
+}
+```
+
+---
+
+#### `fetchCircuitBreaker`
+
+A dedicated `CircuitBreaker` instance for the external data source. Isolated from file system circuit breakers to prevent file operation failures from affecting data fetch, and vice versa.
+
+- **Failure threshold**: 3
+- **Reset timeout**: 120 seconds
+- **State**: `CLOSED` (normal), `OPEN` (blocking), `HALF_OPEN` (testing recovery)
+
+---
+
+#### `findCsvFiles(dir)`
+
+(unchanged from previous - see below)
 
 ### Purpose
 
