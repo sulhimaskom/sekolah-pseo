@@ -299,5 +299,8 @@ All file system operations use resilient wrappers (`fs-safe.js`):
 | 2026-06-22 | Parallelized build finalization                               | saveManifest + exportSchoolsCsv run concurrently via Promise.all                                                                                         |
 | 2026-06-22 | Circuit breaker isolation for bulk file writes                | Added `useCircuitBreaker` option (default true); bulk page writes bypass circuit breaker to prevent cascade failures from isolated write errors          |
 | 2026-06-22 | Province page pre-grouping (O(n) → O(n×p)) + skipFilter       | Added `groupSchoolsByProvince()`, `skipFilter` param in `buildProvincePageData`/`generateProvincePageHtml` — eliminates redundant per-province filtering |
+| 2026-06-29 | Eliminated redundant getUniqueProvinces call in generateProvincePages | Derive provinces from `groupSchoolsByProvince()` Map instead of second O(n) pass — saves one full school iteration per build |
+| 2026-06-29 | Async gzip level 6 (was sync level 9) in writeSearchDataFile | `promisify(zlib.gzip)` at level 6 — ~3x faster compression, non-blocking event loop, <2% gzip size penalty for static-served artifacts |
+| 2026-06-29 | Parallelized build-phase generation                           | Homepage, schools.json, and province pages run concurrently via Promise.all — reduces critical-path wall time |
 
 > **Note**: Keep documentation in sync with implementation. When implementation changes, update the corresponding documentation immediately. Use ADRs for significant architectural changes (see `docs/adr/`).
