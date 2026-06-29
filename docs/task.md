@@ -6213,3 +6213,94 @@ Standardized error handling patterns across the codebase: centralized all scatte
 - **Suggestion**: Verify that no callers pass `skipFilter=false` or `undefined`. If confirmed, remove `filterSchoolsByProvince()` and make `skipFilter` mandatory (remove the default `false`). Alternatively, keep but mark `@deprecated` with a clear removal timeline. This reduces the module surface area and eliminates an untested code path.
 - **Priority**: Low
 - **Effort**: Trivial
+
+---
+
+### [TASK-047] Security Audit Pass 5 - Workflow Permission Hardening (Regression Fix)
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive security audit following up on TASK-044. All workflow file security fixes from prior audits had regressed again — the `agent` branch still contained the original vulnerable configurations. Fixed 17 security issues across 6 workflow files: removed duplicate `API_KEY` secrets, fixed `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` mappings, removed `id-token: write` from non-OIDC workflows, and removed `actions: write` from non-merge workflows.
+
+### Audit Results
+
+| Check                  | Result                                       |
+| ---------------------- | -------------------------------------------- |
+| npm audit (prod)       | 0 vulnerabilities                            |
+| npm audit (dev)        | 0 vulnerabilities                            |
+| npm outdated           | 0 outdated (all synced)                      |
+| ESLint                 | 0 errors                                     |
+| Prettier               | All formatted                                |
+| JS Tests               | 842/842 pass                                 |
+| Build                  | 3474 pages, 0 failed                         |
+| Hardcoded secrets      | None found                                   |
+| Secret scanning        | None found in source code                    |
+| Deprecated packages    | None found                                   |
+| Security headers       | CSP, HSTS, XFO, SAMEORIGIN, etc. all present |
+| innerHTML/XSS vectors  | All use textContent/DOM APIs (secure)        |
+| Command injection      | All execSync calls properly validated        |
+| TODO/FIXME/HACK        | None found in source                         |
+
+### Actions Taken
+
+1. **Removed duplicate `API_KEY` in `on-push.yml` (CRITICAL)**:
+   - Removed `API_KEY: ${{ secrets.GEMINI_API_KEY }}` (exact duplicate of GEMINI_API_KEY)
+   - Removed `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}` (incorrect mapping)
+
+2. **Removed duplicate `API_KEY` entries from `parallel.yml` (CRITICAL)**:
+   - Removed from architect job (`API_KEY: ${{ secrets.GEMINI_API_KEY }}`)
+   - Removed from specialist, Fixer, and PR-Handler steps (3 occurrences via replaceAll)
+
+3. **Replaced `secrets.GH_TOKEN` with `secrets.GITHUB_TOKEN` in 2 workflows (HIGH)**:
+   - `orchestrator.yml`: Replaced both occurrences (env var + checkout token)
+   - `architect-agent.yml`: Replaced the env var reference
+
+4. **Removed `id-token: write` from non-OIDC workflows (HIGH)**:
+   - `parallel.yml`: Removed from top-level
+   - `orchestrator.yml`: Removed from both top-level and job-level
+   - `architect-agent.yml`: Removed from both levels
+   - `opencode.yml`: Removed from both levels
+   - `on-pull.yml`: Removed from top-level
+
+5. **Removed `actions: write` from non-merge workflows (HIGH)**:
+   - `parallel.yml`: Removed from top-level
+   - `orchestrator.yml`: Removed from both levels
+   - `architect-agent.yml`: Removed from both levels
+
+### Files Modified
+
+- `.github/workflows/on-push.yml` — Removed `API_KEY` and `VITE_SUPABASE_ANON_KEY` env vars
+- `.github/workflows/parallel.yml` — Removed 4 `API_KEY` env vars + `actions: write` + `id-token: write`
+- `.github/workflows/orchestrator.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN`, removed `id-token: write` + `actions: write`
+- `.github/workflows/architect-agent.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN`, removed `id-token: write` + `actions: write`
+- `.github/workflows/opencode.yml` — Removed `id-token: write` from both levels
+- `.github/workflows/on-pull.yml` — Removed `id-token: write`
+- `SECURITY_AUDIT_NOTE.md` — Updated audit documentation
+- `docs/task.md` — This entry
+
+### Verification
+
+| Check           | Result                      |
+| --------------- | --------------------------- |
+| npm audit       | 0 vulnerabilities           |
+| ESLint          | 0 errors, 3 pre-existing warnings in coverage files |
+| Prettier        | All formatted               |
+| JS Tests        | 842/842 pass                |
+| Build           | 3474 pages, 0 failed        |
+| Zero regressions| Confirmed                   |
+
+### Acceptance Criteria
+
+- [x] Duplicate `API_KEY` references removed from `on-push.yml` (1) and `parallel.yml` (4)
+- [x] `VITE_SUPABASE_ANON_KEY` incorrect mapping removed from `on-push.yml`
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in all workflows (2 files)
+- [x] `id-token: write` removed from all 5 non-OIDC workflows
+- [x] `actions: write` removed from all 3 non-merge workflows
+- [x] All tests pass (842 JS)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions
