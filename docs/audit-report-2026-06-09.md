@@ -130,16 +130,17 @@
 ❌ **Blocked**: GitHub token (`github-actions[bot]`) does not have permission to create issues in this repository. All findings above should be manually created as GitHub issues.
 
 Required issues to create:
-| # | Title | Labels | Priority |
-|---|-------|--------|----------|
-| 1 | cloudflare-pages.yml misplaced at project root instead of .github/workflows/ | bug, P1 | HIGH |
-| 2 | utils.js SRP violation: split into domain-specific modules | refactor, P2 | MEDIUM |
-| 3 | Low test coverage in interactive.js (60%) and sitemap.js (68%) | test, P2 | MEDIUM |
-| 4 | CI workflow secrets over-exposed on every push | security, P2 | MEDIUM |
-| 5 | No automated release process with versioning | chore, P2 | MEDIUM |
-| 6 | lint-staged engine mismatch with project Node.js version | chore, P3 | LOW |
-| 7 | security-engineer.md contains duplicated content lines 148-163 | docs, P3 | LOW |
-| 8 | No pagination for school search results on homepage | enhancement, P3 | LOW |
+
+| #   | Title                                                                        | Labels          | Priority |
+| --- | ---------------------------------------------------------------------------- | --------------- | -------- |
+| 1   | cloudflare-pages.yml misplaced at project root instead of .github/workflows/ | bug, P1         | HIGH     |
+| 2   | utils.js SRP violation: split into domain-specific modules                   | refactor, P2    | MEDIUM   |
+| 3   | Low test coverage in interactive.js (60%) and sitemap.js (68%)               | test, P2        | MEDIUM   |
+| 4   | CI workflow secrets over-exposed on every push                               | security, P2    | MEDIUM   |
+| 5   | No automated release process with versioning                                 | chore, P2       | MEDIUM   |
+| 6   | lint-staged engine mismatch with project Node.js version                     | chore, P3       | LOW      |
+| 7   | security-engineer.md contains duplicated content lines 148-163               | docs, P3        | LOW      |
+| 8   | No pagination for school search results on homepage                          | enhancement, P3 | LOW      |
 
 ---
 
