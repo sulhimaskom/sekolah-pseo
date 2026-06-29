@@ -16,13 +16,13 @@
 | npm audit        | ✅ 0 vulnerabilities                                                      |
 | Coverage         | ✅ Lines: 91.93%, Branches: 90.41%, Functions: 92.10%, Statements: 91.93% |
 
-| Metric       | Status                 |
+| Metric | Status |
 | ------------ | ---------------------- | ---------------- | ------------------------------------------------------------------------- |
-| ZK           |                        | JavaScript Tests | ✅ PASSING (558 tests)                                                    |
-| Python Tests | ✅ PASSING (18 tests)  |
-| ESLint       | ✅ PASSING (no errors) |
-| npm audit    | ✅ 0 vulnerabilities   |
-| YQ           |                        | Coverage         | ✅ Lines: 91.93%, Branches: 90.41%, Functions: 92.10%, Statements: 91.93% |
+| ZK | | JavaScript Tests | ✅ PASSING (558 tests) |
+| Python Tests | ✅ PASSING (18 tests) |
+| ESLint | ✅ PASSING (no errors) |
+| npm audit | ✅ 0 vulnerabilities |
+| YQ | | Coverage | ✅ Lines: 91.93%, Branches: 90.41%, Functions: 92.10%, Statements: 91.93% |
 
 ---
 
