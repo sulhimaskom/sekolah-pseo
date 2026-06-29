@@ -1,6 +1,10 @@
 const globals = require('globals');
 
 module.exports = [
+  // Global ignores
+  {
+    ignores: ['coverage/**'],
+  },
   {
     files: ['scripts/**/*.js', 'src/**/*.js'],
     ignores: ['dist/**', 'node_modules/**', '**/*.test.js', 'eslint.config.js'],

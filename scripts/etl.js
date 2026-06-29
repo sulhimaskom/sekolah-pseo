@@ -31,6 +31,7 @@ const {
   saveEnrichmentData,
   logEnrichmentSummary,
 } = require('./enrichment');
+const SCHEMA = require('./data-schema');
 
 // Export functions for testing
 module.exports = {
@@ -84,17 +85,17 @@ function normaliseRecord(raw) {
   const currentDate = new Date().toISOString().split('T')[0];
 
   return {
-    npsn: sanitize(raw.npsn || raw.NPSN || ''),
-    nama: sanitize(raw.nama || raw.nama_sekolah || raw.Nama || ''),
-    bentuk_pendidikan: sanitize(raw.bentuk_pendidikan || raw.jenjang || ''),
-    status: sanitize(raw.status || raw.status_sekolah || ''),
-    alamat: sanitize(raw.alamat || raw.alamat_jalan || ''),
-    kelurahan: sanitize(raw.kelurahan || raw.desa || ''),
-    kecamatan: sanitize(raw.kecamatan || ''),
-    kab_kota: sanitize(raw.kabupaten || raw.kab_kota || raw.kota || ''),
-    provinsi: sanitize(raw.provinsi || ''),
-    lat: sanitize(raw.lat || raw.latitude || ''),
-    lon: sanitize(raw.lon || raw.longitude || ''),
+    npsn: sanitize(SCHEMA.mapRawField(raw, 'npsn')),
+    nama: sanitize(SCHEMA.mapRawField(raw, 'nama')),
+    bentuk_pendidikan: sanitize(SCHEMA.mapRawField(raw, 'bentuk_pendidikan')),
+    status: sanitize(SCHEMA.mapRawField(raw, 'status')),
+    alamat: sanitize(SCHEMA.mapRawField(raw, 'alamat')),
+    kelurahan: sanitize(SCHEMA.mapRawField(raw, 'kelurahan')),
+    kecamatan: sanitize(SCHEMA.mapRawField(raw, 'kecamatan')),
+    kab_kota: sanitize(SCHEMA.mapRawField(raw, 'kab_kota')),
+    provinsi: sanitize(SCHEMA.mapRawField(raw, 'provinsi')),
+    lat: sanitize(SCHEMA.mapRawField(raw, 'lat')),
+    lon: sanitize(SCHEMA.mapRawField(raw, 'lon')),
     updated_at: currentDate,
   };
 }
@@ -330,15 +331,27 @@ async function run() {
 
     const processed = [];
     const rejected = [];
+    const categoricalWarnings = [];
+
     for (const record of rawRecords) {
       try {
         const normalized = normaliseRecord(record);
-        if (validateRecord(normalized)) {
+        const schemaErrors = SCHEMA.validateRecord(normalized);
+
+        if (schemaErrors.length === 0) {
           processed.push(normalized);
         } else {
+          const categoricalErrors = schemaErrors.filter(e => e.includes('allowed:'));
+          if (categoricalErrors.length > 0) {
+            categoricalWarnings.push({
+              npsn: normalized.npsn || 'N/A',
+              errors: categoricalErrors,
+            });
+          }
+
           rejected.push({
             npsn: normalized.npsn || 'N/A',
-            reason: 'Missing required fields or invalid NPSN',
+            reason: schemaErrors.join('; '),
           });
         }
       } catch (recordError) {
@@ -351,6 +364,18 @@ async function run() {
 
     logger.info(`Processed ${processed.length} valid records`);
     logger.info(`Rejected ${rejected.length} invalid records`);
+
+    if (categoricalWarnings.length > 0) {
+      logger.warn(
+        `\nCategorical validation warnings: ${categoricalWarnings.length} records with invalid categorical values`
+      );
+      for (const w of categoricalWarnings.slice(0, 5)) {
+        logger.warn(`  NPSN ${w.npsn}: ${w.errors.join(', ')}`);
+      }
+      if (categoricalWarnings.length > 5) {
+        logger.warn(`  ... and ${categoricalWarnings.length - 5} more`);
+      }
+    }
 
     if (processed.length === 0) {
       terminate('No valid records found after processing');
@@ -401,6 +426,7 @@ async function run() {
 
     await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);
     logger.info(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
+    logger.info(`Data schema version: ${SCHEMA.SCHEMA_VERSION}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {
       logger.error({ err: error, code: error.code }, 'Integration error');

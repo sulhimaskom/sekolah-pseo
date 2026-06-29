@@ -131,6 +131,10 @@
 - ~~Fix duplicate Improvements Log section in Product-Architect.md~~ - DONE ([PR #302](https://github.com/sulhimaskom/sekolah-pseo/pull/302))
 - ~~Verify issue #292 status (modules already documented in api.md)~~ - DONE
 - ~~Fix Node.js version inconsistency between blueprint.md and setup.md~~ - DONE ([PR #311](https://github.com/sulhimaskom/sekolah-pseo/pull/311))
+- ~~Add shared template modules (head-meta.js, back-to-top.js) to api.md~~ - DONE
+- ~~Fix Error Code Mapping table (missing 4 network error codes)~~ - DONE
+- ~~Update test counts in testing.md (842→875, 25→26 files)~~ - DONE
+- ~~Add shared/ subdirectory to README.md and blueprint.md project structures~~ - DONE
 
 ## Notes
 
@@ -144,4 +148,7 @@
 - The blueprint.md decisions log had duplicate entries for the same decisions (province page optimization appeared under both 2026-06-08 and 2026-06-15) - watch for this pattern
 - verify function signatures in api.md by comparing to actual module.exports in source files — missing params (skipFilter, enrichment, enrichmentMap) are the most common doc gap
 - After performance optimization (TASK-039), schools.json is 877KB (was 1.1MB) — update size references in api.md when file format changes
-- Test count was 842 as of 2026-06-29 — always run `npm run test:js` to get the current count before updating testing.md
+- Test count is 875 as of 2026-06-29 — always run `npm run test:js` to get the current count before updating testing.md
+- When checking api.md completeness, grep for `module.exports` in `src/presenters/templates/shared/*.js` — shared modules are easy to miss
+- The Error Code Mapping table in api.md's Error Handling Standards section often lags behind the code — check resilience.js ERROR_CODES for the canonical list
+- Shared template modules (head-meta.js, back-to-top.js) have no dependencies — they are standalone string/function exports

@@ -29,17 +29,12 @@ const fs = require('fs');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { parseCsv, terminate } = require('./utils');
+const SCHEMA = require('./data-schema');
 
 // ── Configuration ───────────────────────────────────────────────────────────
 
-const REQUIRED_FIELDS = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
-
-const INDONESIA_BOUNDS = {
-  LAT_MIN: -11,
-  LAT_MAX: 6,
-  LON_MIN: 95,
-  LON_MAX: 141,
-};
+const REQUIRED_FIELDS = SCHEMA.REQUIRED_FIELDS;
+const INDONESIA_BOUNDS = SCHEMA.INDONESIA_BOUNDS;
 
 const DEFAULT_THRESHOLDS = {
   MIN_COMPLETENESS_PCT: 90,
@@ -99,6 +94,7 @@ function analyzeQuality(schools) {
     summary: {
       totalSchools: total,
       overallScore: 0,
+      schemaVersion: SCHEMA.SCHEMA_VERSION,
     },
     fieldCompleteness: {},
     coordinates: {
@@ -395,8 +391,8 @@ function main() {
 module.exports = {
   analyzeQuality,
   checkThresholds,
-  isValidCoordinate,
-  isNonEmpty,
+  isValidCoordinate: SCHEMA.isValidCoordinate,
+  isNonEmpty: SCHEMA.isNonEmpty,
   pct,
   createBar,
   formatHuman,

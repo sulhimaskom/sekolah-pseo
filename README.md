@@ -215,7 +215,10 @@ sekolah-pseo/
 │   │   └── templates/      # Template HTML
 │   │       ├── homepage.js
 │   │       ├── province-page.js
-│   │       └── school-page.js
+│   │       ├── school-page.js
+│   │       └── shared/
+│   │           ├── head-meta.js    # Shared HTML head prefix
+│   │           └── back-to-top.js  # Shared back-to-top button
 │   └── services/
 │       └── PageBuilder.js   # Halaman builder service
 ├── tests/                 # Test Python

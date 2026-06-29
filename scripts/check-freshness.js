@@ -16,7 +16,7 @@ const fs = require('fs');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { terminate } = require('./utils');
+const { parseCsv, terminate } = require('./utils');
 
 const DEFAULT_MAX_AGE_DAYS = 7;
 
@@ -39,9 +39,9 @@ function getDataFreshness() {
     }
 
     const content = fs.readFileSync(schoolsPath, 'utf-8');
-    const lines = content.trim().split('\n');
+    const schools = parseCsv(content);
 
-    if (lines.length <= 1) {
+    if (schools.length === 0) {
       return {
         exists: true,
         date: null,
@@ -51,15 +51,11 @@ function getDataFreshness() {
       };
     }
 
-    // Skip header, find the most recent updated_at (last column)
-    const dataLines = lines.slice(1);
-    const recordCount = dataLines.length;
+    const recordCount = schools.length;
 
-    // Get the last updated_at value (most recent)
     let mostRecentDate = null;
-    for (let i = dataLines.length - 1; i >= 0; i--) {
-      const fields = dataLines[i].split(',');
-      const updatedAt = fields[fields.length - 1]?.trim();
+    for (let i = schools.length - 1; i >= 0; i--) {
+      const updatedAt = (schools[i].updated_at || '').trim();
       if (updatedAt && updatedAt.match(/^\d{4}-\d{2}-\d{2}$/)) {
         mostRecentDate = new Date(updatedAt);
         break;
@@ -111,32 +107,30 @@ function getDataQualityMetrics() {
     }
 
     const content = fs.readFileSync(schoolsPath, 'utf-8');
-    const lines = content.trim().split('\n');
+    const schools = parseCsv(content);
 
-    if (lines.length <= 1) {
+    if (schools.length === 0) {
       return { totalRecords: 0, metrics: {} };
     }
 
-    const dataLines = lines.slice(1);
-    const totalRecords = dataLines.length;
+    const totalRecords = schools.length;
 
     let withCoordinates = 0;
     let withAddress = 0;
     let withNpsn = 0;
     let withProvince = 0;
 
-    for (const line of dataLines) {
-      const fields = line.split(',');
-      if (fields.length >= 12) {
-        const [, , , , alamat, , , , , lat, lon] = fields;
-        const npsn = fields[0]?.trim();
-        const province = fields[9]?.trim();
+    for (const school of schools) {
+      const npsn = (school.npsn || '').trim();
+      const lat = (school.lat || '').trim();
+      const lon = (school.lon || '').trim();
+      const alamat = (school.alamat || '').trim();
+      const province = (school.provinsi || '').trim();
 
-        if (lat && lon) withCoordinates++;
-        if (alamat && alamat.trim()) withAddress++;
-        if (npsn && npsn.match(/^\d+$/)) withNpsn++;
-        if (province) withProvince++;
-      }
+      if (lat && lon) withCoordinates++;
+      if (alamat) withAddress++;
+      if (npsn && /^\d+$/.test(npsn)) withNpsn++;
+      if (province) withProvince++;
     }
 
     return {

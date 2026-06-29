@@ -13,6 +13,7 @@ scripts/           # Controllers and utilities
 ├── resilience.js  # Resilience patterns
 ├── fs-safe.js     # Resilient file system wrappers
 ├── rate-limiter.js # Rate limiting for concurrent operations
+├── data-schema.js # Centralized data schema definition
 ├── slugify.js     # URL slug generation
 ├── etl.js         # ETL operations
 ├── build-pages.js # Page build controller
@@ -32,7 +33,10 @@ src/
     └── templates/
         ├── school-page.js    # School page HTML template
         ├── homepage.js       # Homepage HTML template
-        └── province-page.js  # Province page HTML template
+        ├── province-page.js  # Province page HTML template
+        └── shared/
+            ├── head-meta.js      # Shared HTML head prefix (security headers, meta)
+            └── back-to-top.js    # Shared back-to-top button HTML + script
 ```
 
 ## Configuration Module (`scripts/config.js`)
@@ -91,6 +95,335 @@ Validates that `targetPath` is within `basePath` to prevent path traversal attac
 const isValid = validatePath('/project/data/file.csv', '/project');
 // Returns: true
 ```
+
+---
+
+## Data Schema Module (`scripts/data-schema.js`)
+
+### Purpose
+
+Centralized data schema definition that serves as the single source of truth for the school dataset. Provides field definitions with types, constraints, allowed values, raw field name mappings, and validation functions.
+
+### Exports
+
+```javascript
+module.exports = {
+  SCHEMA_VERSION, // Schema version string
+  INDONESIA_BOUNDS, // Geographic bounding box
+  ALLOWED_VALUES, // Categorical field allowed values
+  FIELDS, // All field definitions
+  CSV_FIELD_ORDER, // Canonical CSV column order
+  REQUIRED_FIELDS, // Required field names
+  isNonEmpty, // Value emptiness check
+  isValidCoordinate, // Coordinate bounds check
+  isValidCategoricalValue, // Categorical value check
+  matchesPattern, // Regex pattern matcher
+  validateRecord, // Full record validator
+  validateCoordinates, // Coordinate validator
+  checkCoordinateQuality, // Coordinate quality assessment
+  mapRawField, // Raw field name mapper
+  getSchemaInfo, // Schema metadata getter
+};
+```
+
+### Constants
+
+#### `SCHEMA_VERSION`
+
+- **Type:** `string`
+- **Value:** `'1.0'`
+- **Description:** Schema version identifier for forward-compatible schema evolution.
+
+#### `INDONESIA_BOUNDS`
+
+- **Type:** `Object`
+- **Properties:**
+  - `LAT_MIN` (number): `-11` — Minimum Indonesia latitude
+  - `LAT_MAX` (number): `6` — Maximum Indonesia latitude
+  - `LON_MIN` (number): `95` — Minimum Indonesia longitude
+  - `LON_MAX` (number): `141` — Maximum Indonesia longitude
+- **Description:** Geographic bounding box for Indonesia coordinate validation.
+
+#### `ALLOWED_VALUES`
+
+- **Type:** `Object<string, string[]>`
+- **Properties:**
+  - `status`: `['N', 'S']` — Negeri (Public) or Swasta (Private)
+  - `bentuk_pendidikan`: `['SD', 'SMP', 'SMA', 'SMK', 'SLB', 'SDLB', 'SMLB', 'SMPLB']`
+- **Description:** Allowed categorical values per field, used for validation at the ETL boundary.
+
+#### `FIELDS`
+
+- **Type:** `Object<string, Object>`
+- **Description:** Registry of all 12 field definitions. Each entry contains:
+  - `type` (string): Data type (`'string'`)
+  - `required` (boolean): Whether the field is mandatory
+  - `description` (string): Human-readable description
+  - `allowedValues` (string[]|undefined): Categorical constraints (only for categorical fields)
+  - `pattern` (RegExp|undefined): Validation regex pattern
+  - `min`/`max` (number|undefined): Numerical bounds (for lat/lon)
+  - `rawMappings` (string[]): Raw CSV column name aliases for ETL normalisation
+
+**Fields:**
+
+| Field               | Required | Type   | Constraints                                        |
+| ------------------- | -------- | ------ | -------------------------------------------------- |
+| `npsn`              | yes      | string | Must be numeric (`/^\d+$/`)                        |
+| `nama`              | yes      | string | —                                                  |
+| `bentuk_pendidikan` | yes      | string | Allowed: SD, SMP, SMA, SMK, SLB, SDLB, SMLB, SMPLB |
+| `status`            | no       | string | Allowed: N, S                                      |
+| `alamat`            | no       | string | —                                                  |
+| `kelurahan`         | no       | string | —                                                  |
+| `kecamatan`         | yes      | string | —                                                  |
+| `kab_kota`          | yes      | string | —                                                  |
+| `provinsi`          | yes      | string | —                                                  |
+| `lat`               | no       | string | -11 to 6 (Indonesia bounds)                        |
+| `lon`               | no       | string | 95 to 141 (Indonesia bounds)                       |
+| `updated_at`        | no       | string | ISO date (YYYY-MM-DD)                              |
+
+#### `CSV_FIELD_ORDER`
+
+- **Type:** `string[]`
+- **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat', 'kelurahan', 'kecamatan', 'kab_kota', 'provinsi', 'lat', 'lon', 'updated_at']`
+- **Description:** Canonical column order for CSV output files (e.g., `data/schools.csv`).
+
+#### `REQUIRED_FIELDS`
+
+- **Type:** `string[]`
+- **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan']`
+- **Description:** Fields that must be non-empty for a valid school record.
+
+### Functions
+
+#### `isNonEmpty(value)`
+
+Checks if a value is non-empty.
+
+**Parameters:**
+
+- `value` (*): Value to check
+
+**Returns:** `boolean` — `true` if value is not null, not undefined, and (if string) not empty after trimming
+
+**Error Handling:** N/A (returns boolean)
+
+**Usage:**
+
+```javascript
+isNonEmpty(null); // false
+isNonEmpty(''); // false
+isNonEmpty('text'); // true
+```
+
+#### `matchesPattern(value, pattern)`
+
+Validates that a string matches a regex pattern.
+
+**Parameters:**
+
+- `value` (string): String to test
+- `pattern` (RegExp): Regex pattern
+
+**Returns:** `boolean` — `true` if value matches pattern after trimming
+
+**Error Handling:** Returns `false` for non-string input (no throw)
+
+**Usage:**
+
+```javascript
+matchesPattern('12345', /^\d+$/); // true
+matchesPattern('abc', /^\d+$/); // false
+```
+
+#### `isValidCoordinate(value, min, max)`
+
+Validates a coordinate value is within specified numeric bounds.
+
+**Parameters:**
+
+- `value` (string|number): Coordinate value
+- `min` (number): Minimum bound (inclusive)
+- `max` (number): Maximum bound (inclusive)
+
+**Returns:** `boolean` — `true` if value is a non-zero number within [min, max]
+
+**Error Handling:** Returns `false` for null, undefined, NaN, or zero values
+
+**Usage:**
+
+```javascript
+isValidCoordinate('-6.2', -11, 6); // true
+isValidCoordinate('0', -11, 6); // false (zero = unset)
+isValidCoordinate('100', 95, 141); // false (out of bounds)
+```
+
+#### `isValidCategoricalValue(field, value)`
+
+Checks if a value is in the allowed list for a categorical field.
+
+**Parameters:**
+
+- `field` (string): Canonical field name
+- `value` (string): Value to validate
+
+**Returns:** `boolean`
+
+- Returns `true` if the field is not categorical (free-text pass-through)
+- Returns `true` if value is in the allowed list
+- Returns `false` for null/undefined values on categorical fields
+
+**Error Handling:** Returns `true` for non-categorical fields — no throw
+
+**Usage:**
+
+```javascript
+isValidCategoricalValue('status', 'N'); // true
+isValidCategoricalValue('status', 'X'); // false
+isValidCategoricalValue('nama', 'SMA Negeri 1'); // true (free-text field)
+```
+
+#### `validateRecord(record)`
+
+Validates a normalized school record against the schema. Checks required fields, regex patterns, and categorical values.
+
+**Parameters:**
+
+- `record` (Object): Normalized school record
+
+**Returns:** `string[]` — Array of error messages (empty array means record is valid)
+
+**Error Handling:**
+
+- Non-object/null/array input → returns `['Record must be a non-null object']`
+- Missing required fields → returns descriptive error per field
+- Pattern violations → returns format-specific message
+- Invalid categorical values → returns allowed values in message
+
+**Usage:**
+
+```javascript
+const errors = validateRecord({ npsn: '123', nama: 'SDN 1', ... });
+if (errors.length > 0) {
+  errors.forEach(e => console.error(e));
+}
+```
+
+#### `validateCoordinates(record)`
+
+Validates lat/lon fields for a record against Indonesia geographic bounds.
+
+**Parameters:**
+
+- `record` (Object): School record with `lat` and/or `lon` fields
+
+**Returns:** `Object`
+
+```javascript
+{
+  lat: { valid: boolean, error?: string },
+  lon: { valid: boolean, error?: string }
+}
+```
+
+**Error Handling:** Returns `{ valid: true }` for each field if the value is empty or valid. Returns error with bounds range for out-of-range values.
+
+**Usage:**
+
+```javascript
+validateCoordinates({ lat: '-6.2', lon: '106.8' });
+// { lat: { valid: true }, lon: { valid: true } }
+
+validateCoordinates({ lat: '100', lon: '200' });
+// { lat: { valid: false, error: 'Latitude "100" outside Indonesia bounds [-11, 6]' },
+//   lon: { valid: false, error: 'Longitude "200" outside Indonesia bounds [95, 141]' } }
+```
+
+#### `checkCoordinateQuality(record)`
+
+Returns an aggregate quality assessment for coordinate data.
+
+**Parameters:**
+
+- `record` (Object): School record
+
+**Returns:** `Object`
+
+```javascript
+{ hasData: boolean, isValid: boolean }
+```
+
+- `hasData`: `true` if either `lat` or `lon` is non-empty
+- `isValid`: `true` if all present coordinates are within Indonesia bounds
+
+**Usage:**
+
+```javascript
+checkCoordinateQuality({}); // { hasData: false, isValid: false }
+checkCoordinateQuality({ lat: '-6.2', lon: '106.8' }); // { hasData: true, isValid: true }
+```
+
+#### `mapRawField(raw, fieldName)`
+
+Maps a raw input field value to a canonical field name by trying each raw mapping in order.
+
+**Parameters:**
+
+- `raw` (Object): Raw input record from CSV parsing
+- `fieldName` (string): Canonical field name from `FIELDS`
+
+**Returns:** `string` — First non-empty value found from raw mappings, or `''` if none found
+
+**Dependencies:**
+
+- `FIELDS` — reads the field's `rawMappings` array
+
+**Usage:**
+
+```javascript
+mapRawField({ NPSN: '123', latitude: '-6.2' }, 'npsn'); // '123'
+mapRawField({ nama: 'SDN 1' }, 'npsn'); // '' (no matching raw field)
+mapRawField({ alamat_jalan: 'Jl. Merdeka' }, 'alamat'); // 'Jl. Merdeka'
+```
+
+#### `getSchemaInfo()`
+
+Returns schema metadata in a serializable format for documentation and reporting.
+
+**Parameters:** None
+
+**Returns:** `Object`
+
+```javascript
+{
+  version: string,            // SCHEMA_VERSION
+  fields: Array<{             // All field definitions
+    name, type, required, description, allowedValues, constraints
+  }>,
+  csvFieldOrder: string[],    // CSV_FIELD_ORDER
+  requiredFields: string[],   // REQUIRED_FIELDS
+  indonesiaBounds: Object,    // INDONESIA_BOUNDS copy
+}
+```
+
+**Usage:**
+
+```javascript
+const info = getSchemaInfo();
+console.log(info.version); // '1.0'
+console.log(info.fields.length); // 12
+```
+
+### Dependencies
+
+None — this is a standalone module. It is consumed by:
+
+- `scripts/etl.js` — Uses `mapRawField`, `validateRecord` for ETL pipeline validation and field normalisation
+- `scripts/data-quality.js` — Uses `REQUIRED_FIELDS`, `INDONESIA_BOUNDS`, `isNonEmpty`, `isValidCoordinate`
+
+### Source
+
+- `scripts/data-schema.js` (392 lines)
+- `scripts/data-schema.test.js` (33 tests)
 
 ---
 
@@ -2181,6 +2514,128 @@ Province pages are generated at:
 
 Example: `/provinsi/dki-jakarta/index.html`
 
+---
+
+## Shared Template Modules (`src/presenters/templates/shared/`)
+
+Shared components extracted from individual templates to eliminate duplication across school pages, province pages, and homepage.
+
+### Head Meta Module (`src/presenters/templates/shared/head-meta.js`)
+
+#### Purpose
+
+Provides the shared HTML document head prefix used by all page templates. Extracting this boilerplate to a single constant eliminates ~1.2KB of duplication per page — saving ~4MB of total output across all 3474+ generated pages while keeping security configuration in one place.
+
+#### Exports
+
+```javascript
+module.exports = {
+  HTML_HEAD_PREFIX: string,
+};
+```
+
+#### Constants
+
+##### `HTML_HEAD_PREFIX`
+
+A constant string containing the shared HTML head tags that are identical across all page types.
+
+**Value (abbreviated):**
+
+```html
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'..." />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), ..." />
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin" />
+    <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+</html>
+```
+
+**Dependencies:** None (standalone constant)
+
+**Usage:**
+
+```javascript
+const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
+
+// Each template appends its own title, description, canonical URL,
+// OG tags, and stylesheet link after this prefix
+const fullHtml = HTML_HEAD_PREFIX + `  <title>School Name</title>\n</head>\n...`;
+```
+
+---
+
+### Back-to-Top Module (`src/presenters/templates/shared/back-to-top.js`)
+
+#### Purpose
+
+Provides the back-to-top button HTML and scroll-to-top JavaScript that appear on all page types. Extracted to eliminate code duplication across school-page, province-page, and homepage templates.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateBackToTopHtml: function,
+  generateBackToTopScript: function,
+};
+```
+
+#### Functions
+
+##### `generateBackToTopHtml()`
+
+Generates the HTML for a back-to-top button with an SVG chevron-up icon.
+
+**Parameters:** None
+
+**Returns:** `string` — HTML string containing a `<button>` element with the `.back-to-top` class and `aria-label="Kembali ke atas"`
+
+**Usage:**
+
+```javascript
+const { generateBackToTopHtml } = require('./shared/back-to-top');
+const html = generateBackToTopHtml();
+// Returns: '<button class="back-to-top" aria-label="Kembali ke atas">...'
+```
+
+---
+
+##### `generateBackToTopScript()`
+
+Generates the JavaScript for scroll-based visibility toggling and smooth scrolling for the back-to-top button.
+
+**Parameters:** None
+
+**Returns:** `string` — Inline `<script>` tag
+
+**Behavior:**
+
+- Shows the button after scrolling past 300px
+- Hides the button when near the top
+- Scrolls smoothly to top on click (respects `prefers-reduced-motion`)
+- Uses a passive scroll listener for performance
+
+**Usage:**
+
+```javascript
+const { generateBackToTopScript } = require('./shared/back-to-top');
+const script = generateBackToTopScript();
+```
+
+---
+
 ## Build Pages Controller (`scripts/build-pages.js`)
 
 ### Purpose
@@ -3849,6 +4304,10 @@ All integration errors use `IntegrationError` with consistent structure:
 | `TIMEOUT`                | All operations  | Operation exceeded time limit      |
 | `RETRY_EXHAUSTED`        | All retries     | All retry attempts failed          |
 | `CIRCUIT_BREAKER_OPEN`   | File I/O        | Circuit breaker is blocking        |
+| `HTTP_ERROR`             | Network         | HTTP request failed                |
+| `NETWORK_ERROR`          | Network         | Network communication failure      |
+| `EXTERNAL_SERVICE_ERROR` | Network         | External service operation failed  |
+| `FETCH_ERROR`            | Network         | Data fetch operation failed        |
 
 ### Error Handling Patterns
 
@@ -3939,8 +4398,22 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 │         src/presenters/templates/school-page.js             │
 │  Depends:                                                   │
 │  - utils.js (escapeHtml)                                    │
+│  - src/presenters/templates/shared/head-meta.js             │
+│  - src/presenters/templates/shared/back-to-top.js           │
 └─────────────────────────────────────────────────────────────┘
+                            │
+                            ├──────────────────┐
+                            ▼                  ▼
+┌─────────────────────────────────┐ ┌─────────────────────────────────┐
+│ src/presenters/templates/shared │ │ src/presenters/templates/shared │
+│    /head-meta.js               │ │    /back-to-top.js              │
+│  Depends: None (standalone)    │ │  Depends: None (standalone)     │
+└─────────────────────────────────┘ └─────────────────────────────────┘
 ```
+
+:::info
+The same shared modules (`head-meta.js`, `back-to-top.js`) are also used by `homepage.js` and `province-page.js` templates.
+:::
 
 ---
 
@@ -4086,6 +4559,13 @@ None.
 ---
 
 ## Changelog
+
+### Version 1.2.0 (2026-06-29)
+
+- Added Shared Template Modules documentation (head-meta.js, back-to-top.js)
+- Updated Module Organization with `shared/` subdirectory
+- Updated Dependency Graph with shared module dependencies
+- Added 4 missing network error codes to Error Code Mapping table (HTTP_ERROR, NETWORK_ERROR, EXTERNAL_SERVICE_ERROR, FETCH_ERROR)
 
 ### Version 1.1.0 (2026-01-10)
 

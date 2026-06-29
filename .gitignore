@@ -242,6 +242,9 @@ dist/
 data/
 schools.csv
 
+# Test temporary cache directories
+test-temp-cache-*/
+
 # OpenCode internal session data
 .omo/
 

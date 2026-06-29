@@ -5,6 +5,9 @@ const DESIGN_TOKENS = {
     primary: '#2563eb',
     primaryHover: '#1d4ed8',
     primaryFocus: '#3b82f6',
+    link: '#2563eb',
+    accent: '#f3f4f6',
+    textInverse: '#111827',
     text: {
       primary: '#111827',
       secondary: '#4b5563',
@@ -30,6 +33,9 @@ const DESIGN_TOKENS = {
     },
     // Dark mode colors
     dark: {
+      link: '#60a5fa',
+      accent: '#374151',
+      textInverse: '#f9fafb',
       text: {
         primary: '#f9fafb',
         secondary: '#d1d5db',
@@ -126,6 +132,9 @@ function getCssVariables() {
     '--color-bg-accent': DESIGN_TOKENS.colors.background.accent,
     '--color-border': DESIGN_TOKENS.colors.border,
     '--color-focus': DESIGN_TOKENS.colors.focus,
+    '--color-link': DESIGN_TOKENS.colors.link,
+    '--color-accent': DESIGN_TOKENS.colors.accent,
+    '--color-text-inverse': DESIGN_TOKENS.colors.textInverse,
     // Badge colors
     '--color-badge-status-bg': DESIGN_TOKENS.colors.badge.status.bg,
     '--color-badge-status-text': DESIGN_TOKENS.colors.badge.status.text,
@@ -185,6 +194,10 @@ function getCssVariables() {
     '--color-dark-bg-secondary': DESIGN_TOKENS.colors.dark.background.secondary,
     '--color-dark-bg-accent': DESIGN_TOKENS.colors.dark.background.accent,
     '--color-dark-border': DESIGN_TOKENS.colors.dark.border,
+    // Dark mode link, accent, textInverse
+    '--color-dark-link': DESIGN_TOKENS.colors.dark.link,
+    '--color-dark-accent': DESIGN_TOKENS.colors.dark.accent,
+    '--color-dark-text-inverse': DESIGN_TOKENS.colors.dark.textInverse,
     // Dark mode badge colors
     '--color-dark-badge-status-bg': DESIGN_TOKENS.colors.dark.badge.status.bg,
     '--color-dark-badge-status-text': DESIGN_TOKENS.colors.dark.badge.status.text,
