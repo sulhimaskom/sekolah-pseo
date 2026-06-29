@@ -443,6 +443,28 @@ footer[role="contentinfo"] {
     color: var(--color-dark-text-light);
     border-top-color: var(--color-dark-border);
   }
+
+  .enrichment-card {
+    background-color: var(--color-dark-bg-secondary);
+    border-color: var(--color-dark-border);
+  }
+
+  .enrichment-extract {
+    color: var(--color-dark-text-primary);
+  }
+
+  .enrichment-source {
+    color: var(--color-dark-text-secondary);
+  }
+
+  .enrichment-source a {
+    color: var(--color-dark-link);
+  }
+
+  .enrichment-badge {
+    background-color: var(--color-dark-accent);
+    color: var(--color-dark-text-inverse);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -963,7 +985,7 @@ footer[role="contentinfo"] {
   background: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: opacity var(--transition-fast);
   white-space: nowrap;
