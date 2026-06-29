@@ -142,3 +142,6 @@
 - build-pages.js has 13 exports; sitemap.js has 6 exports - keep this in mind when updating api.md
 - Always verify test counts by running `npm run test:js` - they drift quickly as tests are added
 - The blueprint.md decisions log had duplicate entries for the same decisions (province page optimization appeared under both 2026-06-08 and 2026-06-15) - watch for this pattern
+- verify function signatures in api.md by comparing to actual module.exports in source files — missing params (skipFilter, enrichment, enrichmentMap) are the most common doc gap
+- After performance optimization (TASK-039), schools.json is 877KB (was 1.1MB) — update size references in api.md when file format changes
+- Test count was 842 as of 2026-06-29 — always run `npm run test:js` to get the current count before updating testing.md
