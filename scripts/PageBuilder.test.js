@@ -1,7 +1,12 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
-const { buildSchoolPageData, getUniqueDirectories } = require('../src/services/PageBuilder');
+const {
+  buildSchoolPageData,
+  getUniqueDirectories,
+  buildProvincePageData,
+  groupSchoolsByProvince,
+} = require('../src/services/PageBuilder');
 
 describe('buildSchoolPageData', () => {
   const validSchool = {
@@ -501,5 +506,154 @@ describe('getUniqueDirectories', () => {
     const result = getUniqueDirectories(schools);
 
     assert.ok(result.length <= 10);
+  });
+});
+
+describe('buildProvincePageData', () => {
+  it('throws error for empty string province name', () => {
+    assert.throws(() => buildProvincePageData('', []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for null province name', () => {
+    assert.throws(() => buildProvincePageData(null, []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for undefined province name', () => {
+    assert.throws(() => buildProvincePageData(undefined, []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for number province name', () => {
+    assert.throws(() => buildProvincePageData(123, []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for object province name', () => {
+    assert.throws(() => buildProvincePageData({ name: 'Test' }, []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for non-array schools (null)', () => {
+    assert.throws(() => buildProvincePageData('Jawa Barat', null), {
+      message: 'schools must be an array',
+    });
+  });
+
+  it('throws error for non-array schools (string)', () => {
+    assert.throws(() => buildProvincePageData('Jawa Barat', 'not-an-array'), {
+      message: 'schools must be an array',
+    });
+  });
+
+  it('throws error for non-array schools (object)', () => {
+    assert.throws(() => buildProvincePageData('Jawa Barat', { school: 'data' }), {
+      message: 'schools must be an array',
+    });
+  });
+
+  it('returns object with relativePath and content for valid inputs', () => {
+    const result = buildProvincePageData('Jawa Barat', []);
+
+    assert.ok(result.hasOwnProperty('relativePath'));
+    assert.ok(result.hasOwnProperty('content'));
+    assert.strictEqual(typeof result.relativePath, 'string');
+    assert.strictEqual(typeof result.content, 'string');
+  });
+
+  it('generates correct relative path structure for province', () => {
+    const result = buildProvincePageData('DKI Jakarta', []);
+
+    assert.ok(result.relativePath.includes('provinsi'));
+    assert.ok(result.relativePath.includes('dki-jakarta'));
+    assert.ok(result.relativePath.includes('index.html'));
+  });
+
+  it('passes skipFilter parameter to template', () => {
+    const resultWithSkip = buildProvincePageData('Jawa Barat', [], true);
+    const resultWithoutSkip = buildProvincePageData('Jawa Barat', [], false);
+
+    assert.ok(resultWithSkip.content);
+    assert.ok(resultWithoutSkip.content);
+  });
+});
+
+describe('groupSchoolsByProvince', () => {
+  it('returns empty Map for null input', () => {
+    const result = groupSchoolsByProvince(null);
+
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for undefined input', () => {
+    const result = groupSchoolsByProvince(undefined);
+
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for object input', () => {
+    const result = groupSchoolsByProvince({});
+
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for empty array', () => {
+    const result = groupSchoolsByProvince([]);
+
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('skips schools without provinsi field', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat' },
+      { npsn: '2', nama: 'School 2' },
+      { npsn: '3', nama: 'School 3', provinsi: null },
+      { npsn: '4', nama: 'School 4', provinsi: '' },
+    ];
+
+    const result = groupSchoolsByProvince(schools);
+
+    assert.strictEqual(result.size, 1);
+    assert.ok(result.has('Jawa Barat'));
+    assert.strictEqual(result.get('Jawa Barat').length, 1);
+  });
+
+  it('groups schools from same province together', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat' },
+      { npsn: '3', nama: 'School 3', provinsi: 'Jawa Timur' },
+    ];
+
+    const result = groupSchoolsByProvince(schools);
+
+    assert.strictEqual(result.size, 2);
+    assert.strictEqual(result.get('Jawa Barat').length, 2);
+    assert.strictEqual(result.get('Jawa Timur').length, 1);
+  });
+
+  it('returns Map with correct province keys', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Bali' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Aceh' },
+      { npsn: '3', nama: 'School 3', provinsi: 'Papua' },
+    ];
+
+    const result = groupSchoolsByProvince(schools);
+
+    assert.strictEqual(result.size, 3);
+    assert.ok(result.has('Bali'));
+    assert.ok(result.has('Aceh'));
+    assert.ok(result.has('Papua'));
   });
 });

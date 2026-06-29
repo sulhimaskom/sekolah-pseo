@@ -47,7 +47,7 @@
   "license": "ISC",
   "type": "commonjs",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.0.0"
   },
   "bugs": {
     "url": "https://github.com/sulhimaskom/sekolah-pseo/issues"
@@ -55,7 +55,7 @@
   "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme",
   "devDependencies": {
     "c8": "^11.0.0",
-    "eslint": "^10.5.0",
+    "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",

@@ -24,7 +24,7 @@
 
 | Criterion             | Weight | Score | Key Evidence                                                                    |
 | --------------------- | ------ | ----- | ------------------------------------------------------------------------------- |
-| Correctness           | 15     | 92    | All 772 JS tests pass (1 flaky); 13/13 Python tests pass                        |
+| Correctness           | 15     | 92    | All 772 JS tests pass (1 flaky); 27/27 Python tests pass                        |
 | Readability & Naming  | 10     | 95    | Consistent JSDoc, clear naming, ESLint-enforced style                           |
 | Simplicity            | 10     | 85    | Resilience layer is well-built but may be over-engineered for a static site gen |
 | Modularity & SRP      | 15     | 88    | Good layer separation; utils.js violates SRP (9 concerns in 1 file)             |

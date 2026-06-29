@@ -58,26 +58,69 @@ const ERROR_CODES = {
   TIMEOUT: 'TIMEOUT',
   RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
   CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
+
+  // Network / External service errors (integration hardening)
+  HTTP_ERROR: 'HTTP_ERROR',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+  FETCH_ERROR: 'FETCH_ERROR',
 };
 
 const TRANSIENT_ERROR_CODES = ['EAGAIN', 'EIO', 'ENOSPC', 'EBUSY', 'ETIMEDOUT'];
 
+const TRANSIENT_NETWORK_CODES = [
+  'ECONNRESET',
+  'ENOTFOUND',
+  'ECONNREFUSED',
+  'ECONNABORTED',
+  'EPIPE',
+  'EPROTO',
+  'EAI_AGAIN',
+  'ESOCKETTIMEDOUT',
+];
+
+const TRANSIENT_HTTP_STATUSES = [429, 500, 502, 503, 504];
+
 /**
  * Checks if an error is a transient error that may be retried.
+ * Covers filesystem, network, and HTTP-level transient conditions.
  * @param {Error|null} error - Error to check
  * @returns {boolean} True if error is transient and should be retried
  */
 function isTransientError(error) {
   if (!error) return false;
-  if (TRANSIENT_ERROR_CODES.includes(error.code)) return true;
+  if (TRANSIENT_ERROR_CODES.includes(error.code) || TRANSIENT_NETWORK_CODES.includes(error.code))
+    return true;
+  if (
+    TRANSIENT_HTTP_STATUSES.includes(error.statusCode) ||
+    TRANSIENT_HTTP_STATUSES.includes(error.status)
+  )
+    return true;
   if (error.message && typeof error.message === 'string') {
+    const msg = error.message;
     return (
-      error.message.includes('timeout') ||
-      error.message.includes('ECONNRESET') ||
-      error.message.includes('EAGAIN') ||
-      error.message.includes('EIO') ||
-      error.message.includes('ENOSPC') ||
-      error.message.includes('EBUSY')
+      msg.includes('timeout') ||
+      msg.includes('ECONNRESET') ||
+      msg.includes('ENOTFOUND') ||
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('ECONNABORTED') ||
+      msg.includes('EPIPE') ||
+      msg.includes('EPROTO') ||
+      msg.includes('EAI_AGAIN') ||
+      msg.includes('ESOCKETTIMEDOUT') ||
+      msg.includes('EAGAIN') ||
+      msg.includes('EIO') ||
+      msg.includes('ENOSPC') ||
+      msg.includes('EBUSY') ||
+      msg.includes('socket hang up') ||
+      msg.includes('socket closed') ||
+      msg.includes('read ETIMEDOUT') ||
+      msg.includes('5xx') ||
+      msg.includes('status 429') ||
+      msg.includes('status 500') ||
+      msg.includes('status 502') ||
+      msg.includes('status 503') ||
+      msg.includes('status 504')
     );
   }
   return false;
@@ -112,6 +155,37 @@ async function withTimeout(promise, timeoutMs, operationName = 'operation') {
     return result;
   } catch (error) {
     clearTimeout(timeoutHandle);
+    throw error;
+  }
+}
+
+/**
+ * Executes a synchronous function with a timeout using spawnSync.
+ * Kills the child process if it exceeds the deadline.
+ * Designed for wrapping execSync/execFileSync calls that may hang.
+ *
+ * @param {Function} syncFn - Synchronous function that accepts { timeout, killSignal } options
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @param {string} [operationName='operation'] - Name for this operation (for logging)
+ * @returns {*} Result of the synchronous function
+ * @throws {IntegrationError} Throws TIMEOUT error if deadline exceeded, or original error
+ */
+function withTimeoutSync(syncFn, timeoutMs, operationName = 'operation') {
+  const timeoutAt = Date.now() + timeoutMs;
+  try {
+    return syncFn({ timeout: timeoutMs, killSignal: 'SIGTERM' });
+  } catch (error) {
+    if (
+      error.killed ||
+      error.signal === 'SIGTERM' ||
+      (error.message && error.message.includes('timed out'))
+    ) {
+      throw new IntegrationError(
+        `${operationName} timed out after ${timeoutMs}ms`,
+        ERROR_CODES.TIMEOUT,
+        { timeoutMs, operationName, elapsed: Date.now() - (timeoutAt - timeoutMs) }
+      );
+    }
     throw error;
   }
 }
@@ -292,6 +366,7 @@ module.exports = {
   ERROR_CODES,
   isTransientError,
   withTimeout,
+  withTimeoutSync,
   retry,
   CircuitBreaker,
 };

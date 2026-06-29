@@ -1,16 +1,18 @@
-# Security Audit - June 2026
+# Security Audit - June 2026 (Pass 4)
 
 ## Summary
 
-Comprehensive security audit of the Indonesian School PSEO project (static site generator).
+Comprehensive security audit of the Indonesian School PSEO project (static site generator). This is the **4th security audit pass** (following TASK-022, TASK-031, TASK-036). All workflow security fixes from prior audits had regressed during a main→agent merge and have been re-applied.
 
 ## Audit Results
 
 ### Dependency Health
 
 - ✅ **npm audit**: 0 vulnerabilities (all deps clean)
-- ✅ **eslint**: ^10.4.1 (latest stable)
-- ✅ **lint-staged**: ^17.0.7 (latest stable)
+- ✅ **eslint**: ^10.6.0 (latest)
+- ✅ **globals**: ^17.7.0 (latest)
+- ✅ **prettier**: ^3.9.1 (latest)
+- ✅ **lint-staged**: ^17.0.8 (latest)
 - ✅ **pino**: ^10.3.1 (latest stable)
 - ✅ **No deprecated packages** detected
 - ✅ **No unused dependencies**
@@ -45,17 +47,17 @@ Comprehensive security audit of the Indonesian School PSEO project (static site 
 - ✅ Cross-Origin-Resource-Policy: same-origin
 - ⚠️ `X-XSS-Protection` removed (deprecated in modern browsers)
 
-### Security Fixes Applied (This Audit)
+### Security Fixes Applied (This Audit - Pass 4)
 
-| #   | Issue                                                               | Severity | Fix                                                                   |
-| --- | ------------------------------------------------------------------- | -------- | --------------------------------------------------------------------- |
-| 1   | `robots.txt` had hardcoded `https://example.com` placeholder        | Medium   | Added `generateRobotsTxt()` to build process; uses dynamic `SITE_URL` |
-| 2   | Sitemap URLs not XML-encoded (potential XInclude injection)         | Low      | Added `escapeXml()` function; URLs encoded in sitemap.xml output      |
-| 3   | `on-push.yml`: `VITE_SUPABASE_ANON_KEY` mapped to wrong secret name | Medium   | Removed duplicate/incorrect secret mappings                           |
-| 4   | `X-XSS-Protection` meta tag used (deprecated/no-op)                 | Low      | Removed from all 3 page templates                                     |
-| 5   | `eslint` minor version behind (10.4.0 -> 10.4.1)                    | Low      | Updated package.json                                                  |
-| 6   | `lint-staged` minor version behind (17.0.5 -> 17.0.7)               | Low      | Updated package.json                                                  |
-| 7   | `SECURITY_AUDIT_NOTE.md` was empty placeholder                      | Low      | Documented audit findings                                             |
+| #   | Issue                                                                                    | Severity | Fix                                                                              |
+| --- | ---------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| 1   | `on-push.yml`: Duplicate `API_KEY` + wrong `VITE_SUPABASE_ANON_KEY` mapping              | Critical | Removed duplicate `API_KEY`; removed incorrectly mapped `VITE_SUPABASE_ANON_KEY` |
+| 2   | `parallel.yml`: 4 duplicate `API_KEY` entries (architect, specialist, Fixer, PR-Handler) | Critical | Removed all 4 `API_KEY: ${{ secrets.GEMINI_API_KEY }}` entries                   |
+| 3   | `orchestrator.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`                 | High     | Replaced both occurrences with `secrets.GITHUB_TOKEN`                            |
+| 4   | `architect-agent.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`              | High     | Replaced with `secrets.GITHUB_TOKEN`                                             |
+| 5   | `id-token: write` in 5 non-OIDC workflows                                                | High     | Removed from all 5 workflows (both levels where applicable)                      |
+| 6   | `actions: write` in 4 non-merge workflows                                                | High     | Removed from all 4 workflows (both levels where applicable)                      |
+| 7   | Lockfile out of sync with package.json (3 package versions)                              | Low      | Ran `npm install` to sync eslint, globals, prettier versions                     |
 
 ### Code Quality
 
@@ -76,5 +78,11 @@ Comprehensive security audit of the Indonesian School PSEO project (static site 
 - ✅ `docs/security-engineer.md` — Removed deprecated `X-XSS-Protection` reference
 - ⚠️ `on-push.yml` still exposes secrets on every push (by design for AI automation)
 - ✅ No secrets in code or logs
+
+### Root Cause of Regression
+
+All issues in this audit were regressions from prior fixes (TASK-022, TASK-031, TASK-036). The root cause: security fixes were applied only on the `agent` branch but never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions. This has happened 3 times.
+
+**Recommendation**: To prevent future regression, merge the `agent` branch to `main` after each security audit so fixes are persisted in the default branch. Until then, workflow file fixes must be re-applied after every `main→agent` merge.
 
 ## Score: ⭐⭐⭐⭐⭐ (5/5) - Excellent security posture

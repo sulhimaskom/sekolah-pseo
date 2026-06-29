@@ -5,6 +5,7 @@ const {
   ERROR_CODES,
   isTransientError,
   withTimeout,
+  withTimeoutSync,
   retry,
   CircuitBreaker,
 } = require('./resilience');
@@ -65,6 +66,36 @@ describe('IntegrationError', () => {
     const json = error.toJSON();
     assert.deepStrictEqual(json.details, { field: 'nama', issues: ['required', 'string'] });
   });
+
+  test('supports new network error codes', () => {
+    const networkCodes = [
+      ERROR_CODES.HTTP_ERROR,
+      ERROR_CODES.NETWORK_ERROR,
+      ERROR_CODES.EXTERNAL_SERVICE_ERROR,
+      ERROR_CODES.FETCH_ERROR,
+    ];
+    networkCodes.forEach(code => {
+      const error = new IntegrationError('Network failure', code);
+      assert.strictEqual(error.code, code);
+      assert.strictEqual(error.name, 'IntegrationError');
+    });
+  });
+
+  test('FETCH_ERROR includes repo details', () => {
+    const error = new IntegrationError('No CSV found', ERROR_CODES.FETCH_ERROR, {
+      repoUrl: 'https://github.com/user/repo.git',
+    });
+    assert.strictEqual(error.code, ERROR_CODES.FETCH_ERROR);
+    assert.strictEqual(error.details.repoUrl, 'https://github.com/user/repo.git');
+  });
+
+  test('EXTERNAL_SERVICE_ERROR includes original error context', () => {
+    const error = new IntegrationError('Git clone failed', ERROR_CODES.EXTERNAL_SERVICE_ERROR, {
+      originalError: 'Connection refused',
+    });
+    assert.strictEqual(error.code, ERROR_CODES.EXTERNAL_SERVICE_ERROR);
+    assert.ok(error.details.originalError);
+  });
 });
 
 describe('isTransientError', () => {
@@ -104,6 +135,42 @@ describe('isTransientError', () => {
   test('handles non-string message', () => {
     assert.strictEqual(isTransientError({ message: 123 }), false);
     assert.strictEqual(isTransientError({ message: null }), false);
+  });
+
+  test('identifies network transient error codes', () => {
+    assert.strictEqual(isTransientError({ code: 'ECONNRESET' }), true);
+    assert.strictEqual(isTransientError({ code: 'ENOTFOUND' }), true);
+    assert.strictEqual(isTransientError({ code: 'ECONNREFUSED' }), true);
+    assert.strictEqual(isTransientError({ code: 'ECONNABORTED' }), true);
+    assert.strictEqual(isTransientError({ code: 'EPIPE' }), true);
+    assert.strictEqual(isTransientError({ code: 'EPROTO' }), true);
+    assert.strictEqual(isTransientError({ code: 'EAI_AGAIN' }), true);
+    assert.strictEqual(isTransientError({ code: 'ESOCKETTIMEDOUT' }), true);
+  });
+
+  test('identifies transient HTTP status codes', () => {
+    assert.strictEqual(isTransientError({ statusCode: 429 }), true);
+    assert.strictEqual(isTransientError({ statusCode: 500 }), true);
+    assert.strictEqual(isTransientError({ statusCode: 502 }), true);
+    assert.strictEqual(isTransientError({ statusCode: 503 }), true);
+    assert.strictEqual(isTransientError({ statusCode: 504 }), true);
+    assert.strictEqual(isTransientError({ status: 429 }), true);
+    assert.strictEqual(isTransientError({ status: 503 }), true);
+  });
+
+  test('non-transient HTTP status codes are not retried', () => {
+    assert.strictEqual(isTransientError({ statusCode: 400 }), false);
+    assert.strictEqual(isTransientError({ statusCode: 401 }), false);
+    assert.strictEqual(isTransientError({ statusCode: 403 }), false);
+    assert.strictEqual(isTransientError({ statusCode: 404 }), false);
+  });
+
+  test('identifies network transient error messages', () => {
+    assert.strictEqual(isTransientError({ message: 'socket hang up' }), true);
+    assert.strictEqual(isTransientError({ message: 'socket closed unexpectedly' }), true);
+    assert.strictEqual(isTransientError({ message: 'read ETIMEDOUT' }), true);
+    assert.strictEqual(isTransientError({ message: 'status 503 service unavailable' }), true);
+    assert.strictEqual(isTransientError({ message: 'status 429 too many requests' }), true);
   });
 });
 
@@ -161,6 +228,72 @@ describe('withTimeout', () => {
   test('handles promise that resolves immediately', async () => {
     const result = await withTimeout(Promise.resolve('immediate'), 1000);
     assert.strictEqual(result, 'immediate');
+  });
+});
+
+describe('withTimeoutSync', () => {
+  test('returns result when sync function completes before timeout', () => {
+    const syncFn = () => {
+      return 'success';
+    };
+    const result = withTimeoutSync(syncFn, 1000, 'test operation');
+    assert.strictEqual(result, 'success');
+  });
+
+  test('throws IntegrationError when sync function is killed by timeout', () => {
+    const syncFn = () => {
+      const error = new Error('Command timed out after 10ms');
+      error.killed = true;
+      error.signal = 'SIGTERM';
+      throw error;
+    };
+    assert.throws(
+      () => withTimeoutSync(syncFn, 10, 'timeout operation'),
+      error => {
+        assert.ok(error instanceof IntegrationError);
+        assert.strictEqual(error.code, ERROR_CODES.TIMEOUT);
+        assert.ok(error.message.includes('timed out'));
+        return true;
+      }
+    );
+  });
+
+  test('re-throws non-timeout errors from sync function', () => {
+    const syncFn = () => {
+      throw new Error('command not found');
+    };
+    assert.throws(
+      () => withTimeoutSync(syncFn, 1000, 'failing operation'),
+      error => {
+        assert.strictEqual(error.message, 'command not found');
+        return true;
+      }
+    );
+  });
+
+  test('passes timeout and killSignal options to sync function', () => {
+    const syncFn = opts => {
+      assert.ok(opts.timeout > 0);
+      assert.strictEqual(opts.killSignal, 'SIGTERM');
+      return 'configured';
+    };
+    const result = withTimeoutSync(syncFn, 5000, 'config test');
+    assert.strictEqual(result, 'configured');
+  });
+
+  test('preserves operation name in timeout error', () => {
+    const syncFn = () => {
+      const error = new Error('Command timed out after 10ms');
+      error.killed = true;
+      throw error;
+    };
+    assert.throws(
+      () => withTimeoutSync(syncFn, 10, 'custom git clone'),
+      error => {
+        assert.ok(error.message.includes('custom git clone'));
+        return true;
+      }
+    );
   });
 });
 
