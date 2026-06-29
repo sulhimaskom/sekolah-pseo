@@ -7,36 +7,38 @@
 
 ## Domain Score Summary
 
-| Domain | Score | Grade |
-|--------|-------|-------|
-| A. Code Quality | **89.6 / 100** | B+ |
-| B. System Quality (Runtime) | **86.9 / 100** | B+ |
-| C. Experience Quality (UX/DX) | **86.1 / 100** | B+ |
-| D. Delivery & Evolution Readiness | **72.0 / 100** | C |
+| Domain                            | Score          | Grade |
+| --------------------------------- | -------------- | ----- |
+| A. Code Quality                   | **89.6 / 100** | B+    |
+| B. System Quality (Runtime)       | **86.9 / 100** | B+    |
+| C. Experience Quality (UX/DX)     | **86.1 / 100** | B+    |
+| D. Delivery & Evolution Readiness | **72.0 / 100** | C     |
 
 ### Global Penalties Applied
+
 - **None** — Build passes ✅, Tests pass (1 flaky, non-blocking) ✅, No critical vulnerabilities ✅
 
 ---
 
 ## A. Code Quality (89.6/100)
 
-| Criterion | Weight | Score | Key Evidence |
-|-----------|--------|-------|-------------|
-| Correctness | 15 | 92 | All 772 JS tests pass (1 flaky); 13/13 Python tests pass |
-| Readability & Naming | 10 | 95 | Consistent JSDoc, clear naming, ESLint-enforced style |
-| Simplicity | 10 | 85 | Resilience layer is well-built but may be over-engineered for a static site gen |
-| Modularity & SRP | 15 | 88 | Good layer separation; utils.js violates SRP (9 concerns in 1 file) |
-| Consistency | 5 | 95 | Prettier formatting, consistent error handling patterns |
-| Testability | 15 | 86 | 92% coverage, factory-pattern test isolation; 1 flaky test |
-| Maintainability | 10 | 88 | Well-modularized, documented; utils.js needs splitting |
-| Error Handling | 10 | 90 | IntegrationError class, circuit breaker, retry, timeout |
-| Dependency Discipline | 5 | 98 | Only 1 runtime dep (pino); extremely lean |
-| Determinism | 5 | 85 | Mostly deterministic; flaky test reduces confidence |
+| Criterion             | Weight | Score | Key Evidence                                                                    |
+| --------------------- | ------ | ----- | ------------------------------------------------------------------------------- |
+| Correctness           | 15     | 92    | All 772 JS tests pass (1 flaky); 13/13 Python tests pass                        |
+| Readability & Naming  | 10     | 95    | Consistent JSDoc, clear naming, ESLint-enforced style                           |
+| Simplicity            | 10     | 85    | Resilience layer is well-built but may be over-engineered for a static site gen |
+| Modularity & SRP      | 15     | 88    | Good layer separation; utils.js violates SRP (9 concerns in 1 file)             |
+| Consistency           | 5      | 95    | Prettier formatting, consistent error handling patterns                         |
+| Testability           | 15     | 86    | 92% coverage, factory-pattern test isolation; 1 flaky test                      |
+| Maintainability       | 10     | 88    | Well-modularized, documented; utils.js needs splitting                          |
+| Error Handling        | 10     | 90    | IntegrationError class, circuit breaker, retry, timeout                         |
+| Dependency Discipline | 5      | 98    | Only 1 runtime dep (pino); extremely lean                                       |
+| Determinism           | 5      | 85    | Mostly deterministic; flaky test reduces confidence                             |
 
 ### Key Findings — Code Quality
 
 #### [CQ-01] Flaky Test: `build creates dist directory and generates files`
+
 - **File**: `scripts/build-pages.test.js:278-317`
 - **Evidence**: First run: 771/772 pass (1 fail). Re-run: 772/772 pass.
 - **Root Cause**: Filesystem timing under parallel CI I/O load despite `waitForFile` retry.
@@ -44,12 +46,14 @@
 - **Suggested Fix**: Increase retries from 5→10 or delay from 100ms→200ms.
 
 #### [CQ-02] `utils.js` violates Single Responsibility Principle
+
 - **File**: `scripts/utils.js` (~280 lines)
 - **Evidence**: Contains CSV parsing, HTML extraction, geo validation, concurrency, performance tracking — 9 distinct responsibilities.
 - **Impact**: Increases cognitive load, makes testing harder.
 - **Suggested Fix**: Split into `csv-utils.js`, `html-utils.js`, `geo-utils.js`, `async-utils.js`.
 
 #### [CQ-03] `interactive.js` has low test coverage (65.12%)
+
 - **File**: `scripts/interactive.js`
 - **Evidence**: Coverage report shows 65.12% statements, 64.28% branches.
 - **Impact**: CLI interactive menu is the least-tested module.
@@ -59,24 +63,26 @@
 
 ## B. System Quality (Runtime) (86.9/100)
 
-| Criterion | Weight | Score | Key Evidence |
-|-----------|--------|-------|-------------|
-| Stability | 20 | 88 | Build passes consistently; 1 flaky test edge case |
-| Performance Efficiency | 15 | 92 | 492ms build for 3474 pages (7060 pages/sec); 112MB peak RSS |
-| Security Practices | 20 | 92 | Path traversal protection, XSS escaping, CSP, formula injection protection |
-| Scalability Readiness | 15 | 75 | Rate limiter + concurrent page gen; limited by static site architecture |
-| Resilience & Fault Tolerance | 15 | 92 | Circuit breaker, retry (exponential backoff), timeout, queue |
-| Observability | 15 | 80 | Pino structured logging, build metrics; no monitoring/profiling |
+| Criterion                    | Weight | Score | Key Evidence                                                               |
+| ---------------------------- | ------ | ----- | -------------------------------------------------------------------------- |
+| Stability                    | 20     | 88    | Build passes consistently; 1 flaky test edge case                          |
+| Performance Efficiency       | 15     | 92    | 492ms build for 3474 pages (7060 pages/sec); 112MB peak RSS                |
+| Security Practices           | 20     | 92    | Path traversal protection, XSS escaping, CSP, formula injection protection |
+| Scalability Readiness        | 15     | 75    | Rate limiter + concurrent page gen; limited by static site architecture    |
+| Resilience & Fault Tolerance | 15     | 92    | Circuit breaker, retry (exponential backoff), timeout, queue               |
+| Observability                | 15     | 80    | Pino structured logging, build metrics; no monitoring/profiling            |
 
 ### Key Findings — System Quality
 
 #### [SQ-01] No monitoring or alerting
+
 - **Files**: Entire codebase
 - **Evidence**: No metrics endpoint, no health check, no alerting configuration.
 - **Impact**: Low for static site, but build failures could go undetected.
 - **Suggested Fix**: Add build health metrics reporting to CI dashboard.
 
 #### [SQ-02] Path traversal protection validated but no integration test
+
 - **File**: `scripts/config.js:18-23`
 - **Evidence**: `validatePath` function exists but has no dedicated test.
 - **Impact**: Low (function is correct), but security-critical code should be tested.
@@ -86,21 +92,22 @@
 
 ## C. Experience Quality (UX/DX) (86.1/100)
 
-| Criterion | Score | Key Evidence |
-|-----------|-------|-------------|
-| Accessibility (UX) | 92/100 | WCAG 2.1 A, ARIA landmarks, skip nav, screen reader support |
-| User Flow Clarity (UX) | 85/100 | Clear search, province nav, school details |
-| Feedback & Error Messaging (UX) | 75/100 | No user-facing error pages (404, 500) |
-| Responsiveness (UX) | 88/100 | Mobile breakpoints, responsive grid |
-| API Clarity (DX) | 88/100 | JSDoc throughout, clear return types |
-| Local Dev Setup (DX) | 90/100 | npm install, .env.example, pre-commit hooks |
-| Documentation Accuracy (DX) | 85/100 | README accurate, ADR present; some doc gaps |
-| Debuggability (DX) | 80/100 | Structured logging; no tracing |
-| Build/Test Feedback Loop (DX) | 92/100 | 5.6s tests, 492ms build |
+| Criterion                       | Score  | Key Evidence                                                |
+| ------------------------------- | ------ | ----------------------------------------------------------- |
+| Accessibility (UX)              | 92/100 | WCAG 2.1 A, ARIA landmarks, skip nav, screen reader support |
+| User Flow Clarity (UX)          | 85/100 | Clear search, province nav, school details                  |
+| Feedback & Error Messaging (UX) | 75/100 | No user-facing error pages (404, 500)                       |
+| Responsiveness (UX)             | 88/100 | Mobile breakpoints, responsive grid                         |
+| API Clarity (DX)                | 88/100 | JSDoc throughout, clear return types                        |
+| Local Dev Setup (DX)            | 90/100 | npm install, .env.example, pre-commit hooks                 |
+| Documentation Accuracy (DX)     | 85/100 | README accurate, ADR present; some doc gaps                 |
+| Debuggability (DX)              | 80/100 | Structured logging; no tracing                              |
+| Build/Test Feedback Loop (DX)   | 92/100 | 5.6s tests, 492ms build                                     |
 
 ### Key Findings — Experience Quality
 
 #### [EX-01] No user-facing error pages
+
 - **Evidence**: No `404.html` or error state templates in `src/presenters/templates/`.
 - **Impact**: Users see browser default error pages on missing schools.
 - **Suggested Fix**: Add `not-found.js` template with search help.
@@ -109,28 +116,31 @@
 
 ## D. Delivery & Evolution Readiness (72.0/100)
 
-| Criterion | Weight | Score | Key Evidence |
-|-----------|--------|-------|-------------|
-| CI/CD Health | 20 | 75 | 6+ workflows, 15-step agent pipeline, non-deterministic |
-| Release & Rollback Safety | 20 | 50 | No release process, no version strategy, no automation |
-| Config & Env Parity | 15 | 88 | .env.example, env defaults, validated config |
-| Migration Safety | 15 | 70 | No DB migrations; CSV data evolution not documented |
-| Technical Debt Exposure | 15 | 75 | Flaky test, utils.js, over-engineered CI |
-| Change Velocity & Blast Radius | 15 | 80 | Good modularity enables fast changes |
+| Criterion                      | Weight | Score | Key Evidence                                            |
+| ------------------------------ | ------ | ----- | ------------------------------------------------------- |
+| CI/CD Health                   | 20     | 75    | 6+ workflows, 15-step agent pipeline, non-deterministic |
+| Release & Rollback Safety      | 20     | 50    | No release process, no version strategy, no automation  |
+| Config & Env Parity            | 15     | 88    | .env.example, env defaults, validated config            |
+| Migration Safety               | 15     | 70    | No DB migrations; CSV data evolution not documented     |
+| Technical Debt Exposure        | 15     | 75    | Flaky test, utils.js, over-engineered CI                |
+| Change Velocity & Blast Radius | 15     | 80    | Good modularity enables fast changes                    |
 
 ### Key Findings — Delivery Readiness
 
 #### [DR-01] No formal release process
+
 - **Evidence**: No `release.yml`, no version scripts, no tag-based automation.
 - **Impact**: Cannot reliably reproduce past builds; no audit trail.
 - **Suggested Fix**: Add `standard-version` or `semantic-release`, create release workflow.
 
 #### [DR-02] CI pipeline is over-engineered
+
 - **Evidence**: `on-push.yml` has 15 sequential OpenCode agent steps (up to 22.5h total wall clock).
 - **Impact**: Non-deterministic, fragile, high failure probability.
 - **Suggested Fix**: Add fast CI checks as required gates; reduce agent steps.
 
 #### [DR-03] 6+ workflow files create confusion
+
 - **Evidence**: `on-push.yml`, `on-pull.yml`, `parallel.yml`, `orchestrator.yml`, `architect-agent.yml`, `opencode.yml`.
 - **Impact**: Unclear which workflow is authoritative; overlapping triggers.
 - **Suggested Fix**: Consolidate into 2 workflows: `ci.yml` (fast checks) and `agent.yml` (LLM-driven tasks).
@@ -139,32 +149,34 @@
 
 ## Summary of Blockers
 
-| Blocker | Description |
-|---------|-------------|
-| Issue creation | `GITHUB_TOKEN` lacks `issues: write` permission. All findings documented here. |
-| PR handling | No open PRs to process. |
-| Issue management | No open issues to normalize. |
+| Blocker          | Description                                                                    |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Issue creation   | `GITHUB_TOKEN` lacks `issues: write` permission. All findings documented here. |
+| PR handling      | No open PRs to process.                                                        |
+| Issue management | No open issues to normalize.                                                   |
 
 ---
 
 ## Phase 2 Actions Completed
 
-| Action | Result |
-|--------|--------|
+| Action                                 | Result                                                    |
+| -------------------------------------- | --------------------------------------------------------- |
 | Fix flaky test (`build-pages.test.js`) | PR #445 merged. `waitForFile` retries: 5×100ms → 10×200ms |
-| Audit report | Saved to `docs/audit-report-2026-06-28.md` |
-| Roadmap update | FEAT-004 marked as IMPLEMENTED |
+| Audit report                           | Saved to `docs/audit-report-2026-06-28.md`                |
+| Roadmap update                         | FEAT-004 marked as IMPLEMENTED                            |
 
 ---
 
 ## Phase 3: Strategic Expansion Proposal — FEAT-005: School Comparison Tool
 
 ### User Story
+
 **As a** parent or student researching schools,
 **I want to** compare up to 3 schools side-by-side,
 **So that** I can make an informed decision about which school best meets my needs.
 
 ### Acceptance Criteria
+
 1. User can select up to 3 schools from search results via a "Compare" checkbox
 2. A "Compare" button appears when ≥2 schools are selected
 3. Comparison view shows schools side-by-side in a table/grid layout
@@ -175,17 +187,20 @@
 8. Shareable comparison URL via query parameters (`?compare=npsn1,npsn2`)
 
 ### Out of Scope
+
 - Star ratings or user reviews (FEAT-008)
 - PDF export (future enhancement)
 - More than 3 schools comparison
 
 ### Value Justification
+
 - **User-facing value**: Addresses a core user need — school selection requires comparison
 - **Technical fit**: All school data is already loaded client-side (`schools.json`). No backend changes needed.
 - **Implementation scope**: Pure frontend JavaScript in `homepage.js`. Low risk, high impact.
 - **Roadmap alignment**: Already documented as FEAT-005 in `docs/roadmap.md`
 
 ### Technical Notes
+
 - Leverages existing `schools.json` payload already loaded at build time
 - Compare state managed via URL `?compare=npsn1,npsn2` for shareability
 - No new data pipeline or build steps required
