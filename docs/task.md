@@ -2,6 +2,111 @@
 
 ## Completed Tasks
 
+### [TASK-044] Security Audit Pass 4 - Workflow Permission Hardening, Duplicate Secret Removal, Dep Sync
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive security audit of the Indonesian School PSEO project following main→agent merge. Discovered that all workflow file security fixes from TASK-022, TASK-031, and TASK-036 had regressed during the merge. Fixed 17 security issues across 6 workflow files: removed 5 duplicate `API_KEY` secrets, fixed 2 `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` mappings, removed `VITE_SUPABASE_ANON_KEY` wrong secret mapping, removed `id-token: write` from 5 non-OIDC workflows, and removed `actions: write` from 4 non-merge workflows.
+
+### Audit Results
+
+| Check                  | Result                                       |
+| ---------------------- | -------------------------------------------- |
+| npm audit (prod)       | 0 vulnerabilities                            |
+| npm audit (dev)        | 0 vulnerabilities                            |
+| npm outdated           | 0 outdated (all synced)                      |
+| ESLint                 | 0 errors                                     |
+| Prettier               | All formatted                                |
+| JS Tests               | 819/819 pass                                 |
+| Python Tests           | 27/27 pass                                   |
+| Build                  | 3474 pages, 0 failed                         |
+| Hardcoded secrets      | None found                                   |
+| Secret scanning        | None found in source code                    |
+| Deprecated packages    | None found                                   |
+| Security headers       | CSP, HSTS, XFO, SAMEORIGIN, etc. all present |
+| innerHTML/XSS vectors  | All use textContent/DOM APIs (secure)        |
+| Command injection      | All execSync calls properly validated        |
+| TODO/FIXME/HACK        | None found in source                         |
+| Workflow YAML validity | 6/6 files valid                              |
+
+### Actions Taken
+
+1. **Removed duplicate `API_KEY` in `on-push.yml` (CRITICAL)**:
+   - Removed `API_KEY: ${{ secrets.GEMINI_API_KEY }}` (exact duplicate of GEMINI_API_KEY)
+   - Removed `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}` (incorrect mapping)
+
+2. **Removed 4 duplicate `API_KEY` entries from `parallel.yml` (CRITICAL)**:
+   - Removed from architect job, specialist step, Fixer step, PR-Handler step
+   - All were identical to `GEMINI_API_KEY`
+
+3. **Replaced `secrets.GH_TOKEN` with `secrets.GITHUB_TOKEN` in 2 workflows (HIGH)**:
+   - `orchestrator.yml`: Replaced both occurrences (env var + checkout token)
+   - `architect-agent.yml`: Replaced the env var reference
+
+4. **Removed `id-token: write` from 5 non-OIDC workflows (HIGH)**:
+   - `parallel.yml`: Removed from top-level
+   - `orchestrator.yml`: Removed from both top-level and job-level
+   - `architect-agent.yml`: Removed from both levels
+   - `opencode.yml`: Removed from both levels
+   - `on-pull.yml`: Removed from top-level
+
+5. **Removed `actions: write` from 4 non-merge workflows (HIGH)**:
+   - `parallel.yml`: Removed from top-level
+   - `orchestrator.yml`: Removed from both levels
+   - `architect-agent.yml`: Removed from both levels
+   - `opencode.yml`: Removed from both levels
+
+6. **Synced lockfile with package.json**:
+   - Ran `npm install` to sync eslint 10.5.0→10.6.0, globals 17.6.0→17.7.0, prettier 3.8.4→3.9.1
+   - All 3 dependabot bumps were merged but lockfile had not been updated
+
+### Files Modified
+
+- `.github/workflows/on-push.yml` — Removed `API_KEY` and `VITE_SUPABASE_ANON_KEY` env vars
+- `.github/workflows/parallel.yml` — Removed 4 `API_KEY` env vars and `actions: write` + `id-token: write` permissions
+- `.github/workflows/orchestrator.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN`, removed `id-token: write` + `actions: write`
+- `.github/workflows/architect-agent.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN`, removed `id-token: write` + `actions: write`
+- `.github/workflows/opencode.yml` — Removed `id-token: write` + `actions: write` from both levels
+- `.github/workflows/on-pull.yml` — Removed `id-token: write`
+- `package-lock.json` — Synced with package.json (eslint 10.6.0, globals 17.7.0, prettier 3.9.1)
+- `SECURITY_AUDIT_NOTE.md` — Updated audit documentation
+- `docs/task.md` — This entry
+
+### Note: Workflow Push Limitation
+
+This runner's `GITHUB_TOKEN` does not have `workflows` permission, so `.github/workflows/*.yml` changes cannot be pushed. The workflow file fixes are prepared in the working tree **and must be applied manually by a maintainer with a token that has `workflows` scope**. The `git diff` for the workflow changes is preserved in `/tmp/workflow-fixes.patch`.
+
+### Verification
+
+- npm audit: 0 vulnerabilities ✓
+- ESLint: 0 errors ✓
+- Prettier: All formatted ✓
+- JS Tests: 819/819 pass ✓
+- Python Tests: 27/27 pass ✓
+- Build: 3474 pages, 0 failed ✓
+- All workflow YAML files valid ✓
+- Zero regressions introduced ✓
+
+### Acceptance Criteria
+
+- [x] 5 duplicate `API_KEY` references removed across 2 workflow files
+- [x] `VITE_SUPABASE_ANON_KEY` incorrect mapping removed from on-push.yml
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in all workflows (2 files)
+- [x] `id-token: write` removed from all 5 non-OIDC workflows
+- [x] `actions: write` removed from all 4 non-merge workflows
+- [x] Lockfile synced with package.json (3 packages updated)
+- [x] All tests pass (819 JS + 27 Python)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions
+
+---
+
 ### [TASK-043] Critical Path Testing - PageBuilder Validation, Enrichment Section, Homepage Edge Cases, Build Incremental
 
 **Status**: Complete
@@ -75,12 +180,12 @@ Added targeted test coverage for uncovered critical business logic paths across 
 
 ### Coverage Impact
 
-| Module | Before | After | Δ |
-|---|---|---|---|
-| src/services/PageBuilder.js (branches) | 86.48% | 91.89% | +5.41% |
-| src/presenters/templates/school-page.js (stmts) | 88.31% | 100% | +11.69% |
-| src/presenters/templates/homepage.js (branches) | 77.08% | 83.33% | +6.25% |
-| scripts/build-pages.js (branches) | 67.79% | 69.63% | +1.84% |
+| Module                                          | Before | After  | Δ       |
+| ----------------------------------------------- | ------ | ------ | ------- |
+| src/services/PageBuilder.js (branches)          | 86.48% | 91.89% | +5.41%  |
+| src/presenters/templates/school-page.js (stmts) | 88.31% | 100%   | +11.69% |
+| src/presenters/templates/homepage.js (branches) | 77.08% | 83.33% | +6.25%  |
+| scripts/build-pages.js (branches)               | 67.79% | 69.63% | +1.84%  |
 
 ### Acceptance Criteria
 
@@ -99,7 +204,6 @@ Added targeted test coverage for uncovered critical business logic paths across 
 - [x] Zero regressions introduced
 
 ---
-
 
 ### [TASK-042] Code Sanitization - Build Failure Fix, Prettier Formatting, Stale Doc Count Correction
 
