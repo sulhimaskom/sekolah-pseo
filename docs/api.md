@@ -530,6 +530,12 @@ ERROR_CODES = {
   TIMEOUT: 'TIMEOUT',
   RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
   CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
+
+  // Network / External service errors
+  HTTP_ERROR: 'HTTP_ERROR',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+  FETCH_ERROR: 'FETCH_ERROR',
 };
 ```
 
@@ -639,7 +645,7 @@ Manually resets circuit breaker to CLOSED state.
 
 #### `isTransientError(error)`
 
-Checks if error is transient (retryable).
+Checks if error is transient (retryable). Covers file system, network, and HTTP-level transient conditions.
 
 **Parameters:**
 
@@ -647,9 +653,13 @@ Checks if error is transient (retryable).
 
 **Returns:** `boolean` - `true` if error is transient
 
-**Transient Error Codes:** `EAGAIN`, `EIO`, `ENOSPC`, `EBUSY`, `ETIMEDOUT`
+**Transient System Error Codes:** `EAGAIN`, `EIO`, `ENOSPC`, `EBUSY`, `ETIMEDOUT`
 
-**Transient Error Messages:** Contains `timeout`, `ECONNRESET`, `EAGAIN`, `EIO`, `ENOSPC`, or `EBUSY`
+**Transient Network Error Codes:** `ECONNRESET`, `ENOTFOUND`, `ECONNREFUSED`, `ECONNABORTED`, `EPIPE`, `EPROTO`, `EAI_AGAIN`, `ESOCKETTIMEDOUT`
+
+**Transient HTTP Status Codes:** `429`, `500`, `502`, `503`, `504`
+
+**Transient Error Messages:** Contains `timeout`, `ECONNRESET`, `ENOTFOUND`, `ECONNREFUSED`, `ECONNABORTED`, `EPIPE`, `EPROTO`, `EAI_AGAIN`, `ESOCKETTIMEDOUT`, `EAGAIN`, `EIO`, `ENOSPC`, `EBUSY`, `socket hang up`, `socket closed`, `read ETIMEDOUT`, `status 429`, `status 500`, `status 50x`
 
 **Usage:**
 
@@ -683,6 +693,47 @@ try {
 } catch (error) {
   if (error.code === ERROR_CODES.TIMEOUT) {
     console.error('Operation timed out');
+  }
+}
+```
+
+---
+
+#### `withTimeoutSync(syncFn, timeoutMs, operationName)`
+
+Executes a synchronous function with a timeout. Designed for wrapping `execSync`/`execFileSync` calls that may hang indefinitely. Passes `{ timeout, killSignal: 'SIGTERM' }` options to the wrapped function.
+
+**Parameters:**
+
+- `syncFn` (Function): Synchronous function that accepts `{ timeout, killSignal }` options
+- `timeoutMs` (number): Timeout in milliseconds
+- `operationName` (string, optional): Name for this operation
+
+**Returns:** `*` - Result of the synchronous function
+
+**Throws:** `IntegrationError` with `TIMEOUT` code if the child process is killed by timeout, or the original error otherwise
+
+**Behavior:**
+
+- Detects killed processes (`error.killed`, `error.signal === 'SIGTERM'`)
+- Re-throws non-timeout errors (e.g. command not found) unchanged
+- Does NOT wrap the sync function return value
+
+**Usage:**
+
+```javascript
+const { execSync } = require('child_process');
+const { withTimeoutSync } = require('./resilience');
+
+try {
+  const output = withTimeoutSync(
+    opts => execSync('git clone --depth 1 https://github.com/user/repo.git', opts),
+    120000,
+    'git clone repo'
+  );
+} catch (error) {
+  if (error.code === ERROR_CODES.TIMEOUT) {
+    console.error('Git clone timed out after 2 minutes');
   }
 }
 ```
@@ -3299,6 +3350,97 @@ Exit Codes:
 ---
 
 ## Fetch Data Module (`scripts/fetch-data.js`)
+
+### Purpose
+
+Fetches the latest school data from external sources (GitHub) with resilience hardening: timeouts, retries, circuit breaker, and cached fallback.
+
+### Exports
+
+```javascript
+module.exports = {
+  fetchFromGitHub: function,
+  findCsvFiles: function,
+  copyToRaw: function,
+  validateRepoUrl: function,
+  validateBranchName: function,
+  execGitCommand: function,
+  useCachedData: function,
+  fetchCircuitBreaker: CircuitBreaker,
+};
+```
+
+### Resilience Configuration
+
+| Setting                       | Value  | Description                           |
+| ----------------------------- | ------ | ------------------------------------- |
+| GIT_OPERATION_TIMEOUT_MS      | 120000 | Git clone/fetch timeout (2 minutes)   |
+| GIT_RETRY_MAX_ATTEMPTS        | 3      | Max retries on transient git failures |
+| GIT_RETRY_INITIAL_DELAY_MS    | 1000   | Initial backoff delay (1 second)      |
+| GIT_CIRCUIT_BREAKER_THRESHOLD | 3      | Failures before circuit opens         |
+| GIT_CIRCUIT_BREAKER_RESET_MS  | 120000 | Circuit reset timeout (2 minutes)     |
+
+### Functions
+
+#### `execGitCommand(command, execOptions, operationName)`
+
+Executes a git command synchronously with timeout protection.
+
+**Parameters:**
+
+- `command` (string): Git command to execute
+- `execOptions` (Object): Options for execSync (cwd, stdio, etc.)
+- `operationName` (string): Human-readable name for the operation
+
+**Returns:** `Buffer|string` - stdout from the command
+
+**Throws:** `IntegrationError` with `TIMEOUT` code if the command exceeds `GIT_OPERATION_TIMEOUT_MS`
+
+**Usage:**
+
+```javascript
+const output = execGitCommand(
+  'git fetch origin',
+  { cwd: '/path/to/repo', stdio: 'inherit' },
+  'git fetch origin'
+);
+```
+
+---
+
+#### `useCachedData(destPath)`
+
+Attempts to use cached (previously fetched) data as fallback when the external source is unavailable.
+
+**Parameters:**
+
+- `destPath` (string): Path where raw data should be written
+
+**Returns:** `boolean` - Whether cached data was found and used. Checks the destination path first, then falls back to CSV files in the `external-data/` directory.
+
+**Usage:**
+
+```javascript
+if (!useCachedData('/path/to/raw.csv')) {
+  console.error('No cached data available either');
+}
+```
+
+---
+
+#### `fetchCircuitBreaker`
+
+A dedicated `CircuitBreaker` instance for the external data source. Isolated from file system circuit breakers to prevent file operation failures from affecting data fetch, and vice versa.
+
+- **Failure threshold**: 3
+- **Reset timeout**: 120 seconds
+- **State**: `CLOSED` (normal), `OPEN` (blocking), `HALF_OPEN` (testing recovery)
+
+---
+
+#### `findCsvFiles(dir)`
+
+(unchanged from previous - see below)
 
 ### Purpose
 

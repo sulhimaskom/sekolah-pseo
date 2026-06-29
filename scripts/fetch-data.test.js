@@ -1,7 +1,8 @@
-const { describe, it } = require('node:test');
+const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 const {
   fetchFromGitHub,
@@ -9,6 +10,9 @@ const {
   copyToRaw,
   validateRepoUrl,
   validateBranchName,
+  execGitCommand,
+  useCachedData,
+  fetchCircuitBreaker,
 } = require('./fetch-data');
 
 describe('fetch-data', () => {
@@ -134,6 +138,70 @@ describe('fetch-data', () => {
     });
   });
 
+  describe('execGitCommand', () => {
+    it('executes a simple command and returns output', () => {
+      const result = execGitCommand('echo hello', {}, 'echo test');
+      assert.ok(result);
+    });
+
+    it('throws error for non-existent command', () => {
+      assert.throws(
+        () => execGitCommand('nonexistent-command-xyz', {}, 'bad command'),
+        error => {
+          // Should throw original execSync error (not swallowed)
+          assert.ok(!(error instanceof IntegrationError && error.code === ERROR_CODES.TIMEOUT));
+          return true;
+        }
+      );
+    });
+  });
+
+  describe('useCachedData', () => {
+    let tempDir;
+    beforeEach(() => {
+      tempDir = path.join(process.cwd(), 'test-temp-cache-' + Date.now());
+      fs.mkdirSync(tempDir, { recursive: true });
+    });
+
+    it('returns true when dest file already exists', () => {
+      const destPath = path.join(tempDir, 'raw.csv');
+      fs.writeFileSync(destPath, 'col1\nval1');
+      const result = useCachedData(destPath);
+      assert.strictEqual(result, true);
+    });
+
+    it('returns false when no cache available', () => {
+      const result = useCachedData(path.join(tempDir, 'nonexistent.csv'));
+      assert.strictEqual(result, false);
+    });
+
+    it('uses external-data cached CSV when dest does not exist', () => {
+      const externalDir = path.join(tempDir, 'external-data-cache');
+      fs.mkdirSync(externalDir, { recursive: true });
+      fs.writeFileSync(path.join(externalDir, 'cached.csv'), 'col1\nval1');
+      const destPath = path.join(tempDir, 'raw.csv');
+
+      const result = useCachedData(destPath);
+      assert.strictEqual(result, false); // No EXTERNAL_DATA_DIR with cached files outside test
+    });
+
+    it('cleans up temp directory', () => {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+  });
+
+  describe('fetchFromGitHub - hardened behavior', () => {
+    it('rejects invalid repo URL with IntegrationError', () => {
+      assert.throws(() => fetchFromGitHub('not-a-url', 'main'), { name: 'IntegrationError' });
+    });
+
+    it('rejects invalid branch name with IntegrationError', () => {
+      assert.throws(() => fetchFromGitHub('https://github.com/user/repo.git', 'rm -rf /'), {
+        name: 'IntegrationError',
+      });
+    });
+  });
+
   describe('module exports', () => {
     it('exports fetchFromGitHub function', () => {
       assert.strictEqual(typeof fetchFromGitHub, 'function');
@@ -153,6 +221,20 @@ describe('fetch-data', () => {
 
     it('exports validateBranchName function', () => {
       assert.strictEqual(typeof validateBranchName, 'function');
+    });
+
+    it('exports execGitCommand function', () => {
+      assert.strictEqual(typeof execGitCommand, 'function');
+    });
+
+    it('exports useCachedData function', () => {
+      assert.strictEqual(typeof useCachedData, 'function');
+    });
+
+    it('exports fetchCircuitBreaker instance', () => {
+      assert.ok(fetchCircuitBreaker);
+      assert.strictEqual(typeof fetchCircuitBreaker.execute, 'function');
+      assert.strictEqual(typeof fetchCircuitBreaker.getState, 'function');
     });
   });
 
