@@ -49,14 +49,14 @@ Comprehensive security audit of the Indonesian School PSEO project (static site 
 
 ### Security Fixes Applied (This Audit - Pass 5)
 
-| #   | Issue                                                                                    | Severity | Fix                                                                              |
-| --- | ---------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
-| 1   | `on-push.yml`: Duplicate `API_KEY` + wrong `VITE_SUPABASE_ANON_KEY` mapping              | Critical | Removed duplicate `API_KEY`; removed incorrectly mapped `VITE_SUPABASE_ANON_KEY` |
-| 2   | `parallel.yml`: 4 duplicate `API_KEY` entries (architect, specialist, Fixer, PR-Handler) | Critical | Removed all 4 `API_KEY: ${{ secrets.GEMINI_API_KEY }}` entries                   |
-| 3   | `orchestrator.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`                 | High     | Replaced both occurrences with `secrets.GITHUB_TOKEN`                            |
-| 4   | `architect-agent.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`              | High     | Replaced with `secrets.GITHUB_TOKEN`                                             |
+| #   | Issue                                                                                    | Severity | Fix                                                                                                                              |
+| --- | ---------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `on-push.yml`: Duplicate `API_KEY` + wrong `VITE_SUPABASE_ANON_KEY` mapping              | Critical | Removed duplicate `API_KEY`; removed incorrectly mapped `VITE_SUPABASE_ANON_KEY`                                                 |
+| 2   | `parallel.yml`: 4 duplicate `API_KEY` entries (architect, specialist, Fixer, PR-Handler) | Critical | Removed all 4 `API_KEY: ${{ secrets.GEMINI_API_KEY }}` entries                                                                   |
+| 3   | `orchestrator.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`                 | High     | Replaced both occurrences with `secrets.GITHUB_TOKEN`                                                                            |
+| 4   | `architect-agent.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`              | High     | Replaced with `secrets.GITHUB_TOKEN`                                                                                             |
 | 5   | `id-token: write` in 5 non-OIDC workflows                                                | High     | Removed from `parallel.yml`, `on-pull.yml`, `opencode.yml`, and from both levels of `orchestrator.yml` and `architect-agent.yml` |
-| 6   | `actions: write` in 4 non-merge workflows                                                | High     | Removed from `parallel.yml` and from both levels of `orchestrator.yml` and `architect-agent.yml` |
+| 6   | `actions: write` in 4 non-merge workflows                                                | High     | Removed from `parallel.yml` and from both levels of `orchestrator.yml` and `architect-agent.yml`                                 |
 
 ### Code Quality
 
