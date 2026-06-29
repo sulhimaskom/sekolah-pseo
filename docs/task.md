@@ -2,6 +2,104 @@
 
 ## Completed Tasks
 
+### [TASK-043] Critical Path Testing - PageBuilder Validation, Enrichment Section, Homepage Edge Cases, Build Incremental
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Added targeted test coverage for uncovered critical business logic paths across 4 modules. Covered `buildProvincePageData()` input validation, `groupSchoolsByProvince()` non-array handling, `generateEnrichmentSection()` Wikipedia rendering paths, `prepareSchoolDataForSearch()` flat array edge cases, `aggregateProvinceAndFilters()` non-array input, `generateRobotsTxt()` functionality, and `buildIncremental()` missing manifest path.
+
+### Actions Taken
+
+1. **Covered `buildProvincePageData()` validation paths** (`scripts/PageBuilder.test.js`):
+   - Empty/null/undefined/number/object province name → throws `Invalid province name provided`
+   - Null/string/object schools → throws `schools must be an array`
+   - Valid inputs → returns object with `relativePath` and `content`
+   - Correct relative path structure for province (`provinsi/{slug}/index.html`)
+   - `skipFilter` parameter passthrough verification
+
+2. **Covered `groupSchoolsByProvince()` edge cases** (`scripts/PageBuilder.test.js`):
+   - Non-array inputs (null, undefined, object) → returns empty Map
+   - Empty array → returns empty Map
+   - Schools without provinsi field → skipped from grouping
+   - Multiple provinces → correctly grouped with correct counts
+   - Province keys properly accessible via Map
+
+3. **Covered `generateEnrichmentSection()` rendering paths** (`scripts/school-page.test.js`):
+   - Null/undefined/string/number enrichment → returns empty string
+   - Empty object → returns empty string
+   - Wikipedia without URL → section not rendered
+   - Full Wikipedia enrichment with extract, title, URL → all rendered
+   - Wikipedia without extract → no `enrichment-extract` paragraph
+   - Wikipedia without title → falls back to 'Wikipedia' label
+   - HTML escaping for XSS prevention in URL, title, and extract
+
+4. **Covered `prepareSchoolDataForSearch()` edge cases** (`scripts/homepage.test.js`):
+   - Non-array inputs (null, undefined, string, object) → returns `[]`
+   - Empty array → returns `[]`
+   - Valid schools → returns flat array format with all 9 fields
+   - Missing optional fields → defaults to empty strings
+
+5. **Covered `aggregateProvinceAndFilters()` edge cases** (`scripts/homepage.test.js`):
+   - Non-array inputs → returns default structure `{ provinces: [], filterOptions: { provinces: [], types: [], statuses: [] } }`
+   - Valid schools → aggregated provinces, types, and statuses
+   - Schools without status → statuses is empty
+   - Schools without bentuk_pendidikan → types is empty
+
+6. **Covered `generateRobotsTxt()` functionality** (`scripts/build-pages.test.js`):
+   - Creates robots.txt with correct `User-agent`, `Allow`, and `Sitemap` directives
+   - Normalizes trailing slash in SITE_URL (no double slash)
+
+7. **Covered `buildIncremental()` edge cases** (`scripts/build-pages.test.js`):
+   - Full build when no manifest exists (simulated first run)
+   - Tracker parameter propagation and metric recording
+
+### Files Modified
+
+- `scripts/PageBuilder.test.js` — Added `buildProvincePageData` (11 tests) and `groupSchoolsByProvince` (8 tests)
+- `scripts/school-page.test.js` — Added `generateEnrichmentSection` (11 tests)
+- `scripts/homepage.test.js` — Added `prepareSchoolDataForSearch` (7 tests) and `aggregateProvinceAndFilters` edge cases (6 tests)
+- `scripts/build-pages.test.js` — Added `generateRobotsTxt` (2 tests) and `buildIncremental` edge cases (2 tests)
+- `docs/testing.md` — Updated test count 772 → 819
+- `docs/task.md` — This entry
+
+### Test Results
+
+- JS Tests: **819/819 pass** (up from 772, **+47 new tests**)
+- Lint: 0 errors
+- Format: All modified files formatted (Prettier clean)
+- Build: 3474 pages, 0 failed, all performance budgets met
+- Zero regressions introduced
+
+### Coverage Impact
+
+| Module                                          | Before | After  | Δ       |
+| ----------------------------------------------- | ------ | ------ | ------- |
+| src/services/PageBuilder.js (branches)          | 86.48% | 91.89% | +5.41%  |
+| src/presenters/templates/school-page.js (stmts) | 88.31% | 100%   | +11.69% |
+| src/presenters/templates/homepage.js (branches) | 77.08% | 83.33% | +6.25%  |
+| scripts/build-pages.js (branches)               | 67.79% | 69.63% | +1.84%  |
+
+### Acceptance Criteria
+
+- [x] `buildProvincePageData()` validation branches covered (empty/null/non-string province, non-array schools)
+- [x] `groupSchoolsByProvince()` non-array input handling tested (null/undefined/object → empty Map)
+- [x] `generateEnrichmentSection()` Wikipedia rendering paths covered (with/without extract/title, null input, XSS)
+- [x] `prepareSchoolDataForSearch()` non-array and flat array format verified
+- [x] `aggregateProvinceAndFilters()` non-array input returns default structure
+- [x] `generateRobotsTxt()` creates robots.txt with correct sitemap URL and trailing slash normalization
+- [x] `buildIncremental()` no-manifest full build path tested
+- [x] All 819 JS tests pass
+- [x] All 27 Python tests pass
+- [x] Lint passes (0 errors)
+- [x] Prettier formatting clean (modified files)
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-042] Code Sanitization - Build Failure Fix, Prettier Formatting, Stale Doc Count Correction
 
 **Status**: Complete

@@ -1,4 +1,4 @@
-const test = require('node:test');
+const { test, describe, it } = require('node:test');
 const assert = require('node:assert');
 
 test('aggregateByProvince returns empty array for non-array input', () => {
@@ -445,4 +445,159 @@ test('aggregateProvinceAndFilters includes statuses in filterOptions', () => {
 
   assert.ok(result.filterOptions.statuses, 'filterOptions should have statuses');
   assert.deepStrictEqual(result.filterOptions.statuses, ['N', 'S']);
+});
+
+describe('prepareSchoolDataForSearch', () => {
+  it('returns empty array for null input', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+    assert.deepStrictEqual(prepareSchoolDataForSearch(null), []);
+  });
+
+  it('returns empty array for undefined input', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+    assert.deepStrictEqual(prepareSchoolDataForSearch(undefined), []);
+  });
+
+  it('returns empty array for string input', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+    assert.deepStrictEqual(prepareSchoolDataForSearch('invalid'), []);
+  });
+
+  it('returns empty array for object input', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+    assert.deepStrictEqual(prepareSchoolDataForSearch({}), []);
+  });
+
+  it('returns empty array for empty schools array', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+    assert.deepStrictEqual(prepareSchoolDataForSearch([]), []);
+  });
+
+  it('returns flat arrays with correct structure for valid schools', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+
+    const schools = [
+      {
+        npsn: '12345678',
+        nama: 'SD Negeri 1 Jakarta',
+        bentuk_pendidikan: 'SD',
+        status: 'N',
+        alamat: 'Jl. Sudirman No. 1',
+        kecamatan: 'Menteng',
+        kab_kota: 'Jakarta Pusat',
+        provinsi: 'DKI Jakarta',
+      },
+    ];
+
+    const result = prepareSchoolDataForSearch(schools);
+
+    assert.strictEqual(result.length, 1);
+    assert.ok(Array.isArray(result[0]));
+    assert.strictEqual(result[0].length, 9);
+
+    // Verify flat array format: [npsn, nama, bentuk, status, alamat, kecamatan, kab_kota, provinsi, url]
+    assert.strictEqual(result[0][0], '12345678');
+    assert.strictEqual(result[0][1], 'SD Negeri 1 Jakarta');
+    assert.strictEqual(result[0][2], 'SD');
+    assert.strictEqual(result[0][3], 'N');
+    assert.strictEqual(result[0][4], 'Jl. Sudirman No. 1');
+    assert.strictEqual(result[0][5], 'Menteng');
+    assert.strictEqual(result[0][6], 'Jakarta Pusat');
+    assert.strictEqual(result[0][7], 'DKI Jakarta');
+    assert.ok(result[0][8].startsWith('/'));
+    assert.ok(result[0][8].includes('12345678'));
+  });
+
+  it('defaults missing fields to empty strings', () => {
+    const { prepareSchoolDataForSearch } = require('../src/presenters/templates/homepage');
+
+    const schools = [
+      {
+        npsn: '87654321',
+        nama: 'SMA Negeri 1',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+    ];
+
+    const result = prepareSchoolDataForSearch(schools);
+
+    assert.strictEqual(result[0][2], '');
+    assert.strictEqual(result[0][3], '');
+    assert.strictEqual(result[0][4], '');
+  });
+});
+
+describe('aggregateProvinceAndFilters edge cases', () => {
+  it('returns default structure for null input', () => {
+    const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+    const result = aggregateProvinceAndFilters(null);
+
+    assert.ok(Array.isArray(result.provinces));
+    assert.strictEqual(result.provinces.length, 0);
+    assert.deepStrictEqual(result.filterOptions, { provinces: [], types: [], statuses: [] });
+  });
+
+  it('returns default structure for undefined input', () => {
+    const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+    const result = aggregateProvinceAndFilters(undefined);
+
+    assert.ok(Array.isArray(result.provinces));
+    assert.strictEqual(result.provinces.length, 0);
+    assert.deepStrictEqual(result.filterOptions, { provinces: [], types: [], statuses: [] });
+  });
+
+  it('returns default structure for string input', () => {
+    const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+    const result = aggregateProvinceAndFilters('invalid');
+
+    assert.strictEqual(result.provinces.length, 0);
+    assert.deepStrictEqual(result.filterOptions, { provinces: [], types: [], statuses: [] });
+  });
+
+  it('returns aggregated data with types and statuses for valid schools', () => {
+    const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+
+    const schools = [
+      { npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA', status: 'N' },
+      { npsn: '2', nama: 'B', provinsi: 'JT', bentuk_pendidikan: 'SMP', status: 'S' },
+      { npsn: '3', nama: 'C', provinsi: 'JB', bentuk_pendidikan: 'SD', status: 'N' },
+    ];
+
+    const result = aggregateProvinceAndFilters(schools);
+
+    assert.strictEqual(result.provinces.length, 2);
+    assert.deepStrictEqual(result.filterOptions.provinces.sort(), ['JB', 'JT']);
+    assert.deepStrictEqual(result.filterOptions.types.sort(), ['SD', 'SMA', 'SMP']);
+    assert.deepStrictEqual(result.filterOptions.statuses.sort(), ['N', 'S']);
+  });
+
+  it('handles schools without optional status field', () => {
+    const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+
+    const schools = [
+      { npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA' },
+      { npsn: '2', nama: 'B', provinsi: 'JT', bentuk_pendidikan: 'SMP' },
+    ];
+
+    const result = aggregateProvinceAndFilters(schools);
+
+    assert.strictEqual(result.filterOptions.statuses.length, 0);
+    assert.strictEqual(result.filterOptions.types.length, 2);
+  });
+
+  it('handles schools without bentuk_pendidikan field', () => {
+    const { aggregateProvinceAndFilters } = require('../src/presenters/templates/homepage');
+
+    const schools = [
+      { npsn: '1', nama: 'A', provinsi: 'JB', status: 'N' },
+      { npsn: '2', nama: 'B', provinsi: 'JT', status: 'S' },
+    ];
+
+    const result = aggregateProvinceAndFilters(schools);
+
+    assert.strictEqual(result.filterOptions.types.length, 0);
+    assert.strictEqual(result.filterOptions.statuses.length, 2);
+  });
 });
