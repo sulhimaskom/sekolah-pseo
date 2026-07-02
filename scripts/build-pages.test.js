@@ -291,7 +291,7 @@ test('build creates dist directory and generates files', async () => {
   // Increased from 5 retries × 100ms to 10 retries × 200ms per audit
   // finding CQ-01 (2026-06-28): the previous values caused 1/772 flaky
   // failures under extreme CI I/O contention.
-  async function waitForFile(filePath, maxRetries = 10, delayMs = 200) {
+  async function waitForFile(filePath, maxRetries = 15, delayMs = 200) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const exists = await fs
         .access(filePath)
