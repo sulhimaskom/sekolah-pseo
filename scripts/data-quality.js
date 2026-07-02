@@ -365,13 +365,12 @@ function main() {
   } else {
     console.log(formatHuman(report));
     if (verbose) {
-      console.log('  ── Verbose Stats ──');
-      console.log(`  Fields analyzed: ${REQUIRED_FIELDS.length}`);
-      console.log('  Categorical dimensions: province, education type, status');
-      console.log(
-        `  Coordinate bounds: lat [${INDONESIA_BOUNDS.LAT_MIN}, ${INDONESIA_BOUNDS.LAT_MAX}], lon [${INDONESIA_BOUNDS.LON_MIN}, ${INDONESIA_BOUNDS.LON_MAX}]`
+      logger.info({ fieldsAnalyzed: REQUIRED_FIELDS.length }, 'Verbose stats');
+      logger.info('Categorical dimensions: province, education type, status');
+      logger.info(
+        { latMin: INDONESIA_BOUNDS.LAT_MIN, latMax: INDONESIA_BOUNDS.LAT_MAX, lonMin: INDONESIA_BOUNDS.LON_MIN, lonMax: INDONESIA_BOUNDS.LON_MAX },
+        'Coordinate bounds'
       );
-      console.log('');
     }
   }
 
@@ -383,7 +382,7 @@ function main() {
       terminate(`Quality thresholds not met: ${failureDetail}`);
     }
     if (!useJson) {
-      console.log('  ✅ All quality thresholds met.\n');
+      logger.info('All quality thresholds met');
     }
   }
 }
