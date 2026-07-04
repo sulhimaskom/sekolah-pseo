@@ -12,11 +12,25 @@ const logger = require('./logger');
 const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
 const { walkDirectory, processConcurrently, terminate } = require('./utils');
 
+/**
+ * Checks if a link is a relative link (should be validated locally).
+ * Filters out: null/undefined, empty, hash-only/fragment, and external URLs.
+ * @param {string|null|undefined} link - The link to check
+ * @returns {boolean} True if the link is a relative link
+ */
+function isRelativeLink(link) {
+  if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
+    return false;
+  }
+  return true;
+}
+
 // Export functions for testing
 module.exports = {
   extractLinks,
   validateLinksInFile,
   validateLinks,
+  isRelativeLink,
 };
 
 /**
@@ -26,13 +40,11 @@ module.exports = {
  */
 function extractLinks(html) {
   const matches = [];
-  // Cache the regex to avoid recreating it each time
   const regex = /href="([^"]+)"/g;
   let match;
   while ((match = regex.exec(html)) !== null) {
     const href = match[1];
-    // consider only relative links
-    if (href && !/^https?:/.test(href)) {
+    if (isRelativeLink(href)) {
       matches.push(href);
     }
   }
@@ -57,7 +69,7 @@ async function validateLinksInFile(file, links, distDir) {
   const brokenInFile = [];
 
   for (const link of links) {
-    if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
+    if (!isRelativeLink(link)) {
       continue;
     }
 

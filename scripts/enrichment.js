@@ -19,7 +19,13 @@
 
 const logger = require('./logger');
 const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
-const { withTimeout } = require('./resilience');
+const {
+  withTimeout,
+  retry,
+  isTransientError,
+  IntegrationError,
+  ERROR_CODES,
+} = require('./resilience');
 const CONFIG = require('./config');
 const path = require('path');
 
@@ -97,33 +103,57 @@ function buildWikipediaExtractUrl(pageTitles) {
  * @returns {Promise<Object>} Parsed JSON response
  */
 function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
-  const protocol = url.startsWith('https') ? require('https') : require('http');
+  const doFetch = () => {
+    const protocol = url.startsWith('https') ? require('https') : require('http');
 
-  return withTimeout(
-    new Promise((resolve, reject) => {
-      protocol
-        .get(
-          url,
-          { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
-          res => {
-            let data = '';
-            res.on('data', chunk => {
-              data += chunk;
-            });
-            res.on('end', () => {
-              try {
-                resolve(JSON.parse(data));
-              } catch (parseError) {
-                reject(new Error(`Failed to parse API response: ${parseError.message}`));
+    return withTimeout(
+      new Promise((resolve, reject) => {
+        protocol
+          .get(
+            url,
+            { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
+            res => {
+              if (res.statusCode && res.statusCode >= 400) {
+                const httpError = new Error(`HTTP ${res.statusCode}`);
+                httpError.statusCode = res.statusCode;
+                reject(httpError);
+                return;
               }
-            });
-          }
-        )
-        .on('error', reject);
-    }),
-    timeoutMs,
-    `Wikipedia API request: ${url.slice(0, 100)}...`
-  );
+              let data = '';
+              res.on('data', chunk => {
+                data += chunk;
+              });
+              res.on('end', () => {
+                try {
+                  resolve(JSON.parse(data));
+                } catch (parseError) {
+                  reject(
+                    new IntegrationError(
+                      `Failed to parse API response: ${parseError.message}`,
+                      ERROR_CODES.HTTP_ERROR,
+                      { url: url.slice(0, 200), parseError: parseError.message }
+                    )
+                  );
+                }
+              });
+            }
+          )
+          .on('error', reject);
+      }),
+      timeoutMs,
+      `Wikipedia API request: ${url.slice(0, 100)}...`
+    );
+  };
+
+  return retry(doFetch, {
+    maxAttempts: 3,
+    initialDelayMs: 1000,
+    shouldRetry: err => {
+      if (err instanceof IntegrationError) return false;
+      if (err.statusCode === 429 || (err.statusCode && err.statusCode >= 500)) return true;
+      return isTransientError(err);
+    },
+  });
 }
 
 /**

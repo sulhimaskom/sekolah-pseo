@@ -2,6 +2,7 @@
 
 const path = require('path');
 const slugify = require('../../scripts/slugify');
+const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 
@@ -22,10 +23,12 @@ const relativePathCache = new WeakMap();
  */
 function getSchoolRelativePath(school) {
   if (!school || typeof school !== 'object') {
-    throw new Error('Invalid school object provided');
+    throw new IntegrationError('Invalid school object provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'school',
+      expectedType: 'object',
+    });
   }
 
-  // Check WeakMap cache first
   const cached = relativePathCache.get(school);
   if (cached !== undefined) {
     return cached;
@@ -34,7 +37,11 @@ function getSchoolRelativePath(school) {
   const missingFields = REQUIRED_SCHOOL_FIELDS.filter(field => !school[field]);
 
   if (missingFields.length > 0) {
-    throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
+    throw new IntegrationError(
+      `School object missing required fields: ${missingFields.join(', ')}`,
+      ERROR_CODES.MISSING_REQUIRED_FIELD,
+      { missingFields }
+    );
   }
 
   const provinsiSlug = slugify(school.provinsi);
@@ -52,20 +59,26 @@ function getSchoolRelativePath(school) {
     `${school.npsn}-${namaSlug}.html`
   );
 
-  // Cache by school object reference
   relativePathCache.set(school, result);
   return result;
 }
 
 function buildSchoolPageData(school, enrichment) {
   if (!school || typeof school !== 'object') {
-    throw new Error('Invalid school object provided');
+    throw new IntegrationError('Invalid school object provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'school',
+      expectedType: 'object',
+    });
   }
 
   const missingFields = REQUIRED_SCHOOL_FIELDS.filter(field => !school[field]);
 
   if (missingFields.length > 0) {
-    throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
+    throw new IntegrationError(
+      `School object missing required fields: ${missingFields.join(', ')}`,
+      ERROR_CODES.MISSING_REQUIRED_FIELD,
+      { missingFields }
+    );
   }
 
   const relativePath = getSchoolRelativePath(school);
@@ -78,7 +91,10 @@ function buildSchoolPageData(school, enrichment) {
 
 function getUniqueDirectories(schools) {
   if (!Array.isArray(schools)) {
-    throw new Error('schools must be an array');
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
   }
 
   const uniqueDirs = new Set();
@@ -110,7 +126,10 @@ function getUniqueDirectories(schools) {
  */
 function getUniqueProvinces(schools) {
   if (!Array.isArray(schools)) {
-    throw new Error('schools must be an array');
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
   }
 
   const provinceMap = new Map();
@@ -144,11 +163,17 @@ function getUniqueProvinces(schools) {
  */
 function buildProvincePageData(provinceName, schools, skipFilter = false) {
   if (!provinceName || typeof provinceName !== 'string') {
-    throw new Error('Invalid province name provided');
+    throw new IntegrationError('Invalid province name provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'provinceName',
+      expectedType: 'non-empty string',
+    });
   }
 
   if (!Array.isArray(schools)) {
-    throw new Error('schools must be an array');
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
   }
 
   const provinceSlug = slugify(provinceName);

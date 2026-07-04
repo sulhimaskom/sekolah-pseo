@@ -68,6 +68,7 @@ module.exports = {
   generateProvincePages,
   preCreateProvinceDirectories,
   writeSearchDataFile,
+  exportSchoolsCsv,
   build,
   buildIncremental,
   computeSchoolHash,

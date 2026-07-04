@@ -23,6 +23,7 @@ const crypto = require('crypto');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeReadFile, safeWriteFile, safeAccess, safeUnlink } = require('./fs-safe');
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 const MANIFEST_FILE = '.build-manifest.json';
 const MANIFEST_VERSION = 1;
@@ -47,10 +48,14 @@ async function loadManifest() {
 
   try {
     await safeAccess(manifestPath);
+  } catch {
+    return null;
+  }
+
+  try {
     const content = await safeReadFile(manifestPath);
     const manifest = JSON.parse(content);
 
-    // Validate manifest version
     if (manifest.version !== MANIFEST_VERSION) {
       logger.info(
         `Manifest version mismatch (${manifest.version} vs ${MANIFEST_VERSION}), starting fresh`
@@ -59,9 +64,13 @@ async function loadManifest() {
     }
 
     return manifest;
-  } catch {
-    // Manifest doesn't exist or is invalid - this is fine for first build
-    return null;
+  } catch (error) {
+    if (error instanceof IntegrationError) throw error;
+    throw new IntegrationError(
+      `Failed to load manifest: ${error.message}`,
+      ERROR_CODES.FILE_READ_ERROR,
+      { manifestPath, originalError: error.message }
+    );
   }
 }
 
@@ -76,7 +85,12 @@ async function saveManifest(manifest) {
     await safeWriteFile(manifestPath, JSON.stringify(manifest, null, 2));
   } catch (error) {
     logger.error({ err: error }, 'Failed to save manifest');
-    throw error;
+    if (error instanceof IntegrationError) throw error;
+    throw new IntegrationError(
+      `Failed to save manifest: ${error.message}`,
+      ERROR_CODES.FILE_WRITE_ERROR,
+      { manifestPath, originalError: error.message }
+    );
   }
 }
 

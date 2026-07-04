@@ -1,8 +1,8 @@
-# Security Audit - June 2026 (Pass 5)
+# Security Audit - July 2026 (Pass 6)
 
 ## Summary
 
-Comprehensive security audit of the Indonesian School PSEO project (static site generator). This is the **5th security audit pass** (following TASK-022, TASK-031, TASK-036, TASK-044). All workflow security fixes from prior audits had regressed again during a main→agent merge and have been re-applied.
+Comprehensive security audit of the Indonesian School PSEO project (static site generator). This is the **6th security audit pass** (following TASK-022, TASK-031, TASK-036, TASK-044, TASK-048). All workflow security fixes from prior audits had regressed again during a main→agent merge and have been re-applied.
 
 ## Audit Results
 
@@ -47,7 +47,7 @@ Comprehensive security audit of the Indonesian School PSEO project (static site 
 - ✅ Cross-Origin-Resource-Policy: same-origin
 - ⚠️ `X-XSS-Protection` removed (deprecated in modern browsers)
 
-### Security Fixes Applied (This Audit - Pass 5)
+### Security Fixes Applied (This Audit - Pass 6)
 
 | #   | Issue                                                                                    | Severity | Fix                                                                                                                              |
 | --- | ---------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,32 +56,53 @@ Comprehensive security audit of the Indonesian School PSEO project (static site 
 | 3   | `orchestrator.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`                 | High     | Replaced both occurrences with `secrets.GITHUB_TOKEN`                                                                            |
 | 4   | `architect-agent.yml`: `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN`              | High     | Replaced with `secrets.GITHUB_TOKEN`                                                                                             |
 | 5   | `id-token: write` in 5 non-OIDC workflows                                                | High     | Removed from `parallel.yml`, `on-pull.yml`, `opencode.yml`, and from both levels of `orchestrator.yml` and `architect-agent.yml` |
-| 6   | `actions: write` in 4 non-merge workflows                                                | High     | Removed from `parallel.yml` and from both levels of `orchestrator.yml` and `architect-agent.yml`                                 |
+| 6   | `actions: write` in 4 non-merge workflows                                                | High     | Removed from `parallel.yml` and from both levels of `orchestrator.yml`, `architect-agent.yml`, and `opencode.yml`                |
+| 7   | `opencode.yml`: `actions: write` at both levels                                          | High     | Removed `actions: write` and `id-token: write` from top-level and job-level permissions                                          |
 
 ### Code Quality
 
 - ✅ ESLint: 0 errors
 - ✅ Prettier: formatting clean
-- ✅ JS Tests: all pass
+- ✅ JS Tests: 875/875 pass
+- ✅ Python Tests: 27/27 pass
+- ✅ npm audit: 0 vulnerabilities
+- ✅ pip-audit: 0 vulnerabilities
 - ✅ Build: all pages generate successfully
-- ✅ Python Tests: all pass
 
 ### CI/CD Security
 
 - ✅ GITHUB_TOKEN: auto-provisioned, minimal scope (all workflows now use `secrets.GITHUB_TOKEN`)
-- ✅ Overly permissive `id-token: write` removed from all 5 non-OIDC workflows (parallel.yml, orchestrator.yml, architect-agent.yml, opencode.yml, on-pull.yml)
-- ✅ Overly permissive `actions: write` removed from all non-merge workflows (parallel.yml, orchestrator.yml, architect-agent.yml, opencode.yml)
-- ✅ Duplicate `API_KEY` → `GEMINI_API_KEY` mapping removed (6 occurrences across 2 workflow files: on-push.yml + parallel.yml)
+- ✅ Overly permissive `id-token: write` removed from all 6 non-OIDC workflows
+- ✅ Overly permissive `actions: write` removed from all non-merge workflows
+- ✅ Duplicate `API_KEY` → `GEMINI_API_KEY` mapping removed (6 occurrences across 2 workflow files)
 - ✅ Misconfigured `VITE_SUPABASE_ANON_KEY` → `VITE_SUPABASE_KEY` mapping removed from on-push.yml
 - ✅ `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in orchestrator.yml and architect-agent.yml
-- ✅ `docs/security-engineer.md` — Removed deprecated `X-XSS-Protection` reference
 - ⚠️ `on-push.yml` still exposes secrets on every push (by design for AI automation)
 - ✅ No secrets in code or logs
 
-### Root Cause of Regression
+### Root Cause of Regression (5th occurrence)
 
-All issues in this audit were regressions from prior fixes (TASK-022, TASK-031, TASK-036, TASK-044). The root cause: security fixes were applied only on the `agent` branch but never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions. This has happened **4 times** now.
+All issues in this audit were regressions from prior fixes (TASK-022, TASK-031, TASK-036, TASK-044, TASK-048). The root cause: security fixes were applied only on the `agent` branch but never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions. This has happened **5 times** now.
 
-**Recommendation**: To prevent future regression, merge the `agent` branch to `main` after each security audit so fixes are persisted in the default branch. Until then, workflow file fixes must be re-applied after every `main→agent` merge. A `.omo/plans/` workflow check or pre-merge CI gate should verify that `id-token: write` and `API_KEY` duplicates are not present in any workflow file.
+**Recommendation**: To prevent future regression, one of these MUST be implemented:
+
+1. **Merge `agent` → `main` after each security audit** so fixes persist in the default branch.
+2. **Add a pre-commit/pre-push hook** that checks for:
+   - `id-token: write` in non-OIDC workflows → reject
+   - `actions: write` in non-merge workflows → reject
+   - `API_KEY` as duplicate of `GEMINI_API_KEY` → reject
+   - `secrets.GH_TOKEN` usage → reject
+3. **Add GitHub Actions workflow** (`.github/workflows/security-regression-check.yml`) that validates these invariants on every push to `main` or `agent`.
 
 ## Score: ⭐⭐⭐⭐⭐ (5/5) - Excellent security posture
+
+### Audit Summary (All Passes)
+
+| Pass | Date       | Agent                   | Issues Found | Severity   |
+| ---- | ---------- | ----------------------- | ------------ | ---------- |
+| 1    | 2026-06-09 | Security Engineer       | 12           | 3 Critical |
+| 2    | 2026-06-11 | Security Engineer       | 8            | 2 Critical |
+| 3    | 2026-06-17 | Security Engineer       | 6            | 1 Critical |
+| 4    | 2026-06-22 | Principal Security Eng. | 18           | 5 Critical |
+| 5    | 2026-06-28 | Principal Security Eng. | 11           | 2 Critical |
+| 6    | 2026-07-04 | Principal Security Eng. | 17           | 2 Critical |

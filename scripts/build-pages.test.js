@@ -10,6 +10,11 @@ const {
   loadSchools,
   generateExternalStyles,
   generateRobotsTxt,
+  ensureDistDir,
+  exportSchoolsCsv,
+  writeSearchDataFile,
+  preCreateProvinceDirectories,
+  generateProvincePages,
   build,
   buildIncremental,
   createManifestFromSchools,
@@ -406,4 +411,305 @@ test('generateRobotsTxt normalizes trailing slash in SITE_URL', async () => {
   // URL should not have double slash
   assert.ok(content.includes('Sitemap: https://sekolah.example.com/sitemap-index.xml'));
   assert.ok(!content.includes('https://sekolah.example.com//sitemap-index.xml'));
+});
+
+// --- ensureDistDir tests ---
+
+test('ensureDistDir creates dist directory when it does not exist', async () => {
+  await fs.rm(CONFIG.DIST_DIR, { recursive: true, force: true });
+
+  await ensureDistDir();
+
+  const exists = await fs
+    .access(CONFIG.DIST_DIR)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(exists, 'dist directory should be created');
+});
+
+test('ensureDistDir does not throw when dist directory already exists', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await ensureDistDir();
+
+  const exists = await fs
+    .access(CONFIG.DIST_DIR)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(exists, 'dist directory should still exist');
+});
+
+// --- exportSchoolsCsv tests ---
+
+test('exportSchoolsCsv copies schools.csv to dist/data/', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await exportSchoolsCsv();
+
+  const exportedPath = path.join(CONFIG.DIST_DIR, 'data', 'schools.csv');
+  const exists = await fs
+    .access(exportedPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(exists, 'schools.csv should be exported to dist/data/');
+
+  const content = await fs.readFile(exportedPath, 'utf-8');
+  assert.ok(content.length > 0, 'exported CSV should have content');
+  assert.ok(content.includes('npsn'), 'exported CSV should contain npsn header');
+  assert.ok(content.includes(','), 'exported CSV should be comma-separated');
+});
+
+test('exportSchoolsCsv creates dist/data/ directory if missing', async () => {
+  await fs.rm(CONFIG.DIST_DIR, { recursive: true, force: true });
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await exportSchoolsCsv();
+
+  const dataDir = path.join(CONFIG.DIST_DIR, 'data');
+  const dataDirExists = await fs
+    .access(dataDir)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(dataDirExists, 'dist/data/ directory should be created');
+});
+
+// --- writeSearchDataFile tests ---
+
+test('writeSearchDataFile creates schools.json from school data', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+    },
+  ];
+
+  await writeSearchDataFile(schools);
+
+  const jsonPath = path.join(CONFIG.DIST_DIR, 'schools.json');
+  const jsonExists = await fs
+    .access(jsonPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(jsonExists, 'schools.json should exist');
+
+  const content = JSON.parse(await fs.readFile(jsonPath, 'utf-8'));
+  assert.ok(Array.isArray(content), 'schools.json should be an array');
+  assert.strictEqual(content.length, 1, 'should contain 1 school');
+
+  assert.ok(Array.isArray(content[0]), 'each entry should be a flat array');
+  assert.strictEqual(content[0][0], '10001', 'first element should be npsn');
+  assert.strictEqual(content[0][1], 'SMA 1', 'second element should be nama');
+});
+
+test('writeSearchDataFile creates gzip-compressed schools.json.gz', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+    },
+  ];
+
+  await writeSearchDataFile(schools);
+
+  const gzPath = path.join(CONFIG.DIST_DIR, 'schools.json.gz');
+  const gzExists = await fs
+    .access(gzPath)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(gzExists, 'schools.json.gz should exist');
+
+  const zlib = require('zlib');
+  const gzBuffer = await fs.readFile(gzPath);
+  const decompressed = zlib.gunzipSync(gzBuffer).toString('utf-8');
+  const parsed = JSON.parse(decompressed);
+  assert.ok(Array.isArray(parsed), 'decompressed content should be an array');
+  assert.strictEqual(parsed.length, 1, 'decompressed should contain 1 school');
+});
+
+test('writeSearchDataFile handles empty schools array', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await writeSearchDataFile([]);
+
+  const jsonPath = path.join(CONFIG.DIST_DIR, 'schools.json');
+  const content = JSON.parse(await fs.readFile(jsonPath, 'utf-8'));
+  assert.ok(Array.isArray(content), 'schools.json should be an array');
+  assert.strictEqual(content.length, 0, 'empty schools should produce empty array');
+});
+
+// --- preCreateProvinceDirectories tests ---
+
+test('preCreateProvinceDirectories creates province directories from schools', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
+    {
+      npsn: '10002',
+      nama: 'SMA 2',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Gubeng',
+    },
+  ];
+
+  await preCreateProvinceDirectories(schools);
+
+  const prov1Dir = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-barat');
+  const prov2Dir = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-timur');
+
+  const d1 = await fs
+    .access(prov1Dir)
+    .then(() => true)
+    .catch(() => false);
+  const d2 = await fs
+    .access(prov2Dir)
+    .then(() => true)
+    .catch(() => false);
+
+  assert.ok(d1, 'jawa-barat directory should exist');
+  assert.ok(d2, 'jawa-timur directory should exist');
+});
+
+test('preCreateProvinceDirectories accepts pre-computed provinces array', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
+  ];
+
+  const provinces = [{ name: 'Jawa Barat', slug: 'jawa-barat', count: 1 }];
+
+  await preCreateProvinceDirectories(schools, provinces);
+
+  const provDir = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-barat');
+  const exists = await fs
+    .access(provDir)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(exists, 'jawa-barat directory should exist using pre-computed provinces');
+});
+
+test('preCreateProvinceDirectories handles empty schools array', async () => {
+  await fs.rm(CONFIG.DIST_DIR, { recursive: true, force: true });
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  await preCreateProvinceDirectories([]);
+
+  const provDir = path.join(CONFIG.DIST_DIR, 'provinsi');
+  const provExists = await fs
+    .access(provDir)
+    .then(() => true)
+    .catch(() => false);
+  assert.ok(!provExists, 'no provinsi directory should be created for empty schools');
+});
+
+// --- generateProvincePages tests ---
+
+test('generateProvincePages generates province pages for each province', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test',
+    },
+    {
+      npsn: '10002',
+      nama: 'SMA 2',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Gubeng',
+      bentuk_pendidikan: 'SMA',
+      status: 'Swasta',
+      alamat: 'Jl. Test 2',
+    },
+  ];
+
+  const result = await generateProvincePages(schools);
+
+  assert.strictEqual(result.successful, 2, 'both province pages should succeed');
+  assert.strictEqual(result.failed, 0, 'no province pages should fail');
+
+  const page1Path = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-barat', 'index.html');
+  const page2Path = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-timur', 'index.html');
+
+  const p1 = await fs
+    .access(page1Path)
+    .then(() => true)
+    .catch(() => false);
+  const p2 = await fs
+    .access(page2Path)
+    .then(() => true)
+    .catch(() => false);
+
+  assert.ok(p1, 'jawa-barat province page should exist');
+  assert.ok(p2, 'jawa-timur province page should exist');
+
+  const content1 = await fs.readFile(page1Path, 'utf-8');
+  assert.ok(
+    content1.includes('<!DOCTYPE html>') || content1.includes('<html'),
+    'province page should be valid HTML'
+  );
+  assert.ok(content1.includes('Jawa Barat'), 'province page should contain province name');
+});
+
+test('generateProvincePages handles empty schools array', async () => {
+  const result = await generateProvincePages([]);
+  assert.strictEqual(result.successful, 0, 'no province pages with empty schools');
+  assert.strictEqual(result.failed, 0, 'no province page failures with empty schools');
+});
+
+test('generateProvincePages skips schools without provinsi in grouping', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test',
+    },
+    { npsn: '10002', nama: 'SMA 2', kab_kota: 'Surabaya', kecamatan: 'Gubeng' },
+  ];
+
+  const result = await generateProvincePages(schools);
+  assert.strictEqual(result.successful, 1, 'only valid province should succeed');
+  assert.strictEqual(result.failed, 0, 'no failures - invalid schools are skipped in grouping');
 });
