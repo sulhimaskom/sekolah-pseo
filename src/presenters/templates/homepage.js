@@ -266,7 +266,7 @@ function generateHomepageHtml(schools) {
             id="school-search" 
             class="search-input" 
             placeholder="Cari sekolah... (Tekan / untuk fokus)"
-            aria-label="Cari sekolah berdasarkan nama, NPSN, atau alamat"
+            aria-label="${escapeHtml(CONFIG.TEXT.SEARCH_ARIA_LABEL)}"
             aria-describedby="search-hint"
             role="combobox"
             aria-expanded="false"
