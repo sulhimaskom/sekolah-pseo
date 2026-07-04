@@ -6675,6 +6675,10 @@ Performed routine CI health maintenance: resolved 3 lingering ESLint warnings fr
 - [x] Prettier formatting clean
 - [x] All performance budgets met
 - [x] Zero regressions introduced
+- [x] error: ETL fails when raw data contains "Negeri"/"Swasta" instead of "N"/"S"
+- [ ] error: Slow test detected: should execute queued operations after active ones complete (549.66ms)
+- [ ] error: Slow test detected: should handle operations that return undefined (841.93ms)
+- [ ] error: Slow test detected: includes error details in retry exhaustion (774.78ms)
 
 ---
 
