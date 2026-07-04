@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { extractLinks, validateLinksInFile, validateLinks } = require('./validate-links');
+const { extractLinks, validateLinksInFile, validateLinks, isRelativeLink } = require('./validate-links');
 
 test('extractLinks extracts relative links from HTML', () => {
   const html = '<a href="page.html">Link</a>';
@@ -92,6 +92,36 @@ test('extractLinks handles undefined input', () => {
 test('extractLinks handles non-string input', () => {
   const result = extractLinks(123);
   assert.deepStrictEqual(result, []);
+});
+
+// ── isRelativeLink ─────────────────────────────────────────────────────────
+
+test('isRelativeLink returns true for relative paths', () => {
+  assert.strictEqual(isRelativeLink('page.html'), true);
+  assert.strictEqual(isRelativeLink('../parent/page.html'), true);
+  assert.strictEqual(isRelativeLink('subdir/page.html'), true);
+  assert.strictEqual(isRelativeLink('/absolute/path.html'), true);
+  assert.strictEqual(isRelativeLink('page.html?param=value'), true);
+  assert.strictEqual(isRelativeLink('page.html#section'), true);
+});
+
+test('isRelativeLink returns false for null/undefined/empty', () => {
+  assert.strictEqual(isRelativeLink(null), false);
+  assert.strictEqual(isRelativeLink(undefined), false);
+  assert.strictEqual(isRelativeLink(''), false);
+});
+
+test('isRelativeLink returns false for hash-only links', () => {
+  assert.strictEqual(isRelativeLink('#'), false);
+  assert.strictEqual(isRelativeLink('#section'), false);
+  assert.strictEqual(isRelativeLink('#nested/anchor'), false);
+});
+
+test('isRelativeLink returns false for external http/https links', () => {
+  assert.strictEqual(isRelativeLink('http://example.com/page.html'), false);
+  assert.strictEqual(isRelativeLink('https://example.com/page.html'), false);
+  assert.strictEqual(isRelativeLink('http://'), false);
+  assert.strictEqual(isRelativeLink('https://'), false);
 });
 
 test('validateLinksInFile skips hash-only links', async () => {
