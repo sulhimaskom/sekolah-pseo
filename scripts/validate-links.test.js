@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { extractLinks, validateLinksInFile, validateLinks, isRelativeLink } = require('./validate-links');
+const {
+  extractLinks,
+  validateLinksInFile,
+  validateLinks,
+  isRelativeLink,
+} = require('./validate-links');
 
 test('extractLinks extracts relative links from HTML', () => {
   const html = '<a href="page.html">Link</a>';
