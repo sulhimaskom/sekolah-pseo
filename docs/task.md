@@ -6679,3 +6679,72 @@ Performed routine CI health maintenance: resolved 3 lingering ESLint warnings fr
 - [ ] error: Slow test detected: should execute queued operations after active ones complete (549.66ms)
 - [ ] error: Slow test detected: should handle operations that return undefined (841.93ms)
 - [ ] error: Slow test detected: includes error details in retry exhaustion (774.78ms)
+
+---
+
+### [TASK-048] Critical Path Testing - Build Pipeline Functions (exportSchoolsCsv, ensureDistDir, writeSearchDataFile, generateProvincePages)
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Added direct test coverage for 5 critical path functions in the build pipeline that lacked dedicated tests. Previously, several exported functions in `build-pages.js` were only tested indirectly through the integration `build()` test, or had zero test coverage at all.
+
+### Actions Taken
+
+1. **Exported `exportSchoolsCsv()` for testability** (`scripts/build-pages.js`):
+   - Added `exportSchoolsCsv` to `module.exports` — was a private function with no test access
+
+2. **Added `ensureDistDir()` tests** (`scripts/build-pages.test.js`):
+   - Creates dist directory when it does not exist
+   - Does not throw when dist directory already exists
+
+3. **Added `exportSchoolsCsv()` tests** (`scripts/build-pages.test.js`):
+   - Copies schools.csv to dist/data/ with correct content (has npsn header, comma-separated)
+   - Creates dist/data/ directory if missing
+
+4. **Added `writeSearchDataFile()` tests** (`scripts/build-pages.test.js`):
+   - Creates schools.json from school data with flat array format
+   - Creates gzip-compressed schools.json.gz that decompresses to valid data
+   - Handles empty schools array → produces empty array
+
+5. **Added `preCreateProvinceDirectories()` tests** (`scripts/build-pages.test.js`):
+   - Creates province directories from school data
+   - Accepts pre-computed provinces array (build optimization path)
+   - Handles empty schools array (no directories created)
+
+6. **Added `generateProvincePages()` tests** (`scripts/build-pages.test.js`):
+   - Generates province pages for each province with valid HTML content
+   - Handles empty schools array (0 successful, 0 failed)
+   - Skips schools without provinsi in grouping (no crash)
+
+### Files Modified
+
+- `scripts/build-pages.js` — Added `exportSchoolsCsv` to module.exports
+- `scripts/build-pages.test.js` — Added 13 new tests covering 5 functions
+- `docs/testing.md` — Updated test count 875 → 888
+- `docs/task.md` — This entry
+
+### Verification Results
+
+| Check            | Result                      |
+| ---------------- | --------------------------- |
+| JS Tests         | 888/888 pass (+13 new)      |
+| Python Tests     | 27/27 pass                  |
+| ESLint           | 0 errors                    |
+| Prettier         | All files formatted         |
+| Zero regressions | Confirmed                   |
+
+### Acceptance Criteria
+
+- [x] `exportSchoolsCsv()` exported and tested (content verification, directory creation)
+- [x] `ensureDistDir()` tested (create when missing, no-op when exists)
+- [x] `writeSearchDataFile()` tested (JSON content, gzip compression, empty input)
+- [x] `preCreateProvinceDirectories()` tested (from schools, pre-computed provinces, empty input)
+- [x] `generateProvincePages()` tested (page generation, empty input, missing provinsi)
+- [x] All 888 JS tests pass
+- [x] All 27 Python tests pass
+- [x] Lint passes (0 errors)
+- [x] Prettier formatting clean
+- [x] Zero regressions introduced
