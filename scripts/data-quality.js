@@ -368,7 +368,12 @@ function main() {
       logger.info({ fieldsAnalyzed: REQUIRED_FIELDS.length }, 'Verbose stats');
       logger.info('Categorical dimensions: province, education type, status');
       logger.info(
-        { latMin: INDONESIA_BOUNDS.LAT_MIN, latMax: INDONESIA_BOUNDS.LAT_MAX, lonMin: INDONESIA_BOUNDS.LON_MIN, lonMax: INDONESIA_BOUNDS.LON_MAX },
+        {
+          latMin: INDONESIA_BOUNDS.LAT_MIN,
+          latMax: INDONESIA_BOUNDS.LAT_MAX,
+          lonMin: INDONESIA_BOUNDS.LON_MIN,
+          lonMax: INDONESIA_BOUNDS.LON_MAX,
+        },
         'Coordinate bounds'
       );
     }

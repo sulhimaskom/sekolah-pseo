@@ -1,4 +1,5 @@
 const { escapeHtml } = require('../../../scripts/utils');
+const CONFIG = require('../../../scripts/config');
 const slugify = require('../../../scripts/slugify');
 const { getSchoolRelativePath } = require('../../services/PageBuilder');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
@@ -265,6 +266,7 @@ function generateHomepageHtml(schools) {
             id="school-search" 
             class="search-input" 
             placeholder="Cari sekolah... (Tekan / untuk fokus)"
+            aria-label="${escapeHtml(CONFIG.TEXT.SEARCH_ARIA_LABEL)}"
             aria-describedby="search-hint"
             role="combobox"
             aria-expanded="false"
@@ -320,7 +322,7 @@ function generateHomepageHtml(schools) {
     </section>
 
     <section aria-labelledby="provinces-heading">
-      <h2 id="provinces-heading" class="section-title">Pilih Provinsi</h2>
+      <h2 id="provinces-heading" class="section-title">${escapeHtml(CONFIG.TEXT.SELECT_PROVINCE_HEADING)}</h2>
       <p class="section-description">Klik pada provinsi untuk melihat daftar sekolah di wilayah tersebut.</p>
       <noscript>
         <p class="noscript-notice">JavaScript dinonaktifkan. Menampilkan daftar provinsi lengkap.</p>
