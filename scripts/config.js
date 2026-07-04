@@ -121,6 +121,7 @@ const CONFIG = {
     COPY_NPSN: 'Salin NPSN',
     SITE_NAME: 'Sekolah PSEO',
     SITE_DESCRIPTION: 'Direktori lengkap sekolah-sekolah di Indonesia.',
+    SELECT_PROVINCE_HEADING: 'Pilih Provinsi',
   },
 
   // Security utilities

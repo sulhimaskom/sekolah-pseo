@@ -84,11 +84,15 @@ function normaliseRecord(raw) {
   // Cache the current date to avoid creating multiple Date objects
   const currentDate = new Date().toISOString().split('T')[0];
 
+  let status = sanitize(SCHEMA.mapRawField(raw, 'status'));
+  if (status.toLowerCase() === 'negeri') status = 'N';
+  if (status.toLowerCase() === 'swasta') status = 'S';
+
   return {
     npsn: sanitize(SCHEMA.mapRawField(raw, 'npsn')),
     nama: sanitize(SCHEMA.mapRawField(raw, 'nama')),
     bentuk_pendidikan: sanitize(SCHEMA.mapRawField(raw, 'bentuk_pendidikan')),
-    status: sanitize(SCHEMA.mapRawField(raw, 'status')),
+    status: status,
     alamat: sanitize(SCHEMA.mapRawField(raw, 'alamat')),
     kelurahan: sanitize(SCHEMA.mapRawField(raw, 'kelurahan')),
     kecamatan: sanitize(SCHEMA.mapRawField(raw, 'kecamatan')),
