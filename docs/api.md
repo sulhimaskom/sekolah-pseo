@@ -22,7 +22,11 @@ scripts/           # Controllers and utilities
 ├── logger.js       # Pino-based logging
 ├── fetch-data.js   # External data fetch from GitHub
 ├── check-freshness.js # Data freshness check
-└── manifest.js     # Build manifest for incremental builds
+├── manifest.js     # Build manifest for incremental builds
+├── enrichment.js   # School data enrichment (Wikipedia API)
+├── build-performance.js  # Build performance tracking
+├── data-quality.js # Data quality analysis
+└── interactive.js  # CLI interactive menu
 
 src/
 ├── services/
@@ -4149,6 +4153,7 @@ Loads the build manifest from disk.
 
 - Returns `null` if manifest file doesn't exist
 - Returns `null` if manifest version doesn't match `MANIFEST_VERSION`
+- Throws `IntegrationError` with `FILE_READ_ERROR` code if file exists but cannot be read or parsed
 
 **Usage:**
 
@@ -4171,7 +4176,7 @@ Saves the build manifest to disk.
 
 **Returns:** `Promise<void>`
 
-**Throws:** Error if file write fails
+**Throws:** `IntegrationError` with `FILE_WRITE_ERROR` code if file write fails
 
 **Usage:**
 
@@ -4429,16 +4434,28 @@ await safeReadFile('/path/to/file.csv');
 await fs.readFile('/path/to/file.csv', 'utf8');
 ```
 
-### 2. Validate Input Early
+### 2. Validate Input Early with IntegrationError
 
 ```javascript
-// Good
+// Good (typesafe validation with IntegrationError)
 if (!school || typeof school !== 'object') {
-  throw new Error('Invalid school object provided');
+  throw new IntegrationError('Invalid school object provided', ERROR_CODES.INVALID_INPUT, {
+    field: 'school',
+    expectedType: 'object',
+  });
 }
 
-// Bad (fails unpredictably later)
-const path = school.provinsi; // Could be undefined
+// Good (missing required fields with specific error code)
+if (missingFields.length > 0) {
+  throw new IntegrationError(
+    `School object missing required fields: ${missingFields.join(', ')}`,
+    ERROR_CODES.MISSING_REQUIRED_FIELD,
+    { missingFields }
+  );
+}
+
+// Bad (generic error, no error code)
+throw new Error('Invalid school object provided');
 ```
 
 ### 3. Use IntegrationError for Integration Failures
@@ -4447,7 +4464,7 @@ const path = school.provinsi; // Could be undefined
 // Good
 throw new IntegrationError('Failed to read file', ERROR_CODES.FILE_READ_ERROR, { filePath });
 
-// Bad (generic error)
+// Bad (generic error, can't distinguish from validation errors)
 throw new Error('File read failed');
 ```
 
@@ -4566,6 +4583,12 @@ None.
 - Updated Module Organization with `shared/` subdirectory
 - Updated Dependency Graph with shared module dependencies
 - Added 4 missing network error codes to Error Code Mapping table (HTTP_ERROR, NETWORK_ERROR, EXTERNAL_SERVICE_ERROR, FETCH_ERROR)
+
+### Version 1.2.0 (2026-07-04)
+
+- Added IntegrationError standardization best practice (validation errors use INVALID_INPUT / MISSING_REQUIRED_FIELD codes)
+- Updated manifest.js docs: loadManifest throws IntegrationError on corrupt files, saveManifest throws IntegrationError on write failure
+- Added enrichment.js module to module organization
 
 ### Version 1.1.0 (2026-01-10)
 

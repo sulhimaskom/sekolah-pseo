@@ -307,7 +307,7 @@ test('collectUrlsFromSchools handles null schools gracefully', () => {
   const { collectUrlsFromSchools } = require('./sitemap');
 
   assert.throws(() => collectUrlsFromSchools(null, 'https://example.com'), {
-    name: 'Error',
+    name: 'IntegrationError',
     message: 'schools must be an array',
   });
 });
@@ -316,7 +316,7 @@ test('collectUrlsFromSchools handles undefined schools gracefully', () => {
   const { collectUrlsFromSchools } = require('./sitemap');
 
   assert.throws(() => collectUrlsFromSchools(undefined, 'https://example.com'), {
-    name: 'Error',
+    name: 'IntegrationError',
     message: 'schools must be an array',
   });
 });

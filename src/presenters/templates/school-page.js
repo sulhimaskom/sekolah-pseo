@@ -1,4 +1,5 @@
 const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../scripts/utils');
+const { IntegrationError, ERROR_CODES } = require('../../../scripts/resilience');
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
@@ -58,14 +59,21 @@ function generateEnrichmentSection(enrichment) {
 
 function generateSchoolPageHtml(school, relativePath, enrichment) {
   if (!school || typeof school !== 'object') {
-    throw new Error('Invalid school object provided');
+    throw new IntegrationError('Invalid school object provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'school',
+      expectedType: 'object',
+    });
   }
 
   const requiredFields = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
   const missingFields = requiredFields.filter(field => !school[field]);
 
   if (missingFields.length > 0) {
-    throw new Error(`School object missing required fields: ${missingFields.join(', ')}`);
+    throw new IntegrationError(
+      `School object missing required fields: ${missingFields.join(', ')}`,
+      ERROR_CODES.MISSING_REQUIRED_FIELD,
+      { missingFields }
+    );
   }
 
   const metaDescription = generateMetaDescription(school);

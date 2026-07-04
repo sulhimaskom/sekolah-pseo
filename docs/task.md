@@ -6862,3 +6862,78 @@ Added direct test coverage for 5 critical path functions in the build pipeline t
 - [x] Lint passes (0 errors)
 - [x] Prettier formatting clean
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-051] Integration Hardening Pass 2 - Error Response Standardization
+
+**Status**: Complete
+**Agent**: Senior Integration Engineer (Sisyphus)
+
+### Description
+
+Standardized error handling patterns across all integration modules to use `IntegrationError` with consistent error codes. Previously, several modules used bare `throw new Error(...)` which prevented callers from distinguishing error types. Additionally, the Wikipedia API enrichment module lacked retry logic for transient failures.
+
+### Changes Made
+
+**1. Standardized PageBuilder.js error handling** (`src/services/PageBuilder.js`):
+
+- Replaced 8 bare `throw new Error(...)` calls with `IntegrationError` using `INVALID_INPUT` or `MISSING_REQUIRED_FIELD` error codes
+- Each error now includes context details (field name, expected type, missing fields list)
+- Imported `IntegrationError` and `ERROR_CODES` from `scripts/resilience.js`
+
+**2. Standardized school-page.js error handling** (`src/presenters/templates/school-page.js`):
+
+- Replaced 2 bare `throw new Error(...)` calls with `IntegrationError` using `INVALID_INPUT` and `MISSING_REQUIRED_FIELD` codes
+- Consistent with PageBuilder error patterns for the same input validation
+
+**3. Hardened manifest.js error handling** (`scripts/manifest.js`):
+
+- Imported `IntegrationError` and `ERROR_CODES`
+- `loadManifest()`: Separated file-not-found (returns null, expected for first build) from file read/parse errors (throws `IntegrationError` with `FILE_READ_ERROR` code)
+- `saveManifest()`: Wraps write failures in `IntegrationError` with `FILE_WRITE_ERROR` code instead of bare re-throw
+
+**4. Added retry to Wikipedia API enrichment** (`scripts/enrichment.js`):
+
+- Added retry logic (3 attempts, 1s initial delay) to `fetchJson()` for transient HTTP errors (429, 5xx) and network errors
+- Added HTTP status code checking — 4xx/5xx responses are now properly detected instead of silently timing out
+- Wrapped parse errors in `IntegrationError` with `HTTP_ERROR` code instead of bare `Error`
+- Imported `retry`, `isTransientError`, `IntegrationError`, `ERROR_CODES` from resilience module
+
+**5. Updated test assertions** (`scripts/sitemap.test.js`):
+
+- Updated 2 `name: 'Error'` assertions to `name: 'IntegrationError'` to match new error types
+
+### Verification Results
+
+| Check            | Result              |
+| ---------------- | ------------------- |
+| JS Tests         | 888/888 pass        |
+| ESLint           | 0 errors            |
+| Prettier         | All files formatted |
+| Zero regressions | Confirmed           |
+
+### Files Modified
+
+- `src/services/PageBuilder.js` — 8 bare Error → IntegrationError with proper codes
+- `src/presenters/templates/school-page.js` — 2 bare Error → IntegrationError
+- `scripts/manifest.js` — Imported IntegrationError, separated file-not-found from read errors, wrapped write errors
+- `scripts/enrichment.js` — Added retry (3 attempts, with backoff), HTTP status detection, IntegrationError wrapping via IntegrationError
+- `scripts/sitemap.test.js` — Updated 2 error name assertions
+- `docs/blueprint.md` — Added decision log entry
+- `docs/api.md` — Updated best practices, manifest docs, version log
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] All bare `throw new Error()` in PageBuilder.js replaced with `IntegrationError` (8 sites)
+- [x] All bare `throw new Error()` in school-page.js replaced with `IntegrationError` (2 sites)
+- [x] manifest.js `loadManifest()` separates file-not-found (null) from read errors (IntegrationError)
+- [x] manifest.js `saveManifest()` wraps write failures in IntegrationError
+- [x] enrichment.js `fetchJson()` has retry logic (3 attempts) for transient Wikipedia API failures
+- [x] enrichment.js `fetchJson()` detects HTTP 4xx/5xx properly
+- [x] enrichment.js uses `IntegrationError` instead of bare `Error` for parse failures
+- [x] All 888 JS tests pass
+- [x] Lint passes (0 errors)
+- [x] Prettier formatting clean
+- [x] Zero regressions introduced
