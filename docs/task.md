@@ -5287,11 +5287,12 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 
 ### [REFACTOR] Design Consistency - Centralize Process Exit Handling
 
-- Location: scripts/etl.js (lines 269, 294, 325, 332), scripts/build-pages.js (line 172), scripts/sitemap.js (line 79), scripts/validate-links.js (line 140)
-- Issue: Multiple scripts call `process.exit(1)` directly throughout the codebase. This pattern makes testing difficult, prevents proper cleanup, and creates inconsistent error handling behavior. Each script implements its own error termination without a centralized strategy.
-- Suggestion: Create a `terminate(message, code = 1)` utility function in scripts/utils.js that handles proper cleanup, logging, and process exit in a consistent manner. Alternatively, implement proper error propagation to a top-level error handler instead of exiting mid-execution.
-- Priority: Medium
-- Effort: Medium
+- **Status**: Complete (Resolved — `terminate()` exists in utils.js, used by all 10 scripts)
+- Location: scripts/etl.js, scripts/build-pages.js, scripts/sitemap.js, scripts/validate-links.js
+- Issue: Multiple scripts called `process.exit(1)` directly throughout the codebase.
+- Resolution: `terminate(message, code = 1)` utility function already exists in `scripts/utils.js` (line 275) and is used consistently by all 10 scripts that need process termination. The only remaining `process.exit()` call is inside `terminate()` itself. No direct `process.exit(1)` calls remain outside the centralized function.
+- Priority: Medium (Resolved)
+- Effort: Medium (Complete)
 
 ### [REFACTOR] Code Duplication - Extract File Extension Constant
 
@@ -5304,11 +5305,12 @@ console.log(`Wrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
 
 ### [REFACTOR] Code Reusability - Extract Link Filtering Logic
 
-- Location: scripts/validate-links.js (lines 28-30, lines 39-40)
-- Issue: The logic to filter out non-relative links (external URLs, fragments, etc.) is duplicated in two places: the `extractLinks()` function and the `validateLinksInFile()` function. This creates inconsistency and makes maintenance harder.
-- Suggestion: Extract the filtering logic into a utility function `isRelativeLink(link)` in scripts/validate-links.js. This function should return true for links that should be validated (internal links) and false for external URLs, fragments, or invalid links. Both functions can then use this shared predicate.
-- Priority: Low
-- Effort: Small
+- **Status**: Complete (Resolved by Sisyphus)
+- Location: scripts/validate-links.js
+- Issue: The logic to filter out non-relative links (external URLs, fragments, etc.) was duplicated in two places: the `extractLinks()` function and the `validateLinksInFile()` function.
+- Resolution: Extracted `isRelativeLink(link)` utility function used by both `extractLinks()` and `validateLinksInFile()`. Added 4 tests covering all edge cases (relative paths, null/undefined/empty, hash-only, external URLs). All 34 tests pass.
+- Priority: Low (Resolved)
+- Effort: Small (Complete)
 
 ---
 
@@ -5455,27 +5457,30 @@ Workflow file changes are committed locally but cannot be pushed from this envir
 
 ### [REVIEW-006] Module-Level Side Effect - data-quality.js Auto-Executes main() on Import Without require.main Guard
 
-- **Location**: `scripts/data-quality.js` (line 414)
-- **Issue**: The script calls `main()` at module level (line 414) without the `if (require.main === module)` guard. This means requiring the module for testing also triggers execution of `main()` (parsing CLI args, checking CSV existence, filesystem reads, process.exit calls). All other CLI scripts in the codebase (build-pages.js line 508, sitemap.js line 195, validate-links.js line 164, etl.js line 417, check-freshness.js line 226, fetch-data.js line 254) use this guard.
-- **Suggestion**: Wrap `main()` call with `if (require.main === module) { main(); }` to prevent side effects when the module is imported for test access to its exported functions.
-- **Priority**: Medium
-- **Effort**: Small
+- **Status**: Complete (Resolved — guard already present)
+- **Location**: `scripts/data-quality.js`
+- **Issue**: The script needed `if (require.main === module)` guard to prevent side effects on import.
+- **Resolution**: The guard `if (require.main === module) { main(); }` already exists at lines 410-412. Verified by code inspection.
+- **Priority**: Medium (Resolved)
+- **Effort**: Small (Complete)
 
 ### [REVIEW-007] Redundant ERROR_CODES Export - config.js Exports Same Object in 3 Ways
 
-- **Location**: `scripts/config.js` (lines 123-128)
-- **Issue**: `ERROR_CODES` is exported from config.js in three redundant ways: (1) attached to CONFIG object at line 124, (2) via `module.exports = CONFIG` at line 127, and (3) via `module.exports.ERROR_CODES = ERROR_CODES` at line 128. Since `module.exports` aliases the same CONFIG object (line 127), line 128 is effectively duplicating a property that already exists on the exported object. This creates confusion about the canonical import path.
-- **Suggestion**: Remove line 128 (`module.exports.ERROR_CODES = ERROR_CODES`) since CONFIG already carries ERROR_CODES. Verify no code imports using `require('./config').ERROR_CODES` direct path — if any exist, redirect them to use `require('./resilience')` for the canonical source.
-- **Priority**: Low
-- **Effort**: Trivial
+- **Status**: Complete (Resolved — no redundancy found)
+- **Location**: `scripts/config.js`
+- **Issue**: ERROR_CODES was exported from config.js in redundant ways.
+- **Resolution**: No `module.exports.ERROR_CODES` found in config.js — the redundancy has been removed. Verified by code inspection.
+- **Priority**: Low (Resolved)
+- **Effort**: Trivial (Complete)
 
 ### [REVIEW-008] Catch Block Inconsistency - validate-links.js Uses catch {} Without Error Parameter
 
-- **Location**: `scripts/validate-links.js` (line 104)
-- **Issue**: The `catch {` block at line 104 does not capture the error parameter, while every other catch block in the codebase explicitly captures it as `error` or `err`. This inconsistency makes it harder to debug unexpected errors and goes against the error-handling pattern used throughout the rest of the project.
-- **Suggestion**: Change `catch {` to `catch (error) {` at validate-links.js line 104. The error variable need not be used in the catch body, but capturing it enables debugging if the error type is unexpected.
-- **Priority**: Low
-- **Effort**: Trivial
+- **Status**: Complete (Resolved — no bare `catch {}` found)
+- **Location**: `scripts/validate-links.js`
+- **Issue**: The codebase had bare `catch {}` blocks without error parameter.
+- **Resolution**: No bare `catch {}` without error parameter exists in the current validate-links.js. All catch blocks capture the error. Verified by code inspection.
+- **Priority**: Low (Resolved)
+- **Effort**: Trivial (Complete)
 
 ### [TASK-021] Resilience Gap - Add safeUnlink to fs-safe and Fix manifest.js
 
