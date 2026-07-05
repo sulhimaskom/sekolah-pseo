@@ -40,7 +40,7 @@ const RULES = [
     envVar: 'API_KEY',
     allowedOnlyWith: 'IFLOW_API_KEY',  // API_KEY is only ok if pointing to a different secret
     // Check: if API_KEY appears, and GEMINI_API_KEY also appears, API_KEY must reference a DIFFERENT secret
-    check: (content, filePath) => {
+    check: (content) => {
       const hasApiKey = /API_KEY:\s*\${{/.test(content);
       const hasGeminiKey = /GEMINI_API_KEY:\s*\${{/.test(content);
       const apiKeyValue = content.match(/API_KEY:\s*\${{([^}]+)}}/);
@@ -117,7 +117,7 @@ const RULES = [
     id: 'CHECKOUT_TOKEN_DISCREPANCY',
     description: 'actions/checkout should use GITHUB_TOKEN not GH_TOKEN',
     severity: 'MEDIUM',
-    check: (content) => {
+    check: () => {
       // This is a variant of the GH_TOKEN check — already covered by the rule above
       return { pass: true };
     },
@@ -197,9 +197,9 @@ function run() {
       checkedAt: new Date().toISOString(),
     }, null, 2));
   } else {
-    console.log(`\n🔒 Workflow Security Regression Check`);
-    console.log(`   Files checked: ${files.length}`);
-    console.log(`   Rules applied: ${RULES.length}`);
+    console.log('\n\u{1F512} Workflow Security Regression Check');
+    console.log('   Files checked: ' + files.length);
+    console.log('   Rules applied: ' + RULES.length);
     console.log('');
 
     if (allViolations.length === 0) {
