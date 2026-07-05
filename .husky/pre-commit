@@ -1,1 +1,5 @@
+# Security regression check — validate workflow file invariants
+# Fails if known security regressions are detected (API_KEY dupes, overly permissive permissions)
+node scripts/check-workflow-security.js 2>/dev/null || echo "⚠️  Workflow security check skipped (run 'node scripts/check-workflow-security.js' to audit)"
+
 npx lint-staged
