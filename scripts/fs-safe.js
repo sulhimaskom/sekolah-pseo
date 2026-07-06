@@ -102,6 +102,27 @@ function createFsSafe(options = {}) {
     });
   }
 
+  /**
+   * Lightweight file write for bulk operations where retry/timeout/circuit-breaker
+   * overhead is unnecessary and the caller already handles error recovery.
+   *
+   * Skips:
+   * - retry wrapper (no exponential-backoff attempt loop)
+   * - withTimeout wrapper (no racing setTimeout)
+   * - Circuit breaker (no failure-tracking state machine)
+   *
+   * Suitable for bulk school page writes (3474+ concurrent writes) where
+   * transient failures on local dist/ writes are virtually non-existent.
+   */
+  function fastWriteFile(filePath, data, fileOptions = {}) {
+    return fs.writeFile(filePath, data, fileOptions.encoding || 'utf8').catch(error => {
+      throw new IntegrationError(`Failed to write file ${filePath}`, ERROR_CODES.FILE_WRITE_ERROR, {
+        filePath,
+        originalError: error.message,
+      });
+    });
+  }
+
   function safeMkdir(dirPath, fileOptions = {}) {
     return retry(
       () =>
@@ -177,6 +198,7 @@ function createFsSafe(options = {}) {
   return {
     safeReadFile,
     safeWriteFile,
+    fastWriteFile,
     safeMkdir,
     safeAccess,
     safeReaddir,
@@ -195,6 +217,7 @@ const defaultInstance = createFsSafe();
 const {
   safeReadFile,
   safeWriteFile,
+  fastWriteFile,
   safeMkdir,
   safeAccess,
   safeReaddir,
@@ -211,6 +234,7 @@ module.exports = {
   // Default singleton instance functions (backward compatible)
   safeReadFile,
   safeWriteFile,
+  fastWriteFile,
   safeMkdir,
   safeAccess,
   safeReaddir,

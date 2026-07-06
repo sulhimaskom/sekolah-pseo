@@ -127,6 +127,20 @@ function parseCsvLine(line) {
   return result;
 }
 
+// Lookup map for HTML entity replacements — avoids branching in the replace callback
+const HTML_ESCAPE_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+// Single-pass regex matching all five HTML special characters
+// Single pass replaces 5 chained .replace() calls (5× character scanning) with
+// one linear scan and a fast object-lookup per match. For ~83K calls during
+// a full build this eliminates ~415K regex evaluations.
+const HTML_ESCAPE_RE = /[&<>"']/g;
+
 // Bounded cache for escapeHtml results - avoids redundant regex replacements
 // for repeated values (provinsi, bentuk_pendidikan, kab_kota, etc.)
 // With ~83K escapeHtml calls during a full build and many repeated field values,
@@ -144,12 +158,8 @@ function escapeHtml(text) {
     return escapeHtmlCache.get(str);
   }
 
-  const escaped = str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  // Single-pass replacement: one linear scan instead of five chained scans
+  const escaped = str.replace(HTML_ESCAPE_RE, char => HTML_ESCAPE_MAP[char]);
 
   // Store in cache with size limit (LRU-like eviction via first-key deletion)
   if (escapeHtmlCache.size >= ESCAPE_HTML_CACHE_MAX) {

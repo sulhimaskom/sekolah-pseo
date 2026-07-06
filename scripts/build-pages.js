@@ -21,7 +21,7 @@ const { parseCsv, processConcurrently, terminate } = require('./utils');
 const logger = require('./logger');
 const CONFIG = require('./config');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
-const { safeReadFile, safeWriteFile, safeMkdir } = require('./fs-safe');
+const { safeReadFile, safeWriteFile, fastWriteFile, safeMkdir } = require('./fs-safe');
 const {
   buildSchoolPageData,
   getSchoolRelativePath,
@@ -118,7 +118,11 @@ async function loadSchools() {
 async function writeSchoolPage(school, enrichment) {
   const pageData = buildSchoolPageData(school, enrichment);
   const outputPath = path.join(distDir, pageData.relativePath);
-  await safeWriteFile(outputPath, pageData.content, { useCircuitBreaker: false });
+  // Use fastWriteFile for bulk school page writes — retry/timeout/circuit-breaker
+  // overhead is unnecessary for local dist/ file writes and circuit breaker is
+  // already disabled for bulk pages (useCircuitBreaker: false was the old approach).
+  // The controller layer handles error recovery via processConcurrently.
+  await fastWriteFile(outputPath, pageData.content);
 }
 
 /**
@@ -207,7 +211,7 @@ async function generateProvincePages(schools) {
         const provinceSchools = grouped.get(province.name) || [];
         const pageData = buildProvincePageData(province.name, provinceSchools, true);
         const outputPath = path.join(distDir, pageData.relativePath);
-        await safeWriteFile(outputPath, pageData.content, { useCircuitBreaker: false });
+        await fastWriteFile(outputPath, pageData.content);
         return { success: true, name: province.name };
       } catch (err) {
         logger.error({ err, province: province.name }, 'Failed to generate province page');

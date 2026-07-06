@@ -20,10 +20,12 @@ All 892 JavaScript tests and 27 Python tests are unit-level. There is no test th
 3. **No `test:e2e` npm script** exists.
 
 ### Impact
+
 - **Medium**: Integration bugs can slip through — changes in one module might break another module's expected contracts
 - **Medium**: Refactoring confidence is lower without integration safety net
 
 ### Recommendations
+
 1. Add `test:e2e` script: ETL on sample data → full build → sitemap → link validation → verify key outputs
 2. Add cross-module contract tests (verify PageBuilder output consumable by sitemap generator)
 3. Consider snapshot testing of generated HTML for regression detection

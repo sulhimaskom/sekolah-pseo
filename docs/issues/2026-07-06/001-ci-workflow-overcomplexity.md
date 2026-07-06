@@ -23,6 +23,7 @@ The repository has 6 separate GitHub Actions workflow files totaling 2045 lines 
 3. **Redundant logic**: Multiple workflows set up identical Node/cache/environment configurations without using shared composite actions or reusable workflows.
 
 ### Files Affected
+
 - `.github/workflows/on-push.yml`
 - `.github/workflows/on-pull.yml`
 - `.github/workflows/parallel.yml`
@@ -31,6 +32,7 @@ The repository has 6 separate GitHub Actions workflow files totaling 2045 lines 
 - `.github/workflows/orchestrator.yml`
 
 ### Recommendations
+
 1. Consolidate to 2-3 workflows maximum
 2. Extract shared setup into composite action or reusable workflow
 3. Remove or scope `concurrency.group: global` to per-branch

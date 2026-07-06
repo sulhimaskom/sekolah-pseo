@@ -7,6 +7,7 @@
 ## Description
 
 The repository has no automated release workflow, version tags, or GitHub releases. While CHANGELOG.md exists, there is no mechanism to:
+
 - Create tagged releases
 - Generate release notes
 - Publish artifacts
@@ -19,12 +20,14 @@ The repository has no automated release workflow, version tags, or GitHub releas
 3. No audit trail linking specific code versions to deployments
 
 ### Impact
+
 - **Low**: Static site generation simplifies rollback to previous deployment
 - **Medium**: Cannot easily identify which changes are in production
 - **Medium**: No automated changelog generation
 
 ### Recommendations
-1. Create a release workflow triggered by version tags (v*.*.*)
+
+1. Create a release workflow triggered by version tags (v*._._)
 2. Use `softprops/action-gh-release` for automated release notes
 3. Add `npm version` script for managed version bumps
 4. Tag current state as v1.0.0 to establish baseline
