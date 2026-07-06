@@ -518,6 +518,27 @@ test('checkThresholds handles empty totalSchools gracefully', () => {
   assert.strictEqual(result.failures.length, 1); // only coordinate failure
 });
 
+test('checkThresholds gracefully handles missing fieldCompleteness entries', () => {
+  const report = {
+    summary: { totalSchools: 100, overallScore: 95 },
+    fieldCompleteness: {
+      npsn: { completenessPct: 100 },
+      // nama is intentionally missing from fieldCompleteness
+      bentuk_pendidikan: { completenessPct: 100 },
+      provinsi: { completenessPct: 100 },
+      kab_kota: { completenessPct: 100 },
+      kecamatan: { completenessPct: 100 },
+    },
+    coordinates: { valid: 100 },
+    npsnUniqueness: { duplicates: 0, duplicateCount: 0, unique: 100, duplicateNpsns: [] },
+  };
+
+  const result = checkThresholds(report);
+  // Missing field should be skipped (comp is undefined, condition short-circuits)
+  assert.strictEqual(result.passed, true);
+  assert.deepStrictEqual(result.failures, []);
+});
+
 test('checkThresholds passes when metrics exactly at threshold boundary', () => {
   const report = {
     summary: { totalSchools: 100, overallScore: 90 },
@@ -688,6 +709,65 @@ test('formatHuman lists duplicate NPSN details when duplicates exist', () => {
   assert.ok(output.includes('NPSN 003'));
   assert.ok(output.includes('→ 2 records'));
   assert.ok(output.includes('→ 3 records'));
+});
+
+test('formatHuman truncates duplicate list when more than 10 duplicate NPSN groups', () => {
+  const schools = [];
+  for (let i = 0; i < 12; i++) {
+    const npsn = String(i).padStart(3, '0');
+    schools.push({
+      npsn,
+      nama: `School ${i}A`,
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    });
+    schools.push({
+      npsn,
+      nama: `School ${i}B`,
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    });
+  }
+  const report = analyzeQuality(schools);
+  const output = formatHuman(report);
+  assert.ok(output.includes('Duplicate NPSN groups: 12'));
+  assert.ok(output.includes('Records with duplicate NPSN: 24'));
+  assert.ok(output.includes('... and 2 more'));
+  assert.ok(output.includes('NPSN 000'));
+  assert.ok(output.includes('NPSN 009'));
+});
+
+test('formatHuman does not show overflow truncation when exactly 10 duplicate groups', () => {
+  const schools = [];
+  for (let i = 0; i < 10; i++) {
+    const npsn = String(i).padStart(3, '0');
+    schools.push({
+      npsn,
+      nama: `A${i}`,
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    });
+    schools.push({
+      npsn,
+      nama: `B${i}`,
+      bentuk_pendidikan: 'SD',
+      provinsi: 'X',
+      kab_kota: 'Y',
+      kecamatan: 'Z',
+    });
+  }
+  const report = analyzeQuality(schools);
+  const output = formatHuman(report);
+  assert.ok(output.includes('Duplicate NPSN groups: 10'));
+  assert.ok(!output.includes('... and'));
+  assert.ok(output.includes('NPSN 000'));
+  assert.ok(output.includes('NPSN 009'));
 });
 
 // ── formatJson ──────────────────────────────────────────────────────────────

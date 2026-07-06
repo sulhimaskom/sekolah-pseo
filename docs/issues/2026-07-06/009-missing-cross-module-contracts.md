@@ -19,17 +19,20 @@ There are no formal data contracts between modules that exchange structured data
 4. **Enrichment Data Provider → PageBuilder**: `loadEnrichmentData()` returns enrichment objects with no shape validation before being passed to templates
 
 ### Impact
+
 - **Medium**: Contract violations are only caught at runtime, not at build/test time
 - **Low**: Currently mitigated by high test coverage, but risk grows as codebase expands
 - **Medium**: Onboarding new contributors increases chance of contract mismatch
 
 ### Evidence
+
 - `scripts/utils.js`: `parseCsv()` returns generic objects with no output schema
 - `src/services/PageBuilder.js`: Validates input but not output contract
 - `scripts/manifest.js`: `loadManifest()` returns parsed JSON with no validation
 - `scripts/enrichment.js`: Returns enrichment data without shape guarantees
 
 ### Recommendations
+
 1. Add JSDoc `@typedef` definitions for all shared data structures (School, Province, Enrichment, Manifest)
 2. Consider runtime validation at module boundaries using a lightweight validator
 3. Add integration tests that verify cross-module data contracts (output of A matches input of B)

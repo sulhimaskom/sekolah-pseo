@@ -201,9 +201,9 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 26 test files, 888 test cases
+- JavaScript: 26 test files, 902 test cases, 84 suites
 - Python: 27 test cases (standalone runner)
-- Total: 100% pass rate
+- Total: 929 tests, 100% pass rate
 
 ## Test Output Examples
 

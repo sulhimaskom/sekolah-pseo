@@ -1,7 +1,59 @@
-const { describe, it, beforeEach, afterEach } = require('node:test');
+const { describe, it, beforeEach, afterEach, before, after } = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
+const { Readable } = require('stream');
+
+const https = require('https');
+
+/**
+ * Creates a mock https.get that returns canned JSON data instead of making real HTTP calls.
+ * @param {Object} responseData - JSON data to return
+ * @param {number} statusCode - HTTP status code
+ */
+/**
+ * Wikipedia API mock data: empty search results, so all enrichSchool calls
+ * return {} (no enrichment found) without making real HTTP requests.
+ */
+const MOCK_EMPTY_SEARCH = { query: { search: [] } };
+
+let mockHttpsOriginal;
+
+function mockHttpsGet(responseData, statusCode = 200) {
+  const mockReq = {
+    on() {
+      return mockReq;
+    },
+  };
+
+  https.get = function (...args) {
+    const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+    const mockRes = new Readable({
+      read() {
+        this.push(JSON.stringify(responseData));
+        this.push(null);
+      },
+    });
+    mockRes.statusCode = statusCode;
+    mockRes.headers = { 'content-type': 'application/json' };
+    if (typeof cb === 'function') {
+      cb(mockRes);
+    }
+    return mockReq;
+  };
+}
+
+function setupMockWikipedia() {
+  mockHttpsOriginal = https.get;
+  mockHttpsGet(MOCK_EMPTY_SEARCH);
+}
+
+function teardownMockWikipedia() {
+  if (mockHttpsOriginal) {
+    https.get = mockHttpsOriginal;
+    mockHttpsOriginal = null;
+  }
+}
 
 const {
   isEnrichmentEnabled,
@@ -87,6 +139,9 @@ describe('buildWikipediaExtractUrl', () => {
 });
 
 describe('enrichSchool', () => {
+  before(() => setupMockWikipedia());
+  after(() => teardownMockWikipedia());
+
   it('returns empty object for null input', async () => {
     const result = await enrichSchool(null);
     assert.deepStrictEqual(result, {});
@@ -107,17 +162,17 @@ describe('enrichSchool', () => {
     assert.deepStrictEqual(result, {});
   });
 
-  it('handles school with name gracefully (API call may fail)', async () => {
-    // This test verifies graceful degradation - it doesn't fail if API is unreachable
+  it('handles school with name gracefully (no enrichment data)', async () => {
     const school = { npsn: '12345', nama: 'SDN Test School', provinsi: 'Jawa Barat' };
     const result = await enrichSchool(school);
-    // Either returns empty (API unreachable) or enrichment data (API reachable)
-    // Either way, it should not throw
     assert.ok(typeof result === 'object');
   });
 });
 
 describe('enrichSchoolViaWikipedia', () => {
+  before(() => setupMockWikipedia());
+  after(() => teardownMockWikipedia());
+
   it('returns empty object for null input', async () => {
     const result = await enrichSchoolViaWikipedia(null);
     assert.deepStrictEqual(result, {});
@@ -128,17 +183,17 @@ describe('enrichSchoolViaWikipedia', () => {
     assert.deepStrictEqual(result, {});
   });
 
-  it('gracefully handles API errors without throwing', async () => {
-    // Temporarily break the Wikipedia URL to simulate API failure
-    // This tests the catch block
-    const school = { npsn: '99999', nama: 'SDN Unreachable', provinsi: 'Unknown' };
+  it('gracefully handles no Wikipedia results', async () => {
+    const school = { npsn: '99999', nama: 'SDN Mock', provinsi: 'Test' };
     const result = await enrichSchoolViaWikipedia(school);
-    // Should not throw - returns empty object on failure
     assert.ok(typeof result === 'object');
   });
 });
 
 describe('enrichSchools', () => {
+  before(() => setupMockWikipedia());
+  after(() => teardownMockWikipedia());
+
   it('returns empty object for empty array', async () => {
     const result = await enrichSchools([]);
     assert.deepStrictEqual(result, {});
@@ -169,11 +224,7 @@ describe('enrichSchools', () => {
   });
 
   it('handles schools with missing data gracefully', async () => {
-    const schools = [
-      null,
-      { npsn: '00001' }, // missing nama
-      { npsn: '00002', nama: 'SD Test', provinsi: 'Test' },
-    ];
+    const schools = [null, { npsn: '00001' }, { npsn: '00002', nama: 'SD Test', provinsi: 'Test' }];
 
     const result = await enrichSchools(schools, { concurrency: 1 });
     assert.ok(typeof result === 'object');
@@ -277,7 +328,10 @@ describe('logEnrichmentSummary', () => {
 });
 
 describe('enrichSchool integration with multiple source types', () => {
-  it('handles complex enrichment objects', async () => {
+  before(() => setupMockWikipedia());
+  after(() => teardownMockWikipedia());
+
+  it('handles complex enrichment objects (mocked)', async () => {
     const school = {
       npsn: '12345678',
       nama: 'SMA Negeri 1 Jakarta',
@@ -287,13 +341,7 @@ describe('enrichSchool integration with multiple source types', () => {
     };
 
     const result = await enrichSchool(school);
-    // Should either return empty (API failure) or have wikipedia data
-    // Either way, it's a valid object
     assert.ok(typeof result === 'object');
-    if (result.wikipedia) {
-      assert.ok(result.wikipedia.source === 'wikipedia');
-      assert.ok(result.wikipedia.enrichedAt);
-    }
   });
 });
 
@@ -385,6 +433,9 @@ describe('saveEnrichmentData', () => {
 });
 
 describe('enrichSchools edge cases', () => {
+  before(() => setupMockWikipedia());
+  after(() => teardownMockWikipedia());
+
   it('skips schools without NPSN in batch processing', async () => {
     const schools = [
       { npsn: '00001', nama: 'SD Test A', provinsi: 'Test', kab_kota: 'Test', kecamatan: 'Test' },
@@ -395,7 +446,6 @@ describe('enrichSchools edge cases', () => {
     const result = await enrichSchools(schools, { concurrency: 1 });
 
     assert.ok(typeof result === 'object');
-    // School without NPSN should not be in results
     assert.ok(!result['undefined']);
   });
 
