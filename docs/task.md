@@ -4220,6 +4220,229 @@ Clear, actionable. Agent can execute without questions.
 - [ ] Verifiable criterion
 ```
 
+---
+
+## Backlog
+
+### [REFACTOR-001] DRY violation: `getUniqueDirectories()` duplicates path computation logic
+
+**Status**: Backlog
+**Priority**: Medium
+**Effort**: Small
+
+### Description
+
+`getUniqueDirectories()` in `src/services/PageBuilder.js` (lines 92-120) manually recomputes directory paths using inline slugify calls:
+
+```javascript
+const dirPath = path.join(
+  'provinsi',
+  slugify(school.provinsi),
+  'kabupaten',
+  slugify(school.kab_kota),
+  'kecamatan',
+  slugify(school.kecamatan)
+);
+```
+
+This duplicates the exact same path structure from `getSchoolRelativePath()` (lines 52-60). If the path structure ever changes (e.g., adding a new directory level between kabupaten and kecamatan), both functions must be updated independently — a maintainability risk.
+
+### Suggestion
+
+Instead of recomputing the path from scratch, use `path.dirname(getSchoolRelativePath(school))` to derive the directory from the already-computed relative path, then deduplicate via Set. This leverages the existing cache (WeakMap in `getSchoolRelativePath()`) and eliminates the duplicate path logic.
+
+Alternatively, extract the shared path computation into a private helper like `_computeSchoolDirPath(school)` and call it from both `getSchoolRelativePath()` and `getUniqueDirectories()`.
+
+### Files
+
+- `src/services/PageBuilder.js`
+
+### Verification
+
+- All existing `getUniqueDirectories()` tests in `scripts/PageBuilder.test.js` must continue to pass
+- Directory paths generated must be identical to current output
+- Build must generate 3474 pages with 0 failures
+
+---
+
+### [REFACTOR-002] `computeSchoolHash()` uses fragile delimiter-based field joining
+
+**Status**: Backlog
+**Priority**: Low
+**Effort**: Small
+
+### Description
+
+`computeSchoolHash()` in `scripts/manifest.js` (lines 104-123) joins relevant fields with `|` delimiter after filtering out empty strings:
+
+```javascript
+const relevantFields = [school.npsn, school.nama, ...]
+  .filter(Boolean)
+  .join('|');
+```
+
+This has two issues:
+
+1. **Empty string ambiguity**: Fields with empty string values are silently filtered out before hashing. If `alamat` is empty and `kecamatan` is "Sukamaju", the hash input is identical to if `alamat` is "Sukamaju" and `kecamatan` is empty (after filtering adjacent `|` separators).
+2. **Delimiter collision risk**: If a school name or other field contains `|`, the hash input structure becomes ambiguous.
+
+In practice, the collision risk is extremely low because multiple fields would need to be simultaneously unusual. However, for a hash that drives incremental build correctness, even theoretical ambiguity is undesirable.
+
+### Suggestion
+
+Replace `filter(Boolean).join('|')` with a format that unambiguously delimits each field. Options:
+
+- Use a null character `\x00` as delimiter (cannot appear in CSV text data)
+- Prefix each field with its byte length: `"${field.length}:${field}"` joined with a delimiter
+- Use JSON serialization: `JSON.stringify(relevantFields)` (more robust, ~3x slower but on 3474 records it's negligible)
+
+### Files
+
+- `scripts/manifest.js`
+
+### Verification
+
+- All existing `computeSchoolHash()` tests pass
+- Hash values for all 3474 current schools remain stable (no unnecessary rebuilds)
+- Edge case: empty-string and `|`-containing fields produce distinct hashes
+
+---
+
+### [REFACTOR-003] Module-level `distDir` in `build-pages.js` creates implicit coupling
+
+**Status**: Backlog
+**Priority**: Medium
+**Effort**: Medium
+
+### Description
+
+`scripts/build-pages.js` declares `distDir` as a module-level constant at line 77:
+
+```javascript
+const distDir = CONFIG.DIST_DIR;
+```
+
+All exported functions (`writeSchoolPage`, `writeSearchDataFile`, `generateProvincePages`, `generateRobotsTxt`, etc.) implicitly close over this module-level `distDir` rather than receiving it as a parameter. This creates:
+
+1. **Testing constraints**: Tests cannot easily configure a temp directory — they must operate in the real `dist/` dir or use mocking.
+2. **Reuse constraints**: Functions cannot be reused for a different output directory without re-requiring the module with a different CONFIG.
+3. **Hidden dependency**: Function signatures don't express that they need `distDir`.
+
+### Suggestion
+
+Refactor the main exported functions to accept `distDir` as a parameter (with a default from CONFIG.DIST_DIR for backward compatibility). The module-level `distDir` can remain as a default but should not be the only way to configure it.
+
+Alternatively, for minimal change surface: add `distDir` parameter as optional to the 4-5 functions that use it, with `distDir || CONFIG.DIST_DIR` default.
+
+### Files
+
+- `scripts/build-pages.js`
+
+### Verification
+
+- All existing tests in `scripts/build-pages.test.js` continue to pass
+- Build generates 3474 pages with 0 failures
+- Functions can optionally receive a custom `distDir`
+
+---
+
+### [REFACTOR-004] Extract `fileExists()` helper for manifest.js existence checks
+
+**Status**: Backlog
+**Priority**: Low
+**Effort**: Small
+
+### Description
+
+`scripts/manifest.js` uses the same empty-catch pattern for file existence checking in two places:
+
+```javascript
+// Line 49-53 (in loadManifest):
+try {
+  await safeAccess(manifestPath);
+} catch {
+  return null;
+}
+
+// Line 179-181 (in clearManifest):
+try {
+  await safeUnlink(manifestPath);
+} catch {
+  /* File doesn't exist - that's fine */
+}
+```
+
+While these patterns are intentional and correct (existence checks should not throw), extracting a `fileExists()` helper would make the intent explicit and reduce the cognitive load of reading empty catch blocks.
+
+### Suggestion
+
+Add an async `fileExists(path)` helper that wraps `safeAccess()` and returns a boolean. Replace the two try/catch patterns with:
+
+- `if (!await fileExists(manifestPath)) return null;` (loadManifest)
+- `if (await fileExists(manifestPath)) await safeUnlink(manifestPath);` (clearManifest)
+
+### Files
+
+- `scripts/manifest.js` (helper definition + 2 call sites)
+- Optionally make the helper available project-wide via `utils.js` if useful elsewhere
+
+### Verification
+
+- All existing `manifest.js` tests pass
+- `loadManifest()` returns `null` when no manifest exists
+- `clearManifest()` silently succeeds when no manifest exists
+
+---
+
+### [IMPROVEMENT-005] `prepareSchoolDataForSearch()` array format indices are brittle
+
+**Status**: Backlog
+**Priority**: Low
+**Effort**: Small
+
+### Description
+
+`prepareSchoolDataForSearch()` in `src/services/PageBuilder.js` (lines 228-247) returns an array-of-arrays format where each school is represented as a positional array `[npsn, nama, bentuk, status, alamat, kecamatan, kab_kota, provinsi, url]`. The client-side JavaScript in `homepage.js` references fields by index (`[0]`, `[1]`, etc.).
+
+While this format saves ~13% payload (intentional optimization from TASK-039), it creates a fragile coupling between:
+
+- The return order in `prepareSchoolDataForSearch()` (service layer)
+- The array index JSDoc comments (line 236-244)
+- The client-side fetch handler in `homepage.js` that converts arrays back to objects
+
+If a new field is added or the order changes, both server and client code must be updated simultaneously.
+
+### Suggestion
+
+Define a named constant array for the field-order mapping at the module level in `PageBuilder.js`:
+
+```javascript
+const SEARCH_DATA_FIELDS = [
+  'npsn',
+  'nama',
+  'bentuk_pendidikan',
+  'status',
+  'alamat',
+  'kecamatan',
+  'kab_kota',
+  'provinsi',
+  'url',
+];
+```
+
+Use this array both to build the output and to document the schema. Export it so the client-side conversion code in `homepage.js` can reference the same constant, eliminating the index-literal dependency.
+
+### Files
+
+- `src/services/PageBuilder.js`
+- `src/presenters/templates/homepage.js` (client-side fetch handler)
+
+### Verification
+
+- All existing tests pass
+- Client-side search still works with generated schools.json
+- Adding/removing a field from `SEARCH_DATA_FIELDS` causes predictable test failures
+
 ### [TASK-012] UI/UX Enhancement - Design System & Responsive Design
 
 **Status**: Complete
