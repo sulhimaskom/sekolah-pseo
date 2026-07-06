@@ -25,7 +25,7 @@ const path = require('path');
 const WORKFLOW_DIR = path.join(__dirname, '..', '.github', 'workflows');
 const ALLOWED_OVERRIDES = [
   // Workflows that legitimately need elevated permissions (merge workflows)
-  'on-pull.yml',      // merge PR handler
+  'on-pull.yml', // merge PR handler
 ];
 
 // ── Forbidden patterns ──────────────────────────────────────────────────────
@@ -38,9 +38,9 @@ const RULES = [
     severity: 'CRITICAL',
     type: 'forbidden_env_var_pair',
     envVar: 'API_KEY',
-    allowedOnlyWith: 'IFLOW_API_KEY',  // API_KEY is only ok if pointing to a different secret
+    allowedOnlyWith: 'IFLOW_API_KEY', // API_KEY is only ok if pointing to a different secret
     // Check: if API_KEY appears, and GEMINI_API_KEY also appears, API_KEY must reference a DIFFERENT secret
-    check: (content) => {
+    check: content => {
       const hasApiKey = /API_KEY:\s*\${{/.test(content);
       const hasGeminiKey = /GEMINI_API_KEY:\s*\${{/.test(content);
       const apiKeyValue = content.match(/API_KEY:\s*\${{([^}]+)}}/);
@@ -102,7 +102,7 @@ const RULES = [
     id: 'GH_TOKEN_INSTEAD_OF_GITHUB_TOKEN',
     description: 'Use secrets.GITHUB_TOKEN not secrets.GH_TOKEN',
     severity: 'HIGH',
-    check: (content) => {
+    check: content => {
       const matches = content.match(/secrets\.GH_TOKEN\b/g);
       if (matches) {
         return {
@@ -129,7 +129,9 @@ const RULES = [
 function findWorkflowFiles() {
   try {
     // Try glob if available (from glob package, commonly installed)
-    const files = fs.readdirSync(WORKFLOW_DIR).filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
+    const files = fs
+      .readdirSync(WORKFLOW_DIR)
+      .filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
     return files.map(f => ({
       filename: f,
       path: path.join(WORKFLOW_DIR, f),
@@ -189,13 +191,19 @@ function run() {
   const formatJson = process.argv.includes('--json');
 
   if (formatJson) {
-    console.log(JSON.stringify({
-      passed: allViolations.length === 0,
-      totalFiles: files.length,
-      totalViolations: allViolations.length,
-      violations: allViolations,
-      checkedAt: new Date().toISOString(),
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          passed: allViolations.length === 0,
+          totalFiles: files.length,
+          totalViolations: allViolations.length,
+          violations: allViolations,
+          checkedAt: new Date().toISOString(),
+        },
+        null,
+        2
+      )
+    );
   } else {
     console.log('\n\u{1F512} Workflow Security Regression Check');
     console.log('   Files checked: ' + files.length);
