@@ -1,7 +1,6 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const CONFIG = require('../../../scripts/config');
 const slugify = require('../../../scripts/slugify');
-const { getSchoolRelativePath } = require('../../services/PageBuilder');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
 
@@ -33,48 +32,6 @@ function extractFilterOptions(schools) {
     types: Array.from(typeSet).sort((a, b) => a.localeCompare(b, 'id')),
     statuses: Array.from(statusSet).sort(),
   };
-}
-
-/**
- * Prepare minimal school data for client-side search
- * @param {Array<Object>} schools - Array of school data objects
- * @returns {Array<Array<string>>} - Array of school data arrays (flat array format saves ~13% payload)
- *
- * Array index map (compact flat array eliminates per-object key overhead):
- *   [0] = n (npsn)
- *   [1] = a (nama)
- *   [2] = b (bentuk_pendidikan)
- *   [3] = s (status)
- *   [4] = al (alamat)
- *   [5] = kc (kecamatan)
- *   [6] = kk (kab_kota)
- *   [7] = p (provinsi)
- *   [8] = u (schoolUrl)
- */
-function prepareSchoolDataForSearch(schools) {
-  if (!Array.isArray(schools)) {
-    return [];
-  }
-
-  return schools.map(school => {
-    // Compute the relative path once and reuse for URL
-    // getSchoolRelativePath returns 'provinsi/.../npsn-slug.html'
-    // client-side schoolUrl needs '/provinsi/.../npsn-slug.html'
-    const relPath = getSchoolRelativePath(school);
-    // Flat array format eliminates per-object key overhead (~39 bytes/school saved)
-    // Client-side code converts back to named properties after loading
-    return [
-      school.npsn || '', // [0] n (npsn)
-      school.nama || '', // [1] a (nama)
-      school.bentuk_pendidikan || '', // [2] b (bentuk_pendidikan)
-      school.status || '', // [3] s (status)
-      school.alamat || '', // [4] al (alamat)
-      school.kecamatan || '', // [5] kc (kecamatan)
-      school.kab_kota || '', // [6] kk (kab_kota)
-      school.provinsi || '', // [7] p (provinsi)
-      '/' + relPath, // [8] u (schoolUrl)
-    ];
-  });
 }
 
 /**
@@ -758,6 +715,5 @@ module.exports = {
   generateHomepageHtml,
   aggregateByProvince,
   aggregateProvinceAndFilters,
-  prepareSchoolDataForSearch,
   extractFilterOptions,
 };

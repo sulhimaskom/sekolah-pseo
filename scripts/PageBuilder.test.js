@@ -6,6 +6,7 @@ const {
   getUniqueDirectories,
   buildProvincePageData,
   groupSchoolsByProvince,
+  prepareSchoolDataForSearch,
 } = require('../src/services/PageBuilder');
 
 describe('buildSchoolPageData', () => {
@@ -655,5 +656,78 @@ describe('groupSchoolsByProvince', () => {
     assert.ok(result.has('Bali'));
     assert.ok(result.has('Aceh'));
     assert.ok(result.has('Papua'));
+  });
+});
+
+describe('prepareSchoolDataForSearch', () => {
+  it('returns empty array for null input', () => {
+    assert.deepStrictEqual(prepareSchoolDataForSearch(null), []);
+  });
+
+  it('returns empty array for undefined input', () => {
+    assert.deepStrictEqual(prepareSchoolDataForSearch(undefined), []);
+  });
+
+  it('returns empty array for string input', () => {
+    assert.deepStrictEqual(prepareSchoolDataForSearch('invalid'), []);
+  });
+
+  it('returns empty array for object input', () => {
+    assert.deepStrictEqual(prepareSchoolDataForSearch({}), []);
+  });
+
+  it('returns empty array for empty schools array', () => {
+    assert.deepStrictEqual(prepareSchoolDataForSearch([]), []);
+  });
+
+  it('returns flat arrays with correct structure for valid schools', () => {
+    const schools = [
+      {
+        npsn: '12345678',
+        nama: 'SD Negeri 1 Jakarta',
+        bentuk_pendidikan: 'SD',
+        status: 'N',
+        alamat: 'Jl. Sudirman No. 1',
+        kecamatan: 'Menteng',
+        kab_kota: 'Jakarta Pusat',
+        provinsi: 'DKI Jakarta',
+      },
+    ];
+
+    const result = prepareSchoolDataForSearch(schools);
+
+    assert.strictEqual(result.length, 1);
+    assert.ok(Array.isArray(result[0]));
+    assert.strictEqual(result[0].length, 9);
+
+    // Verify flat array format: [npsn, nama, bentuk, status, alamat, kecamatan, kab_kota, provinsi, url]
+    assert.strictEqual(result[0][0], '12345678');
+    assert.strictEqual(result[0][1], 'SD Negeri 1 Jakarta');
+    assert.strictEqual(result[0][2], 'SD');
+    assert.strictEqual(result[0][3], 'N');
+    assert.strictEqual(result[0][4], 'Jl. Sudirman No. 1');
+    assert.strictEqual(result[0][5], 'Menteng');
+    assert.strictEqual(result[0][6], 'Jakarta Pusat');
+    assert.strictEqual(result[0][7], 'DKI Jakarta');
+    assert.ok(result[0][8].startsWith('/'));
+    assert.ok(result[0][8].includes('12345678'));
+  });
+
+  it('defaults missing fields to empty strings', () => {
+    const schools = [
+      {
+        npsn: '87654321',
+        nama: 'SMA Negeri 1',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+    ];
+
+    const result = prepareSchoolDataForSearch(schools);
+
+    assert.strictEqual(result[0][2], '');
+    assert.strictEqual(result[0][3], '');
+    assert.strictEqual(result[0][4], '');
   });
 });
