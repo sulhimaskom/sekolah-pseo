@@ -104,3 +104,45 @@ Extend the existing `filterSchools()` function in `src/presenters/templates/home
 ## Dependencies
 
 None — builds entirely on existing FEAT-002 search infrastructure and `schools.json` data export.
+
+---
+
+---
+
+# Strategic Expansion Proposal — FEAT-003: Map Integration
+
+**Phase:** Phase 3 — Strategic Expansion
+**Evaluation Date:** 2026-07-06
+**Status:** Proposed
+
+## Value Justification
+
+The project stores complete coordinate data (latitude/longitude) for all 3474 schools — this data is collected in the ETL pipeline but never presented to users in a geographic context. Interactive map visualization surfaces this existing data asset in the most intuitive discovery format for school directories.
+
+**Alignment with Roadmap:** This implements FEAT-003 from `docs/roadmap.md` (Phase 2: Geographic Visualization). Every school in the dataset already has coordinates — no data collection changes needed.
+
+## User Story
+
+**As a** parent looking for schools in an unfamiliar area,
+**I want** to see all schools displayed on an interactive map with location markers,
+**so that** I can visually identify schools near my home, compare their geographic distribution, and quickly navigate to school details.
+
+## Acceptance Criteria (MVP)
+
+- [ ] Generate school locations as GeoJSON FeatureCollection during build
+- [ ] Include interactive map on homepage below search results
+- [ ] School location markers with basic info popup (name, type, link to school page)
+- [ ] Click marker navigates to school detail page
+- [ ] Map works without API keys (OpenStreetMap tiles via Leaflet)
+
+## Technical Approach
+
+Use Leaflet.js (free, open-source, 40KB gzipped) with OpenStreetMap tiles. Generate `schools.geojson` at build time from existing school data. Render map on homepage with marker clustering for dense urban areas.
+
+## Risk
+
+Low — progressive enhancement (site works without JS), static GeoJSON data, no backend changes needed.
+
+## Dependencies
+
+Leaflet.js (CDN or bundled), OpenStreetMap tile layer (free tier)
