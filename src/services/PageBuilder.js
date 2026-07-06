@@ -215,6 +215,37 @@ function groupSchoolsByProvince(schools) {
   return grouped;
 }
 
+/**
+ * Prepare minimal school data for client-side search.
+ * This belongs in the service layer (not the template/presenter) because it:
+ * 1. Computes relative paths via getSchoolRelativePath() (service concern)
+ * 2. Transforms data shape for serialization (data transformation, not presentation)
+ * 3. Returns a flat array format that saves ~13% payload over object format
+ *
+ * @param {Array<Object>} schools - Array of school data objects
+ * @returns {Array<Array<string>>} - Array of flat arrays [npsn, nama, bentuk, status, alamat, kecamatan, kab_kota, provinsi, url]
+ */
+function prepareSchoolDataForSearch(schools) {
+  if (!Array.isArray(schools)) {
+    return [];
+  }
+
+  return schools.map(school => {
+    const relPath = getSchoolRelativePath(school);
+    return [
+      school.npsn || '', // [0] n (npsn)
+      school.nama || '', // [1] a (nama)
+      school.bentuk_pendidikan || '', // [2] b (bentuk_pendidikan)
+      school.status || '', // [3] s (status)
+      school.alamat || '', // [4] al (alamat)
+      school.kecamatan || '', // [5] kc (kecamatan)
+      school.kab_kota || '', // [6] kk (kab_kota)
+      school.provinsi || '', // [7] p (provinsi)
+      '/' + relPath, // [8] u (schoolUrl)
+    ];
+  });
+}
+
 module.exports = {
   buildSchoolPageData,
   getSchoolRelativePath,
@@ -222,4 +253,5 @@ module.exports = {
   getUniqueProvinces,
   buildProvincePageData,
   groupSchoolsByProvince,
+  prepareSchoolDataForSearch,
 };

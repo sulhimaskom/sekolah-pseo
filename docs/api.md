@@ -1869,6 +1869,7 @@ module.exports = {
   getUniqueProvinces: function,
   buildProvincePageData: function,
   groupSchoolsByProvince: function,
+  prepareSchoolDataForSearch: function,
 };
 ```
 
@@ -2103,6 +2104,44 @@ const jakartaSchools = grouped.get('DKI Jakarta'); // Array of schools in Jakart
 
 ---
 
+#### `prepareSchoolDataForSearch(schools)`
+
+Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+
+**Returns:** `Array<Array>` - Array of school records as flat arrays
+
+```javascript
+// Each record: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
+[
+  [
+    '12345678',
+    'SMA Negeri 1',
+    'SMA',
+    'N',
+    'Jl. Sudirman',
+    'Menteng',
+    'Jakarta Pusat',
+    'DKI Jakarta',
+    '/provinsi/...',
+  ],
+];
+```
+
+**Array Indexes:** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url`
+
+**Usage:**
+
+```javascript
+const { prepareSchoolDataForSearch } = require('../src/services/PageBuilder');
+const searchData = prepareSchoolDataForSearch(schools);
+```
+
+---
+
 ## School Page Template Module (`src/presenters/templates/school-page.js`)
 
 ### Purpose
@@ -2246,7 +2285,6 @@ module.exports = {
   generateHomepageHtml: function,
   aggregateByProvince: function,
   aggregateProvinceAndFilters: function,
-  prepareSchoolDataForSearch: function,
   extractFilterOptions: function,
 };
 ```
@@ -2339,46 +2377,6 @@ Aggregates school data by province and extracts filter options in a single pass.
 const { aggregateProvinceAndFilters } = require('./templates/homepage');
 const { provinces, types } = aggregateProvinceAndFilters(schools);
 ```
-
----
-
-#### `prepareSchoolDataForSearch(schools)`
-
-Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size.
-
-**Parameters:**
-
-- `schools` (Array<Object>): Array of school data objects
-
-**Returns:** `Array<Array>` - Array of school records as flat arrays
-
-```javascript
-// Each record: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
-[
-  [
-    '12345678',
-    'SMA Negeri 1',
-    'SMA',
-    'N',
-    'Jl. Sudirman',
-    'Menteng',
-    'Jakarta Pusat',
-    'DKI Jakarta',
-    '/provinsi/...',
-  ],
-];
-```
-
-**Array Indexes:** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url`
-
-**Usage:**
-
-```javascript
-const { prepareSchoolDataForSearch } = require('./templates/homepage');
-const searchData = prepareSchoolDataForSearch(schools);
-```
-
----
 
 #### `extractFilterOptions(schools)`
 
@@ -2761,7 +2759,8 @@ Generates the external CSS file for all school pages.
 
 **Dependencies:**
 
-- `writeExternalStylesFile` (from `src/presenters/styles.js`)
+- `generateSchoolPageStyles` (from `src/presenters/styles.js`)
+- `safeWriteFile` (from `scripts/fs-safe.js`)
 
 **Usage:**
 
@@ -3483,8 +3482,7 @@ Generates responsive CSS for school pages using design system tokens.
 
 ```javascript
 module.exports = {
-  generateSchoolPageStyles: function,
-  writeExternalStylesFile: function
+  generateSchoolPageStyles: function
 };
 ```
 
@@ -3527,31 +3525,6 @@ Generates complete CSS string for school pages.
 ```javascript
 const css = generateSchoolPageStyles();
 await safeWriteFile('/dist/styles.css', css);
-```
-
----
-
-#### `writeExternalStylesFile(distDir)`
-
-Writes the generated CSS to an external file.
-
-**Parameters:**
-
-- `distDir` (string): Distribution directory path
-
-**Returns:** `Promise<string>` - Path to written CSS file
-
-**Output:** `{distDir}/styles.css`
-
-**Dependencies:**
-
-- `safeWriteFile` (from `scripts/fs-safe.js`)
-
-**Usage:**
-
-```javascript
-await writeExternalStylesFile('/dist');
-// Creates: /dist/styles.css
 ```
 
 ---

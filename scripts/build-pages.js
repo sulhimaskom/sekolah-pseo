@@ -29,12 +29,9 @@ const {
   getUniqueProvinces,
   buildProvincePageData,
   groupSchoolsByProvince,
-} = require('../src/services/PageBuilder');
-const { writeExternalStylesFile } = require('../src/presenters/styles');
-const {
-  generateHomepageHtml,
   prepareSchoolDataForSearch,
-} = require('../src/presenters/templates/homepage');
+} = require('../src/services/PageBuilder');
+const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 const { BuildPerformanceTracker } = require('./build-performance');
 const { loadEnrichmentData } = require('./enrichment');
@@ -61,6 +58,7 @@ async function generateRobotsTxt(siteUrl) {
 module.exports = {
   writeSchoolPage,
   writeSchoolPagesConcurrently,
+  writeExternalStylesFile,
   ensureDistDir,
   loadSchools,
   generateExternalStyles,
@@ -237,6 +235,23 @@ async function generateProvincePages(schools) {
 
   logger.info(`Generated ${successful} province pages (${failed} failed)`);
   return { successful, failed };
+}
+
+/**
+ * Write the external styles.css file to disk.
+ * This belongs in the controller layer — CSS generation (pure presentation)
+ * lives in src/presenters/styles.js, while file I/O belongs here alongside
+ * other file operations (school pages, robots.txt, sitemaps).
+ * @param {string} distDir - Path to the dist directory
+ * @returns {Promise<string>} Path to the written styles.css file
+ */
+async function writeExternalStylesFile(distDir) {
+  const { generateSchoolPageStyles } = require('../src/presenters/styles');
+  const css = generateSchoolPageStyles();
+  const outputPath = path.join(distDir, 'styles.css');
+  await safeMkdir(distDir);
+  await safeWriteFile(outputPath, css);
+  return outputPath;
 }
 
 /**
