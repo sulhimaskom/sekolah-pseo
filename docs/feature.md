@@ -73,7 +73,7 @@ As a user, I want to see school locations on an interactive map, so that I can f
 
 ### [FEAT-004] Advanced Filtering
 
-**Status**: Draft
+**Status**: Complete
 **Priority**: P1
 
 ### User Story
@@ -82,18 +82,19 @@ As a user, I want to filter schools by multiple criteria simultaneously, so that
 
 ### Acceptance Criteria
 
-- [ ] Filter by education level (SD/SMP/SMA/SMK/SLB)
-- [ ] Filter by school status (Negeri/Swasta)
-- [ ] Combined search + filter interface on homepage
-- [ ] Filter results update in real-time with search
-- [ ] Mobile-responsive filter controls
-- [ ] Clear/reset all filters option
+- [x] Filter by education level (SD/SMP/SMA/SMK/SLB)
+- [x] Filter by school status (Negeri/Swasta)
+- [x] Combined search + filter interface on homepage
+- [x] Filter results update in real-time with search
+- [x] Mobile-responsive filter controls
+- [x] Clear/reset all filters option
 
 ### Technical Notes
 
 - Filter options extracted server-side via `extractFilterOptions()` in homepage.js
 - Province navigation serves as a geographic filter
 - Education type and status filters are derived from school data fields
+- Implemented across commits `037b2b7` and `46e2b0b` (2026-06-08)
 
 ---
 

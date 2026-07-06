@@ -29,14 +29,14 @@ Conducted comprehensive CI/CD health check and hardened the pipeline against rec
 
 **3. Applied 7th-generation workflow security fixes** — 6 workflow files:
 
-| File | Fix |
-|------|-----|
-| `on-push.yml` | Removed `API_KEY` (duplicate of `GEMINI_API_KEY`) and `VITE_SUPABASE_ANON_KEY` (wrong mapping) |
-| `parallel.yml` | Removed `actions: write` + `id-token: write` permissions; removed 3 `API_KEY` duplicates |
-| `orchestrator.yml` | Removed `id-token: write` + `actions: write`; replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` |
+| File                  | Fix                                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| `on-push.yml`         | Removed `API_KEY` (duplicate of `GEMINI_API_KEY`) and `VITE_SUPABASE_ANON_KEY` (wrong mapping)     |
+| `parallel.yml`        | Removed `actions: write` + `id-token: write` permissions; removed 3 `API_KEY` duplicates           |
+| `orchestrator.yml`    | Removed `id-token: write` + `actions: write`; replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` |
 | `architect-agent.yml` | Removed `id-token: write` + `actions: write`; replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` |
-| `opencode.yml` | Removed `id-token: write` + `actions: write` |
-| `on-pull.yml` | Removed `id-token: write` |
+| `opencode.yml`        | Removed `id-token: write` + `actions: write`                                                       |
+| `on-pull.yml`         | Removed `id-token: write`                                                                          |
 
 **4. Created workflow security validation script** (`scripts/check-workflow-security.js`):
 
@@ -54,16 +54,16 @@ Conducted comprehensive CI/CD health check and hardened the pipeline against rec
 
 ### Verification Results
 
-| Check | Result |
-|-------|--------|
-| Build | 3474 pages, 0 failed, 370ms |
-| ESLint | 0 errors |
-| Prettier | All files formatted |
-| JS Tests | 902/902 pass (84 suites, 4.1s) |
-| Python Tests | 27/27 pass (0.1s) |
-| npm audit | 0 vulnerabilities |
-| Workflow Security | 6/6 files pass all 5 rules |
-| Enrichment Tests | 34/34 pass in 127ms (was ~148s) |
+| Check             | Result                          |
+| ----------------- | ------------------------------- |
+| Build             | 3474 pages, 0 failed, 370ms     |
+| ESLint            | 0 errors                        |
+| Prettier          | All files formatted             |
+| JS Tests          | 902/902 pass (84 suites, 4.1s)  |
+| Python Tests      | 27/27 pass (0.1s)               |
+| npm audit         | 0 vulnerabilities               |
+| Workflow Security | 6/6 files pass all 5 rules      |
+| Enrichment Tests  | 34/34 pass in 127ms (was ~148s) |
 
 ### Files Modified
 
@@ -84,6 +84,7 @@ Conducted comprehensive CI/CD health check and hardened the pipeline against rec
 Same root cause as all prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049): workflow file security fixes were committed to the `agent` branch but never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions.
 
 **Permanent Fix Applied This Cycle**:
+
 - `node scripts/check-workflow-security.js` — can be integrated as pre-commit hook or CI step
 - Running `node scripts/check-workflow-security.js` on all 6 workflow files passes with 0 violations
 
