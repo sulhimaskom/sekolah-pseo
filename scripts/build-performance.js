@@ -7,6 +7,7 @@
 
 'use strict';
 
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 const logger = require('./logger');
 
 /**
@@ -345,7 +346,11 @@ async function monitorBuild(buildFn, options = {}) {
 
     if (throwOnViolation && tracker.violations.length > 0) {
       const messages = tracker.violations.map(v => v.message).join('; ');
-      throw new Error(`Performance budget violation(s): ${messages}`);
+      throw new IntegrationError(
+        `Performance budget violation(s): ${messages}`,
+        ERROR_CODES.PERFORMANCE_BUDGET_VIOLATION,
+        { violations: tracker.violations }
+      );
     }
   }
 }
