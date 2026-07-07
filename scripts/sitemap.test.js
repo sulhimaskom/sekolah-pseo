@@ -653,3 +653,49 @@ test('generateSitemaps with single school produces consistent structure', async 
   }
   await fs.rm(path.join(CONFIG.DIST_DIR, 'sitemap-index.xml'), { force: true });
 });
+
+test('generateSitemaps without schools falls back to filesystem walk', async () => {
+  const { generateSitemaps } = require('./sitemap');
+  const CONFIG = require('./config');
+
+  const testDir = path.join(process.env.TEST_TEMP_DIR, 'generate-no-schools');
+  await fs.mkdir(testDir, { recursive: true });
+  await fs.writeFile(path.join(testDir, 'index.html'), '<html></html>', 'utf8');
+  await fs.writeFile(path.join(testDir, 'sma-negeri-1-bandung.html'), '<html></html>', 'utf8');
+  await fs.writeFile(path.join(testDir, 'sma-negeri-2-bandung.html'), '<html></html>', 'utf8');
+
+  const originalDist = CONFIG.DIST_DIR;
+  CONFIG.DIST_DIR = testDir;
+
+  try {
+    const result = await generateSitemaps();
+    const { urls, files } = result;
+
+    assert.strictEqual(urls.length, 3);
+    assert.ok(urls.some(u => u.url.includes('index.html')));
+    assert.ok(urls.some(u => u.url.includes('sma-negeri-1-bandung.html')));
+    assert.ok(urls.some(u => u.url.includes('sma-negeri-2-bandung.html')));
+
+    assert.ok(files.length > 0);
+    assert.ok(files.every(f => f.startsWith('sitemap-') && f.endsWith('.xml')));
+
+    for (const file of files) {
+      const filePath = path.join(testDir, file);
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+      assert.ok(exists, `sitemap file ${file} should exist in test directory`);
+    }
+
+    const indexPath = path.join(testDir, 'sitemap-index.xml');
+    const indexExists = await fs
+      .access(indexPath)
+      .then(() => true)
+      .catch(() => false);
+    assert.ok(indexExists, 'sitemap-index.xml should exist');
+  } finally {
+    CONFIG.DIST_DIR = originalDist;
+    await fs.rm(testDir, { recursive: true, force: true });
+  }
+});

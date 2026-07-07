@@ -24,11 +24,13 @@ The Python test suite has only 27 tests covering basic structural checks, compar
    - Regression tests
 
 ### Files Affected
+
 - `tests/test_basic.py`
 - `tests/test_data_validation.py`
 - `tests/run_tests.py`
 
 ### Recommendations
+
 1. Enable `pytest-cov` (already in requirements.txt) for coverage measurement
 2. Add data processing unit tests for Python-based logic
 3. Add integration tests validating the full Python data pipeline

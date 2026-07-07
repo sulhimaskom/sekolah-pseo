@@ -21,14 +21,17 @@ The `on-push.yml` workflow exposes an excessive number of secrets as environment
 3. **Broad permissions**: `contents: write` on every push workflow run violates least privilege principle.
 
 ### Impact
+
 - **High**: Every workflow run has broad secret access — any compromised step could exfiltrate secrets
 - **Medium**: Confusion between API_KEY and GEMINI_API_KEY could lead to secret rotation failures
 
 ### Files Affected
+
 - `.github/workflows/on-push.yml`
 - `.github/workflows/on-pull.yml`
 
 ### Recommendations
+
 1. Audit which secrets are actually needed for push-triggered builds
 2. Remove unused/unnecessary secrets from workflow env
 3. Eliminate `API_KEY` alias — use `GEMINI_API_KEY` directly

@@ -16,7 +16,7 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
 
 - ✅ **Core Infrastructure**: Static site generator, ETL pipeline, page builder
 - ✅ **Architecture**: Layer separation (presentation, service, controller)
-- ✅ **Testing**: 772+ tests covering critical paths
+- ✅ **Testing**: 902+ tests covering critical paths
 - ✅ **Security**: Input validation, XSS prevention, security headers
 - ✅ **Performance**: 60% build time improvement through optimization
 - ✅ **Accessibility**: WCAG 2.1 Level A compliance, ARIA support
@@ -25,7 +25,7 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
 
 ---
 
-## Phase 1: Enhanced Discovery (Q1 2026)
+## Phase 1: Enhanced Discovery (Complete)
 
 ### Goals
 
@@ -47,7 +47,7 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
   - ✅ Combined search + filter interface
   - Implemented across commits `037b2b7` and `46e2b0b` (2026-06-08)
 
-- **[FEAT-005] Comparison Tool**
+- **[FEAT-005] Comparison Tool** (deferred)
   - Compare up to 3 schools side-by-side
   - Visual comparison of key metrics
   - Share comparison results
@@ -219,11 +219,11 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
 
 ## Milestones
 
-| Milestone           | Target Date | Status                                     |
-| ------------------- | ----------- | ------------------------------------------ |
-| Foundation Complete | 2026-01     | ✅ Complete                                |
-| Phase 1 Launch      | 2026-06     | 🔄 In Progress (FEAT-002 ✅, FEAT-004 WIP) |
-| Phase 2 Launch      | 2026-09     | 📋 Planned                                 |
-| Phase 3 Launch      | 2026-12     | 📋 Planned                                 |
-| Phase 4 Launch      | 2027-03     | 📋 Planned                                 |
-| Phase 5 Launch      | 2027-06     | 📋 Planned                                 |
+| Milestone           | Target Date | Status                                 |
+| ------------------- | ----------- | -------------------------------------- |
+| Foundation Complete | 2026-01     | ✅ Complete                            |
+| Phase 1 Launch      | 2026-07     | ✅ Complete (FEAT-002 ✅, FEAT-004 ✅) |
+| Phase 2 Launch      | 2026-09     | 📋 Planned                             |
+| Phase 3 Launch      | 2026-12     | 📋 Planned                             |
+| Phase 4 Launch      | 2027-03     | 📋 Planned                             |
+| Phase 5 Launch      | 2027-06     | 📋 Planned                             |

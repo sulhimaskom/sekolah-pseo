@@ -26,7 +26,9 @@ scripts/           # Controllers and utilities
 ├── enrichment.js   # School data enrichment (Wikipedia API)
 ├── build-performance.js  # Build performance tracking
 ├── data-quality.js # Data quality analysis
-└── interactive.js  # CLI interactive menu
+├── freshness-report.js # Data freshness report generation
+├── interactive.js  # CLI interactive menu
+└── check-workflow-security.js # Workflow security validation (CI)
 
 src/
 ├── services/

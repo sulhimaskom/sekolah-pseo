@@ -1,8 +1,12 @@
-const { describe, it } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert');
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');
+const CONFIG = require('./config');
 
 describe('check-freshness', () => {
   describe('getDataFreshness', () => {
@@ -68,6 +72,79 @@ describe('check-freshness', () => {
     });
   });
 
+  describe('getDataQualityMetrics isolated (temp file scenarios)', () => {
+    let testDir;
+    let originalPath;
+
+    before(() => {
+      originalPath = CONFIG.SCHOOLS_CSV_PATH;
+    });
+
+    after(() => {
+      CONFIG.SCHOOLS_CSV_PATH = originalPath;
+      if (testDir) {
+        try {
+          fs.rmSync(testDir, { recursive: true, force: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+
+    it('returns null when schools.csv does not exist', () => {
+      CONFIG.SCHOOLS_CSV_PATH = '/nonexistent/path/schools.csv';
+      const result = getDataQualityMetrics();
+      assert.strictEqual(result, null);
+    });
+
+    it('returns zero metrics when CSV has header but no records', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(csvPath, 'npsn,nama,lat,lon,alamat,provinsi\n', 'utf-8');
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataQualityMetrics();
+      assert.ok(result !== null);
+      assert.strictEqual(result.totalRecords, 0);
+      assert.deepStrictEqual(result.metrics, {});
+    });
+
+    it('calculates metrics correctly with mixed data', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(
+        csvPath,
+        'npsn,nama,lat,lon,alamat,provinsi\n' +
+          '001,School A,-6.2,106.8,Jl. Merdeka,Jawa Barat\n' +
+          '002,School B,,,Jl. Sudirman,Jawa Timur\n' +
+          '003,School C,-7.2,112.7,,Jawa Timur\n',
+        'utf-8'
+      );
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataQualityMetrics();
+      assert.strictEqual(result.totalRecords, 3);
+      assert.strictEqual(result.metrics.coordinates.count, 2);
+      assert.strictEqual(result.metrics.coordinates.percentage, '66.67');
+      assert.strictEqual(result.metrics.address.count, 2);
+      assert.strictEqual(result.metrics.npsn.count, 3);
+      assert.strictEqual(result.metrics.npsn.percentage, '100.00');
+      assert.strictEqual(result.metrics.province.count, 3);
+    });
+
+    it('counts schools with non-numeric NPSN as missing NPSN', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(csvPath, 'npsn,nama\nABCDE,Invalid NPSN\n67890,Valid NPSN\n', 'utf-8');
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataQualityMetrics();
+      assert.strictEqual(result.totalRecords, 2);
+      assert.strictEqual(result.metrics.npsn.count, 1);
+      assert.strictEqual(result.metrics.npsn.percentage, '50.00');
+    });
+  });
+
   describe('module exports', () => {
     it('exports getDataFreshness function', () => {
       assert.strictEqual(typeof getDataFreshness, 'function');
@@ -75,6 +152,111 @@ describe('check-freshness', () => {
 
     it('exports getDataQualityMetrics function', () => {
       assert.strictEqual(typeof getDataQualityMetrics, 'function');
+    });
+  });
+
+  describe('getDataFreshness isolated (temp file scenarios)', () => {
+    let testDir;
+    let originalPath;
+
+    before(() => {
+      originalPath = CONFIG.SCHOOLS_CSV_PATH;
+    });
+
+    after(() => {
+      CONFIG.SCHOOLS_CSV_PATH = originalPath;
+      if (testDir) {
+        try {
+          fs.rmSync(testDir, { recursive: true, force: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+
+    it('returns exists:false when schools.csv does not exist', () => {
+      CONFIG.SCHOOLS_CSV_PATH = '/nonexistent/path/schools.csv';
+      const result = getDataFreshness();
+      assert.strictEqual(result.exists, false);
+      assert.strictEqual(result.date, null);
+      assert.strictEqual(result.daysAgo, null);
+      assert.strictEqual(result.recordCount, 0);
+      assert.strictEqual(result.isFresh, false);
+    });
+
+    it('returns exists:true, recordCount:0 when CSV has header but no records', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(csvPath, 'npsn,nama,updated_at\n', 'utf-8');
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataFreshness();
+      assert.strictEqual(result.exists, true);
+      assert.strictEqual(result.date, null);
+      assert.strictEqual(result.daysAgo, null);
+      assert.strictEqual(result.recordCount, 0);
+      assert.strictEqual(result.isFresh, false);
+    });
+
+    it('returns date:null when records have no updated_at field', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(csvPath, 'npsn,nama\n12345,Test School\n67890,Test School 2\n', 'utf-8');
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataFreshness();
+      assert.strictEqual(result.exists, true);
+      assert.strictEqual(result.date, null);
+      assert.strictEqual(result.daysAgo, null);
+      assert.strictEqual(result.recordCount, 2);
+      assert.strictEqual(result.isFresh, false);
+    });
+
+    it('returns date:null when records have empty updated_at values', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(
+        csvPath,
+        'npsn,nama,updated_at\n12345,Test School,\n67890,Test School 2,\n',
+        'utf-8'
+      );
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataFreshness();
+      assert.strictEqual(result.exists, true);
+      assert.strictEqual(result.date, null);
+      assert.strictEqual(result.daysAgo, null);
+      assert.strictEqual(result.recordCount, 2);
+      assert.strictEqual(result.isFresh, false);
+    });
+
+    it('returns date:null when updated_at values are not valid ISO dates', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      fs.writeFileSync(csvPath, 'npsn,nama,updated_at\n12345,Test School,not-a-date\n', 'utf-8');
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataFreshness();
+      assert.strictEqual(result.exists, true);
+      assert.strictEqual(result.date, null);
+      assert.strictEqual(result.daysAgo, null);
+      assert.strictEqual(result.recordCount, 1);
+      assert.strictEqual(result.isFresh, false);
+    });
+
+    it('parses valid updated_at and calculates daysAgo correctly', () => {
+      testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
+      const csvPath = path.join(testDir, 'schools.csv');
+      const today = new Date().toISOString().split('T')[0];
+      fs.writeFileSync(csvPath, `npsn,nama,updated_at\n12345,Test School,${today}\n`, 'utf-8');
+      CONFIG.SCHOOLS_CSV_PATH = csvPath;
+
+      const result = getDataFreshness();
+      assert.strictEqual(result.exists, true);
+      assert.strictEqual(result.date, today);
+      assert.strictEqual(result.daysAgo, 0);
+      assert.strictEqual(result.recordCount, 1);
+      assert.strictEqual(result.isFresh, true);
     });
   });
 
