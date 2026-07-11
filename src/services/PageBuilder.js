@@ -100,20 +100,9 @@ function getUniqueDirectories(schools) {
   const uniqueDirs = new Set();
 
   for (const school of schools) {
-    const provinsiSlug = slugify(school.provinsi);
-    const kabKotaSlug = slugify(school.kab_kota);
-    const kecamatanSlug = slugify(school.kecamatan);
-
-    const dirPath = path.join(
-      'provinsi',
-      provinsiSlug,
-      'kabupaten',
-      kabKotaSlug,
-      'kecamatan',
-      kecamatanSlug
-    );
-
-    uniqueDirs.add(dirPath);
+    // Reuse getSchoolRelativePath (WeakMap-cached) to eliminate duplicate path computation.
+    const relPath = getSchoolRelativePath(school);
+    uniqueDirs.add(path.dirname(relPath));
   }
 
   return Array.from(uniqueDirs);
