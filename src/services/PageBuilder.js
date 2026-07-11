@@ -100,9 +100,18 @@ function getUniqueDirectories(schools) {
   const uniqueDirs = new Set();
 
   for (const school of schools) {
-    // Reuse getSchoolRelativePath (WeakMap-cached) to eliminate duplicate path computation.
-    const relPath = getSchoolRelativePath(school);
-    uniqueDirs.add(path.dirname(relPath));
+    // Use getSchoolRelativePath (WeakMap-cached) to eliminate duplicate path computation.
+    // Wrap in try-catch because getSchoolRelativePath validates all school fields including
+    // npsn/nama, while getUniqueDirectories only needs directory-level fields (provinsi,
+    // kab_kota, kecamatan). Invalid schools are skipped here; their failure is handled
+    // later by the caller (e.g. writeSchoolPagesConcurrently).
+    try {
+      const relPath = getSchoolRelativePath(school);
+      uniqueDirs.add(path.dirname(relPath));
+    } catch {
+      // School is missing required fields for path computation — skip it.
+      // The caller will handle the validation error downstream.
+    }
   }
 
   return Array.from(uniqueDirs);
