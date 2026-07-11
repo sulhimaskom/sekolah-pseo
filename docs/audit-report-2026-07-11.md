@@ -258,35 +258,40 @@ The refactoring in commit `d6ec7db` made `getUniqueDirectories` delegate to `get
 2. **Reduced secret exposure** from 10 secrets to 1 (`GEMINI_API_KEY` only) — removed `IFLOW_API_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `API_KEY` alias, `SUPABASE_ANON_KEY`, `VITE_SUPABASE_ANON_KEY`.
 3. **Removed confusing `API_KEY` alias** (`API_KEY: ${{ secrets.GEMINI_API_KEY }}`).
 
-### Still Pending: GitHub Issue Creation
+### GitHub Issue Creation Status
 
-The current workflow run's `GITHUB_TOKEN` was issued before the permissions fix was applied, so this run still cannot create issues. Future workflow runs will have `issues: write` and can create the 11 issues documented in `docs/issues/2026-07-06/`. The issues are documented here as a reference until then.
+The GITHUB_TOKEN still lacks `issues: write` permission (token was issued before the permissions fix in on-push.yml). The `issues: write` permission has been ADDED to on-push.yml in this run and will take effect in future workflow runs.
 
-### 11 Documented Findings (from docs/issues/2026-07-06/)
+### Finding Status (from docs/issues/2026-07-06/)
 
-| #   | Issue                                              | Category | Priority |
-| --- | -------------------------------------------------- | -------- | -------- |
-| 1   | CI/CD Workflow Overcomplexity                      | ci       | P2       |
-| 2   | Oversized Source Files (styles.js, build-pages.js) | refactor | P2       |
-| 3   | Excessive CI Secret Exposure                       | security | P1       |
-| 4   | Insufficient Python Test Coverage                  | test     | P2       |
-| 5   | Missing E2E/Integration Tests                      | test     | P2       |
-| 6   | Missing Automated Release Process                  | chore    | P2       |
-| 7   | High Coupling in Build Controller                  | refactor | P2       |
-| 8   | Duplicate Slug Computation                         | refactor | P3       |
-| 9   | Missing Cross-Module Contracts                     | refactor | P2       |
-| 10  | Incremental/Full Build Duplication                 | refactor | P3       |
-| 11  | FEAT-003 Map Integration Strategic                 | feature  | P2       |
+| #   | Issue                                              | Category | Priority | Status              |
+| --- | -------------------------------------------------- | -------- | -------- | ------------------- |
+| 1   | CI/CD Workflow Overcomplexity                      | ci       | P2       | 💡 Open             |
+| 2   | Oversized Source Files (styles.js, build-pages.js) | refactor | P2       | 💡 Open             |
+| 3   | Excessive CI Secret Exposure                       | security | P1       | ✅ **FIXED**        |
+| 4   | Insufficient Python Test Coverage                  | test     | P2       | 💡 Open             |
+| 5   | Missing E2E/Integration Tests                      | test     | P2       | 💡 Open             |
+| 6   | Missing Automated Release Process                  | chore    | P2       | 💡 Open             |
+| 7   | High Coupling in Build Controller                  | refactor | P2       | 💡 Open             |
+| 8   | Duplicate Slug Computation                         | refactor | P3       | ✅ **FIXED** (d6ec7db) |
+| 9   | Missing Cross-Module Contracts                     | refactor | P2       | 💡 Open             |
+| 10  | Incremental/Full Build Duplication                 | refactor | P3       | 💡 Open             |
+| 11  | FEAT-003 Map Integration Strategic                 | feature  | P2       | 💡 Open (Phase 3)   |
 
 ---
 
 ## Final State
 
-- **Phase**: Phase 1 (Complete — read-only analysis with fixes applied)
-- **Fixes applied**:
-  1. `getUniqueDirectories` regression fixed (PageBuilder.js)
-  2. Workflow permissions fixed (added `issues: write`)
-  3. CI secret exposure reduced (removed 9 unnecessary secrets)
-- **GitHub Issues**: 11 documented in `docs/issues/2026-07-06/` — creation blocked for THIS run (token was issued before permissions fix). Next workflow run can create them.
-- **Status**: **waiting for human review** (issues documented but not created as GitHub issues)
-- **Next**: Phase 2 ready when issues are created
+- **Phase**: Phase 1 Complete → Phase 2 Active
+- **Fixes applied in this run (2026-07-11)**:
+  1. `getUniqueDirectories` regression fixed (PageBuilder.js) — committed in `0eedf82`
+  2. **Added `issues: write` permission** to `.github/workflows/on-push.yml` (unblocks future issue creation)
+  3. **Reduced CI secret exposure** across ALL 6 workflow files:
+     - `on-push.yml`: 10→2 secrets (kept GITHUB_TOKEN, GEMINI_API_KEY)
+     - `on-pull.yml`: 5→1 secret (kept GITHUB_TOKEN)
+     - `parallel.yml`: 4 env blocks cleaned (kept GH_TOKEN, GEMINI_API_KEY)
+     - `orchestrator.yml`: removed IFLOW_API_KEY
+     - `architect-agent.yml`: removed IFLOW_API_KEY
+     - `opencode.yml`: removed IFLOW_API_KEY
+- **GitHub Issues Not Created**: Token permission issue — `issues: write` now added to on-push.yml, will take effect on next workflow run.
+- **Status**: **idle — awaiting next workflow run for issue creation**

@@ -1,0 +1,60 @@
+# Composite action: setup opencode CLI + git config + Node.js caching
+# Extracted from all 6 workflow files to eliminate ~15 lines of duplication per workflow.
+#
+# Usage:
+#   - uses: ./.github/actions/setup-opencode
+#
+name: 'Setup OpenCode CLI'
+description: 'Checkout, configure git, install Node, cache, and install OpenCode CLI'
+
+inputs:
+  checkout-token:
+    description: 'Token for checkout (defaults to github.token)'
+    required: false
+    default: ''
+  fetch-depth:
+    description: 'Git fetch depth (default: 0 for full history)'
+    required: false
+    default: '0'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        token: ${{ inputs.checkout-token || github.token }}
+
+    - name: Setup Cache
+      uses: actions/cache@v6
+      with:
+        path: |
+          ~/.opencode
+          ~/.npm
+        key: opencode-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-v1
+        restore-keys: |
+          opencode-${{ runner.os }}-v1
+          opencode-${{ runner.os }}-
+
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      shell: bash
+      run: npm ci || true
+
+    - name: Install OpenCode CLI
+      shell: bash
+      run: |
+        curl -fsSL https://opencode.ai/install | bash
+        echo "$HOME/.opencode/bin" >> $GITHUB_PATH
