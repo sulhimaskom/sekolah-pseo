@@ -89,12 +89,12 @@ This feature directly addresses **Phase 2: Geographic Visualization** in the pro
 
 ## Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-| ---- | ---------- | ------ | ---------- |
-| OpenStreetMap tile rate limiting | Low | Medium | Use tile cache or switch to MapTiler (free tier) |
-| Map not rendering (JS disabled) | Low | Low | Progressive enhancement — site works without map |
-| Mobile performance with 3474 markers | Medium | Medium | Use clustering, only render visible markers |
-| Leaflet CDN availability | Low | Medium | Bundle Leaflet or use fallback |
+| Risk                                 | Likelihood | Impact | Mitigation                                       |
+| ------------------------------------ | ---------- | ------ | ------------------------------------------------ |
+| OpenStreetMap tile rate limiting     | Low        | Medium | Use tile cache or switch to MapTiler (free tier) |
+| Map not rendering (JS disabled)      | Low        | Low    | Progressive enhancement — site works without map |
+| Mobile performance with 3474 markers | Medium     | Medium | Use clustering, only render visible markers      |
+| Leaflet CDN availability             | Low        | Medium | Bundle Leaflet or use fallback                   |
 
 ## Success Metrics
 
