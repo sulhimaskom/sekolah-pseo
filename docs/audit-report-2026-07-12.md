@@ -290,15 +290,14 @@
 
 ## Final State
 
-- **Phase**: Phase 1 + Phase 2 Complete (Phase 3 skipped — FEAT-003 already proposed)
-- **Fixes applied this run**:
-  1. Added `issues: write` to `.github/workflows/on-push.yml` (reverted from push due to token permission)
-  2. Removed unused `tracker` parameter from `scripts/build-pages.js` (fixes ESLint error)
-  3. Updated `scripts/build-pages.test.js` to match
-  4. **Phase 2**: Added `buildHomepageData()` to `src/services/PageBuilder.js` — enforces service boundary
-  5. **Phase 2**: Removed direct template import from `scripts/build-pages.js` — reduces coupling
-  6. Updated audit report with current findings
-  7. Created local issue docs for findings #012, #013
-- **PR #478**: Created with all changes (awaiting merge)
-- **GitHub Issues Not Created**: Token permission limitation — `issues: write` needs manual workflow PR
-- **Status**: **idle — PR #478 open, awaiting review and merge**
+- **Phase**: Phase 0 + Phase 1 Complete (PR merged, audit confirmed)
+- **PR #478**: MERGED into main at `9a56b31` (2026-07-12T18:57Z)
+- **Fixes now in main**:
+  1. Removed unused `tracker` parameter from `scripts/build-pages.js` (fixes ESLint error)
+  2. Updated `scripts/build-pages.test.js` to match
+  3. **Phase 2**: Added `buildHomepageData()` to `src/services/PageBuilder.js` — enforces service boundary
+  4. **Phase 2**: Removed direct template import from `scripts/build-pages.js` — reduces coupling
+- **Note**: `issues: write` permission fix for `on-push.yml` could not be pushed — workflow runner token lacks `workflows` permission
+- **GitHub Issues Not Created**: Token permission limitation — `issues: write` permission missing from GITHUB_TOKEN
+- **Remaining Open Issues (local docs)**: #1–#7, #9–#11 (10 documented issues) — see docs/issues/2026-07-12/
+- **Status**: **idle — awaiting next phase execution**

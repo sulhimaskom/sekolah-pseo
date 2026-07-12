@@ -1,0 +1,542 @@
+/**
+ * @module BuildOrchestrator
+ * @description Build pipeline orchestration service. Encapsulates the static site
+ * generation pipeline — data loading, page generation, file output, manifest tracking,
+ * and performance reporting. Controllers (scripts/build-pages.js) delegate to this
+ * service rather than implementing pipeline logic directly.
+ *
+ * Architectural role (per docs/blueprint.md):
+ *   src/services/        ← Business logic (this module)
+ *   scripts/             ← Thin controllers / CLI entry points
+ *   src/presenters/      ← Presentation / template layer
+ */
+
+'use strict';
+
+const path = require('path');
+const zlib = require('zlib');
+const { promisify } = require('util');
+const slugify = require('../../scripts/slugify');
+const gzipAsync = promisify(zlib.gzip);
+const { parseCsv, processConcurrently } = require('../../scripts/utils');
+const logger = require('../../scripts/logger');
+const CONFIG = require('../../scripts/config');
+const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
+const { safeReadFile, safeWriteFile, fastWriteFile, safeMkdir } = require('../../scripts/fs-safe');
+const {
+  buildSchoolPageData,
+  buildHomepageData,
+  getSchoolRelativePath,
+  getUniqueDirectories,
+  getUniqueProvinces,
+  buildProvincePageData,
+  groupSchoolsByProvince,
+  prepareSchoolDataForSearch,
+} = require('./PageBuilder');
+const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('../../scripts/manifest');
+const { BuildPerformanceTracker } = require('../../scripts/build-performance');
+const { loadEnrichmentData } = require('../../scripts/enrichment');
+
+// Ensure dist directory exists
+const distDir = CONFIG.DIST_DIR;
+
+/**
+ * Ensure the dist directory exists.
+ */
+async function ensureDistDir() {
+  try {
+    await safeMkdir(distDir);
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to create dist directory');
+    throw error;
+  }
+}
+
+/**
+ * Load the processed schools CSV into an array of objects.
+ */
+async function loadSchools() {
+  const text = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
+  const schools = parseCsv(text);
+
+  if (schools.length === 0) {
+    throw new IntegrationError(
+      `No schools found in ${CONFIG.SCHOOLS_CSV_PATH} - CSV may be empty or invalid`,
+      ERROR_CODES.FILE_EMPTY,
+      { path: CONFIG.SCHOOLS_CSV_PATH }
+    );
+  }
+
+  return schools;
+}
+
+/**
+ * Write a single school page using PageBuilder service.
+ *
+ * Circuit breaker is disabled for bulk page writes since isolated failures
+ * should not cascade and block all remaining pages. Retry+timeout still
+ * protect against transient filesystem errors.
+ *
+ * @param {Object} school
+ * @param {Object} [enrichment] - Optional enrichment data for this school
+ */
+async function writeSchoolPage(school, enrichment) {
+  const pageData = buildSchoolPageData(school, enrichment);
+  const outputPath = path.join(distDir, pageData.relativePath);
+  await fastWriteFile(outputPath, pageData.content);
+}
+
+/**
+ * Pre-create all unique directories needed for schools to reduce redundant
+ * fs.mkdir calls. Failed directories are tracked and reported — since this
+ * is a bulk operation, the build continues but downstream file writes to
+ * missing directories will fail.
+ *
+ * @param {Array<Object>} schools
+ * @returns {Promise<string[]>} Array of directory paths that failed to create
+ */
+async function preCreateDirectories(schools) {
+  const uniqueDirs = getUniqueDirectories(schools);
+
+  logger.info(`Creating ${uniqueDirs.length} unique directories...`);
+
+  const failures = [];
+
+  const dirPromises = uniqueDirs.map(async dir => {
+    const fullPath = path.join(distDir, dir);
+    try {
+      await safeMkdir(fullPath);
+    } catch (err) {
+      logger.error({ err, path: fullPath }, 'Failed to create directory');
+      failures.push(fullPath);
+    }
+  });
+
+  await Promise.all(dirPromises);
+
+  if (failures.length > 0) {
+    logger.warn(`${failures.length} of ${uniqueDirs.length} directories failed to create`);
+  }
+
+  return failures;
+}
+
+/**
+ * Generate robots.txt with the actual SITE_URL.
+ * @param {string} siteUrl - Base URL for the site
+ */
+async function generateRobotsTxt(siteUrl) {
+  const normalizedUrl = siteUrl.replace(/\/$/, '');
+  const content = [
+    'User-agent: *',
+    'Allow: /',
+    '',
+    `Sitemap: ${normalizedUrl}/sitemap-index.xml`,
+    '',
+  ].join('\n');
+
+  await safeWriteFile(path.join(distDir, 'robots.txt'), content);
+  logger.info(`Generated robots.txt with sitemap URL: ${normalizedUrl}/sitemap-index.xml`);
+}
+
+/**
+ * Write the external styles.css file to disk.
+ * CSS generation (pure presentation) lives in src/presenters/styles.js,
+ * while file I/O belongs here alongside other file operations.
+ *
+ * @param {string} targetDir - Path to the dist directory
+ * @returns {Promise<string>} Path to the written styles.css file
+ */
+async function writeExternalStylesFile(targetDir) {
+  const { generateSchoolPageStyles } = require('../presenters/styles');
+  const css = generateSchoolPageStyles();
+  const outputPath = path.join(targetDir, 'styles.css');
+  await safeMkdir(targetDir);
+  await safeWriteFile(outputPath, css);
+  return outputPath;
+}
+
+/**
+ * Generate external styles.css file.
+ */
+async function generateExternalStyles() {
+  logger.info('Generating external styles.css...');
+  await writeExternalStylesFile(distDir);
+  logger.info('Generated styles.css');
+}
+
+/**
+ * Generate external search data file (schools.json) for lazy-loaded client-side search.
+ * This separates the ~1.3MB JSON search data from the homepage HTML,
+ * allowing the homepage to load as a lightweight ~14KB page.
+ * The JS client fetches the JSON asynchronously after page load.
+ *
+ * @param {Array<Object>} schools
+ */
+async function writeSearchDataFile(schools) {
+  const searchData = prepareSchoolDataForSearch(schools);
+  const jsonContent = JSON.stringify(searchData);
+  const outputPath = path.join(distDir, 'schools.json');
+  await safeWriteFile(outputPath, jsonContent);
+
+  // Pre-compress schools.json.gz for servers with gzip_static support.
+  // This enables ~86% transfer size reduction without per-request compression overhead.
+  // Uses level 6 (vs 9) for ~3x faster compression at <2% size penalty — the gzip
+  // is served statically by nginx, so decompression speed is irrelevant at the edge.
+  const gzipped = await gzipAsync(jsonContent, { level: 6 });
+  const gzipPath = path.join(distDir, 'schools.json.gz');
+  await safeWriteFile(gzipPath, gzipped);
+
+  logger.info(
+    `Generated schools.json (${(Buffer.byteLength(jsonContent, 'utf-8') / 1024).toFixed(0)} KB)` +
+      `, gzip: ${(gzipped.length / 1024).toFixed(0)} KB`
+  );
+}
+
+/**
+ * Pre-create all unique province directories.
+ * Accepts an optional pre-computed provinces array to avoid
+ * redundant getUniqueProvinces() calls.
+ *
+ * @param {Array<Object>} schools - School records (used if provinces not provided)
+ * @param {Array<Object>} [provinces] - Pre-computed province objects with slug/name/count
+ */
+async function preCreateProvinceDirectories(schools, provinces) {
+  const provinceList = provinces || getUniqueProvinces(schools);
+
+  logger.info(`Creating ${provinceList.length} province directories...`);
+
+  const dirPromises = provinceList.map(province => {
+    const fullPath = path.join(distDir, 'provinsi', province.slug);
+    return safeMkdir(fullPath).catch(err => {
+      logger.error({ err, path: fullPath }, 'Failed to create province directory');
+    });
+  });
+
+  await Promise.all(dirPromises);
+}
+
+/**
+ * Create manifest object from schools.
+ * @param {Array<Object>} schools - School records
+ */
+function createManifestFromSchools(schools) {
+  const nowISO = new Date().toISOString();
+  const manifest = {
+    version: 1,
+    lastBuild: nowISO,
+    schools: {},
+  };
+
+  for (const school of schools) {
+    const npsn = school.npsn;
+    const hash = computeSchoolHash(school);
+
+    manifest.schools[npsn] = {
+      hash,
+      builtAt: nowISO,
+      path: getSchoolRelativePath(school),
+    };
+  }
+
+  return manifest;
+}
+
+/**
+ * Generate all province pages.
+ * Uses province pre-grouping (O(n) single pass) to avoid redundant per-province filtering.
+ *
+ * @param {Array<Object>} schools
+ */
+async function generateProvincePages(schools) {
+  // Pre-group schools by province in a single O(n) pass.
+  // Derive province list from the grouped Map instead of a second O(n) pass
+  // via getUniqueProvinces — we already have the schools grouped.
+  const grouped = groupSchoolsByProvince(schools);
+  const provinces = Array.from(grouped.entries()).map(([name, provinceSchools]) => ({
+    name,
+    slug: slugify(name),
+    count: provinceSchools.length,
+  }));
+
+  await preCreateProvinceDirectories(schools, provinces);
+
+  logger.info(`Generating ${provinces.length} province pages...`);
+
+  const { results, metrics } = await processConcurrently(
+    provinces,
+    async province => {
+      try {
+        // Use pre-filtered schools with skipFilter=true to avoid redundant filtering
+        const provinceSchools = grouped.get(province.name) || [];
+        const pageData = buildProvincePageData(province.name, provinceSchools, true);
+        const outputPath = path.join(distDir, pageData.relativePath);
+        await fastWriteFile(outputPath, pageData.content);
+        return { success: true, name: province.name };
+      } catch (err) {
+        logger.error({ err, province: province.name }, 'Failed to generate province page');
+        return { success: false, name: province.name };
+      }
+    },
+    {
+      limit: CONFIG.BUILD_CONCURRENCY_LIMIT,
+      timeout: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
+      getName: province => `generateProvincePage-${province.name}`,
+    }
+  );
+
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const failed = results.filter(
+    r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
+  ).length;
+
+  logger.info('Province build metrics:', {
+    total: metrics.total,
+    completed: metrics.completed,
+    failed: metrics.failed,
+    throughput: metrics.throughput,
+  });
+
+  logger.info(`Generated ${successful} province pages (${failed} failed)`);
+  return { successful, failed };
+}
+
+/**
+ * Export schools CSV to dist directory for user download.
+ */
+async function exportSchoolsCsv() {
+  const csvPath = CONFIG.SCHOOLS_CSV_PATH;
+  const distDataDir = path.join(distDir, 'data');
+  await safeMkdir(distDataDir);
+  const csvContent = await safeReadFile(csvPath);
+  const outputPath = path.join(distDataDir, 'schools.csv');
+  await safeWriteFile(outputPath, csvContent);
+  logger.info(
+    `Exported schools data (${(Buffer.byteLength(csvContent, 'utf-8') / 1024 / 1024).toFixed(1)} MB)`
+  );
+}
+
+/**
+ * Write multiple school pages concurrently with a controlled concurrency limit
+ * to avoid overwhelming the file system.
+ *
+ * @param {Array<Object>} schools
+ * @param {number} concurrencyLimit
+ * @param {Object} [enrichmentMap] - Optional map of NPSN to enrichment data
+ */
+async function writeSchoolPagesConcurrently(
+  schools,
+  concurrencyLimit = CONFIG.BUILD_CONCURRENCY_LIMIT,
+  enrichmentMap
+) {
+  await preCreateDirectories(schools);
+
+  const { results, metrics } = await processConcurrently(
+    schools,
+    async school => {
+      const enrichment = enrichmentMap ? enrichmentMap[school.npsn] : undefined;
+      await writeSchoolPage(school, enrichment);
+    },
+    {
+      limit: concurrencyLimit,
+      timeout: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
+      getName: school => `writeSchoolPage-${school.npsn}`,
+      onProgress: (processed, total) => {
+        if (processed % 100 === 0 || processed === total) {
+          logger.info(`Processed ${processed} of ${total} school pages`);
+        }
+      },
+    }
+  );
+
+  logger.info('Build metrics:', {
+    total: metrics.total,
+    completed: metrics.completed,
+    failed: metrics.failed,
+    throughput: metrics.throughput,
+  });
+
+  const successful = results.filter(result => result.status === 'fulfilled').length;
+  const failedResults = results.filter(result => result.status === 'rejected');
+  const failed = failedResults.length;
+
+  if (failed > 0) {
+    const failureDetails = failedResults.slice(0, 5).map(r => ({
+      reason: r.reason?.message || 'Unknown error',
+      npsn: r.reason?.details?.npsn || 'unknown',
+      operationName: r.reason?.details?.operationName,
+    }));
+    logger.warn(
+      { failures: failureDetails, totalFailed: failed },
+      `${failed} school pages failed to generate`
+    );
+  }
+
+  return { successful, failed };
+}
+
+/**
+ * Prepare the build environment and generate shared pages.
+ * Extracted to eliminate duplication between full and incremental builds.
+ *
+ * @returns {Promise<{schools: Array, enrichmentMap: Object}>}
+ */
+async function prepareBuildEnvironment() {
+  await ensureDistDir();
+  await generateExternalStyles();
+  await generateRobotsTxt(CONFIG.SITE_URL);
+
+  const schools = await loadSchools();
+  logger.info(`Loaded ${schools.length} schools from CSV`);
+
+  if (schools.length === 0) {
+    throw new IntegrationError(
+      'No schools loaded from CSV. Build aborted - ensure schools.csv exists and contains valid data.',
+      ERROR_CODES.FILE_EMPTY,
+      { path: CONFIG.SCHOOLS_CSV_PATH }
+    );
+  }
+
+  const enrichmentMap = await loadEnrichmentData();
+  const enrichedCount = Object.keys(enrichmentMap).length;
+  if (enrichedCount > 0) {
+    logger.info(`Loaded enrichment data for ${enrichedCount} schools`);
+  }
+
+  // Run homepage generation, search data export, and province page generation in parallel.
+  // All three are independent — they read from the same schools array but write to
+  // different files. Parallelising shaves ~30ms of wall time from the critical path.
+  await Promise.all([
+    (async () => {
+      logger.info('Generating homepage...');
+      const homepageHtml = buildHomepageData(schools);
+      await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
+      logger.info('Generated homepage (index.html)');
+    })(),
+    writeSearchDataFile(schools),
+    generateProvincePages(schools),
+  ]);
+
+  return { schools, enrichmentMap };
+}
+
+/**
+ * Log the build performance report with optional GITHUB_STEP_SUMMARY.
+ *
+ * @param {BuildPerformanceTracker} tracker
+ */
+function finalizeBuild(tracker) {
+  tracker.stop();
+  tracker.logReport();
+
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    try {
+      const fs = require('fs');
+      fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, tracker.getGitHubSummary() + '\n');
+    } catch (summaryError) {
+      logger.debug(`Could not write to GITHUB_STEP_SUMMARY: ${summaryError.message}`);
+    }
+  }
+}
+
+/**
+ * Main build function. Orchestrates the build process by:
+ * 1. Ensuring dist directory exists
+ * 2. Loading school data
+ * 3. Generating external CSS file
+ * 4. Generating homepage
+ * 5. Generating province pages
+ * 6. Generating and writing pages
+ *
+ * Supports --incremental flag for faster rebuilds.
+ * Incremental mode filters schools via the build manifest so only
+ * changed (or new) pages are regenerated, sharing the same pipeline.
+ *
+ * Usage: node build-pages.js [--incremental]
+ *
+ * @param {Object} [options] - Build options
+ * @param {boolean} [options.incremental] - If true, only rebuild changed pages
+ */
+async function build(options = {}) {
+  const incremental = options.incremental || process.argv.includes('--incremental');
+  const tracker = new BuildPerformanceTracker();
+  tracker.start();
+  tracker.setBuildType(incremental ? 'incremental' : 'full');
+
+  try {
+    const { schools, enrichmentMap } = await prepareBuildEnvironment();
+
+    // Filter to changed schools for incremental builds
+    let schoolsToBuild = schools;
+    if (incremental) {
+      const manifest = await loadManifest();
+      if (manifest) {
+        const { changed, unchanged } = getChangedSchools(schools, manifest);
+        logger.info(`Incremental build: ${unchanged.length} unchanged, ${changed.length} changed`);
+        schoolsToBuild = changed;
+      } else {
+        logger.info('No manifest found, performing full build');
+      }
+    }
+
+    if (schoolsToBuild.length === 0) {
+      logger.info('No pages to rebuild');
+      tracker.recordPageCounts(0, 0);
+    } else {
+      const { successful, failed } = await writeSchoolPagesConcurrently(
+        schoolsToBuild,
+        CONFIG.BUILD_CONCURRENCY_LIMIT,
+        enrichmentMap
+      );
+      logger.info(`Generated ${successful} school pages (${failed} failed)`);
+      tracker.recordPageCounts(successful + failed, failed);
+    }
+
+    // Save manifest for future incremental builds
+    await saveManifest(createManifestFromSchools(schools));
+    logger.info('Build manifest saved');
+
+    // Full build also exports CSV; incremental does not re-export
+    if (!incremental) {
+      await exportSchoolsCsv();
+    }
+  } finally {
+    finalizeBuild(tracker);
+  }
+}
+
+/**
+ * Incremental build - only rebuilds pages that have changed.
+ * Thin wrapper for backward compatibility.
+ *
+ * @returns {Promise<void>}
+ */
+async function buildIncremental() {
+  return build({ incremental: true });
+}
+
+module.exports = {
+  // Build pipeline
+  build,
+  buildIncremental,
+  prepareBuildEnvironment,
+  finalizeBuild,
+
+  // Step functions
+  ensureDistDir,
+  loadSchools,
+  writeSchoolPage,
+  writeSchoolPagesConcurrently,
+  preCreateDirectories,
+  preCreateProvinceDirectories,
+  generateProvincePages,
+  generateRobotsTxt,
+  generateExternalStyles,
+  writeExternalStylesFile,
+  writeSearchDataFile,
+  exportSchoolsCsv,
+  createManifestFromSchools,
+
+  // Re-exported for convenience
+  computeSchoolHash,
+};
