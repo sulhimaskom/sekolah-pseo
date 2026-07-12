@@ -248,9 +248,10 @@
 | 9   | Missing Cross-Module Contracts                       | refactor | P2       | 💡 Open            |
 | 10  | Incremental/Full Build Duplication                   | refactor | P3       | 💡 Open            |
 | 11  | FEAT-003 Map Integration Strategic                   | feature  | P2       | 💡 Open (Phase 3)  |
-| 12  | on-push.yml missing issues: write permission          | ci       | P1       | ✅ Fixed this run  |
+| 12  | on-push.yml missing issues: write permission          | ci       | P1       | 🔄 Needs manual PR |
 | 13  | Unused `tracker` param in buildIncremental()           | refactor | P3       | ✅ Fixed this run  |
 | 14  | Homepage bypasses PageBuilder service boundary          | refactor | P3       | ✅ Fixed this run  |
+| 15  | FEAT-007 Regional Dashboards                         | feature  | P2       | 💡 Proposed (Phase 3) |
 
 ---
 
@@ -292,12 +293,16 @@
 
 - **Phase**: Phase 0 + Phase 1 Complete (PR merged, audit confirmed)
 - **PR #478**: MERGED into main at `9a56b31` (2026-07-12T18:57Z)
+- **PR #479**: MERGED (BuildOrchestrator extraction) at `471f0e3` (2026-07-12T19:06Z)
+- **PR #480**: MERGED (docs update) at `7c69290` (2026-07-12)
 - **Fixes now in main**:
   1. Removed unused `tracker` parameter from `scripts/build-pages.js` (fixes ESLint error)
   2. Updated `scripts/build-pages.test.js` to match
   3. **Phase 2**: Added `buildHomepageData()` to `src/services/PageBuilder.js` — enforces service boundary
   4. **Phase 2**: Removed direct template import from `scripts/build-pages.js` — reduces coupling
+  5. **Phase 2**: Extracted `src/services/BuildOrchestrator.js` — build-pages.js 542→44 lines (92% reduction), 13+ imports→1
 - **Note**: `issues: write` permission fix for `on-push.yml` could not be pushed — workflow runner token lacks `workflows` permission
 - **GitHub Issues Not Created**: Token permission limitation — `issues: write` permission missing from GITHUB_TOKEN
-- **Remaining Open Issues (local docs)**: #1–#7, #9–#11 (10 documented issues) — see docs/issues/2026-07-12/
-- **Status**: **idle — awaiting next phase execution**
+- **Phase 3 Proposal**: FEAT-007 Regional Dashboards proposed — see `docs/issues/2026-07-12/014-feat-007-regional-dashboards.md`
+- **Remaining Open Issues (local docs)**: #1–#6, #9, #11, #15 — see docs/issues/2026-07-12/
+- **Status**: **idle — all phases complete for this run**
