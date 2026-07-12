@@ -264,19 +264,19 @@ The GITHUB_TOKEN still lacks `issues: write` permission (token was issued before
 
 ### Finding Status (from docs/issues/2026-07-06/)
 
-| #   | Issue                                              | Category | Priority | Status              |
-| --- | -------------------------------------------------- | -------- | -------- | ------------------- |
-| 1   | CI/CD Workflow Overcomplexity                      | ci       | P2       | 💡 Open             |
-| 2   | Oversized Source Files (styles.js, build-pages.js) | refactor | P2       | 💡 Open             |
-| 3   | Excessive CI Secret Exposure                       | security | P1       | ✅ **FIXED**        |
-| 4   | Insufficient Python Test Coverage                  | test     | P2       | 💡 Open             |
-| 5   | Missing E2E/Integration Tests                      | test     | P2       | 💡 Open             |
-| 6   | Missing Automated Release Process                  | chore    | P2       | 💡 Open             |
-| 7   | High Coupling in Build Controller                  | refactor | P2       | 💡 Open             |
+| #   | Issue                                              | Category | Priority | Status                 |
+| --- | -------------------------------------------------- | -------- | -------- | ---------------------- |
+| 1   | CI/CD Workflow Overcomplexity                      | ci       | P2       | 💡 Open                |
+| 2   | Oversized Source Files (styles.js, build-pages.js) | refactor | P2       | 💡 Open                |
+| 3   | Excessive CI Secret Exposure                       | security | P1       | ✅ **FIXED**           |
+| 4   | Insufficient Python Test Coverage                  | test     | P2       | 💡 Open                |
+| 5   | Missing E2E/Integration Tests                      | test     | P2       | 💡 Open                |
+| 6   | Missing Automated Release Process                  | chore    | P2       | 💡 Open                |
+| 7   | High Coupling in Build Controller                  | refactor | P2       | 💡 Open                |
 | 8   | Duplicate Slug Computation                         | refactor | P3       | ✅ **FIXED** (d6ec7db) |
-| 9   | Missing Cross-Module Contracts                     | refactor | P2       | 💡 Open             |
-| 10  | Incremental/Full Build Duplication                 | refactor | P3       | 💡 Open             |
-| 11  | FEAT-003 Map Integration Strategic                 | feature  | P2       | 💡 Open (Phase 3)   |
+| 9   | Missing Cross-Module Contracts                     | refactor | P2       | 💡 Open                |
+| 10  | Incremental/Full Build Duplication                 | refactor | P3       | 💡 Open                |
+| 11  | FEAT-003 Map Integration Strategic                 | feature  | P2       | 💡 Open (Phase 3)      |
 
 ---
 

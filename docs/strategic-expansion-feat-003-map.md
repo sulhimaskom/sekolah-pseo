@@ -24,23 +24,27 @@ Implement an interactive map of all 3,474 Indonesian schools using Leaflet.js + 
 ## Value Justification
 
 ### 1. Strategic Alignment
+
 - Directly implements **Phase 2: Geographic Visualization** from `docs/roadmap.md`
 - The ONLY roadmap phase whose features are all currently unstarted
 - High visibility feature that demonstrates product maturity
 
 ### 2. Existing Infrastructure (Zero New Dependencies)
+
 - **Coordinates ready**: 100% of schools have lat/lon (validated by `hasCoordinateData()` in utils.js)
 - **Flat array search data**: `schools.json` (877KB) already generated at build time — GeoJSON would add ~0.5MB
 - **No backend required**: Static GeoJSON generated at build time, served alongside HTML
 - **No API keys**: OpenStreetMap tiles + Leaflet.js are free and open-source
 
 ### 3. User Impact
+
 - **Visual discovery**: Map is the #1 requested feature for school directories
 - **Mobile-ready**: Leaflet + OSM tiles work on all devices
 - **Progressive enhancement**: Site works fully without JS; map enhances experience
 - **SEO benefit**: School location data in structured format improves local search relevance
 
 ### 4. Build Impact
+
 - GeoJSON generation: negligible (<100ms, data already in memory during build)
 - Output size: ~0.5MB additional (parallel to schools.json)
 - No network requests at build time
@@ -115,16 +119,16 @@ Add a `generateSchoolGeoJson()` function to the build pipeline that produces:
 
 ### Files to Modify
 
-| File | Change |
-|------|--------|
-| `scripts/build-pages.js` | Add `generateSchoolGeoJson()` step to `prepareBuildEnvironment()` |
-| `src/presenters/templates/homepage.js` | Add map container div + Leaflet scripts to homepage HTML |
-| `scripts/build-performance.js` | Add GeoJSON generation to budget tracking (if budgets applied) |
+| File                                   | Change                                                            |
+| -------------------------------------- | ----------------------------------------------------------------- |
+| `scripts/build-pages.js`               | Add `generateSchoolGeoJson()` step to `prepareBuildEnvironment()` |
+| `src/presenters/templates/homepage.js` | Add map container div + Leaflet scripts to homepage HTML          |
+| `scripts/build-performance.js`         | Add GeoJSON generation to budget tracking (if budgets applied)    |
 
 ### Files to Create
 
-| File | Purpose |
-|------|---------|
+| File                                          | Purpose                                               |
+| --------------------------------------------- | ----------------------------------------------------- |
 | `src/presenters/templates/shared/map-init.js` | Shared Leaflet initialization + GeoJSON loading logic |
 
 ---
@@ -132,16 +136,19 @@ Add a `generateSchoolGeoJson()` function to the build pipeline that produces:
 ## Implementation Plan
 
 ### Step 1: GeoJSON Generation (30 min)
+
 - Add `generateSchoolGeoJson(schools)` to `build-pages.js`
 - Filter to only schools with valid coordinates (lat != 0, lon != 0)
 - Output to `dist/schools.geojson`
 
 ### Step 2: Homepage Integration (45 min)
+
 - Add map container div with conditional CSS (hidden → visible on JS load)
 - Append Leaflet CSS `<link>` in `<head>` (with `media="print" onload="this.media='all'"` for non-blocking)
 - Append Leaflet JS + init script before `</body>`
 
 ### Step 3: Performance & QA (30 min)
+
 - Verify build time impact (<100ms added)
 - Test on mobile viewport (320px width)
 - Test with JS disabled (no map, but site works)
@@ -151,13 +158,13 @@ Add a `generateSchoolGeoJson()` function to the build pipeline that produces:
 
 ## Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| OSM tile rate limiting (dev/test) | Low | Medium | Use local tiles for dev; MapTiler free tier for production |
-| 3,474 markers on mobile | Medium | Medium | Add marker clustering in post-MVP; defer heavy rendering |
-| Leaflet CDN availability | Low | Medium | Bundle Leaflet CSS/JS (~40KB gzipped) or use multiple CDN fallbacks |
-| Build time regression | Low | Low | Data already in memory; GeoJSON serialization is O(n) |
-| Accessibility (screen reader on map) | Medium | Medium | Provide fallback text description; ARIA labels on map container |
+| Risk                                 | Likelihood | Impact | Mitigation                                                          |
+| ------------------------------------ | ---------- | ------ | ------------------------------------------------------------------- |
+| OSM tile rate limiting (dev/test)    | Low        | Medium | Use local tiles for dev; MapTiler free tier for production          |
+| 3,474 markers on mobile              | Medium     | Medium | Add marker clustering in post-MVP; defer heavy rendering            |
+| Leaflet CDN availability             | Low        | Medium | Bundle Leaflet CSS/JS (~40KB gzipped) or use multiple CDN fallbacks |
+| Build time regression                | Low        | Low    | Data already in memory; GeoJSON serialization is O(n)               |
+| Accessibility (screen reader on map) | Medium     | Medium | Provide fallback text description; ARIA labels on map container     |
 
 ---
 
