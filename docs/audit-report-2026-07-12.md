@@ -243,7 +243,7 @@
 | 4   | Insufficient Python Test Coverage                    | test     | P2       | 💡 Open            |
 | 5   | Missing E2E/Integration Tests                        | test     | P2       | 💡 Open            |
 | 6   | Missing Automated Release Process                    | chore    | P3       | 💡 Open            |
-| 7   | High Coupling in Build Controller                    | refactor | P2       | 💡 Open            |
+| 7   | High Coupling in Build Controller                    | refactor | P2       | ✅ Fixed (#479)    |
 | 8   | Duplicate Slug Computation                           | refactor | P3       | ✅ Fixed (d6ec7db) |
 | 9   | Missing Cross-Module Contracts                       | refactor | P2       | 💡 Open            |
 | 10  | Incremental/Full Build Duplication                   | refactor | P3       | 💡 Open            |

@@ -1,7 +1,9 @@
-# Phase 2 - Hardening: High Coupling in build-pages.js Controller
+# [RESOLVED] Phase 2 - Hardening: High Coupling in build-pages.js Controller
 
 **Category**: refactor | **Priority**: P2
 **Evaluation Date**: 2026-07-12
+**Resolution Date**: 2026-07-12
+**Resolution PR**: #479
 **Audit Report**: docs/audit-report-2026-07-12.md
 
 ## Description
