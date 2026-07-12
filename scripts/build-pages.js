@@ -529,10 +529,9 @@ async function build(options = {}) {
  * Incremental build - only rebuilds pages that have changed.
  * Thin wrapper for backward compatibility.
  *
- * @param {BuildPerformanceTracker} [tracker] - Optional performance tracker (unused, kept for API compat)
  * @returns {Promise<void>}
  */
-async function buildIncremental(tracker) {
+async function buildIncremental() {
   return build({ incremental: true });
 }
 

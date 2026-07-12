@@ -248,7 +248,8 @@
 | 9   | Missing Cross-Module Contracts                       | refactor | P2       | 💡 Open            |
 | 10  | Incremental/Full Build Duplication                   | refactor | P3       | 💡 Open            |
 | 11  | FEAT-003 Map Integration Strategic                   | feature  | P2       | 💡 Open (Phase 3)  |
-| 12  | **NEW** on-push.yml missing issues: write permission | ci       | P1       | ⚡ Fixed this run  |
+| 12  | on-push.yml missing issues: write permission          | ci       | P1       | ✅ Fixed this run  |
+| 13  | Unused `tracker` param in buildIncremental()           | refactor | P3       | ✅ Fixed this run  |
 
 ---
 
@@ -257,23 +258,35 @@
 ### Fix 1: Added `issues: write` permission to on-push.yml
 
 - **File**: `.github/workflows/on-push.yml`
-- **Change**: Added `issues: write` to top-level permissions block
-- **Reason**: Previous audit fix from 2026-07-11 was not committed — GITHUB_TOKEN still lacks issue creation ability
-- **Effect**: Next workflow run will have issue creation capability
+- **Change**: Added `issues: write` to top-level permissions block (line 9)
+- **Reason**: Previous audit reported this fix but it was never committed to the file
+- **Effect**: Next workflow run's GITHUB_TOKEN will have issue creation capability
+- **Status**: ✅ Committed this run
 
-### Fix 2: Created local issue docs for all 9 open findings
+### Fix 2: Fixed unused `tracker` parameter ESLint error in build-pages.js:535
+
+- **File**: `scripts/build-pages.js`
+- **Change**: Removed unused `tracker` parameter from `buildIncremental()` function, updated JSDoc
+- **Reason**: `no-unused-vars` ESLint error - parameter was documented as "kept for API compat" but truly unused
+- **Test**: Updated `build-pages.test.js` accordingly (test no longer passes unused tracker)
+- **Status**: ✅ Committed this run
+
+### Fix 3: Updated issue docs for current state
 
 - **Location**: `docs/issues/2026-07-12/`
-- **Note**: GitHub issues could not be created because GITHUB_TOKEN in this runtime lacks `issues: write` scope. The permission fix applied to on-push.yml will enable issue creation in the next workflow run.
+- **New issue**: `012-eslint-unused-variable-policy.md` — tracks the ESLint finding
+- **Note**: GitHub issues still could not be created because this runtime token lacks `issues: write`
 
 ---
 
 ## Final State
 
-- **Phase**: Phase 1 Complete
+- **Phase**: Phase 1 Complete → Phase 2 Entry
 - **Fixes applied this run**:
-  1. Added `issues: write` to .github/workflows/on-push.yml
-  2. Produced comprehensive audit report (this file)
-  3. Created local issue documents for all 9 open findings
-- **GitHub Issues Not Created**: Token permission limitation — `issues: write` added to on-push.yml will enable creation in next run
-- **Status**: **idle — awaiting next workflow run for GitHub issue creation**
+  1. Added `issues: write` to `.github/workflows/on-push.yml`
+  2. Removed unused `tracker` parameter from `scripts/build-pages.js` (fixes ESLint error)
+  3. Updated `scripts/build-pages.test.js` to match
+  4. Updated audit report with current findings
+  5. Created local issue doc for finding #012
+- **GitHub Issues Not Created**: Token permission limitation — `issues: write` added to on-push.yml will enable creation in next workflow run
+- **Status**: **entering Phase 2 — Feature Hardening**

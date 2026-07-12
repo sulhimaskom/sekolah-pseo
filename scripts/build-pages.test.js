@@ -362,9 +362,7 @@ test('buildIncremental performs full build when no manifest exists', async () =>
   assert.ok(exists, 'index.html should exist after incremental build without manifest');
 });
 
-test('buildIncremental handles tracker parameter', async () => {
-  const { BuildPerformanceTracker } = require('./build-performance');
-
+test('buildIncremental runs without error', async () => {
   // Remove manifest to simulate first run
   const manifestPath = path.join(CONFIG.ROOT_DIR, '.build-manifest.json');
   try {
@@ -373,17 +371,16 @@ test('buildIncremental handles tracker parameter', async () => {
     // Ignore if manifest doesn't exist
   }
 
-  const tracker = new BuildPerformanceTracker();
-  tracker.start();
+  await buildIncremental();
 
-  await buildIncremental(tracker);
-
-  tracker.stop();
-
-  // Tracker should have recorded pages
-  assert.ok(tracker.getElapsedMs() >= 0);
-  const report = tracker.generateReport();
-  assert.ok(report.metrics.totalPages >= 0);
+  // Verify build output exists (index.html should be generated)
+  const indexPath = path.join(CONFIG.ROOT_DIR, 'dist', 'index.html');
+  try {
+    await fs.access(indexPath);
+    assert.ok(true, 'index.html exists after incremental build');
+  } catch {
+    assert.fail('index.html should exist after incremental build');
+  }
 });
 
 test('generateRobotsTxt creates robots.txt with correct sitemap URL', async () => {
