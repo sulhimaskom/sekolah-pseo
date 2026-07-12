@@ -24,6 +24,7 @@ const { IntegrationError, ERROR_CODES } = require('./resilience');
 const { safeReadFile, safeWriteFile, fastWriteFile, safeMkdir } = require('./fs-safe');
 const {
   buildSchoolPageData,
+  buildHomepageData,
   getSchoolRelativePath,
   getUniqueDirectories,
   getUniqueProvinces,
@@ -31,7 +32,6 @@ const {
   groupSchoolsByProvince,
   prepareSchoolDataForSearch,
 } = require('../src/services/PageBuilder');
-const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('./manifest');
 const { BuildPerformanceTracker } = require('./build-performance');
 const { loadEnrichmentData } = require('./enrichment');
@@ -429,7 +429,7 @@ async function prepareBuildEnvironment() {
   await Promise.all([
     (async () => {
       logger.info('Generating homepage...');
-      const homepageHtml = generateHomepageHtml(schools);
+      const homepageHtml = buildHomepageData(schools);
       await safeWriteFile(path.join(distDir, 'index.html'), homepageHtml);
       logger.info('Generated homepage (index.html)');
     })(),

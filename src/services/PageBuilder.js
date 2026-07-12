@@ -5,6 +5,7 @@ const slugify = require('../../scripts/slugify');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
+const { generateHomepageHtml } = require('../presenters/templates/homepage');
 
 const REQUIRED_SCHOOL_FIELDS = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
 
@@ -214,6 +215,24 @@ function groupSchoolsByProvince(schools) {
 }
 
 /**
+ * Build homepage data (HTML content).
+ * Routes through PageBuilder so controllers don't import templates directly.
+ *
+ * @param {Array<Object>} schools - Array of school data objects
+ * @returns {string} Homepage HTML content
+ */
+function buildHomepageData(schools) {
+  if (!Array.isArray(schools)) {
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
+  }
+
+  return generateHomepageHtml(schools);
+}
+
+/**
  * Prepare minimal school data for client-side search.
  * This belongs in the service layer (not the template/presenter) because it:
  * 1. Computes relative paths via getSchoolRelativePath() (service concern)
@@ -246,6 +265,7 @@ function prepareSchoolDataForSearch(schools) {
 
 module.exports = {
   buildSchoolPageData,
+  buildHomepageData,
   getSchoolRelativePath,
   getUniqueDirectories,
   getUniqueProvinces,
