@@ -33,7 +33,12 @@ const {
   groupSchoolsByProvince,
   prepareSchoolDataForSearch,
 } = require('./PageBuilder');
-const { loadManifest, saveManifest, getChangedSchools, computeSchoolHash } = require('../../scripts/manifest');
+const {
+  loadManifest,
+  saveManifest,
+  getChangedSchools,
+  computeSchoolHash,
+} = require('../../scripts/manifest');
 const { BuildPerformanceTracker } = require('../../scripts/build-performance');
 const { loadEnrichmentData } = require('../../scripts/enrichment');
 
