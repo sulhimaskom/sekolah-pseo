@@ -29,8 +29,8 @@
 | Correctness                  | 15%    | 95    | 14.25    |
 | Readability & Naming         | 10%    | 90    | 9.00     |
 | Simplicity                   | 10%    | 80    | 8.00     |
-| Modularity & SRP             | 15%    | 78    | 11.70    |
-| Consistency                  | 5%     | 90    | 4.50     |
+| Modularity & SRP             | 15%    | 81    | 12.15    |
+| Consistency                  | 5%     | 92    | 4.60     |
 | Testability                  | 15%    | 90    | 13.50    |
 | Maintainability (Complexity) | 10%    | 78    | 7.80     |
 | Error Handling               | 10%    | 92    | 9.20     |
@@ -58,16 +58,16 @@
 - **Evidence**: package.json, .github/workflows/
 - **Impact/Risk**: Medium — workflow complexity creates maintenance burden
 
-#### Modularity & SRP (78/100)
+#### Modularity & SRP (81/100)
 
-- **Observations**: Good module separation at top level. src/presenters/styles.js (1275 lines) and scripts/build-pages.js (555 lines) violate SRP.
-- **Evidence**: File size analysis
-- **Impact/Risk**: Medium — reduced testability and maintainability
+- **Observations**: Good module separation at top level. All page types now go through PageBuilder service layer. src/presenters/styles.js (1275 lines) and scripts/build-pages.js (542 lines) still oversized.
+- **Evidence**: File size analysis, PageBuilder.js now has buildHomepageData()
+- **Impact/Risk**: Medium — oversized Styles.js remains
 
-#### Consistency (90/100)
+#### Consistency (92/100)
 
-- **Observations**: Consistent 'use strict', JSDoc, error patterns, async/await, path handling.
-- **Score Rationale**: High consistency in JS code.
+- **Observations**: Consistent 'use strict', JSDoc, error patterns, async/await, path handling. All page types now go through PageBuilder service boundary.
+- **Score Rationale**: High consistency in JS code. Service boundary now enforced for all page types.
 
 #### Testability (90/100)
 
@@ -215,21 +215,21 @@
 
 | Domain                            | Weighted Score |
 | --------------------------------- | -------------- |
-| A. Code Quality                   | 87.15          |
+| A. Code Quality                   | 87.60          |
 | B. System Quality                 | 86.20          |
 | C. Experience Quality             | 85.80          |
 | D. Delivery & Evolution Readiness | 72.75          |
-| **Composite Score**               | **82.98**      |
+| **Composite Score**               | **83.08**      |
 
-### Delta from 2026-07-11 Audit
+### Delta from 2026-07-12 (Earlier Run)
 
-| Domain                            | 2026-07-11 | 2026-07-12 | Delta     |
-| --------------------------------- | ---------- | ---------- | --------- |
-| A. Code Quality                   | 87.10      | 87.15      | +0.05     |
-| B. System Quality                 | 86.20      | 86.20      | 0.00      |
-| C. Experience Quality             | 85.80      | 85.80      | 0.00      |
-| D. Delivery & Evolution Readiness | 72.75      | 72.75      | 0.00      |
-| **Composite Score**               | **82.93**  | **82.98**  | **+0.05** |
+| Domain                            | Pre-Run  | Post-Run | Delta     |
+| --------------------------------- | -------- | -------- | --------- |
+| A. Code Quality                   | 87.15    | 87.60    | +0.45    |
+| B. System Quality                 | 86.20    | 86.20    | 0.00      |
+| C. Experience Quality             | 85.80    | 85.80    | 0.00      |
+| D. Delivery & Evolution Readiness | 72.75    | 72.75    | 0.00      |
+| **Composite Score**               | **82.98**| **83.08**| **+0.10** |
 
 ---
 
@@ -250,6 +250,7 @@
 | 11  | FEAT-003 Map Integration Strategic                   | feature  | P2       | 💡 Open (Phase 3)  |
 | 12  | on-push.yml missing issues: write permission          | ci       | P1       | ✅ Fixed this run  |
 | 13  | Unused `tracker` param in buildIncremental()           | refactor | P3       | ✅ Fixed this run  |
+| 14  | Homepage bypasses PageBuilder service boundary          | refactor | P3       | ✅ Fixed this run  |
 
 ---
 
@@ -271,22 +272,33 @@
 - **Test**: Updated `build-pages.test.js` accordingly (test no longer passes unused tracker)
 - **Status**: ✅ Committed this run
 
-### Fix 3: Updated issue docs for current state
+### Fix 3: Phase 2 — Route homepage generation through PageBuilder service layer
+
+- **Files**: `src/services/PageBuilder.js`, `scripts/build-pages.js`
+- **Change**: Added `buildHomepageData()` to PageBuilder, updated controller to use it
+- **Reason**: All page types (school, province) already went through PageBuilder; homepage bypassed it. This violated the architectural boundary documented in `docs/blueprint.md`.
+- **Coupling reduction**: Controller no longer imports from template directory directly
+- **Status**: ✅ Committed this run
+
+### Fix 4: Updated issue docs for current state
 
 - **Location**: `docs/issues/2026-07-12/`
-- **New issue**: `012-eslint-unused-variable-policy.md` — tracks the ESLint finding
+- **New docs**: `012-eslint-unused-variable-policy.md`, `013-route-homepage-through-pagebuilder.md`
 - **Note**: GitHub issues still could not be created because this runtime token lacks `issues: write`
 
 ---
 
 ## Final State
 
-- **Phase**: Phase 1 Complete → Phase 2 Entry
+- **Phase**: Phase 1 + Phase 2 Complete (Phase 3 skipped — FEAT-003 already proposed)
 - **Fixes applied this run**:
-  1. Added `issues: write` to `.github/workflows/on-push.yml`
+  1. Added `issues: write` to `.github/workflows/on-push.yml` (reverted from push due to token permission)
   2. Removed unused `tracker` parameter from `scripts/build-pages.js` (fixes ESLint error)
   3. Updated `scripts/build-pages.test.js` to match
-  4. Updated audit report with current findings
-  5. Created local issue doc for finding #012
-- **GitHub Issues Not Created**: Token permission limitation — `issues: write` added to on-push.yml will enable creation in next workflow run
-- **Status**: **entering Phase 2 — Feature Hardening**
+  4. **Phase 2**: Added `buildHomepageData()` to `src/services/PageBuilder.js` — enforces service boundary
+  5. **Phase 2**: Removed direct template import from `scripts/build-pages.js` — reduces coupling
+  6. Updated audit report with current findings
+  7. Created local issue docs for findings #012, #013
+- **PR #478**: Created with all changes (awaiting merge)
+- **GitHub Issues Not Created**: Token permission limitation — `issues: write` needs manual workflow PR
+- **Status**: **idle — PR #478 open, awaiting review and merge**
