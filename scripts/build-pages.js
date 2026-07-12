@@ -468,39 +468,58 @@ function finalizeBuild(tracker) {
  * 5. Generating province pages
  * 6. Generating and writing pages
  *
- * Supports --incremental flag for faster rebuilds
- * Usage: node build-pages.js --incremental
+ * Supports --incremental flag for faster rebuilds.
+ * Incremental mode filters schools via the build manifest so only
+ * changed (or new) pages are regenerated, sharing the same pipeline.
+ *
+ * Usage: node build-pages.js [--incremental]
+ *
+ * @param {Object} [options] - Build options
+ * @param {boolean} [options.incremental] - If true, only rebuild changed pages
  */
 async function build(options = {}) {
   const incremental = options.incremental || process.argv.includes('--incremental');
   const tracker = new BuildPerformanceTracker();
   tracker.start();
+  tracker.setBuildType(incremental ? 'incremental' : 'full');
 
   try {
-    if (incremental) {
-      return await buildIncremental(tracker);
-    }
-
-    tracker.setBuildType('full');
-
     const { schools, enrichmentMap } = await prepareBuildEnvironment();
 
-    const { successful, failed } = await writeSchoolPagesConcurrently(
-      schools,
-      CONFIG.BUILD_CONCURRENCY_LIMIT,
-      enrichmentMap
-    );
-    logger.info(`Generated ${successful} school pages (${failed} failed)`);
+    // Filter to changed schools for incremental builds
+    let schoolsToBuild = schools;
+    if (incremental) {
+      const manifest = await loadManifest();
+      if (manifest) {
+        const { changed, unchanged } = getChangedSchools(schools, manifest);
+        logger.info(`Incremental build: ${unchanged.length} unchanged, ${changed.length} changed`);
+        schoolsToBuild = changed;
+      } else {
+        logger.info('No manifest found, performing full build');
+      }
+    }
 
-    // Run manifest saving and CSV export in parallel (independent operations)
-    await Promise.all([
-      saveManifest(createManifestFromSchools(schools)).then(() => {
-        logger.info('Build manifest saved');
-      }),
-      exportSchoolsCsv(),
-    ]);
+    if (schoolsToBuild.length === 0) {
+      logger.info('No pages to rebuild');
+      tracker.recordPageCounts(0, 0);
+    } else {
+      const { successful, failed } = await writeSchoolPagesConcurrently(
+        schoolsToBuild,
+        CONFIG.BUILD_CONCURRENCY_LIMIT,
+        enrichmentMap
+      );
+      logger.info(`Generated ${successful} school pages (${failed} failed)`);
+      tracker.recordPageCounts(successful + failed, failed);
+    }
 
-    tracker.recordPageCounts(successful + failed, failed);
+    // Save manifest for future incremental builds
+    await saveManifest(createManifestFromSchools(schools));
+    logger.info('Build manifest saved');
+
+    // Full build also exports CSV; incremental does not re-export
+    if (!incremental) {
+      await exportSchoolsCsv();
+    }
   } finally {
     finalizeBuild(tracker);
   }
@@ -508,44 +527,13 @@ async function build(options = {}) {
 
 /**
  * Incremental build - only rebuilds pages that have changed.
- * Uses a manifest file to track built files and their content hashes.
+ * Thin wrapper for backward compatibility.
  *
- * @param {BuildPerformanceTracker} [tracker] - Optional performance tracker
+ * @param {BuildPerformanceTracker} [tracker] - Optional performance tracker (unused, kept for API compat)
+ * @returns {Promise<void>}
  */
 async function buildIncremental(tracker) {
-  if (tracker) tracker.setBuildType('incremental');
-
-  const { schools, enrichmentMap } = await prepareBuildEnvironment();
-
-  // Load manifest to check for changes
-  const manifest = await loadManifest();
-
-  let schoolsToBuild = schools;
-
-  if (manifest) {
-    const { changed, unchanged } = getChangedSchools(schools, manifest);
-    logger.info(`Incremental build: ${unchanged.length} unchanged, ${changed.length} changed`);
-    schoolsToBuild = changed;
-  } else {
-    logger.info('No manifest found, performing full build');
-  }
-
-  if (schoolsToBuild.length === 0) {
-    logger.info('No pages to rebuild');
-    if (tracker) tracker.recordPageCounts(0, 0);
-  } else {
-    const { successful, failed } = await writeSchoolPagesConcurrently(
-      schoolsToBuild,
-      CONFIG.BUILD_CONCURRENCY_LIMIT,
-      enrichmentMap
-    );
-    logger.info(`Generated ${successful} school pages (${failed} failed)`);
-    if (tracker) tracker.recordPageCounts(successful + failed, failed);
-  }
-
-  // Save manifest for future incremental builds
-  await saveManifest(createManifestFromSchools(schools));
-  logger.info('Build manifest saved');
+  return build({ incremental: true });
 }
 
 if (require.main === module) {
