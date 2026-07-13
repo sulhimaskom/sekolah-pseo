@@ -405,6 +405,26 @@ test('extractFilterOptions returns empty arrays for non-array input', () => {
   });
 });
 
+test('generateHomepageHtml falls back to raw value for unknown status in option display', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+
+  const schools = [
+    {
+      npsn: '12345678',
+      nama: 'SMA Negeri 1',
+      provinsi: 'Jawa Barat',
+      bentuk_pendidikan: 'SMA',
+      status: 'X', // Unknown status - should fall back to raw value
+    },
+  ];
+
+  const html = generateHomepageHtml(schools);
+
+  // The unknown status 'X' should appear as-is in the dropdown since it's not in the statusLabels map
+  assert.ok(html.includes('value="X"'), 'Unknown status value X should appear in dropdown options');
+  assert.ok(html.includes('>X<'), 'Unknown status X should be displayed as-is (not mapped)');
+});
+
 test('generateHomepageHtml includes status filter dropdown when schools have status data', () => {
   const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 
