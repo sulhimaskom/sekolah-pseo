@@ -220,7 +220,8 @@ sekolah-pseo/
 │   │           ├── head-meta.js    # Shared HTML head prefix
 │   │           └── back-to-top.js  # Shared back-to-top button
 │   └── services/
-│       └── PageBuilder.js   # Halaman builder service
+│       ├── PageBuilder.js       # Page data builders (paths, grouping, search)
+│       └── BuildOrchestrator.js # Build pipeline orchestration service
 ├── tests/                 # Test Python
 ├── docs/                  # Dokumentasi
 ├── CONTRIBUTING.md       # Panduan kontribusi
