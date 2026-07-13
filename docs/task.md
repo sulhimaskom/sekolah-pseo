@@ -13,20 +13,21 @@ Conducted comprehensive CI/CD health check. Fixed Prettier formatting in 8 files
 
 ### CI Health Check Results
 
-| Check             | Result                       |
-| ----------------- | ---------------------------- |
-| Build             | ✅ 3474 pages, 0 failed, 463ms |
+| Check             | Result                             |
+| ----------------- | ---------------------------------- |
+| Build             | ✅ 3474 pages, 0 failed, 463ms     |
 | ESLint            | ✅ 0 errors (2 pre-existing fixed) |
-| Prettier          | ✅ All files formatted (8 fixed) |
-| JS Tests          | ✅ 963/963 pass               |
-| Python Tests      | ✅ 27/27 pass                 |
-| Workflow Security | ✅ 6/6 files, 0 violations   |
-| npm audit         | ✅ 0 vulnerabilities          |
-| Env parity        | ✅ .env.example matches config |
+| Prettier          | ✅ All files formatted (8 fixed)   |
+| JS Tests          | ✅ 963/963 pass                    |
+| Python Tests      | ✅ 27/27 pass                      |
+| Workflow Security | ✅ 6/6 files, 0 violations         |
+| npm audit         | ✅ 0 vulnerabilities               |
+| Env parity        | ✅ .env.example matches config     |
 
 ### Actions Taken
 
 **1. Fixed Prettier formatting (7 files)**:
+
 - `docs/task.md` — Fixed formatting from main merge drift
 - `scripts/navigation.test.js` — Fixed formatting
 - `scripts/utils.test.js` — Fixed formatting
@@ -36,20 +37,21 @@ Conducted comprehensive CI/CD health check. Fixed Prettier formatting in 8 files
 - `src/services/BuildOrchestrator.js` — Fixed formatting
 
 **2. Fixed ESLint unused-variable errors in `scripts/utils.test.js`**:
+
 - Removed unused `const { RateLimiter } = require('./rate-limiter')` import (line 464)
 - Removed unused `index` parameter from `getName` callback (line 467)
 
 ### Verification
 
-| Check             | Result                       |
-| ----------------- | ---------------------------- |
-| Build             | 3474 pages, 0 failed, 463ms |
-| ESLint            | 0 errors                     |
-| Prettier          | All files formatted          |
-| JS Tests          | 963/963 pass                 |
-| Python Tests      | 27/27 pass                   |
-| npm audit         | 0 vulnerabilities            |
-| Zero regressions  | Confirmed                    |
+| Check            | Result                      |
+| ---------------- | --------------------------- |
+| Build            | 3474 pages, 0 failed, 463ms |
+| ESLint           | 0 errors                    |
+| Prettier         | All files formatted         |
+| JS Tests         | 963/963 pass                |
+| Python Tests     | 27/27 pass                  |
+| npm audit        | 0 vulnerabilities           |
+| Zero regressions | Confirmed                   |
 
 ### Acceptance Criteria
 
@@ -8096,6 +8098,38 @@ Optimized three hotspots in the static site generation pipeline that survived th
 - **Suggestion**: Align `preCreateProvinceDirectories()` with the `preCreateDirectories()` pattern: collect failures in an array, return them, log a warning with failure count. Update the single call site if needed.
 - **Priority**: Low
 - **Effort**: Small
+
+### [REFACTOR-005] Consolidate `getUniqueProvinces()` and `aggregateByProvince()` — Duplicate Province Aggregation
+
+- **Location**: `src/services/PageBuilder.js:126-153` and `src/presenters/templates/homepage.js:41-69`
+- **Issue**: Both functions iterate all schools, filter by `provinsi`, build a `Map<string, {name, slug, count}>`, and return `Array.from(Map.values())`. `getUniqueProvinces()` is used by `BuildOrchestrator.preCreateProvinceDirectories()`; `aggregateByProvince()` is exported for tests and public API. The only behavioral difference is sorting: `aggregateByProvince()` sorts by Indonesian locale, `getUniqueProvinces()` does not. Any change to province aggregation logic (field selection, data shape, slug generation) must be applied in two places.
+- **Suggestion**: Extract the shared province aggregation logic into a single internal function (e.g., in `PageBuilder.js` or a shared utility). Both public functions become thin wrappers: one adds sorting, the other does not. This eliminates the duplication while preserving the sorting difference. Update tests accordingly.
+- **Priority**: Medium
+- **Effort**: Small
+
+### [REFACTOR-006] Consolidate `REQUIRED_SCHOOL_FIELDS` Constant — Duplicated Across Layers
+
+- **Location**: `src/services/PageBuilder.js:10` and `src/presenters/templates/school-page.js:67`
+- **Issue**: The array `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']` is defined as `REQUIRED_SCHOOL_FIELDS` in `PageBuilder.js` and duplicated inline as `requiredFields` in `school-page.js:generateSchoolPageHtml()`. If the required fields evolve (e.g., adding `alamat` as required), both definitions must be updated in lockstep — a maintenance trap that has already been documented as a `REQUIRED_SCHOOL_FIELDS` constant export for this purpose.
+- **Suggestion**: Export `REQUIRED_SCHOOL_FIELDS` from `PageBuilder.js` and import it in `school-page.js`. Remove the inline `requiredFields` definition. This ensures the template layer always validates against the same field set as the service layer.
+- **Priority**: Low
+- **Effort**: Trivial
+
+### [REFACTOR-007] Doc-Code Mismatch: `extractFilterOptions()` Status Incorrectly Documented as Removed
+
+- **Location**: `docs/task.md` (TASK-019, lines 2822 and 2896) vs `src/presenters/templates/homepage.js:14-34,715`
+- **Issue**: Multiple task entries state that `extractFilterOptions()` was "Removed now-unused" (line 2822) and "Removed unused `extractFilterOptions()` function (detected and cleaned via lint)" (line 2896). However, the function is still present in the source — defined at line 14, exported at line 715, and tested in `homepage.test.js`. This is either: (a) the removal was documented but never applied to the code, or (b) the function was re-added after removal without updating the documentation. Either way, the documentation is actively misleading.
+- **Suggestion**: Determine the correct status: if `extractFilterOptions()` truly should be removed (since `aggregateProvinceAndFilters()` covers both `aggregateByProvince` and `extractFilterOptions` in a single pass), remove it from source, update tests to use `aggregateProvinceAndFilters()` for direct testing, and correct the doc. If it should be kept for backward compatibility, remove the "Removed" statements from the doc.
+- **Priority**: Low
+- **Effort**: Small
+
+### [REFACTOR-008] Extract Common Error Wrapping Pattern in `fs-safe.js`
+
+- **Location**: `scripts/fs-safe.js:51-212`
+- **Issue**: Every `safeXxx` function follows the identical pattern: `retry(withTimeout(fs.Xxx(...), timeout, label))` + `.catch(error => { throw new IntegrationError(...) })`. This pattern is repeated for `safeReadFile`, `safeWriteFile`, `safeMkdir`, `safeAccess`, `safeReaddir`, `safeStat`, `safeUnlink` — 7 times. Each repetition varies only in: the underlying `fs` call, timeout value, error code, and error message template. The structural duplication makes it harder to add new safe wrappers and risks inconsistency (e.g., some have `retry(maxAttempts: 3)`, `safeMkdir` uses `maxAttempts: 2`).
+- **Suggestion**: Extract a helper function, e.g., `wrapFsOp(fsPromise, options)` that encapsulates the `retry(withTimeout(...))` + `IntegrationError` wrapping. Each `safeXxx` function becomes a 3-line call to the helper with the specific `fs` call, timeout, error code, and context. This reduces ~150 lines of structural boilerplate to ~30 lines, ensures consistent error messages, and makes adding new operations trivial.
+- **Priority**: Low
+- **Effort**: Medium
 
 ---
 
