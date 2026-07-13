@@ -2,10 +2,9 @@ const { escapeHtml } = require('../../../scripts/utils');
 const CONFIG = require('../../../scripts/config');
 const slugify = require('../../../scripts/slugify');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
+const { generateFooterHtml } = require('./shared/footer');
+const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
-
-// Hoisted constant - computed once at module load
-const CURRENT_YEAR = new Date().getFullYear();
 
 /**
  * Extract unique values for filter dropdowns
@@ -188,9 +187,7 @@ function generateHomepageHtml(schools) {
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
   
   <header role="banner">
-    <nav aria-label="Navigasi utama">
-      <span aria-current="page">Beranda</span>
-    </nav>
+    ${generateBreadcrumbHtml([{ label: 'Beranda' }])}
   </header>
   
   <main id="main-content" role="main">
@@ -290,10 +287,10 @@ function generateHomepageHtml(schools) {
     </section>
   </main>
   
-  <footer role="contentinfo">
-    <p>&copy; ${CURRENT_YEAR} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
-    <p class="footer-links"><a href="/data/schools.csv" download>Unduh Data Sekolah (CSV)</a></p>
-  </footer>
+  ${generateFooterHtml({
+    extraContent:
+      '\n    <p class="footer-links"><a href="/data/schools.csv" download>Unduh Data Sekolah (CSV)</a></p>',
+  })}
   
   ${generateBackToTopHtml()}
   

@@ -32,7 +32,8 @@ scripts/           # Controllers and utilities
 
 src/
 ├── services/
-│   └── PageBuilder.js  # Page builder service layer
+│   ├── PageBuilder.js       # Page data builders (paths, grouping, search)
+│   └── BuildOrchestrator.js # Build pipeline orchestration service
 └── presenters/
     ├── design-system.js   # Design tokens
     ├── styles.js         # CSS generator
@@ -42,7 +43,9 @@ src/
         ├── province-page.js  # Province page HTML template
         └── shared/
             ├── head-meta.js      # Shared HTML head prefix (security headers, meta)
-            └── back-to-top.js    # Shared back-to-top button HTML + script
+            ├── back-to-top.js    # Shared back-to-top button HTML + script
+            ├── navigation.js     # Shared breadcrumb navigation component
+            └── footer.js        # Shared footer component
 ```
 
 ## Configuration Module (`scripts/config.js`)
