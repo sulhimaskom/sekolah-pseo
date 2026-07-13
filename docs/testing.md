@@ -66,6 +66,9 @@ Located in `scripts/*.test.js`:
 - `freshness-report.test.js` - Freshness report tests
 - `data-quality.test.js` - Data quality tests
 - `data-schema.test.js` - Data schema validation tests
+- `navigation.test.js` - Breadcrumb navigation component tests
+- `footer.test.js` - Footer component tests
+- `back-to-top.test.js` - Back-to-top button component tests
 
 ### Python Tests
 
@@ -201,9 +204,9 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 26 test files, 902 test cases, 84 suites
+- JavaScript: 29 test files, 963 test cases
 - Python: 27 test cases (standalone runner)
-- Total: 929 tests, 100% pass rate
+- Total: 990 tests, 100% pass rate
 
 ## Test Output Examples
 

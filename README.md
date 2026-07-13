@@ -218,7 +218,9 @@ sekolah-pseo/
 │   │       ├── school-page.js
 │   │       └── shared/
 │   │           ├── head-meta.js    # Shared HTML head prefix
-│   │           └── back-to-top.js  # Shared back-to-top button
+│   │           ├── back-to-top.js  # Shared back-to-top button
+│   │           ├── navigation.js   # Shared breadcrumb navigation component
+│   │           └── footer.js       # Shared footer component
 │   └── services/
 │       ├── PageBuilder.js       # Page data builders (paths, grouping, search)
 │       └── BuildOrchestrator.js # Build pipeline orchestration service
