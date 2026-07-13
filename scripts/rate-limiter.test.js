@@ -371,4 +371,41 @@ describe('RateLimiter', () => {
       assert.strictEqual(result, undefined);
     });
   });
+
+  describe('reset with queued tasks', () => {
+    it('should clear queued task timers on reset', async () => {
+      const lowLimiter = new RateLimiter({ maxConcurrent: 1, queueTimeoutMs: 5000 });
+
+      // Start a long-running task that blocks the single slot
+      let block = true;
+      const runningTask = lowLimiter.execute(async () => {
+        while (block) await new Promise(resolve => setTimeout(resolve, 50));
+      });
+
+      // Give it time to start
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // These should be queued since maxConcurrent is 1
+      lowLimiter.execute(async () => 'result1');
+      lowLimiter.execute(async () => 'result2');
+
+      // Give queue time to process
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Reset should clear queued tasks and their timers
+      lowLimiter.reset();
+
+      const metrics = lowLimiter.getMetrics();
+      assert.strictEqual(metrics.queueLength, 0, 'queue should be empty after reset');
+      assert.strictEqual(metrics.active, 0, 'active count should be 0 after reset');
+
+      // Release the blocker to clean up
+      block = false;
+      try {
+        await runningTask;
+      } catch {
+        // Ignore rejection from reset
+      }
+    });
+  });
 });

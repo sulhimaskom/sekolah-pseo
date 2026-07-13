@@ -425,3 +425,63 @@ test('clearManifest handles non-existent file gracefully', async () => {
     CONFIG.ROOT_DIR = originalRoot;
   }
 });
+
+test('saveManifest throws IntegrationError when write fails', async () => {
+  const { saveManifest } = require('./manifest');
+  const { IntegrationError } = require('./resilience');
+
+  const testDir = process.env.TEST_TEMP_DIR;
+  const originalRoot = CONFIG.ROOT_DIR;
+  CONFIG.ROOT_DIR = testDir;
+
+  try {
+    // Create a directory with the manifest filename so safeWriteFile fails with EISDIR
+    const manifestPath = path.join(testDir, '.build-manifest.json');
+    await fs.mkdir(manifestPath, { recursive: true });
+
+    const testManifest = {
+      version: 1,
+      lastBuild: new Date().toISOString(),
+      schools: {},
+    };
+
+    // safeWriteFile will retry 3 times, then throw IntegrationError via retry.
+    // saveManifest catches it and re-throws since it's already an IntegrationError.
+    await assert.rejects(
+      () => saveManifest(testManifest),
+      IntegrationError,
+      'saveManifest should throw IntegrationError when write fails'
+    );
+
+    // Clean up the directory entry
+    await fs.rm(manifestPath, { recursive: true, force: true });
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});
+
+test('saveManifest wraps non-IntegrationError in IntegrationError', async () => {
+  const { saveManifest } = require('./manifest');
+  const { IntegrationError } = require('./resilience');
+
+  const testDir = process.env.TEST_TEMP_DIR;
+  const originalRoot = CONFIG.ROOT_DIR;
+  // Use a non-existent deep path so safeWriteFile fails with ENOENT
+  CONFIG.ROOT_DIR = path.join(testDir, 'nonexistent-deep-path');
+
+  try {
+    const testManifest = {
+      version: 1,
+      lastBuild: new Date().toISOString(),
+      schools: {},
+    };
+
+    await assert.rejects(
+      () => saveManifest(testManifest),
+      IntegrationError,
+      'saveManifest should wrap non-IntegrationError in IntegrationError'
+    );
+  } finally {
+    CONFIG.ROOT_DIR = originalRoot;
+  }
+});
