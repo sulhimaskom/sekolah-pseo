@@ -41,9 +41,9 @@ const RULES = [
     allowedOnlyWith: 'IFLOW_API_KEY', // API_KEY is only ok if pointing to a different secret
     // Check: if API_KEY appears, and GEMINI_API_KEY also appears, API_KEY must reference a DIFFERENT secret
     check: content => {
-      const hasApiKey = /API_KEY:\s*\${{/.test(content);
+      const hasApiKey = /\bAPI_KEY:\s*\${{/.test(content);
       const hasGeminiKey = /GEMINI_API_KEY:\s*\${{/.test(content);
-      const apiKeyValue = content.match(/API_KEY:\s*\${{([^}]+)}}/);
+      const apiKeyValue = content.match(/\bAPI_KEY:\s*\${{([^}]+)}}/);
       const geminiValue = content.match(/GEMINI_API_KEY:\s*\${{([^}]+)}}/);
 
       if (hasApiKey && hasGeminiKey) {

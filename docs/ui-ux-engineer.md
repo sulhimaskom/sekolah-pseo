@@ -146,6 +146,17 @@ Static site generator for Indonesian school pages.
 - Improves SEO by eliminating duplicate content in page headers
 - All tests pass after fix
 
+### 15. Component Extraction - Shared Footer and Navigation ✅
+
+- Extracted duplicate footer HTML from 3 templates (school-page, homepage, province-page) into shared `footer.js` component
+- Extracted duplicate breadcrumb navigation from 3 templates into shared `navigation.js` component
+- `footer.js` supports configurable site name and extra content (e.g., CSV download link on homepage)
+- `navigation.js` accepts a breadcrumb items array — last item renders as current page with `aria-current="page"`
+- Both components maintain existing accessibility: `role="contentinfo"`, `aria-label="Navigasi utama"`, `aria-current="page"`, `aria-hidden="true"` separators
+- Removed duplicate `CURRENT_YEAR` constants from school-page.js and province-page.js (now handled by shared footer)
+- Created 16 new tests (footer.test.js + navigation.test.js) following the same pattern as back-to-top.test.js
+- All 963 JS tests pass, build clean (3474 pages)
+
 ## Testing
 
 - `npm run test:js` runs comprehensive tests for styles and design-system

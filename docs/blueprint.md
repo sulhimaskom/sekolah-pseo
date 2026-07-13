@@ -28,7 +28,9 @@ sekolah-pseo/
 │   │   │   ├── province-page.js     # Province page HTML template
 │   │   │   └── shared/
 │   │   │       ├── head-meta.js     # Shared HTML head prefix
-│   │   │       └── back-to-top.js   # Shared back-to-top button
+│   │   │       ├── back-to-top.js   # Shared back-to-top button
+│   │   │       ├── footer.js        # Shared footer component
+│   │   │       └── navigation.js    # Shared breadcrumb navigation component
 │   │   ├── design-system.js     # Design tokens (colors, spacing, typography)
 │   │   └── styles.js            # CSS generator and external stylesheet writer
 │   └── services/                # Business logic layer
