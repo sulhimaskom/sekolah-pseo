@@ -22,6 +22,7 @@ This created maintenance risk where a fix applied to one path may not be applied
 Both paths were unified into a single `build()` function that handles both modes via the `--incremental` flag. `buildIncremental()` retained as a backward-compatibility thin wrapper.
 
 **Changes**:
+
 - Single shared pipeline: `prepareBuildEnvironment()` → filter (if incremental) → write pages → save manifest → export CSV (full only)
 - Removed duplicate `prepareBuildEnvironment()` and `finalizeBuild()` calls
 - Shared logging and performance tracking

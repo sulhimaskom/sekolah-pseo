@@ -223,35 +223,35 @@
 
 ### Delta from 2026-07-12 (Earlier Run)
 
-| Domain                            | Pre-Run  | Post-Run | Delta     |
-| --------------------------------- | -------- | -------- | --------- |
-| A. Code Quality                   | 87.15    | 87.60    | +0.45    |
-| B. System Quality                 | 86.20    | 86.20    | 0.00      |
-| C. Experience Quality             | 85.80    | 85.80    | 0.00      |
-| D. Delivery & Evolution Readiness | 72.75    | 72.75    | 0.00      |
-| **Composite Score**               | **82.98**| **83.08**| **+0.10** |
+| Domain                            | Pre-Run   | Post-Run  | Delta     |
+| --------------------------------- | --------- | --------- | --------- |
+| A. Code Quality                   | 87.15     | 87.60     | +0.45     |
+| B. System Quality                 | 86.20     | 86.20     | 0.00      |
+| C. Experience Quality             | 85.80     | 85.80     | 0.00      |
+| D. Delivery & Evolution Readiness | 72.75     | 72.75     | 0.00      |
+| **Composite Score**               | **82.98** | **83.08** | **+0.10** |
 
 ---
 
 ## Issue Status (from docs/issues/)
 
-| #   | Issue                                                | Category | Priority | Status             |
-| --- | ---------------------------------------------------- | -------- | -------- | ------------------ |
-| 1   | CI/CD Workflow Overcomplexity                        | ci       | P2       | 💡 Open            |
-| 2   | Oversized Source Files (styles.js, build-pages.js)   | refactor | P2       | 💡 Open            |
-| 3   | Excessive CI Secret Exposure                         | security | P1       | 🔄 Reopened        |
-| 4   | Insufficient Python Test Coverage                    | test     | P2       | 💡 Open            |
-| 5   | Missing E2E/Integration Tests                        | test     | P2       | 💡 Open            |
-| 6   | Missing Automated Release Process                    | chore    | P3       | 💡 Open            |
-| 7   | High Coupling in Build Controller                    | refactor | P2       | ✅ Fixed (#479)    |
-| 8   | Duplicate Slug Computation                           | refactor | P3       | ✅ Fixed (d6ec7db) |
-| 9   | Missing Cross-Module Contracts                       | refactor | P2       | 💡 Open            |
-| 10  | Incremental/Full Build Duplication                   | refactor | P3       | 💡 Open            |
-| 11  | FEAT-003 Map Integration Strategic                   | feature  | P2       | 💡 Open (Phase 3)  |
-| 12  | on-push.yml missing issues: write permission          | ci       | P1       | 🔄 Needs manual PR |
-| 13  | Unused `tracker` param in buildIncremental()           | refactor | P3       | ✅ Fixed this run  |
-| 14  | Homepage bypasses PageBuilder service boundary          | refactor | P3       | ✅ Fixed this run  |
-| 15  | FEAT-007 Regional Dashboards                         | feature  | P2       | 💡 Proposed (Phase 3) |
+| #   | Issue                                              | Category | Priority | Status                |
+| --- | -------------------------------------------------- | -------- | -------- | --------------------- |
+| 1   | CI/CD Workflow Overcomplexity                      | ci       | P2       | 💡 Open               |
+| 2   | Oversized Source Files (styles.js, build-pages.js) | refactor | P2       | 💡 Open               |
+| 3   | Excessive CI Secret Exposure                       | security | P1       | 🔄 Reopened           |
+| 4   | Insufficient Python Test Coverage                  | test     | P2       | 💡 Open               |
+| 5   | Missing E2E/Integration Tests                      | test     | P2       | 💡 Open               |
+| 6   | Missing Automated Release Process                  | chore    | P3       | 💡 Open               |
+| 7   | High Coupling in Build Controller                  | refactor | P2       | ✅ Fixed (#479)       |
+| 8   | Duplicate Slug Computation                         | refactor | P3       | ✅ Fixed (d6ec7db)    |
+| 9   | Missing Cross-Module Contracts                     | refactor | P2       | 💡 Open               |
+| 10  | Incremental/Full Build Duplication                 | refactor | P3       | 💡 Open               |
+| 11  | FEAT-003 Map Integration Strategic                 | feature  | P2       | 💡 Open (Phase 3)     |
+| 12  | on-push.yml missing issues: write permission       | ci       | P1       | 🔄 Needs manual PR    |
+| 13  | Unused `tracker` param in buildIncremental()       | refactor | P3       | ✅ Fixed this run     |
+| 14  | Homepage bypasses PageBuilder service boundary     | refactor | P3       | ✅ Fixed this run     |
+| 15  | FEAT-007 Regional Dashboards                       | feature  | P2       | 💡 Proposed (Phase 3) |
 
 ---
 
