@@ -17,6 +17,7 @@
 ### Strategic Alignment
 
 This feature directly addresses **FEAT-007 Regional Dashboards** in the project roadmap (`docs/roadmap.md`, Phase 2: Geographic Visualization, lines 83-86). The roadmap explicitly calls for:
+
 - Province-level statistics
 - City-level school distribution
 - Interactive charts and graphs
@@ -72,8 +73,7 @@ function computeRegionalStats(schools) {
     stats.national.total++;
     stats.national.byType[school.bentuk_pendidikan] =
       (stats.national.byType[school.bentuk_pendidikan] || 0) + 1;
-    stats.national.byStatus[school.status] =
-      (stats.national.byStatus[school.status] || 0) + 1;
+    stats.national.byStatus[school.status] = (stats.national.byStatus[school.status] || 0) + 1;
 
     // Aggregate by province
     const prov = school.provinsi;
@@ -122,11 +122,11 @@ function generateProvinceDashboardHtml(provinceName, stats) {
 
 ### Build Impact
 
-| Metric | Impact |
-|--------|--------|
-| Build time | +10-20ms (single O(n) pass over schools array) |
-| Output size | +~50KB stats JSON, +~2KB per province HTML |
-| Memory | Negligible (statistics object ~500KB for 3474 schools) |
+| Metric      | Impact                                                 |
+| ----------- | ------------------------------------------------------ |
+| Build time  | +10-20ms (single O(n) pass over schools array)         |
+| Output size | +~50KB stats JSON, +~2KB per province HTML             |
+| Memory      | Negligible (statistics object ~500KB for 3474 schools) |
 
 ## Out of Scope
 

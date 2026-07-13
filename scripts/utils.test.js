@@ -1,11 +1,16 @@
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('fs').promises;
+const path = require('path');
+const os = require('os');
 const {
   parseCsv,
   formatStatus,
   formatEmptyValue,
   hasCoordinateData,
   escapeCsvField,
+  writeCsv,
+  clearEscapeHtmlCache,
 } = require('./utils');
 
 test('parseCsv handles empty data', () => {
@@ -160,4 +165,126 @@ test('escapeCsvField does not affect non-formula strings', () => {
   assert.strictEqual(escapeCsvField('test+value'), 'test+value');
   assert.strictEqual(escapeCsvField('test-value'), 'test-value');
   assert.strictEqual(escapeCsvField('email@domain.com'), 'email@domain.com');
+});
+
+// --- clearEscapeHtmlCache tests ---
+
+test('clearEscapeHtmlCache clears the escapeHtml cache without throwing', () => {
+  // Calling clearEscapeHtmlCache should not throw
+  clearEscapeHtmlCache();
+  assert.ok(true, 'clearEscapeHtmlCache should not throw when cache is empty');
+
+  // Calling it multiple times should also be safe
+  clearEscapeHtmlCache();
+  clearEscapeHtmlCache();
+  assert.ok(true, 'clearEscapeHtmlCache should be idempotent');
+});
+
+// --- writeCsv tests ---
+
+test('writeCsv writes CSV with header and data rows', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'writecsv-test-'));
+  const outputPath = path.join(tmpDir, 'test.csv');
+  try {
+    const data = [
+      { npsn: '12345', nama: 'School A', provinsi: 'Jawa Barat' },
+      { npsn: '67890', nama: 'School B', provinsi: 'Jawa Timur' },
+    ];
+
+    await writeCsv(data, outputPath);
+
+    const content = await fs.readFile(outputPath, 'utf-8');
+    const lines = content.trim().split('\n');
+
+    assert.strictEqual(lines.length, 3, 'should have header + 2 data rows');
+    assert.ok(lines[0].includes('npsn'), 'header should contain npsn');
+    assert.ok(lines[0].includes('nama'), 'header should contain nama');
+    assert.ok(lines[0].includes('provinsi'), 'header should contain provinsi');
+    assert.ok(lines[1].includes('12345'), 'first row should contain school A npsn');
+    assert.ok(lines[2].includes('67890'), 'second row should contain school B npsn');
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('writeCsv escapes special characters in CSV fields', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'writecsv-test-'));
+  const outputPath = path.join(tmpDir, 'test.csv');
+  try {
+    const data = [{ npsn: '12345', nama: 'School, Inc.', alamat: 'Jl. Sudirman No. 5' }];
+
+    await writeCsv(data, outputPath);
+
+    const content = await fs.readFile(outputPath, 'utf-8');
+    // The comma in "School, Inc." should be quoted
+    assert.ok(content.includes('"School, Inc."'), 'comma-containing field should be quoted');
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('writeCsv handles formula injection protection', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'writecsv-test-'));
+  const outputPath = path.join(tmpDir, 'test.csv');
+  try {
+    const data = [{ npsn: '12345', nama: '=SUM(A1:A2)', alamat: '+CMD' }];
+
+    await writeCsv(data, outputPath);
+
+    const content = await fs.readFile(outputPath, 'utf-8');
+    assert.ok(content.includes("'=SUM"), 'formula injection should be prefixed with single quote');
+    assert.ok(content.includes("'+CMD"), 'plus-prefixed values should be prefixed');
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('writeCsv throws for empty array', async () => {
+  const { IntegrationError } = require('./resilience');
+  await assert.rejects(() => writeCsv([], '/tmp/nonexistent/test.csv'), IntegrationError);
+});
+
+test('writeCsv throws for non-array input', async () => {
+  const { IntegrationError } = require('./resilience');
+  await assert.rejects(() => writeCsv(null, '/tmp/nonexistent/test.csv'), IntegrationError);
+  await assert.rejects(() => writeCsv(undefined, '/tmp/nonexistent/test.csv'), IntegrationError);
+  await assert.rejects(() => writeCsv('string', '/tmp/nonexistent/test.csv'), IntegrationError);
+});
+
+test('writeCsv handles single row', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'writecsv-test-'));
+  const outputPath = path.join(tmpDir, 'test.csv');
+  try {
+    const data = [{ npsn: '12345', nama: 'School A', provinsi: 'Jawa Barat' }];
+
+    await writeCsv(data, outputPath);
+
+    const content = await fs.readFile(outputPath, 'utf-8');
+    const lines = content.trim().split('\n');
+    assert.strictEqual(lines.length, 2, 'should have header + 1 data row');
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('writeCsv handles large dataset with batching', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'writecsv-test-'));
+  const outputPath = path.join(tmpDir, 'test.csv');
+  try {
+    // Create 2500 records to test batching (batchSize is 1000 in writeCsv)
+    const data = [];
+    for (let i = 0; i < 2500; i++) {
+      data.push({ npsn: String(i).padStart(5, '0'), nama: `School ${i}` });
+    }
+
+    await writeCsv(data, outputPath);
+
+    const content = await fs.readFile(outputPath, 'utf-8');
+    const lines = content.trim().split('\n');
+    assert.strictEqual(lines.length, 2501, 'should have header + 2500 data rows');
+    assert.ok(lines[1].includes('00000'), 'first row should contain first school');
+    assert.ok(lines[2500].includes('2499'), 'last row should contain last school');
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
 });
