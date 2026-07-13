@@ -2,6 +2,134 @@
 
 ## Completed Tasks
 
+### [TASK-054] Security Audit Pass 8 - Workflow Permission Hardening (7th Regression Fix) + check-workflow-security False Positive Fix
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted **8th comprehensive security audit** of the Indonesian School PSEO project. All workflow security fixes from the 7 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052) had **regressed again** — the same root cause: security fixes applied on `agent` branch were never merged to `main`, and subsequent `main`→`agent` merges overwrote the fixes.
+
+Fixed **18 security issues** across 6 workflow files: removed duplicate `API_KEY` + wrong `VITE_SUPABASE_ANON_KEY` mapping + reduced secret sprawl in `on-push.yml` (9 secrets → 2), removed `actions: write` and `id-token: write` from 4 non-merge workflows, removed 7 duplicate `API_KEY` env vars, replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` in 2 workflows, removed `SUPABASE_SECRET_KEY` + `IFLOW_API_KEY` + `VITE_SUPABASE_*` from PR workflow (`on-pull.yml`). Also fixed a false positive bug in the `check-workflow-security.js` validation script where the `/API_KEY:/` regex incorrectly matched `GEMINI_API_KEY:` as a duplicate `API_KEY:`.
+
+### Audit Results
+
+| Check             | Result                                                     |
+| ----------------- | ---------------------------------------------------------- |
+| npm audit         | 0 vulnerabilities                                          |
+| npm outdated      | All up to date                                             |
+| ESLint            | 0 errors                                                   |
+| JS Tests          | 914/914 pass                                               |
+| Python Tests      | 27/27 pass                                                 |
+| Build             | 3474 pages, 0 failed, 463ms                                |
+| Workflow Security | 6/6 files pass all 5 rules (0 violations)                  |
+| Hardcoded secrets | None found in source code                                  |
+| Security headers  | CSP, HSTS, XFO, SAMEORIGIN, COOP, CORP all present         |
+| XSS vectors       | All use escapeHtml() + DOM APIs (secure)                   |
+| Command injection | All execSync calls properly validated                      |
+| Input validation  | validatePath, validateRepoUrl, escapeCsvField all in place |
+| .gitignore        | Properly configured                                        |
+| .env.example      | No real secrets, proper documentation                      |
+
+### Actions Taken
+
+**1. Fixed `on-push.yml` secret sprawl + wrong mapping (CRITICAL)**:
+
+- Removed `API_KEY: ${{ secrets.GEMINI_API_KEY }}` (exact duplicate of GEMINI_API_KEY)
+- Removed `VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_KEY }}` (wrong mapping — anon key was pointing to service key)
+- Removed `IFLOW_API_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `SUPABASE_ANON_KEY`, `VITE_SUPABASE_ANON_KEY` (unused in build workflow)
+- Reduced from 9 secrets to 2 (`GITHUB_TOKEN`, `GEMINI_API_KEY`)
+
+**2. Fixed `parallel.yml` permission escalation (HIGH)**:
+
+- Removed `actions: write` from top-level permissions (non-merge workflow)
+- Removed `id-token: write` from top-level permissions (no OIDC used)
+- Removed 4 duplicate `API_KEY` env vars — all were identical to `GEMINI_API_KEY`
+- Removed extraneous `IFLOW_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` from architect job and 3 downstream jobs
+
+**3. Fixed `orchestrator.yml` permission + secret issues (HIGH)**:
+
+- Replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` in env var and checkout token (2 occurrences)
+- Removed `id-token: write` from top-level and job-level permissions
+- Removed `actions: write` from top-level and job-level permissions
+- Replaced `IFLOW_API_KEY` with `GEMINI_API_KEY`
+
+**4. Fixed `architect-agent.yml` permission + secret issues (HIGH)**:
+
+- Replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` in env var
+- Removed `id-token: write` from top-level and job-level permissions
+- Removed `actions: write` from top-level and job-level permissions
+- Replaced `IFLOW_API_KEY` with `GEMINI_API_KEY`
+
+**5. Fixed `opencode.yml` permission escalation (HIGH)**:
+
+- Removed `id-token: write` from top-level and job-level permissions
+- Removed `actions: write` from top-level and job-level permissions
+
+**6. Fixed `on-pull.yml` permission + secret exposure (HIGH)**:
+
+- Removed `id-token: write` from permissions (no OIDC used)
+- Removed `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_KEY`, `VITE_SUPABASE_URL`, `IFLOW_API_KEY` from env vars (secrets should not be exposed in PR workflows — PRs can be forked)
+- Reduced from 5 secrets to 2 (`GITHUB_TOKEN`, `GEMINI_API_KEY`)
+
+**7. Fixed false positive in check-workflow-security.js (MEDIUM)**:
+
+- The `DUPLICATE_API_KEY` rule regex `/API_KEY:\s*\${{/` matched `GEMINI_API_KEY:` as a false positive
+- Fixed with `\bAPI_KEY:` word boundary — only matches standalone `API_KEY:`, not compound names containing "API_KEY"
+
+### Files Modified
+
+- `.github/workflows/on-push.yml` — Removed 7 unused secrets, removed duplicate API_KEY + wrong VITE_SUPABASE_ANON_KEY mapping
+- `.github/workflows/parallel.yml` — Removed `actions: write`, `id-token: write`, 4 duplicate API_KEY + 3 extraneous secrets
+- `.github/workflows/orchestrator.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN` (2x), removed `id-token: write` + `actions: write`, replaced `IFLOW_API_KEY`→`GEMINI_API_KEY`
+- `.github/workflows/architect-agent.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN`, removed `id-token: write` + `actions: write`, replaced `IFLOW_API_KEY`→`GEMINI_API_KEY`
+- `.github/workflows/opencode.yml` — Removed `id-token: write` + `actions: write` from both levels
+- `.github/workflows/on-pull.yml` — Removed `id-token: write`, removed 4 extraneous secrets
+- `scripts/check-workflow-security.js` — Fixed `DUPLICATE_API_KEY` regex false positive (`\b` word boundary on API_KEY pattern)
+- `docs/task.md` — This entry
+
+### Root Cause of Regression (7th occurrence)
+
+Same root cause as all prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052): workflow file security fixes were committed to the `agent` branch but never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions.
+
+**Permanent Fix**: The `check-workflow-security.js` validation script now has a fixed false positive issue. It can be integrated as a pre-commit hook or CI step to catch regressions before they land.
+
+### Verification
+
+| Check             | Result                       |
+| ----------------- | ---------------------------- |
+| Build             | 3474 pages, 0 failed, 463ms  |
+| ESLint            | 0 errors                     |
+| Prettier          | All files formatted          |
+| Workflow Security | 6/6 files pass, 0 violations |
+| JS Tests          | 914/914 pass                 |
+| Python Tests      | 27/27 pass                   |
+| npm audit         | 0 vulnerabilities            |
+| Zero regressions  | Confirmed                    |
+
+### Acceptance Criteria
+
+- [x] Duplicate `API_KEY` removed from on-push.yml (1)
+- [x] `VITE_SUPABASE_ANON_KEY` wrong mapping removed from on-push.yml
+- [x] 7 unused secrets removed from on-push.yml (9 → 2)
+- [x] `actions: write` removed from all 4 non-merge workflows
+- [x] `id-token: write` removed from all 5 non-OIDC workflows
+- [x] 4 duplicate `API_KEY` references removed from parallel.yml
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in 2 workflows
+- [x] `SUPABASE_SECRET_KEY` removed from on-pull.yml (forked PR exposure risk)
+- [x] `check-workflow-security.js` `DUPLICATE_API_KEY` rule fixed (false positive for GEMINI_API_KEY)
+- [x] All 6 workflow files pass security validation script (0 violations)
+- [x] All 914 JS tests pass
+- [x] All 27 Python tests pass
+- [x] Build succeeds (3474 pages, 0 failed)
+- [x] Lint passes (0 errors)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-053] Code Sanitization - Full Health Check (Build, Lint, Tests, Dead Code, Formatting)
 
 **Status**: Complete
@@ -7601,28 +7729,33 @@ Added targeted test coverage for untested critical code paths across 4 modules. 
 ### Changes Made
 
 **1. Covered `writeCsv()` validation and batching** (`scripts/utils.test.js`):
-   - Writing CSV header + data rows with correct structure
-   - Escaping special characters (commas → quoted, formula injection → prefixed)
-   - Non-array inputs (null, undefined, string) → throws IntegrationError
-   - Empty array → throws IntegrationError
-   - Single row → correct header + 1 data row
-   - Large dataset (2500 rows) → batched processing with correct row count
+
+- Writing CSV header + data rows with correct structure
+- Escaping special characters (commas → quoted, formula injection → prefixed)
+- Non-array inputs (null, undefined, string) → throws IntegrationError
+- Empty array → throws IntegrationError
+- Single row → correct header + 1 data row
+- Large dataset (2500 rows) → batched processing with correct row count
 
 **2. Covered `clearEscapeHtmlCache()` idempotency** (`scripts/utils.test.js`):
-   - Calling on empty cache does not throw
-   - Multiple sequential calls run without error
+
+- Calling on empty cache does not throw
+- Multiple sequential calls run without error
 
 **3. Covered `saveManifest()` error propagation** (`scripts/manifest.test.js`):
-   - Write failure (EISDIR from directory-as-file) → throws IntegrationError
-   - Write to non-existent directory → throws wrapped IntegrationError
+
+- Write failure (EISDIR from directory-as-file) → throws IntegrationError
+- Write to non-existent directory → throws wrapped IntegrationError
 
 **4. Covered `rate-limiter.reset()` queued task timers** (`scripts/rate-limiter.test.js`):
-   - Created low-concurrency limiter (maxConcurrent: 1) to force task queuing
-   - Queued tasks with timers → reset clears queue and timers, metrics zeroed
+
+- Created low-concurrency limiter (maxConcurrent: 1) to force task queuing
+- Queued tasks with timers → reset clears queue and timers, metrics zeroed
 
 **5. Covered `generateStatusOptionsHtml()` unknown status** (`scripts/homepage.test.js`):
-   - School with status 'X' (not N or S) → raw value displayed as-is
-   - Verifies `statusLabels[s] || s` fallback on uncovered branch
+
+- School with status 'X' (not N or S) → raw value displayed as-is
+- Verifies `statusLabels[s] || s` fallback on uncovered branch
 
 ### Files Modified
 
@@ -7642,12 +7775,12 @@ Added targeted test coverage for untested critical code paths across 4 modules. 
 
 ### Coverage Impact
 
-| Module                     | Before     | After      | Δ        |
-| -------------------------- | ---------- | ---------- | -------- |
-| scripts/utils.js (stmts)   | 92.47%     | 98.38%     | +5.91%   |
-| scripts/rate-limiter.js    | 98.46%     | 100%       | +1.54%   |
-| scripts/manifest.js        | 95.6%      | 92.85%     | -2.75%*  |
-| src/homepage.js (branches) | 97.43%     | 100%       | +2.57%   |
+| Module                     | Before | After  | Δ       |
+| -------------------------- | ------ | ------ | ------- |
+| scripts/utils.js (stmts)   | 92.47% | 98.38% | +5.91%  |
+| scripts/rate-limiter.js    | 98.46% | 100%   | +1.54%  |
+| scripts/manifest.js        | 95.6%  | 92.85% | -2.75%* |
+| src/homepage.js (branches) | 97.43% | 100%   | +2.57%  |
 
 \* manifest.js statement drop is a coverage measurement variation; `saveManifest()` error paths (lines 87–94) are now exercised, but loadManifest dead code (lines 68–74) was re-classified by c8.
 
@@ -7664,3 +7797,120 @@ Added targeted test coverage for untested critical code paths across 4 modules. 
 - [x] Lint passes (0 errors)
 - [x] Prettier formatting clean (modified files)
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-056] Build Performance Optimization Pass 2 — Template Static Pre-computation, Direct FS I/O, Manifest Inlining
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized three hotspots in the static site generation pipeline that survived the previous optimization pass (TASK-054's escapeHtml + fastWriteFile). These changes reduced build time by **3.5%** (395ms → 381ms average) and improved throughput by **3.6%** (8795 → 9110 pages/sec).
+
+### Changes Made
+
+**1. Pre-computed back-to-top static strings** (`src/presenters/templates/shared/back-to-top.js`):
+
+- Replaced per-page function calls (`generateBackToTopHtml()`, `generateBackToTopScript()`) with module-level constants (`BACK_TO_TOP_HTML`, `BACK_TO_TOP_SCRIPT_WRAPPED`, `BACK_TO_TOP_SCRIPT_INLINE`)
+- The `.replace('<script>', '').replace('</script>', '').trim()` chain on the inline variant (called ~3474 times per build) is now evaluated once at module load instead of per page
+- Template literals for the HTML button are allocated once instead of ~3474 times
+- Updated `school-page.js`, `province-page.js`, and `homepage.js` to import and use the pre-computed constants directly
+
+**2. Direct fs I/O for one-off local operations** (`src/services/BuildOrchestrator.js`, `scripts/manifest.js`):
+
+- Replaced `safeReadFile`/`safeWriteFile` (retry(3) + withTimeout(30s) + circuitBreaker wrappers) with direct `fs.promises.readFile`/`writeFile` for local filesystem operations where transient failures are virtually non-existent
+- Affected paths: CSV loading, robots.txt, styles.css, homepage HTML, schools.json (×2), manifest save, CSV export
+- Each safe wrapper created 3–5 Promise objects + a setTimeout/clearTimeout pair for local operations that complete in <1ms
+- `saveManifest()` switched from `safeWriteFile` to `fastWriteFile` in `scripts/manifest.js`
+- Error contracts preserved: `loadSchools()` wraps the direct read error in `IntegrationError` matching the previous format
+
+**3. Manifest accumulation during page writes** (`src/services/BuildOrchestrator.js`):
+
+- `writeSchoolPagesConcurrently()` now accumulates manifest entries (`{ hash, builtAt, path }` per school) during the page write phase, eliminating the redundant `createManifestFromSchools()` full-school iteration
+- The `build()` function uses accumulated entries directly for full builds, or merges with the previous manifest for incremental builds
+- `computeSchoolHash()` (MD5 of relevant fields) runs during the write phase — cost is ~3.5ms for 3474 schools and avoids a separate O(n) iteration
+- Returns `manifestEntries` object from `writeSchoolPagesConcurrently()` for downstream use
+- Edge cases handled: zero pages rebuilt (updates manifest timestamp), incremental merge with previous manifest, fresh build with no previous data
+
+### Performance Results
+
+| Metric         | Baseline (avg) | After (avg) | Δ         |
+| -------------- | -------------- | ----------- | --------- |
+| Build duration | 395ms          | 381ms       | **−3.5%** |
+| Throughput     | 8795 pg/s      | 9110 pg/s   | **+3.6%** |
+| Peak RSS       | 120.48 MB      | 122.18 MB   | +1.4%     |
+| Memory delta   | 22.98 MB       | 22.05 MB    | −4.0%     |
+| Total pages    | 3474           | 3474        | —         |
+| Failed pages   | 0              | 0           | —         |
+
+### Files Modified
+
+- `src/presenters/templates/shared/back-to-top.js` — Pre-computed `BACK_TO_TOP_HTML`, `BACK_TO_TOP_SCRIPT_WRAPPED`, `BACK_TO_TOP_SCRIPT_INLINE` constants; exported `getBackToTopScriptInline()`; backward-compatible function wrappers
+- `src/presenters/templates/school-page.js` — Import `BACK_TO_TOP_HTML`, `BACK_TO_TOP_SCRIPT_INLINE`; use pre-computed constants
+- `src/presenters/templates/province-page.js` — Import `BACK_TO_TOP_HTML`; use pre-computed HTML constant
+- `src/presenters/templates/homepage.js` — Import `BACK_TO_TOP_HTML`, `BACK_TO_TOP_SCRIPT_INLINE`; use pre-computed constants
+- `src/services/BuildOrchestrator.js` — Direct fs I/O for 7 one-off paths; manifest accumulation in `writeSchoolPagesConcurrently()`; restructured `build()` manifest logic
+- `scripts/manifest.js` — `saveManifest()` uses `fastWriteFile`; removed unused `safeWriteFile` import
+- `scripts/build-pages.test.js` — Updated test to expect `manifestEntries: {}` in `writeSchoolPagesConcurrently` return value
+- `docs/task.md` — This entry
+
+### Verification
+
+| Check            | Result                          |
+| ---------------- | ------------------------------- |
+| Build            | 3474 pages, 0 failed, 381ms avg |
+| ESLint           | 0 errors                        |
+| Prettier         | All files formatted             |
+| JS Tests         | 914/914 pass                    |
+| Zero regressions | Confirmed                       |
+
+### Acceptance Criteria
+
+- [x] Pre-computed back-to-top constants eliminate per-page function calls + string processing
+- [x] Direct fs I/O for 7 one-off local operations with IntegrationError error contract preserved
+- [x] Manifest entries accumulated during page writes; redundant full-school iteration eliminated
+- [x] Build time reduced by 3.5% (395ms → 381ms average)
+- [x] Throughput improved by 3.6% (8795 → 9110 pg/s)
+- [x] All 914 JS tests pass
+- [x] All 27 Python tests pass
+- [x] Lint passes (0 errors)
+- [x] Prettier formatting clean
+- [x] Zero regressions introduced
+
+---
+
+## Open Tasks
+
+### [REFACTOR-001] Add BuildOrchestrator Service Tests
+
+- **Location**: `src/services/BuildOrchestrator.js`
+- **Issue**: The core pipeline orchestrator (621 lines, 26 exported functions) has **zero direct unit tests**. Key functions — `loadSchools()`, `writeSchoolPagesConcurrently()`, `createManifestFromSchools()`, `exportSchoolsCsv()`, `writeSearchDataFile()`, `finalizeBuild()`, and the main `build()` pipeline — have no dedicated test file. They are only tested indirectly through `build-pages.test.js`, which exercises the thin re-export wrapper, not the service module directly. This means manifest merging logic, incremental/full build branching, and error paths are untested.
+- **Suggestion**: Create `src/services/BuildOrchestrator.test.js` with focused unit tests. Mock dependencies (`fs`, `manifest`, `PageBuilder`, `enrichment`, `config`) using `node:test` mocks. Cover: successful build flow, incremental build with/without manifest, incremental merge with existing manifest, zero-page edge case, `prepareBuildEnvironment` error paths, `exportSchoolsCsv` fallback, `finalizeBuild` GITHUB_STEP_SUMMARY path, `loadSchools` file-not-found and empty-CSV paths.
+- **Priority**: High
+- **Effort**: Large
+
+### [REFACTOR-002] Test CONFIG Mutation Safety Helper
+
+- **Location**: Multiple test files (`validate-links.test.js`, `manifest.test.js`, `check-freshness.test.js`, `build-pages.test.js`, `sitemap.test.js`)
+- **Issue**: Tests mutate the `CONFIG` singleton directly (43+ mutations across 5 files) by assigning to `CONFIG.DIST_DIR`, `CONFIG.ROOT_DIR`, etc. directly — e.g., `CONFIG.DIST_DIR = tempDir`. Since `CONFIG` is a shared singleton, tests that forget to restore the original value (or whose `finally` block is skipped) cause cascading failures in sibling tests. This is a test isolation debt that creates brittle, order-dependent tests.
+- **Suggestion**: Create a shared test helper `withConfig(overrides, fn)` or `useConfig({...overrides})` that wraps CONFIG mutation in try/finally auto-restore. Place in a shared test utility file or a `test-setup.js`. Apply it to the 5 affected test files. The helper should accept partial overrides and restore originals even on exception.
+- **Priority**: Medium
+- **Effort**: Medium
+
+### [REFACTOR-003] Inline `require('fs')` in finalizeBuild
+
+- **Location**: `src/services/BuildOrchestrator.js:481`
+- **Issue**: `finalizeBuild()` uses an inline `require('fs')` for `GITHUB_STEP_SUMMARY` — the only place in the file where `fs` is not imported at module level. Line 17 already imports `const fs = require('fs')` and line 32 creates `const fsp = fs.promises`. The inline require is inconsistent with the module's top-level import pattern. Moreover, `fs.appendFileSync` could be called via the already-imported `fs` object.
+- **Suggestion**: Remove the inline `require('fs')` and use the existing `fs` module-level import (`fs.appendFileSync`) instead.
+- **Priority**: Low
+- **Effort**: Small
+
+### [REFACTOR-004] Inconsistent Error Handling in `preCreateProvinceDirectories`
+
+- **Location**: `src/services/BuildOrchestrator.js:228-241`
+- **Issue**: `preCreateProvinceDirectories()` silently swallows all directory creation errors via `.catch(err => { logger.error(...) })` and returns `void`. By contrast, `preCreateDirectories()` (line 122) tracks failures in an array, returns it to the caller, and logs a warning with failure count. This inconsistency means province directory failures are invisible to callers — a failed province directory won't surface except in logs, potentially causing downstream failures (province page writes) with confusing error messages.
+- **Suggestion**: Align `preCreateProvinceDirectories()` with the `preCreateDirectories()` pattern: collect failures in an array, return them, log a warning with failure count. Update the single call site if needed.
+- **Priority**: Low
+- **Effort**: Small
