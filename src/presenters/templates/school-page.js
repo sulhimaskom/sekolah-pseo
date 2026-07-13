@@ -2,10 +2,9 @@ const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../
 const { IntegrationError, ERROR_CODES } = require('../../../scripts/resilience');
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
+const { generateFooterHtml } = require('./shared/footer');
+const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
-
-// Module-level constants - computed once at module load, not per school page
-const CURRENT_YEAR = new Date().getFullYear();
 
 // Pre-escape static CONFIG.TEXT values to avoid ~38K redundant escapeHtml calls
 // during full build (each escapeHtml does 5 regex replacements)
@@ -113,11 +112,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
   
   <header role="banner">
-    <nav aria-label="Navigasi utama">
-      <a href="/">${T.HOME}</a>
-      <span aria-hidden="true"> / </span>
-      <span aria-current="page">${escapeHtml(school.nama)}</span>
-    </nav>
+    ${generateBreadcrumbHtml([{ label: T.HOME, url: '/' }, { label: escapeHtml(school.nama) }])}
   </header>
   
   <main id="main-content" role="main">
@@ -167,9 +162,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
     </article>
   </main>
   
-  <footer role="contentinfo">
-    <p>&copy; ${CURRENT_YEAR} ${T.SITE_NAME}. Data sekolah berasal dari Dapodik.</p>
-  </footer>
+  ${generateFooterHtml({ siteName: T.SITE_NAME })}
   
   ${generateBackToTopHtml()}
   

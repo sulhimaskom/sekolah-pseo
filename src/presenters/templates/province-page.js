@@ -2,10 +2,9 @@ const { escapeHtml } = require('../../../scripts/utils');
 const slugify = require('../../../scripts/slugify');
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
+const { generateFooterHtml } = require('./shared/footer');
+const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
-
-// Hoisted constant - computed once at module load, not per province page
-const CURRENT_YEAR = new Date().getFullYear();
 
 /**
  * Filter schools by province
@@ -101,11 +100,7 @@ function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
   
   <header role="banner">
-    <nav aria-label="Navigasi utama">
-      <a href="/">Beranda</a>
-      <span aria-hidden="true"> / </span>
-      <span aria-current="page">${escapeHtml(provinceName)}</span>
-    </nav>
+    ${generateBreadcrumbHtml([{ label: 'Beranda', url: '/' }, { label: escapeHtml(provinceName) }])}
   </header>
   
   <main id="main-content" role="main">
@@ -136,9 +131,7 @@ function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
     </section>
   </main>
   
-  <footer role="contentinfo">
-    <p>&copy; ${CURRENT_YEAR} Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
-  </footer>
+  ${generateFooterHtml()}
   
   ${generateBackToTopHtml()}
   ${generateBackToTopScript()}
