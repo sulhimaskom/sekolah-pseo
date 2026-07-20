@@ -667,13 +667,13 @@ Optimized three remaining cold paths in the build pipeline: replaced RateLimiter
 
 ### Performance Results
 
-| Metric                | Before (baseline) | After       | Δ (at scale)    |
-| --------------------- | ----------------- | ----------- | --------------- |
-| RateLimiter overhead  | 3374 setTimeout   | 0           | —               |
-| Manifest format       | Pretty (55KB)     | Compact     | ~~55KB I/O~~    |
-| NFD normalization     | Every cache miss  | ASCII skip  | —               |
-| Build (2-school)      | 28ms              | 27ms        | ~~−3.6%~~       |
-| JS Tests              | 963/963           | 973/973     | 0 failures      |
+| Metric               | Before (baseline) | After      | Δ (at scale) |
+| -------------------- | ----------------- | ---------- | ------------ |
+| RateLimiter overhead | 3374 setTimeout   | 0          | —            |
+| Manifest format      | Pretty (55KB)     | Compact    | ~~55KB I/O~~ |
+| NFD normalization    | Every cache miss  | ASCII skip | —            |
+| Build (2-school)     | 28ms              | 27ms       | ~~−3.6%~~    |
+| JS Tests             | 963/963           | 973/973    | 0 failures   |
 
 > **Note**: With only 2 schools in the current CSV, absolute timing differences are within noise. Optimizations are designed for the production scale of 3474 schools documented in prior builds, where the RateLimiter overhead and NFD normalization cost become measurable.
 
@@ -4977,6 +4977,250 @@ Use this array both to build the output and to document the schema. Export it so
 - Client-side search still works with generated schools.json
 - Adding/removing a field from `SEARCH_DATA_FIELDS` causes predictable test failures
 
+---
+
+### [REFACTOR-010] `check-freshness.js` uses raw sync `fs.*` instead of resilient wrappers
+
+**Status**: Backlog
+**Priority**: Medium
+**Effort**: Medium
+
+### Description
+
+`getDataFreshness()` and `getDataQualityMetrics()` in `scripts/check-freshness.js` (lines 27-95, 101-167) use raw synchronous `fs.*` calls (`fs.existsSync()`, `fs.readFileSync()`) instead of the project's resilient async wrappers from `fs-safe.js` (`safeReadFile`, `safeAccess`). This makes it the **only module** in the codebase that bypasses the established resilience patterns (timeout, retry, circuit breaker).
+
+### Suggestion
+
+Migrate `getDataFreshness()` and `getDataQualityMetrics()` to use async `safeReadFile()`/`safeAccess()` from `fs-safe.js`:
+
+```javascript
+// Before: raw sync fs
+const content = fs.readFileSync(schoolsPath, 'utf-8');
+
+// After: resilient async
+const content = await safeReadFile(schoolsPath);
+```
+
+This requires marking the functions as `async` and updating callers (which are already wrapped in try/catch or `main()` that's `async`-compatible). Check `main()` and test callers to ensure they handle the returned Promise.
+
+### Files
+
+- `scripts/check-freshness.js`
+- `scripts/check-freshness.test.js` (update callers for async)
+
+### Verification
+
+- `getDataFreshness()` returns the same freshness data structure
+- `getDataQualityMetrics()` returns the same quality metrics
+- All existing tests in `check-freshness.test.js` continue to pass
+- Raw `fs.*` calls eliminated from the module
+
+---
+
+### [REFACTOR-011] Simplify `validateLinksInFile()` excessive try/catch nesting
+
+**Status**: Backlog
+**Priority**: Low
+**Effort**: Small
+
+### Description
+
+`validateLinksInFile()` in `scripts/validate-links.js` (lines 68-103) uses a 4-level deep try/catch nesting pattern for link validation:
+
+```javascript
+try {
+  await safeAccess(targetPath);
+} catch (error) {
+  if (error.name === 'IntegrationError') {
+    try {
+      const stat = await safeStat(targetPath);
+      if (!stat.isDirectory()) {
+        brokenInFile.push({ source: file, link: link });
+      }
+    } catch (statError) {
+      if (statError.name === 'IntegrationError') {
+        brokenInFile.push({ source: file, link: link });
+      }
+    }
+  }
+}
+```
+
+The double-access pattern (safeAccess → fallback to safeStat inside catch) creates deep nesting that is difficult to read and maintain. The intention is to check if a path exists (safeAccess), and if it doesn't, verify it's really missing (safeStat distinguishes "not found" from "permission denied").
+
+### Suggestion
+
+Replace the try/catch double-call with a single `safeStat` call that handles both "not found" and other errors at the same level:
+
+```javascript
+try {
+  const stat = await safeStat(targetPath);
+  if (!stat.isDirectory()) {
+    brokenInFile.push({ source: file, link: link });
+  }
+} catch (error) {
+  if (error.name === 'IntegrationError') {
+    // File genuinely doesn't exist or is inaccessible
+    brokenInFile.push({ source: file, link: link });
+  }
+}
+```
+
+This eliminates the nested try/catch entirely while preserving the same behavior.
+
+### Files
+
+- `scripts/validate-links.js`
+
+### Verification
+
+- Link validation produces identical results (same broken links detected)
+- All existing tests in `validate-links.test.js` continue to pass
+- Edge case: a directory path should NOT be reported as a broken link
+
+---
+
+### [REFACTOR-012] Extract shared `fileExists()` utility for project-wide use
+
+**Status**: Backlog
+**Priority**: Medium
+**Effort**: Small
+
+### Description
+
+File existence checking is implemented with different patterns across the codebase:
+
+1. `scripts/check-freshness.js` — raw `fs.existsSync(schoolsPath)` (sync, no resilience)
+2. `scripts/manifest.js` — `try { await safeAccess(path); } catch { return null; }` (async, patterned)
+3. `scripts/manifest.js` — `try { await safeUnlink(path); } catch { /* doesn't exist */ }` (async, patterned)
+
+Each pattern is semantically "does this file exist?" but implemented differently — one raw sync, two via try/catch on error-throwing wrappers. This is a maintainability risk and makes the code harder to read.
+
+### Suggestion
+
+Add an async `fileExists(path)` helper to `scripts/utils.js` that wraps `safeAccess()` and returns a boolean:
+
+```javascript
+async function fileExists(filePath) {
+  try {
+    await safeAccess(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+```
+
+Replace the three call sites:
+- `check-freshness.js`: `fs.existsSync(schoolsPath)` → `await fileExists(schoolsPath)`
+- `manifest.js` loadManifest: try/catch → `if (!await fileExists(manifestPath)) return null;`
+- `manifest.js` clearManifest: try/catch → `if (await fileExists(manifestPath)) await safeUnlink(manifestPath);`
+
+### Files
+
+- `scripts/utils.js` (add `fileExists`)
+- `scripts/check-freshness.js` (replace `fs.existsSync`)
+- `scripts/manifest.js` (replace try/catch patterns)
+
+### Verification
+
+- `fileExists()` returns `true` for existing files, `false` for non-existent
+- `loadManifest()` returns `null` when no manifest exists
+- `clearManifest()` silently succeeds when no manifest exists
+- `getDataFreshness()` returns `{ exists: false }` when schools.csv doesn't exist
+- All existing tests pass
+
+---
+
+### [TASK-061] Add test coverage for `interactive.js` exported functions
+
+**Status**: Backlog
+**Priority**: Medium
+**Effort**: Medium
+
+### Description
+
+`scripts/interactive.js` (347 lines, 6 exported functions) has **zero test coverage**. The module exports:
+
+- `SCRIPTS` — static command registry
+- `runCommand(cmd, label)` — shell command executor
+- `pickFromList(title, items, rl)` — interactive list picker
+- `printListAsJson()` — JSON output
+- `printFlatList()` — flat JSON output
+- `printHelp()` — help text printer
+
+These are pure/deterministic functions (except `runCommand` and `pickFromList`) that are straightforward to test.
+
+### Suggestion
+
+Add test file `scripts/interactive.test.js` with coverage for:
+
+1. **SCRIPTS structure**: Verify data shape (5 categories, correct item structure)
+2. **printListAsJson()**: Verify outputs valid JSON matching SCRIPTS structure
+3. **printFlatList()**: Verify flat array with category+label+desc+cmd for each entry
+4. **printHelp()**: Verify outputs help text with key sections
+5. **pickFromList()**: Verify input parsing (valid choice → index, invalid → -2, back → -1)
+6. **runCommand()**: Command execution and error handling
+
+### Files
+
+- `scripts/interactive.test.js` (new)
+- `scripts/interactive.js` (export/import adjustments if needed)
+
+### Verification
+
+- All new tests pass
+- Existing tests unaffected
+- Zero regressions
+
+---
+
+### [REFACTOR-009] Consolidate text translation access patterns across page templates
+
+**Status**: Backlog
+**Priority**: Low
+**Effort**: Small
+
+### Description
+
+The three page templates access the `CONFIG.TEXT` translation object with different patterns:
+
+- **`school-page.js`** (lines 9-12): Pre-escapes all TEXT values into local `T` object at module load:
+  ```javascript
+  const T = Object.fromEntries(
+    Object.entries(CONFIG.TEXT).map(([key, value]) => [key, escapeHtml(value)])
+  );
+  ```
+
+- **`homepage.js`**: Accesses `CONFIG.TEXT.SEARCH_ARIA_LABEL` and `CONFIG.TEXT.SELECT_PROVINCE_HEADING` directly in JS template literal expressions (wrapped in `escapeHtml()` at use-site).
+
+- **`province-page.js`**: May use either pattern or a different one.
+
+This inconsistency means developers adding new text labels must know which pattern to follow in each file. The pre-escaping in `school-page.js` is a performance optimization (~38K redundant calls avoided) but creates a different access pattern from the other templates.
+
+### Suggestion
+
+Standardize all three templates to use a pre-escaped `T` object pattern. Either:
+
+**Option A**: Move the pre-escaped `T` object to a shared module (e.g., `shared/translations.js`) that all templates import.
+
+**Option B**: Apply the pre-escaping pattern consistently in all three templates, with a clear comment explaining the performance rationale.
+
+### Files
+
+- `src/presenters/templates/school-page.js`
+- `src/presenters/templates/homepage.js`
+- `src/presenters/templates/province-page.js`
+
+### Verification
+
+- All templates produce identical HTML output (no visual changes)
+- Pre-escaping still avoids redundant escapeHtml calls during build
+- All template tests continue to pass
+- New text keys added to CONFIG.TEXT are automatically available in all templates
+
+---
+
 ### [TASK-012] UI/UX Enhancement - Design System & Responsive Design
 
 **Status**: Complete
@@ -8384,7 +8628,7 @@ Fixed **12+ security issues** across 6 workflow files: removed `id-token: write`
 | ----------------- | ---------------------------------------------------------- |
 | npm audit         | 0 vulnerabilities                                          |
 | npm outdated      | All up to date (c8 12.0.0, lint-staged 17.1.0 synced)      |
-| ESLint            | 0 errors (4 pre-existing in interactive.test.js)            |
+| ESLint            | 0 errors (4 pre-existing in interactive.test.js)           |
 | JS Tests          | 969/977 pass (4 pre-existing in fetch-data.test.js)        |
 | Python Tests      | 26/27 pass (1 pre-existing data format assertion)          |
 | Build             | 2 pages, 0 failed, 27ms                                    |
@@ -8400,34 +8644,41 @@ Fixed **12+ security issues** across 6 workflow files: removed `id-token: write`
 ### Actions Taken
 
 **1. Fixed `architect-agent.yml` permission + secret issues (HIGH)**:
+
 - Removed `id-token: write` and `actions: write` from top-level and job-level permissions
 - Replaced `GH_TOKEN: ${{ secrets.GH_TOKEN }}` → `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`
 - Removed `IFLOW_API_KEY` from env
 
 **2. Fixed `on-push.yml` secret sprawl (CRITICAL)**:
+
 - Removed `IFLOW_API_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `API_KEY`, `SUPABASE_ANON_KEY`, `VITE_SUPABASE_ANON_KEY`
 - Reduced from 10 secrets to 2 (`GITHUB_TOKEN`, `GEMINI_API_KEY`)
 
 **3. Fixed `parallel.yml` permission + secret sprawl (HIGH)**:
+
 - Removed `actions: write` and `id-token: write` from top-level permissions
 - Removed `IFLOW_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `API_KEY` from all 4 env blocks (architect, specialists, Fixer, PR-Handler)
 
 **4. Fixed `orchestrator.yml` permission + secret issues (HIGH)**:
+
 - Removed `id-token: write` and `actions: write` from top-level and job-level permissions
 - Replaced `GH_TOKEN: ${{ secrets.GH_TOKEN }}` → `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`
 - Replaced checkout `token: ${{ secrets.GH_TOKEN }}` → `${{ secrets.GITHUB_TOKEN }}`
 - Removed `IFLOW_API_KEY` from env
 
 **5. Fixed `opencode.yml` permission escalation (HIGH)**:
+
 - Removed `id-token: write` and `actions: write` from top-level and job-level permissions
 - Removed `IFLOW_API_KEY` from env
 
 **6. Fixed `on-pull.yml` permission + secret exposure (HIGH)**:
+
 - Removed `id-token: write` and `repository-projects: write` from permissions
 - Removed `IFLOW_API_KEY`, `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_KEY`, `VITE_SUPABASE_URL` from env vars and step env
 - Reduced from 5 secrets to 1 (`GITHUB_TOKEN`)
 
 **7. Updated outdated dependencies**:
+
 - Synced `c8` to ^12.0.0 (was 11.0.0)
 - Synced `lint-staged` to ^17.1.0 (was 17.0.8)
 - Ran `npm install` — all packages at latest compatible versions

@@ -172,6 +172,85 @@ describe('interactive CLI', () => {
     });
   });
 
+  describe('runCommand', () => {
+    it('returns true on success', () => {
+      const result = mod.runCommand('echo "test"', 'echo test');
+      assert.strictEqual(result, true);
+    });
+
+    it('returns false on failure', () => {
+      const result = mod.runCommand('nonexistent-command-xyz-12345', 'bad command');
+      assert.strictEqual(result, false);
+    });
+  });
+
+  describe('main() CLI flags', () => {
+    let captured;
+
+    beforeEach(() => {
+      captured = [];
+      process.stdout.write = chunk => {
+        captured.push(chunk.toString());
+      };
+    });
+
+    it('--help flag routes to printHelp', () => {
+      process.argv = ['node', 'interactive.js', '--help'];
+      process.stdin.isTTY = false;
+      delete require.cache[require.resolve('./interactive')];
+      require('./interactive');
+      const text = captured.join('');
+      assert.ok(text.includes('Usage:'));
+      assert.ok(text.includes('--help'));
+      assert.ok(text.includes('--list'));
+      assert.ok(text.includes('Categories:'));
+    });
+
+    it('--list flag routes to printListAsJson', () => {
+      captured = [];
+      process.argv = ['node', 'interactive.js', '--list'];
+      process.stdin.isTTY = false;
+      delete require.cache[require.resolve('./interactive')];
+      require('./interactive');
+      const output = captured.join('');
+      assert.doesNotThrow(() => JSON.parse(output));
+      const parsed = JSON.parse(output);
+      assert.ok(parsed.Development);
+      assert.ok(parsed.Testing);
+    });
+
+    it('--list=flat flag routes to printFlatList', () => {
+      captured = [];
+      process.argv = ['node', 'interactive.js', '--list=flat'];
+      process.stdin.isTTY = false;
+      delete require.cache[require.resolve('./interactive')];
+      require('./interactive');
+      const output = captured.join('');
+      assert.doesNotThrow(() => {
+        const parsed = JSON.parse(output);
+        assert.ok(Array.isArray(parsed));
+      });
+      const parsed = JSON.parse(output);
+      assert.ok(parsed.length > 0);
+      assert.ok(parsed[0].category);
+      assert.ok(parsed[0].label);
+      assert.ok(parsed[0].cmd);
+    });
+
+    it('non-TTY mode prints npm scripts listing', () => {
+      captured = [];
+      process.argv = ['node', 'interactive.js'];
+      process.stdin.isTTY = false;
+      delete require.cache[require.resolve('./interactive')];
+      require('./interactive');
+      const text = captured.join('');
+      assert.ok(text.includes('Sekolah PSEO Interactive CLI'));
+      assert.ok(text.includes('npm run'));
+      assert.ok(text.includes('test'));
+      assert.ok(text.includes('build'));
+    });
+  });
+
   describe('npm script coverage', () => {
     let pkgScripts;
 

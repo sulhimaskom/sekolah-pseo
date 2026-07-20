@@ -7,9 +7,6 @@ This document defines the internal API contracts for all modules in the Sekolah 
 ## Module Organization
 
 ```
-
-```
-
 scripts/ # Controllers, utilities, and CLI tools
 ├── config.js # Configuration module
 ├── utils.js # Shared utility functions (CSV, HTML, directory walk)
@@ -49,9 +46,6 @@ src/
 ├── back-to-top.js # Shared back-to-top button HTML + script
 ├── navigation.js # Shared breadcrumb navigation component
 └── footer.js # Shared footer component
-
-```
-
 ```
 
 ## Configuration Module (`scripts/config.js`)
