@@ -146,8 +146,18 @@ test('run() processes valid CSV with multiple records', async () => {
 
     // Verify all expected fields are present
     const expectedHeaders = [
-      'npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat',
-      'kelurahan', 'kecamatan', 'kab_kota', 'provinsi', 'lat', 'lon', 'updated_at',
+      'npsn',
+      'nama',
+      'bentuk_pendidikan',
+      'status',
+      'alamat',
+      'kelurahan',
+      'kecamatan',
+      'kab_kota',
+      'provinsi',
+      'lat',
+      'lon',
+      'updated_at',
     ];
     for (const header of expectedHeaders) {
       assert.ok(header in records[0], `Output should have field: ${header}`);
@@ -291,7 +301,7 @@ test('run() terminates when all records fail schema validation', async () => {
 test('run() terminates when processed array is empty after filtering', async () => {
   const csv = [
     'npsn,nama,provinsi,kab_kota,kecamatan,bentuk_pendidikan,status',
-    'abcde,,Jawa Barat,Bandung,Coblong,SD,N',  // non-numeric npsn and missing nama
+    'abcde,,Jawa Barat,Bandung,Coblong,SD,N', // non-numeric npsn and missing nama
   ].join('\n');
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
@@ -314,8 +324,8 @@ test('run() filters out invalid records and only writes valid ones', async () =>
   const csv = [
     'npsn,nama,provinsi,kab_kota,kecamatan,bentuk_pendidikan,status',
     '12345,Valid School,Jawa Barat,Bandung,Coblong,SD,N',
-    'xxxxx,Invalid School,Jawa Timur,Surabaya,Tegalsari,SMP,S',   // non-numeric npsn
-    '',                                                            // empty record
+    'xxxxx,Invalid School,Jawa Timur,Surabaya,Tegalsari,SMP,S', // non-numeric npsn
+    '', // empty record
     '67890,Another Valid,Jawa Tengah,Semarang,Gajahmungkur,SMA,N',
   ].join('\n');
 

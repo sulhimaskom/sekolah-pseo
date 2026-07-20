@@ -164,6 +164,12 @@ describe('fetch-data', () => {
     });
 
     afterEach(() => {
+      // Clean up tempDir created in beforeEach
+      if (tempDir && fs.existsSync(tempDir)) {
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        } catch {}
+      }
       // Clean up external-data dir if test created it
       const externalDataDir = path.join(process.cwd(), 'external-data');
       if (fs.existsSync(externalDataDir)) {
@@ -321,7 +327,7 @@ describe('fetch-data', () => {
       originalExit = process.exit;
 
       // Mock process.exit to throw instead of exiting
-      process.exit = (code) => {
+      process.exit = code => {
         throw new Error(`PROCESS_EXIT:${code}`);
       };
     });
@@ -339,7 +345,14 @@ describe('fetch-data', () => {
     it('terminates when fetch fails and no cache available', () => {
       // Use --output pointing to a path that doesn't exist and has no cached fallback
       const outputPath = path.join(testDir, 'nonexistent', 'output.csv');
-      process.argv = ['node', 'fetch-data.js', '--source', 'not-a-valid-url', '--output', outputPath];
+      process.argv = [
+        'node',
+        'fetch-data.js',
+        '--source',
+        'not-a-valid-url',
+        '--output',
+        outputPath,
+      ];
 
       assert.throws(
         () => require('./fetch-data').main(),
@@ -370,9 +383,12 @@ describe('fetch-data', () => {
 
     it('parses --output argument', () => {
       process.argv = [
-        'node', 'fetch-data.js',
-        '--output', path.join(testDir, 'custom.csv'),
-        '--source', 'not-a-valid-url',
+        'node',
+        'fetch-data.js',
+        '--output',
+        path.join(testDir, 'custom.csv'),
+        '--source',
+        'not-a-valid-url',
       ];
 
       // Should attempt to fetch and fail, then try cache (which doesn't exist → terminate)
@@ -396,8 +412,10 @@ describe('fetch-data', () => {
       // CONFIG.RAW_DATA_PATH points to non-existent file → no direct cache
       // But external-data dir has a CSV → useCachedData falls back to it
       process.argv = [
-        'node', 'fetch-data.js',
-        '--source', 'https://github.com/nonexistent/repo.git',
+        'node',
+        'fetch-data.js',
+        '--source',
+        'https://github.com/nonexistent/repo.git',
       ];
 
       try {
@@ -418,17 +436,13 @@ describe('fetch-data', () => {
 
   describe('fetchFromGitHub - error handling paths', () => {
     it('throws IntegrationError for invalid repo URL', () => {
-      assert.throws(
-        () => fetchFromGitHub('not-a-url'),
-        { name: 'IntegrationError' }
-      );
+      assert.throws(() => fetchFromGitHub('not-a-url'), { name: 'IntegrationError' });
     });
 
     it('throws IntegrationError for invalid branch name', () => {
-      assert.throws(
-        () => fetchFromGitHub('https://github.com/user/repo.git', 'rm -rf /'),
-        { name: 'IntegrationError' }
-      );
+      assert.throws(() => fetchFromGitHub('https://github.com/user/repo.git', 'rm -rf /'), {
+        name: 'IntegrationError',
+      });
     });
 
     it('handles empty branch parameter with default', async () => {
@@ -439,7 +453,7 @@ describe('fetch-data', () => {
       // from validation (INVALID_INPUT code)
       await assert.rejects(
         () => fetchFromGitHub('https://github.com/user/repo.git'),
-        (err) => {
+        err => {
           // Should NOT be a validation error
           if (err.name === 'IntegrationError' && err.code === 'INVALID_INPUT') {
             return false;

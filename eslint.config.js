@@ -3,7 +3,7 @@ const globals = require('globals');
 module.exports = [
   // Global ignores
   {
-    ignores: ['coverage/**'],
+    ignores: ['coverage/**', 'test-temp-*'],
   },
   {
     files: ['scripts/**/*.js', 'src/**/*.js'],
