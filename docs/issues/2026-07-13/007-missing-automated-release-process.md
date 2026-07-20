@@ -24,7 +24,7 @@ No automated release workflow, GitHub Releases, or versioning strategy exists. T
 
 ## Recommended Actions
 
-1. Create a release workflow triggered by tag push (v*.*.*)
+1. Create a release workflow triggered by tag push (v*._._)
 2. Integrate CHANGELOG.md into the release process
 3. Configure semantic versioning based on conventional commits
 4. Add release notes generation from changelog
