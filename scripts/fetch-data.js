@@ -29,7 +29,7 @@ const {
 } = require('./resilience');
 
 // Default external data configuration
-const DEFAULT_SOURCE_REPO = 'https://github.com/玩家们/daftar-sekolah-indonesia.git';
+const DEFAULT_SOURCE_REPO = 'https://github.com/suryavip/daftar-sekolah-indonesia.git';
 const DEFAULT_BRANCH = 'main';
 const EXTERNAL_DATA_DIR = path.join(process.cwd(), 'external-data');
 
