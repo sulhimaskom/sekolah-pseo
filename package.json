@@ -54,11 +54,11 @@
   },
   "homepage": "https://github.com/sulhimaskom/sekolah-pseo#readme",
   "devDependencies": {
-    "c8": "^11.0.0",
+    "c8": "^12.0.0",
     "eslint": "^10.7.0",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
+    "lint-staged": "^17.1.0",
     "prettier": "^3.9.5"
   },
   "c8": {
