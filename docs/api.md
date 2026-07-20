@@ -7,45 +7,45 @@ This document defines the internal API contracts for all modules in the Sekolah 
 ## Module Organization
 
 ```
-scripts/           # Controllers and utilities
-├── config.js      # Configuration module
-├── utils.js       # Shared utility functions
-├── resilience.js  # Resilience patterns
-├── fs-safe.js     # Resilient file system wrappers
+scripts/ # Controllers, utilities, and CLI tools
+├── config.js # Configuration module
+├── utils.js # Shared utility functions (CSV, HTML, directory walk)
+├── resilience.js # Resilience patterns (retry, timeout, circuit breaker)
+├── fs-safe.js # Resilient file system wrappers
 ├── rate-limiter.js # Rate limiting for concurrent operations
 ├── data-schema.js # Centralized data schema definition
-├── slugify.js     # URL slug generation
-├── etl.js         # ETL operations
-├── build-pages.js # Page build controller
-├── sitemap.js     # Sitemap generator
+├── slugify.js # URL slug generation
+├── etl.js # ETL operations (extract, transform, load)
+├── build-pages.js # Page build controller (delegates to BuildOrchestrator)
+├── build-performance.js # Build performance tracking and budgets
+├── sitemap.js # Sitemap generator
 ├── validate-links.js # Link validation
-├── logger.js       # Pino-based logging
-├── fetch-data.js   # External data fetch from GitHub
+├── logger.js # Pino-based logging
+├── fetch-data.js # External data fetch from GitHub
+├── enrichment.js # School data enrichment (Wikipedia API)
 ├── check-freshness.js # Data freshness check
-├── manifest.js     # Build manifest for incremental builds
-├── enrichment.js   # School data enrichment (Wikipedia API)
-├── build-performance.js  # Build performance tracking
-├── data-quality.js # Data quality analysis
 ├── freshness-report.js # Data freshness report generation
-├── interactive.js  # CLI interactive menu
+├── data-quality.js # Data quality analysis and scoring
+├── manifest.js # Build manifest for incremental builds
+├── interactive.js # CLI interactive menu
 └── check-workflow-security.js # Workflow security validation (CI)
 
 src/
 ├── services/
-│   ├── PageBuilder.js       # Page data builders (paths, grouping, search)
-│   └── BuildOrchestrator.js # Build pipeline orchestration service
+│ ├── PageBuilder.js # Page data builders (paths, grouping, search)
+│ └── BuildOrchestrator.js # Build pipeline orchestration service
 └── presenters/
-    ├── design-system.js   # Design tokens
-    ├── styles.js         # CSS generator
-    └── templates/
-        ├── school-page.js    # School page HTML template
-        ├── homepage.js       # Homepage HTML template
-        ├── province-page.js  # Province page HTML template
-        └── shared/
-            ├── head-meta.js      # Shared HTML head prefix (security headers, meta)
-            ├── back-to-top.js    # Shared back-to-top button HTML + script
-            ├── navigation.js     # Shared breadcrumb navigation component
-            └── footer.js        # Shared footer component
+├── design-system.js # Design tokens
+├── styles.js # CSS generator
+└── templates/
+├── school-page.js # School page HTML template
+├── homepage.js # Homepage HTML template
+├── province-page.js # Province page HTML template
+└── shared/
+├── head-meta.js # Shared HTML head prefix (security headers, meta)
+├── back-to-top.js # Shared back-to-top button HTML + script
+├── navigation.js # Shared breadcrumb navigation component
+└── footer.js # Shared footer component
 ```
 
 ## Configuration Module (`scripts/config.js`)
@@ -2147,6 +2147,367 @@ const searchData = prepareSchoolDataForSearch(schools);
 
 ---
 
+## Build Orchestrator Service (`src/services/BuildOrchestrator.js`)
+
+### Purpose
+
+Build pipeline orchestration service that encapsulates the static site generation pipeline — data loading, page generation, file output, manifest tracking, performance reporting, and shared resource generation (homepage, province pages, search data). Controllers (`scripts/build-pages.js`) delegate to this service rather than implementing pipeline logic directly.
+
+### Exports
+
+```javascript
+module.exports = {
+  // Build pipeline
+  build: function,
+  buildIncremental: function,
+  prepareBuildEnvironment: function,
+  finalizeBuild: function,
+
+  // Step functions
+  ensureDistDir: function,
+  loadSchools: function,
+  writeSchoolPage: function,
+  writeSchoolPagesConcurrently: function,
+  preCreateDirectories: function,
+  preCreateProvinceDirectories: function,
+  generateProvincePages: function,
+  generateRobotsTxt: function,
+  generateExternalStyles: function,
+  writeExternalStylesFile: function,
+  writeSearchDataFile: function,
+  exportSchoolsCsv: function,
+  createManifestFromSchools: function,
+
+  // Re-exported for convenience
+  computeSchoolHash: function,
+};
+```
+
+### Functions
+
+#### `build(options)`
+
+Main build function that orchestrates the complete build process.
+
+**Parameters:**
+
+- `options` (Object, optional):
+  - `incremental` (boolean): If true, performs incremental build
+
+**Returns:** `Promise<void>`
+
+**Build Process (full):**
+
+1. Prepares build environment — ensures `dist/`, generates `styles.css` and `robots.txt`
+2. Loads school data from CSV and enrichment data
+3. Generates homepage (`index.html`), province pages, and schools.json **in parallel** with school page writing
+4. Writes all school pages concurrently using `processInBatches`
+5. Saves build manifest for future incremental builds
+6. Exports schools.csv to `dist/data/schools.csv`
+
+**Build Process (incremental):**
+
+1. Same environment preparation as full build
+2. Loads previous manifest and filters to changed schools only
+3. Homepage, province pages, and schools.json are always regenerated (aggregate data)
+4. Only changed school pages are written
+5. Manifest updated; CSV export skipped (data unchanged)
+
+**Dependencies:**
+
+- `ensureDistDir()`, `generateExternalStyles()`, `generateRobotsTxt()`
+- `loadSchools()`, `loadEnrichmentData()` (from `scripts/enrichment.js`)
+- `buildHomepageData()`, `buildProvincePageData()` (from `./PageBuilder.js`)
+- `writeSchoolPagesConcurrently()`, `generateProvincePages()`
+- `loadManifest` / `saveManifest` (from `scripts/manifest.js`)
+- `BuildPerformanceTracker` (from `scripts/build-performance.js`)
+
+**Usage:**
+
+```javascript
+// Full build
+await build();
+
+// Incremental build
+await build({ incremental: true });
+```
+
+---
+
+#### `loadSchools()`
+
+Loads processed school data from CSV file.
+
+**Returns:** `Promise<Array<Object>>` — Array of school records
+
+**Throws:** `IntegrationError` with `FILE_EMPTY` code if CSV is empty or contains no records
+
+**Usage:**
+
+```javascript
+const schools = await loadSchools();
+console.log(`Loaded ${schools.length} schools`);
+```
+
+---
+
+#### `writeSchoolPage(school, enrichment)`
+
+Writes a single school page using `fastWriteFile` (no retry/timeout/circuit-breaker for bulk writes).
+
+**Parameters:**
+
+- `school` (Object): School data object
+- `enrichment` (Object, optional): Enrichment data (e.g., Wikipedia extract)
+
+**Returns:** `Promise<void>`
+
+**Dependencies:**
+
+- `buildSchoolPageData` (from `./PageBuilder.js`)
+- `fastWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+await writeSchoolPage(school);
+await writeSchoolPage(school, enrichmentMap[school.npsn]);
+```
+
+---
+
+#### `writeSchoolPagesConcurrently(schools, concurrencyLimit, enrichmentMap)`
+
+Writes multiple school pages concurrently using batch-based concurrency (`processInBatches`) instead of RateLimiter — eliminates per-item Promise+setTimeout overhead for 3474+ fast filesystem writes.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school records
+- `concurrencyLimit` (number, optional): Max concurrent operations (default: `CONFIG.BUILD_CONCURRENCY_LIMIT`)
+- `enrichmentMap` (Object, optional): Optional map of NPSN → enrichment data
+
+**Returns:** `Promise<Object>`
+
+```javascript
+{
+  successful: number,  // Count of successfully generated pages
+  failed: number       // Count of failed pages
+}
+```
+
+**Behavior:**
+
+- Pre-creates all unique directories via `preCreateDirectories()`
+- Uses `processInBatches` with configurable batch size
+- Reports progress every 100 pages
+- Logs failure details (up to 5 examples) when pages fail
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await writeSchoolPagesConcurrently(schools, 100);
+```
+
+---
+
+#### `preCreateDirectories(schools)`
+
+Pre-creates all unique school page directories to reduce redundant `fs.mkdir` calls. Failed directories are tracked and reported — the build continues but downstream writes to missing directories will fail.
+
+**Parameters:**
+
+- `schools` (Array<Object>): School records
+
+**Returns:** `Promise<string[]>` — Array of directory paths that failed to create
+
+**Usage:**
+
+```javascript
+const failures = await preCreateDirectories(schools);
+if (failures.length > 0) console.warn('Some directories failed');
+```
+
+---
+
+#### `preCreateProvinceDirectories(schools, provinces)`
+
+Pre-creates all unique province directories. Accepts an optional pre-computed provinces array to avoid redundant `getUniqueProvinces()` calls.
+
+**Parameters:**
+
+- `schools` (Array<Object>): School records (used if provinces not provided)
+- `provinces` (Array<Object>, optional): Pre-computed province objects with `slug`/`name`/`count`
+
+**Returns:** `Promise<void>`
+
+**Usage:**
+
+```javascript
+await preCreateProvinceDirectories(schools);
+await preCreateProvinceDirectories(schools, provinces);
+```
+
+---
+
+#### `generateProvincePages(schools)`
+
+Generates all province-level index pages using O(n) province pre-grouping to avoid redundant per-province filtering.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Promise<Object>` — `{ successful: number, failed: number }`
+
+**Process:**
+
+1. Groups schools by province in a single O(n) pass
+2. Derives province list from the grouped Map (eliminates second O(n) pass)
+3. Pre-creates province directories
+4. Generates province pages concurrently using `processInBatches` with `skipFilter=true`
+
+**Dependencies:**
+
+- `groupSchoolsByProvince`, `buildProvincePageData` (from `./PageBuilder.js`)
+- `slugify` (from `scripts/slugify.js`)
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await generateProvincePages(schools);
+```
+
+---
+
+#### `generateRobotsTxt(siteUrl)`
+
+Generates a `robots.txt` file with the correct sitemap URL.
+
+**Parameters:**
+
+- `siteUrl` (string): Base URL for the site
+
+**Returns:** `Promise<void>`
+
+**Throws:** `IntegrationError` with `FILE_WRITE_ERROR` code if write fails
+
+**Output:** `dist/robots.txt`
+
+**Usage:**
+
+```javascript
+await generateRobotsTxt('https://example.com');
+```
+
+---
+
+#### `generateExternalStyles()`
+
+Generates the external `styles.css` file using the design system.
+
+**Returns:** `Promise<void>`
+
+**Dependencies:**
+
+- `generateSchoolPageStyles` (from `src/presenters/styles.js`)
+
+**Usage:**
+
+```javascript
+await generateExternalStyles();
+```
+
+---
+
+#### `writeSearchDataFile(schools)`
+
+Generates `schools.json` for lazy-loaded client-side search and a pre-compressed `schools.json.gz` (gzip level 6, ~86% transfer reduction).
+
+**Parameters:**
+
+- `schools` (Array<Object>): School records
+
+**Returns:** `Promise<void>`
+
+**Dependencies:**
+
+- `prepareSchoolDataForSearch` (from `./PageBuilder.js`)
+- `safeWriteFile` (from `scripts/fs-safe.js`)
+
+**Output:** `dist/schools.json`, `dist/schools.json.gz`
+
+**Usage:**
+
+```javascript
+await writeSearchDataFile(schools);
+```
+
+---
+
+#### `exportSchoolsCsv()`
+
+Exports `schools.csv` to `dist/data/schools.csv` for user download. Only runs during full builds.
+
+**Returns:** `Promise<void>`
+
+**Usage:**
+
+```javascript
+await exportSchoolsCsv();
+```
+
+---
+
+#### `createManifestFromSchools(schools)`
+
+Creates a build manifest object from school records for incremental build tracking.
+
+**Parameters:**
+
+- `schools` (Array<Object>): School records
+
+**Returns:** `Object` — Manifest object with `version`, `lastBuild`, and per-school hashes
+
+**Usage:**
+
+```javascript
+const manifest = createManifestFromSchools(schools);
+```
+
+---
+
+#### `prepareBuildEnvironment()`
+
+Prepares the build environment and shared page generation. Extracted to eliminate duplication between full and incremental builds. Fires homepage, search data, and province page generation as a background promise that overlaps with school page writing.
+
+**Returns:** `Promise<Object>`
+
+```javascript
+{
+  schools: Array,                   // Loaded school records
+  enrichmentMap: Object,            // NPSN -> enrichment data
+  sharedPagesPromise: Promise<void> // Background page generation
+}
+```
+
+**Usage:** Internal — called by `build()`.
+
+---
+
+#### `finalizeBuild(tracker)`
+
+Stops the performance tracker, logs the report, and optionally writes a GitHub Actions step summary.
+
+**Parameters:**
+
+- `tracker` (BuildPerformanceTracker): Build performance tracker instance
+
+**Returns:** `void`
+
+**Usage:** Internal — called by `build()` in a `finally` block.
+
+---
+
 ## School Page Template Module (`src/presenters/templates/school-page.js`)
 
 ### Purpose
@@ -2639,6 +3000,119 @@ Generates the JavaScript for scroll-based visibility toggling and smooth scrolli
 ```javascript
 const { generateBackToTopScript } = require('./shared/back-to-top');
 const script = generateBackToTopScript();
+```
+
+---
+
+### Navigation Module (`src/presenters/templates/shared/navigation.js`)
+
+#### Purpose
+
+Provides the shared breadcrumb navigation component used by all page templates. Extracted to eliminate duplicate breadcrumb pattern code across school-page, province-page, and homepage templates.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateBreadcrumbHtml: function,
+};
+```
+
+#### Functions
+
+##### `generateBreadcrumbHtml(items)`
+
+Generates a breadcrumb navigation HTML block with semantic `<nav>` and `aria-label` attributes.
+
+**Parameters:**
+
+- `items` (Array<{label: string, url?: string}>): Breadcrumb trail. The last item should omit `url` to render as a `<span>` with `aria-current="page"`. Labels must be HTML-escaped by the caller.
+
+**Returns:** `string` — Navigation HTML string (empty string if items is empty or not an array)
+
+**Semantic Structure:**
+
+```html
+<nav aria-label="Navigasi utama">
+  <a href="/">Beranda</a> /
+  <span aria-current="page">Province Name</span>
+</nav>
+```
+
+**Usage:**
+
+```javascript
+const { generateBreadcrumbHtml } = require('./shared/navigation');
+
+// Current page (last item has no url)
+const html = generateBreadcrumbHtml([
+  { label: 'Beranda', url: '/' },
+  { label: 'DKI Jakarta', url: '/provinsi/dki-jakarta/' },
+  { label: 'SMA Negeri 1 Jakarta' },
+]);
+
+// With escapeHtml for user-generated labels
+const safeHtml = generateBreadcrumbHtml([
+  { label: escapeHtml('Beranda'), url: '/' },
+  { label: escapeHtml(school.provinsi) },
+]);
+```
+
+---
+
+### Footer Module (`src/presenters/templates/shared/footer.js`)
+
+#### Purpose
+
+Provides the shared footer component used by all page templates. Extracted to eliminate duplicate footer HTML across the codebase.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateFooterHtml: function,
+};
+```
+
+#### Constants
+
+- `CURRENT_YEAR`: Computed once at module load via `new Date().getFullYear()`
+
+#### Functions
+
+##### `generateFooterHtml(options)`
+
+Generates a consistent footer HTML block with semantic `<footer role="contentinfo">`.
+
+**Parameters:**
+
+- `options` (Object, optional):
+  - `siteName` (string): Site name displayed in copyright (default: `'Sekolah PSEO'`)
+  - `extraContent` (string): Additional HTML content injected after the copyright line (default: `''`)
+
+**Returns:** `string` — Footer HTML string
+
+**Output Structure:**
+
+```html
+<footer role="contentinfo">
+  <p>&copy; 2026 Sekolah PSEO. Data sekolah berasal dari Dapodik.</p>
+</footer>
+```
+
+**Usage:**
+
+```javascript
+const { generateFooterHtml } = require('./shared/footer');
+
+// Default footer
+const html = generateFooterHtml();
+
+// Custom footer with additional links
+const html = generateFooterHtml({
+  siteName: 'Sekolah PSEO',
+  extraContent: '<p class="footer-links"><a href="/sitemap-index.xml">Sitemap</a></p>',
+});
 ```
 
 ---
@@ -4255,6 +4729,923 @@ console.log('Manifest cleared - next build will be full');
 
 ---
 
+## Enrichment Module (`scripts/enrichment.js`)
+
+### Purpose
+
+Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (timeouts, retries for API calls).
+
+### Exports
+
+```javascript
+module.exports = {
+  isEnrichmentEnabled: function,
+  enrichSchool: function,
+  enrichSchoolViaWikipedia: function,
+  enrichSchools: function,
+  saveEnrichmentData: function,
+  loadEnrichmentData: function,
+  logEnrichmentSummary: function,
+  buildWikipediaSearchUrl: function,
+  buildWikipediaExtractUrl: function,
+  ENRICHMENT_DATA_PATH: string,
+  WIKIPEDIA_API_URL: string,
+};
+```
+
+### Constants
+
+#### `ENRICHMENT_DATA_PATH`
+
+- **Type:** `string`
+- **Value:** `data/enrichment.json`
+- **Description:** File path for persisted enrichment data.
+
+#### `WIKIPEDIA_API_URL`
+
+- **Type:** `string`
+- **Value:** `https://id.wikipedia.org/w/api.php`
+- **Description:** Indonesian Wikipedia API endpoint.
+
+### Functions
+
+#### `isEnrichmentEnabled()`
+
+Checks whether enrichment is enabled via environment variable or CLI flag.
+
+**Returns:** `boolean` — `true` if `ENRICHMENT_ENABLED=true`/`1` or `--enrich` flag is present in `process.argv`
+
+**Usage:**
+
+```javascript
+if (isEnrichmentEnabled()) {
+  logger.info('Enrichment is enabled');
+}
+```
+
+---
+
+#### `enrichSchool(school)`
+
+Enriches a single school record using all available enrichment sources (currently Wikipedia). Returns an empty object on failure (graceful degradation).
+
+**Parameters:**
+
+- `school` (Object): School record with at least `nama`
+
+**Returns:** `Promise<Object>` — Enrichment data keyed by source name
+
+```javascript
+{
+  wikipedia: {
+    wikipediaUrl: string,       // URL to the Wikipedia page
+    wikipediaTitle: string,     // Wikipedia page title
+    wikipediaExtract: string,   // First 500 chars of extract
+    enrichedAt: string,         // ISO-8601 timestamp
+    source: 'wikipedia'
+  }
+}
+```
+
+**Error Handling:** Returns `{}` for null/non-object input, or if enrichment fails at any step (graceful degradation — enrichment failures never propagate).
+
+**Usage:**
+
+```javascript
+const enrichment = await enrichSchool(school);
+if (enrichment.wikipedia) {
+  console.log(`Found Wikipedia page: ${enrichment.wikipedia.wikipediaTitle}`);
+}
+```
+
+---
+
+#### `enrichSchoolViaWikipedia(school)`
+
+Enriches a single school using the Indonesian Wikipedia API. Searches by school name (optionally scoped by province), fetches page extracts, and returns the best match.
+
+**Parameters:**
+
+- `school` (Object): School record with at least `nama` and optionally `provinsi`
+
+**Returns:** `Promise<Object>` — Wikipedia enrichment data or `{}` if no results
+
+**API Flow:**
+
+1. Builds search URL with `buildWikipediaSearchUrl(schoolName, province)`
+2. Fetches search results via `fetchJson()` with retry and timeout
+3. Builds extract URL with `buildWikipediaExtractUrl(pageTitles)`
+4. Fetches page extracts
+5. Returns the first valid page with extract truncated to 500 characters
+
+**Resilience:**
+
+- Timeout: 10 seconds per API call
+- Retries: Up to 3 attempts with 1s initial delay
+- Retry conditions: HTTP 429, 5xx, or transient network errors
+- Non-transient errors (e.g., parse failures) are NOT retried
+
+**Usage:**
+
+```javascript
+const wikiData = await enrichSchoolViaWikipedia({
+  nama: 'SMA Negeri 1 Jakarta',
+  provinsi: 'DKI Jakarta',
+});
+```
+
+---
+
+#### `enrichSchools(schools, options)`
+
+Enriches multiple school records concurrently with controlled concurrency.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school records
+- `options` (Object, optional):
+  - `concurrency` (number): Max concurrent API calls (default: 10)
+  - `onProgress` (Function): Progress callback `(processed, total) => void`
+
+**Returns:** `Promise<Object>` — Object mapping NPSN to enrichment data
+
+```javascript
+{
+  "12345678": { wikipedia: { ... } },
+  "87654321": { wikipedia: { ... } }
+}
+```
+
+**Behavior:**
+
+- Processes schools in batches to control API concurrency
+- Silently skips schools without NPSN
+- Only includes schools where enrichment returned non-empty data
+- Reports progress via callback
+
+**Usage:**
+
+```javascript
+const enrichmentMap = await enrichSchools(schools, {
+  concurrency: 5,
+  onProgress: (processed, total) => {
+    console.log(`Enriched ${processed}/${total}`);
+  },
+});
+```
+
+---
+
+#### `saveEnrichmentData(enrichmentData)`
+
+Persists enrichment data to the enrichment data file as JSON.
+
+**Parameters:**
+
+- `enrichmentData` (Object): Enrichment data keyed by NPSN
+
+**Returns:** `Promise<void>`
+
+**Throws:** `IntegrationError` with `FILE_WRITE_ERROR` code if the file cannot be written
+
+**Output:** `data/enrichment.json` — Pretty-printed JSON (human-readable for debugging)
+
+**Usage:**
+
+```javascript
+await saveEnrichmentData(enrichmentMap);
+// Logs: "Saved enrichment data for 1500 schools (240 KB)"
+```
+
+---
+
+#### `loadEnrichmentData()`
+
+Loads enrichment data from the enrichment data file.
+
+**Returns:** `Promise<Object>` — Enrichment data keyed by NPSN, or `{}` if file doesn't exist or is invalid
+
+**Error Handling:** Returns `{}` for missing file, corrupt JSON, or any read error (graceful degradation)
+
+**Usage:**
+
+```javascript
+const enrichmentMap = await loadEnrichmentData();
+console.log(`Loaded ${Object.keys(enrichmentMap).length} enriched schools`);
+```
+
+---
+
+#### `logEnrichmentSummary(enrichmentData, totalSchools)`
+
+Logs enrichment summary statistics showing coverage rates and breakdown by source.
+
+**Parameters:**
+
+- `enrichmentData` (Object): Enrichment data keyed by NPSN
+- `totalSchools` (number): Total number of schools processed
+
+**Returns:** `void`
+
+**Usage:**
+
+```javascript
+logEnrichmentSummary(enrichmentMap, schools.length);
+// Output:
+// === Enrichment Summary ===
+// Total schools: 3474
+// Enriched schools: 1500
+// Coverage: 43.2%
+//
+// Enrichment by source:
+//   wikipedia: 1500 schools
+```
+
+---
+
+#### `buildWikipediaSearchUrl(schoolName, province)`
+
+Builds a Wikipedia API search URL for a school query.
+
+**Parameters:**
+
+- `schoolName` (string): School name to search for
+- `province` (string, optional): Province to narrow the search
+
+**Returns:** `string` — Wikipedia API URL
+
+**Usage:**
+
+```javascript
+const url = buildWikipediaSearchUrl('SMA Negeri 1', 'DKI Jakarta');
+// Returns: 'https://id.wikipedia.org/w/api.php?action=query&list=search&srsearch=SMA+Negeri+1+DKI+Jakarta&srlimit=3&format=json&origin=*'
+```
+
+---
+
+#### `buildWikipediaExtractUrl(pageTitles)`
+
+Builds a Wikipedia API URL to fetch page extracts for a set of page titles.
+
+**Parameters:**
+
+- `pageTitles` (Array<string>): Page titles to fetch extracts for
+
+**Returns:** `string` — Wikipedia API URL
+
+**Usage:**
+
+```javascript
+const url = buildWikipediaExtractUrl(['SMA Negeri 1 Jakarta', 'SMAN 1 Jakarta']);
+```
+
+---
+
+## Build Performance Module (`scripts/build-performance.js`)
+
+### Purpose
+
+Tracks build performance metrics (duration, memory, throughput) and enforces configurable performance budgets. Generates structured reports for CI/CD visibility, including GitHub Actions step summaries. Used by `BuildOrchestrator.js` to monitor build pipeline performance.
+
+### Exports
+
+```javascript
+module.exports = {
+  BuildPerformanceTracker: class,
+  monitorBuild: function,
+  DEFAULT_BUDGETS: Object,
+};
+```
+
+### Constants
+
+#### `DEFAULT_BUDGETS`
+
+Default performance budgets, configurable via environment variables:
+
+| Budget              | Env Variable             | Default | Description                     |
+| ------------------- | ------------------------ | ------- | ------------------------------- |
+| `MAX_BUILD_TIME_MS` | `PERF_MAX_BUILD_TIME_MS` | 300000  | Maximum build time (5 minutes)  |
+| `MAX_MEMORY_BYTES`  | `PERF_MAX_MEMORY_BYTES`  | 2 GB    | Maximum heap memory usage       |
+| `MIN_THROUGHPUT`    | `PERF_MIN_THROUGHPUT`    | 10      | Minimum pages/second throughput |
+| `MAX_FAILED_PAGES`  | `PERF_MAX_FAILED_PAGES`  | 0       | Maximum allowed failed pages    |
+
+### Classes
+
+#### `BuildPerformanceTracker`
+
+Tracks build metrics from start to finish and generates reports with budget compliance checking.
+
+**Constructor:**
+
+```javascript
+new BuildPerformanceTracker(budgets);
+```
+
+**Parameters:**
+
+- `budgets` (Object, optional): Override default performance budgets
+
+**Methods:**
+
+##### `start()`
+
+Starts the performance tracking timer. Call this before the build begins.
+
+**Returns:** `void`
+
+---
+
+##### `stop()`
+
+Stops the performance tracking timer and records end state. Call this after the build completes.
+
+**Returns:** `void`
+
+---
+
+##### `setBuildType(type)`
+
+Sets the build type for context in reports.
+
+**Parameters:**
+
+- `type` (string): `'full'` or `'incremental'`
+
+**Returns:** `void`
+
+---
+
+##### `recordPageCounts(total, failed)`
+
+Records page counts at the end of the build.
+
+**Parameters:**
+
+- `total` (number): Total pages processed
+- `failed` (number): Failed pages count
+
+**Returns:** `void`
+
+---
+
+##### `getElapsedMs()`
+
+Calculates elapsed build time in milliseconds.
+
+**Returns:** `number` — Milliseconds since start (0 if start/end not set)
+
+---
+
+##### `getThroughput()`
+
+Calculates throughput in pages per second.
+
+**Returns:** `number` — Pages/second (0 if no elapsed time or total pages)
+
+---
+
+##### `getMemoryDelta()`
+
+Gets peak memory usage delta (heap used).
+
+**Returns:** `number` — Memory increase in bytes
+
+---
+
+##### `getPeakRss()`
+
+Gets the peak RSS (Resident Set Size) in bytes.
+
+**Returns:** `number` — Peak RSS in bytes
+
+---
+
+##### `checkBudgets()`
+
+Checks all budgets against actual metrics and records violations.
+
+**Returns:** `Array<Object>` — Array of violation objects
+
+```javascript
+[
+  {
+    budget: 'MAX_BUILD_TIME_MS',
+    threshold: 300000,
+    actual: 350000,
+    message: 'Build time 350000ms exceeds budget of 300000ms',
+  },
+];
+```
+
+---
+
+##### `formatBytes(bytes)`
+
+Formats bytes to a human-readable string (B, KB, MB, GB).
+
+**Parameters:**
+
+- `bytes` (number): Value in bytes
+
+**Returns:** `string` — e.g., `'256.00 MB'`
+
+---
+
+##### `generateReport()`
+
+Generates a structured performance report with metrics, budgets, and violations.
+
+**Returns:** `Object`
+
+```javascript
+{
+  buildType: 'full',
+  status: 'PASS' | 'VIOLATION',
+  passed: boolean,
+  timestamp: 'ISO-8601',
+  metrics: {
+    elapsedMs: number,
+    elapsedFormatted: string,
+    totalPages: number,
+    failedPages: number,
+    throughput: number,
+    throughputFormatted: string,
+    memoryDelta: string,
+    peakRss: string,
+  },
+  budgets: { ... },
+  violations: [ ... ],
+}
+```
+
+---
+
+##### `logReport()`
+
+Logs the performance report to the console using the project's Pino logger.
+
+**Returns:** `void`
+
+---
+
+##### `getGitHubSummary()`
+
+Generates a GitHub Actions step summary compatible markdown string.
+
+**Returns:** `string` — Markdown table for `GITHUB_STEP_SUMMARY`
+
+---
+
+### Functions
+
+#### `monitorBuild(buildFn, options)`
+
+Factory function that creates a tracker, wraps an async build function, and logs the report on completion.
+
+**Parameters:**
+
+- `buildFn` (Function): Async function `(tracker) => Promise<any>` that performs the build
+- `options` (Object, optional):
+  - `buildType` (string): `'full'` or `'incremental'` (default: `'full'`)
+  - `budgets` (Object): Override performance budgets
+  - `throwOnViolation` (boolean): If true, throws `IntegrationError` with `PERFORMANCE_BUDGET_VIOLATION` code when budgets are exceeded (default: `false`)
+
+**Returns:** `Promise<Object>`
+
+```javascript
+{
+  result: any,       // Return value of buildFn
+  report: Object,    // Performance report object
+}
+```
+
+**Throws:** `IntegrationError` with `PERFORMANCE_BUDGET_VIOLATION` code if `throwOnViolation` is true and budgets are exceeded
+
+**Usage:**
+
+```javascript
+const { result, report } = await monitorBuild(
+  async tracker => {
+    tracker.recordPageCounts(3474, 0);
+    return 'build complete';
+  },
+  { buildType: 'full' }
+);
+
+console.log(report.status); // 'PASS' or 'VIOLATION'
+```
+
+---
+
+## Data Quality Module (`scripts/data-quality.js`)
+
+### Purpose
+
+Generates comprehensive data quality metrics for the school dataset, including field completeness per required field, coordinate validity (Indonesia geographic bounds), NPSN uniqueness detection, categorical distribution analysis (province, education type, status), and an overall quality score. Can be run locally or in CI/CD with configurable thresholds.
+
+### Exports
+
+```javascript
+module.exports = {
+  analyzeQuality: function,
+  checkThresholds: function,
+  isValidCoordinate: function,
+  isNonEmpty: function,
+  pct: function,
+  createBar: function,
+  formatHuman: function,
+  formatJson: function,
+  main: function,
+  REQUIRED_FIELDS: string[],
+  INDONESIA_BOUNDS: Object,
+  DEFAULT_THRESHOLDS: Object,
+};
+```
+
+### Constants
+
+#### `DEFAULT_THRESHOLDS`
+
+```javascript
+{
+  MIN_COMPLETENESS_PCT: 90,     // Minimum field completeness percentage
+  MAX_DUPLICATE_NPSN: 0,        // Maximum allowed duplicate NPSN groups
+  MIN_COORDINATE_PCT: 50,       // Minimum coordinate validity percentage
+}
+```
+
+### Functions
+
+#### `analyzeQuality(schools)`
+
+Computes comprehensive quality metrics for the school dataset in a single pass. Returns a structured report with field completeness, coordinate validity, NPSN uniqueness, categorical distribution, and an overall quality score.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Parsed school records
+
+**Returns:** `Object`
+
+```javascript
+{
+  summary: {
+    totalSchools: number,
+    overallScore: number,    // 0-100 weighted composite:
+    schemaVersion: string,   // 40% completeness, 30% coordinates, 30% uniqueness
+  },
+  fieldCompleteness: {
+    npsn: { present: number, missing: number, completenessPct: number },
+    // ... per required field
+  },
+  coordinates: {
+    valid: number,          // Both lat/lon within Indonesia bounds
+    missing: number,        // Both fields empty
+    zero: number,           // One or both are 0 (unset)
+    outOfBounds: number,    // Outside Indonesia bounds
+    total: number,
+  },
+  npsnUniqueness: {
+    unique: number,
+    duplicates: number,      // Number of NPSN values that appear more than once
+    duplicateCount: number,  // Total records with duplicate NPSNs
+    duplicateNpsns: [{ npsn: string, count: number }],
+  },
+  categoricalDistribution: {
+    provinces: { 'DKI Jakarta': number, ... },
+    educationTypes: { 'SMA': number, ... },
+    statuses: { 'Negeri': number, 'Swasta': number },
+  },
+}
+```
+
+**Overall Score Calculation:**
+
+- Completeness (40%): Average completeness across all required fields
+- Coordinate validity (30%): Percentage of records with valid coordinates
+- Uniqueness (30%): 100% if no duplicates, penalty proportional to duplicate ratio
+
+**Usage:**
+
+```javascript
+const report = analyzeQuality(schools);
+console.log(`Quality score: ${report.summary.overallScore}/100`);
+```
+
+---
+
+#### `checkThresholds(report, thresholds)`
+
+Checks if a quality report meets configurable thresholds.
+
+**Parameters:**
+
+- `report` (Object): Report from `analyzeQuality()`
+- `thresholds` (Object, optional): Threshold overrides (defaults to `DEFAULT_THRESHOLDS`)
+
+**Returns:** `Object`
+
+```javascript
+{
+  passed: boolean,          // True if all checks pass
+  failures: string[]        // Descriptive failure messages
+}
+```
+
+**Usage:**
+
+```javascript
+const result = checkThresholds(report);
+if (!result.passed) {
+  result.failures.forEach(f => console.error(f));
+}
+```
+
+---
+
+#### `formatHuman(report)`
+
+Formats the quality report as a human-readable ASCII string with progress bars.
+
+**Parameters:**
+
+- `report` (Object): Report from `analyzeQuality()`
+
+**Returns:** `string` — Formatted report with bars, tables, and section headers
+
+---
+
+#### `formatJson(report)`
+
+Formats the quality report as pretty-printed JSON.
+
+**Parameters:**
+
+- `report` (Object): Report from `analyzeQuality()`
+
+**Returns:** `string` — JSON string
+
+**Usage:**
+
+```javascript
+// CLI: node scripts/data-quality.js --json
+console.log(formatJson(report));
+```
+
+---
+
+### CLI Usage
+
+The module can be run directly from the command line:
+
+```bash
+node scripts/data-quality.js                   # Human-readable report
+node scripts/data-quality.js --json            # JSON output
+node scripts/data-quality.js --threshold       # Exit 1 if quality below threshold
+node scripts/data-quality.js --verbose         # Detailed per-record stats
+```
+
+**Exit Codes:**
+
+- `0`: Quality meets thresholds (or thresholds not enforced)
+- `1`: Quality below thresholds (only with `--threshold`)
+
+---
+
+## Freshness Report Module (`scripts/freshness-report.js`)
+
+### Purpose
+
+Generates a static HTML report page showing data freshness and quality metrics, written to `dist/freshness-report/index.html`. Can be served alongside the rest of the static site for transparency about data age and quality.
+
+### Exports
+
+```javascript
+module.exports = {
+  generateHtml: function,
+  getReportData: function,
+};
+```
+
+### Functions
+
+#### `generateHtml(freshness, quality)`
+
+Generates a complete HTML report page with cards for status, last updated, school count, threshold, and a data quality metrics section with visual bars.
+
+**Parameters:**
+
+- `freshness` (Object): Data freshness info from `getDataFreshness()`
+- `quality` (Object|null): Data quality metrics from `getDataQualityMetrics()`
+
+**Returns:** `string` — Complete HTML document
+
+**Features:**
+
+- Status badge (Fresh/Stale) with color coding
+- Last updated date with "X days ago" label
+- Total school record count
+- Data age threshold display
+- Quality metric bars with color thresholds (green ≥99%, yellow ≥90%, red <90%)
+- Dark mode support via `prefers-color-scheme`
+- Responsive grid layout using design system tokens
+
+**Dependencies:**
+
+- `DESIGN_TOKENS` (from `src/presenters/design-system.js`)
+
+**Usage:**
+
+```javascript
+const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');
+const html = generateHtml(getDataFreshness(), getDataQualityMetrics());
+await safeWriteFile('dist/freshness-report/index.html', html);
+```
+
+---
+
+#### `getReportData()**
+
+Returns a combined report data object with freshness, quality, and generation timestamp.
+
+**Returns:** `Object`
+
+```javascript
+{
+  exists: boolean,
+  date: string|null,
+  daysAgo: number|null,
+  recordCount: number,
+  isFresh: boolean,
+  maxAgeDays: number,
+  quality: { totalRecords: number, metrics: Object } | null,
+  generatedAt: 'ISO-8601',
+}
+```
+
+**Usage:**
+
+```javascript
+const data = getReportData();
+console.log(data.isFresh ? 'Data is fresh' : 'Data is stale');
+```
+
+---
+
+### CLI Usage
+
+```bash
+node scripts/freshness-report.js                    # Generate report to dist/freshness-report/index.html
+node scripts/freshness-report.js --stdout           # Print HTML to stdout
+node scripts/freshness-report.js --json             # Print JSON report data
+```
+
+---
+
+## Interactive CLI Module (`scripts/interactive.js`)
+
+### Purpose
+
+Provides an interactive terminal menu for common development tasks using Node.js built-in `readline` (zero external dependencies). Organizes tasks into categories: Development, Data Pipeline, Testing, Validation, and Utilities. Falls back to non-interactive mode when stdin is not a TTY.
+
+### Exports
+
+```javascript
+module.exports = {
+  SCRIPTS: Object,
+  runCommand: function,
+  pickFromList: function,
+  printListAsJson: function,
+  printFlatList: function,
+  printHelp: function,
+};
+```
+
+### Constants
+
+#### `SCRIPTS`
+
+Predefined script categories and their commands:
+
+```javascript
+{
+  Development: [
+    { label: 'Dev (lint + test JS)', desc: '...', cmd: 'npm run dev' },
+    { label: 'Build all pages (full)', desc: '...', cmd: 'npm run build' },
+    // ...
+  ],
+  'Data Pipeline': [ /* ETL, fetch, freshness, quality */ ],
+  Testing: [ /* all, JS, Python, pytest, coverage */ ],
+  Validation: [ /* validate-links, sitemap */ ],
+  Utilities: [ /* lint, format, format:check */ ],
+}
+```
+
+### Functions
+
+#### `runCommand(cmd, label)`
+
+Runs a shell command and returns its status.
+
+**Parameters:**
+
+- `cmd` (string): Shell command to execute
+- `label` (string): Human-readable label for display
+
+**Returns:** `boolean` — `true` if command succeeded, `false` otherwise
+
+**Behavior:**
+
+- Uses `execSync` with `stdio: 'inherit'` for real-time output
+- Logs success/failure to console
+
+---
+
+#### `pickFromList(title, items, rl)`
+
+Displays a numbered list and prompts for selection.
+
+**Parameters:**
+
+- `title` (string): Section title
+- `items` (Array<{label: string, desc?: string}>): Selectable items
+- `rl` (readline.Interface): Readline interface
+
+**Returns:** `Promise<number>` — 0-based index, `-1` for back, `-2` for invalid input
+
+---
+
+### CLI Usage
+
+```bash
+node scripts/interactive.js                          # Start interactive menu
+node scripts/interactive.js --help                   # Show help text
+node scripts/interactive.js --list                   # List commands as JSON
+node scripts/interactive.js --list=flat              # List commands as flat JSON array
+```
+
+**Non-TTY Mode:** When stdin is not a TTY (CI/CD pipes), prints available npm scripts instead.
+
+---
+
+## Workflow Security Module (`scripts/check-workflow-security.js`)
+
+### Purpose
+
+Automated security regression checker for GitHub Actions workflow files. Validates `.github/workflows/*.yml` files against known security invariants that have regressed multiple times in this repository. Prevents future regressions by failing CI/pre-commit when forbidden patterns appear.
+
+### Exports
+
+The module runs as a standalone CLI script and does not export functions for programmatic use (ran as `node scripts/check-workflow-security.js`).
+
+### Security Rules
+
+| Rule ID                            | Severity | Description                                                      |
+| ---------------------------------- | -------- | ---------------------------------------------------------------- |
+| `DUPLICATE_API_KEY`                | CRITICAL | `API_KEY` must not reference the same secret as `GEMINI_API_KEY` |
+| `ID_TOKEN_WRITE`                   | HIGH     | `id-token: write` must not appear in non-OIDC workflows          |
+| `ACTIONS_WRITE_NON_MERGE`          | HIGH     | `actions: write` must not appear in non-merge workflows          |
+| `GH_TOKEN_INSTEAD_OF_GITHUB_TOKEN` | HIGH     | `secrets.GH_TOKEN` should be `secrets.GITHUB_TOKEN`              |
+| `CHECKOUT_TOKEN_DISCREPANCY`       | MEDIUM   | `actions/checkout` should use `GITHUB_TOKEN` not `GH_TOKEN`      |
+
+### Allowed Overrides
+
+- `on-pull.yml`: Allowed elevated permissions (merge PR handler)
+
+### CLI Usage
+
+```bash
+node scripts/check-workflow-security.js           # Check all workflow files (exit 0 if clean)
+node scripts/check-workflow-security.js --fix     # Read-only check (no automated fix)
+node scripts/check-workflow-security.js --json    # JSON output for CI integration
+```
+
+**Exit Codes:**
+
+- `0`: All checks passed — no security regressions
+- `1`: Violations found — security regressions detected
+
+**JSON Output:**
+
+```javascript
+{
+  passed: boolean,
+  totalFiles: number,
+  totalViolations: number,
+  violations: [{
+    rule: string,
+    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM',
+    description: string,
+    file: string,
+    line: number | null,
+    message: string
+  }],
+  checkedAt: 'ISO-8601'
+}
+```
+
+---
+
 ## Error Handling Standards
 
 ### IntegrationError Format
@@ -4273,24 +5664,25 @@ All integration errors use `IntegrationError` with consistent structure:
 
 ### Error Code Mapping
 
-| Code                     | Module          | Scenario                           |
-| ------------------------ | --------------- | ---------------------------------- |
-| `FILE_READ_ERROR`        | File operations | File reading failed                |
-| `FILE_WRITE_ERROR`       | File operations | File writing failed                |
-| `FILE_EMPTY`             | File operations | File exists but is empty           |
-| `VALIDATION_ERROR`       | Data processing | Data validation failed             |
-| `INVALID_URL`            | Data processing | URL format validation failed       |
-| `INVALID_COORDINATES`    | Data processing | Coordinate out of Indonesia bounds |
-| `INVALID_INPUT`          | Data processing | Invalid input provided             |
-| `CONFIGURATION_ERROR`    | Configuration   | Configuration issue                |
-| `MISSING_REQUIRED_FIELD` | Data processing | Required field is missing          |
-| `TIMEOUT`                | All operations  | Operation exceeded time limit      |
-| `RETRY_EXHAUSTED`        | All retries     | All retry attempts failed          |
-| `CIRCUIT_BREAKER_OPEN`   | File I/O        | Circuit breaker is blocking        |
-| `HTTP_ERROR`             | Network         | HTTP request failed                |
-| `NETWORK_ERROR`          | Network         | Network communication failure      |
-| `EXTERNAL_SERVICE_ERROR` | Network         | External service operation failed  |
-| `FETCH_ERROR`            | Network         | Data fetch operation failed        |
+| Code                           | Module          | Scenario                              |
+| ------------------------------ | --------------- | ------------------------------------- |
+| `FILE_READ_ERROR`              | File operations | File reading failed                   |
+| `FILE_WRITE_ERROR`             | File operations | File writing failed                   |
+| `FILE_EMPTY`                   | File operations | File exists but is empty              |
+| `VALIDATION_ERROR`             | Data processing | Data validation failed                |
+| `INVALID_URL`                  | Data processing | URL format validation failed          |
+| `INVALID_COORDINATES`          | Data processing | Coordinate out of Indonesia bounds    |
+| `INVALID_INPUT`                | Data processing | Invalid input provided                |
+| `CONFIGURATION_ERROR`          | Configuration   | Configuration issue                   |
+| `MISSING_REQUIRED_FIELD`       | Data processing | Required field is missing             |
+| `TIMEOUT`                      | All operations  | Operation exceeded time limit         |
+| `RETRY_EXHAUSTED`              | All retries     | All retry attempts failed             |
+| `CIRCUIT_BREAKER_OPEN`         | File I/O        | Circuit breaker is blocking           |
+| `HTTP_ERROR`                   | Network         | HTTP request failed                   |
+| `NETWORK_ERROR`                | Network         | Network communication failure         |
+| `EXTERNAL_SERVICE_ERROR`       | Network         | External service operation failed     |
+| `FETCH_ERROR`                  | Network         | Data fetch operation failed           |
+| `PERFORMANCE_BUDGET_VIOLATION` | Performance     | Performance budget threshold exceeded |
 
 ### Error Handling Patterns
 
@@ -4325,80 +5717,95 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 ### Dependency Graph
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    config.js                                 │
-│  (No dependencies)                                          │
-└──────────────────────────┬──────────────────────────────────┘
-                            │
-            ┌───────────────┼───────────────┐
-            │               │               │
-            ▼               ▼               ▼
-┌──────────────────┐ ┌──────────────┐ ┌─────────────────┐
-│   utils.js       │ │  slugify.js  │ │ resilience.js   │
-│  (No deps)       │ │  (No deps)   │ │  (No deps)      │
-└──────────────────┘ └──────────────┘ └─────────────────┘
-                                             │
-                                             ▼
-                                    ┌──────────────────┐
-                                    │ rate-limiter.js │
-                                    │  Depends:       │
-                                    │  - resilience.js│
-                                    └────────┬─────────┘
-                                             │
-                                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    fs-safe.js                                │
-│  Depends: resilience.js                                     │
-└──────────────────────────┬──────────────────────────────────┘
-                          │
-           ┌───────────────┼───────────────┐
-           ▼               ▼               ▼
-┌──────────────────┐ ┌──────────────┐ ┌─────────────────┐
-│     etl.js       │ │  build-pages│ │  sitemap.js     │
-│  Depends:        │ │  .js         │ │  Depends:       │
-│  - utils.js      │ │  Depends:    │ │  - fs-safe.js   │
-│  - config.js     │ │  - fs-safe.js│ │  - utils.js     │
-│  - fs-safe.js    │ │  - slugify.js│ │  - config.js    │
-└──────────────────┘ │  - utils.js  │ │                  │
-                    │  - config.js │ └─────────────────┘
-                    │  - services/ │
-                    │    PageBuilder│
-                    │  - rate-     │
-                    │    limiter.js │
-                    │              │
-                    └──────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│              src/services/PageBuilder.js                     │
-│  Depends:                                                   │
-│  - slugify.js                                               │
-│  - src/presenters/templates/school-page.js                  │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│         src/presenters/templates/school-page.js             │
-│  Depends:                                                   │
-│  - utils.js (escapeHtml)                                    │
-│  - src/presenters/templates/shared/head-meta.js             │
-│  - src/presenters/templates/shared/back-to-top.js           │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ├──────────────────┐
-                            ▼                  ▼
-┌─────────────────────────────────┐ ┌─────────────────────────────────┐
-│ src/presenters/templates/shared │ │ src/presenters/templates/shared │
-│    /head-meta.js               │ │    /back-to-top.js              │
-│  Depends: None (standalone)    │ │  Depends: None (standalone)     │
-└─────────────────────────────────┘ └─────────────────────────────────┘
+                         ┌─────────────────────┐
+                         │     config.js        │
+                         │  (No dependencies)   │
+                         └──────────┬──────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+          ▼                         ▼                         ▼
+┌──────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
+│    utils.js      │     │   slugify.js     │     │   resilience.js     │
+│  (No deps)       │     │  (No deps)       │     │  (No deps)          │
+└────────┬─────────┘     └──────────────────┘     └──────────┬──────────┘
+         │                                                    │
+         │                                                    ▼
+         │                                     ┌──────────────────────┐
+         │                                     │   rate-limiter.js    │
+         │                                     │  Depends:            │
+         │                                     │  - resilience.js     │
+         │                                     └──────────┬───────────┘
+         │                                                    │
+         │                                                    ▼
+         │                              ┌──────────────────────────────┐
+         │                              │       fs-safe.js             │
+         │                              │  Depends: resilience.js      │
+         │                              └──────────┬───────────────────┘
+         │                                         │
+         │         ┌───────────────────────────────┼───────────────┐
+         │         │                               │               │
+         ▼         ▼                               ▼               ▼
+┌──────────────┐ ┌──────────────────┐   ┌──────────────────┐ ┌──────────────┐
+│  etl.js      │ │  enrichment.js   │   │  manifest.js     │ │  sitemap.js  │
+│  Depends:    │ │  Depends:        │   │  Depends:        │ │  Depends:    │
+│  - utils.js  │ │  - fs-safe.js    │   │  - fs-safe.js    │ │  - fs-safe.js│
+│  - config.js │ │  - resilience.js │   │  - config.js     │ │  - utils.js  │
+│  - fs-safe.js│ │  - config.js     │   │  - resilience.js │ │  - config.js │
+└──────────────┘ └──────────────────┘   │  - logger.js     │ └──────────────┘
+                                        └──────────────────┘
+
+         ┌──────────────────────────────────────────────────────────┐
+         │                build-pages.js (Controller)               │
+         │  Delegates to: src/services/BuildOrchestrator.js         │
+         └──────────────────────────┬───────────────────────────────┘
+                                    │
+                                    ▼
+         ┌──────────────────────────────────────────────────────────┐
+         │        src/services/BuildOrchestrator.js                 │
+         │  Depends:                                                │
+         │  - scripts/slugify.js, scripts/utils.js                  │
+         │  - scripts/logger.js, scripts/config.js                  │
+         │  - scripts/resilience.js, scripts/fs-safe.js             │
+         │  - scripts/manifest.js, scripts/build-performance.js     │
+         │  - scripts/enrichment.js                                 │
+         │  - src/services/PageBuilder.js                           │
+         └──────────────────────────┬───────────────────────────────┘
+                                    │
+                                    ▼
+         ┌──────────────────────────────────────────────────────────┐
+         │              src/services/PageBuilder.js                  │
+         │  Depends:                                                │
+         │  - slugify.js                                            │
+         │  - resilience.js (IntegrationError)                      │
+         │  - src/presenters/templates/school-page.js               │
+         │  - src/presenters/templates/province-page.js             │
+         │  - src/presenters/templates/homepage.js                  │
+         └──────────────────────────┬───────────────────────────────┘
+                                    │
+          ┌─────────────────────────┼────────────────────────┐
+          │                         │                        │
+          ▼                         ▼                        ▼
+┌─────────────────────┐ ┌─────────────────────┐ ┌─────────────────────┐
+│  school-page.js     │ │  homepage.js        │ │  province-page.js   │
+│  Depends:           │ │  Depends:           │ │  Depends:           │
+│  - utils.js         │ │  - utils.js         │ │  - utils.js         │
+│  - shared/*         │ │  - shared/*         │ │  - shared/*         │
+└─────────────────────┘ └─────────────────────┘ └─────────────────────┘
+          │                         │                        │
+          └─────────────────────────┼────────────────────────┘
+                                    │
+                                    ▼
+         ┌──────────────────────────────────────────────────────────┐
+         │              Shared Template Modules                     │
+         │  (src/presenters/templates/shared/)                      │
+         ├──────────────────────────────────────────────────────────┤
+         │  head-meta.js     │  Depends: None (standalone)          │
+         │  back-to-top.js   │  Depends: None (standalone)          │
+         │  navigation.js    │  Depends: None (standalone)          │
+         │  footer.js        │  Depends: None (standalone)          │
+         └──────────────────────────────────────────────────────────┘
 ```
-
-:::info
-The same shared modules (`head-meta.js`, `back-to-top.js`) are also used by `homepage.js` and `province-page.js` templates.
-:::
-
----
 
 ## Best Practices
 
@@ -4554,6 +5961,20 @@ None.
 ---
 
 ## Changelog
+
+### Version 2.0.0 (2026-07-20)
+
+- Added Build Orchestrator Service documentation (src/services/BuildOrchestrator.js) — full build pipeline, step functions, concurrent page generation, incremental build flow
+- Added Enrichment Module documentation (scripts/enrichment.js) — Wikipedia enrichment pipeline with retry/timeout/graceful degradation
+- Added Build Performance Module documentation (scripts/build-performance.js) — BuildPerformanceTracker, monitorBuild, configurable budgets, CI step summary
+- Added Data Quality Module documentation (scripts/data-quality.js) — analyzeQuality, checkThresholds, weighted scoring, human/JSON output
+- Added Freshness Report Module documentation (scripts/freshness-report.js) — HTML report generation, design system styling, JSON data export
+- Added Interactive CLI Module documentation (scripts/interactive.js) — interactive menu, script categories, readline-based TUI
+- Added Workflow Security Module documentation (scripts/check-workflow-security.js) — security regression checker rules, CLI usage, JSON output
+- Added shared template documentation (navigation.js, footer.js) — breadcrumb navigation and footer components
+- Added PERFORMANCE_BUDGET_VIOLATION error code to Error Code Mapping table
+- Added 6 new modules to Module Organization list
+- Added BuildOrchestrator, navigation.js, footer.js to Dependency Graph descriptions
 
 ### Version 1.2.0 (2026-06-29)
 

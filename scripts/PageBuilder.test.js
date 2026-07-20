@@ -730,4 +730,82 @@ describe('prepareSchoolDataForSearch', () => {
     assert.strictEqual(result[0][3], '');
     assert.strictEqual(result[0][4], '');
   });
+
+  it('handles school objects with missing optional fields', () => {
+    const schools = [
+      {
+        npsn: '12345678',
+        nama: 'Test School',
+        provinsi: 'DKI Jakarta',
+        kab_kota: 'Jakarta Pusat',
+        kecamatan: 'Menteng',
+      },
+    ];
+    const result = prepareSchoolDataForSearch(schools);
+    // Optional fields like bentuk_pendidikan, status, alamat default to empty string
+    assert.strictEqual(result[0][2], ''); // bentuk_pendidikan
+    assert.strictEqual(result[0][3], ''); // status
+    assert.strictEqual(result[0][4], ''); // alamat
+    assert.strictEqual(result[0][7], 'DKI Jakarta');
+  });
+
+  it('returns url with leading slash', () => {
+    const schools = [
+      {
+        npsn: '12345678',
+        nama: 'Test',
+        provinsi: 'Test',
+        kab_kota: 'Test',
+        kecamatan: 'Test',
+      },
+    ];
+    const result = prepareSchoolDataForSearch(schools);
+    assert.ok(result[0][8].startsWith('/'), 'URL should start with /');
+  });
+});
+
+describe('buildHomepageData', () => {
+  const { buildHomepageData } = require('../src/services/PageBuilder');
+
+  it('returns HTML string for valid schools array', () => {
+    const schools = [
+      {
+        npsn: '12345',
+        nama: 'SD Test',
+        provinsi: 'DKI Jakarta',
+        kab_kota: 'Jakarta Pusat',
+        kecamatan: 'Menteng',
+        bentuk_pendidikan: 'SD',
+      },
+    ];
+    const result = buildHomepageData(schools);
+    assert.ok(typeof result === 'string');
+    assert.ok(result.includes('<!DOCTYPE html>'));
+    assert.ok(result.includes('Sekolah PSEO'));
+    assert.ok(result.includes('schools.json'));
+  });
+
+  it('handles empty schools array', () => {
+    const result = buildHomepageData([]);
+    assert.ok(typeof result === 'string');
+    assert.ok(result.includes('<!DOCTYPE html>'));
+  });
+
+  it('throws IntegrationError for null input', () => {
+    assert.throws(() => buildHomepageData(null), { name: 'IntegrationError' });
+  });
+
+  it('throws IntegrationError for string input', () => {
+    assert.throws(() => buildHomepageData('invalid'), { name: 'IntegrationError' });
+  });
+
+  it('throws IntegrationError for object input', () => {
+    assert.throws(() => buildHomepageData({}), { name: 'IntegrationError' });
+  });
+
+  it('includes search functionality in output', () => {
+    const result = buildHomepageData([]);
+    assert.ok(result.includes('search'));
+    assert.ok(result.includes('provinsi'));
+  });
 });

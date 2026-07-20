@@ -8,6 +8,7 @@
 ## Problem Statement
 
 Two identical prompt directories exist:
+
 - `.github/prompt/` (13 files, 1263 lines)
 - `.github/workflows/prompt/` (13 files, 1263 lines)
 

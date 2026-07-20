@@ -1,4 +1,4 @@
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
@@ -163,6 +163,16 @@ describe('fetch-data', () => {
       fs.mkdirSync(tempDir, { recursive: true });
     });
 
+    afterEach(() => {
+      // Clean up external-data dir if test created it
+      const externalDataDir = path.join(process.cwd(), 'external-data');
+      if (fs.existsSync(externalDataDir)) {
+        try {
+          fs.rmSync(externalDataDir, { recursive: true, force: true });
+        } catch {}
+      }
+    });
+
     it('returns true when dest file already exists', () => {
       const destPath = path.join(tempDir, 'raw.csv');
       fs.writeFileSync(destPath, 'col1\nval1');
@@ -175,14 +185,34 @@ describe('fetch-data', () => {
       assert.strictEqual(result, false);
     });
 
-    it('uses external-data cached CSV when dest does not exist', () => {
-      const externalDir = path.join(tempDir, 'external-data-cache');
-      fs.mkdirSync(externalDir, { recursive: true });
-      fs.writeFileSync(path.join(externalDir, 'cached.csv'), 'col1\nval1');
-      const destPath = path.join(tempDir, 'raw.csv');
+    it('falls back to external-data dir when dest does not exist and external-data has CSVs', () => {
+      // useCachedData checks process.cwd() + '/external-data'
+      const externalDataDir = path.join(process.cwd(), 'external-data');
+      fs.mkdirSync(externalDataDir, { recursive: true });
+      fs.writeFileSync(path.join(externalDataDir, 'cached.csv'), 'col1\nval1');
 
+      const destPath = path.join(tempDir, 'raw.csv');
       const result = useCachedData(destPath);
-      assert.strictEqual(result, false); // No EXTERNAL_DATA_DIR with cached files outside test
+      assert.strictEqual(result, true);
+      assert.ok(fs.existsSync(destPath), 'Cached file should be copied to dest');
+      const content = fs.readFileSync(destPath, 'utf-8').trim();
+      assert.strictEqual(content, 'col1\nval1');
+    });
+
+    it('returns false when external-data dir exists but has no CSV files', () => {
+      const externalDataDir = path.join(process.cwd(), 'external-data');
+      fs.mkdirSync(externalDataDir, { recursive: true });
+
+      const destPath = path.join(tempDir, 'raw.csv');
+      const result = useCachedData(destPath);
+      assert.strictEqual(result, false);
+    });
+
+    it('prefers existing dest over external-data fallback', () => {
+      // When dest already exists, useCachedData returns true without checking external-data
+      const destPath = path.join(tempDir, 'raw.csv');
+      fs.writeFileSync(destPath, 'existing data');
+      assert.strictEqual(useCachedData(destPath), true);
     });
 
     it('cleans up temp directory', () => {

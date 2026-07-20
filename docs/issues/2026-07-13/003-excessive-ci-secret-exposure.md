@@ -18,6 +18,7 @@ CI workflows expose excessive secrets to all job steps, increasing the blast rad
 ## Evidence
 
 **on-push.yml** (lines 20-28):
+
 ```yaml
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,6 +34,7 @@ env:
 ```
 
 **parallel.yml** (lines 33-38):
+
 ```yaml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

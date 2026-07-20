@@ -18,7 +18,7 @@ const zlib = require('zlib');
 const { promisify } = require('util');
 const slugify = require('../../scripts/slugify');
 const gzipAsync = promisify(zlib.gzip);
-const { parseCsv, processConcurrently } = require('../../scripts/utils');
+const { parseCsv, processInBatches } = require('../../scripts/utils');
 const logger = require('../../scripts/logger');
 const CONFIG = require('../../scripts/config');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
@@ -268,7 +268,7 @@ async function generateProvincePages(schools) {
 
   logger.info(`Generating ${provinces.length} province pages...`);
 
-  const { results, metrics } = await processConcurrently(
+  const { results } = await processInBatches(
     provinces,
     async province => {
       try {
@@ -284,9 +284,7 @@ async function generateProvincePages(schools) {
       }
     },
     {
-      limit: CONFIG.BUILD_CONCURRENCY_LIMIT,
-      timeout: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
-      getName: province => `generateProvincePage-${province.name}`,
+      batchSize: CONFIG.BUILD_CONCURRENCY_LIMIT,
     }
   );
 
@@ -294,13 +292,6 @@ async function generateProvincePages(schools) {
   const failed = results.filter(
     r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
   ).length;
-
-  logger.info('Province build metrics:', {
-    total: metrics.total,
-    completed: metrics.completed,
-    failed: metrics.failed,
-    throughput: metrics.throughput,
-  });
 
   logger.info(`Generated ${successful} province pages (${failed} failed)`);
   return { successful, failed };
@@ -336,16 +327,18 @@ async function writeSchoolPagesConcurrently(
 ) {
   await preCreateDirectories(schools);
 
-  const { results, metrics } = await processConcurrently(
+  // Use batch-based concurrency instead of RateLimiter-based to eliminate
+  // per-item Promise+setTimeout overhead for 3474+ fast filesystem writes.
+  // Each write is a lightweight fastWriteFile (no retry/timeout/circuit-breaker),
+  // so the RateLimiter's queue management and timer overhead is pure waste.
+  const { results } = await processInBatches(
     schools,
     async school => {
       const enrichment = enrichmentMap ? enrichmentMap[school.npsn] : undefined;
       await writeSchoolPage(school, enrichment);
     },
     {
-      limit: concurrencyLimit,
-      timeout: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
-      getName: school => `writeSchoolPage-${school.npsn}`,
+      batchSize: concurrencyLimit,
       onProgress: (processed, total) => {
         if (processed % 100 === 0 || processed === total) {
           logger.info(`Processed ${processed} of ${total} school pages`);
@@ -353,13 +346,6 @@ async function writeSchoolPagesConcurrently(
       },
     }
   );
-
-  logger.info('Build metrics:', {
-    total: metrics.total,
-    completed: metrics.completed,
-    failed: metrics.failed,
-    throughput: metrics.throughput,
-  });
 
   const successful = results.filter(result => result.status === 'fulfilled').length;
   const failedResults = results.filter(result => result.status === 'rejected');

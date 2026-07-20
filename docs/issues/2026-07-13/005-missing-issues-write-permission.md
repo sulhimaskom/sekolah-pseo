@@ -18,6 +18,7 @@ The `on-push.yml` workflow is missing `issues: write` in its top-level permissio
 ## Evidence
 
 Current on-push.yml permissions (lines 6-9):
+
 ```yaml
 permissions:
   contents: write
@@ -25,8 +26,9 @@ permissions:
 ```
 
 Missing:
+
 ```yaml
-  issues: write
+issues: write
 ```
 
 ## Recommended Actions

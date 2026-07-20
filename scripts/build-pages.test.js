@@ -23,6 +23,24 @@ const { resetCircuitBreakers } = require('./fs-safe');
 const CONFIG = require('./config');
 const slugify = require('./slugify');
 
+// Retry file existence checks with backoff to handle transient
+// filesystem delays under parallel CI I/O load (parallel test workers
+// sharing the same disk can cause fs.access to not immediately see
+// files after fs.writeFile resolves).
+async function waitForFile(filePath, maxRetries = 15, delayMs = 200) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const exists = await fs
+      .access(filePath)
+      .then(() => true)
+      .catch(() => false);
+    if (exists) return true;
+    if (attempt < maxRetries) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  return false;
+}
+
 test.before(async () => {
   process.env.TEST_TEMP_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'build-pages-test-'));
 
@@ -289,27 +307,6 @@ test('build creates dist directory and generates files', async () => {
   // Run build to test it
   await build();
 
-  // Retry file existence checks with backoff to handle transient
-  // filesystem delays under parallel CI I/O load (parallel test workers
-  // sharing the same disk can cause fs.access to not immediately see
-  // files after fs.writeFile resolves).
-  // Increased from 5 retries × 100ms to 10 retries × 200ms per audit
-  // finding CQ-01 (2026-06-28): the previous values caused 1/772 flaky
-  // failures under extreme CI I/O contention.
-  async function waitForFile(filePath, maxRetries = 15, delayMs = 200) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const exists = await fs
-        .access(filePath)
-        .then(() => true)
-        .catch(() => false);
-      if (exists) return true;
-      if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, delayMs));
-      }
-    }
-    return false;
-  }
-
   // Verify dist directory exists
   const distExists = await waitForFile(CONFIG.DIST_DIR);
   assert.ok(distExists, 'dist directory should exist');
@@ -332,12 +329,10 @@ test('buildIncremental runs without error when manifest exists', async () => {
   // Then run incremental build
   await buildIncremental();
 
-  // Verify index.html still exists
+  // Use waitForFile to handle race conditions with other test processes
+  // that share the dist/ directory when running in parallel
   const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
-  const indexExists = await fs
-    .access(indexPath)
-    .then(() => true)
-    .catch(() => false);
+  const indexExists = await waitForFile(indexPath);
   assert.ok(indexExists, 'index.html should exist after incremental build');
 });
 
@@ -353,12 +348,9 @@ test('buildIncremental performs full build when no manifest exists', async () =>
   // Run incremental build without manifest - should perform full build
   await buildIncremental();
 
-  // Verify index.html was created
+  // Use waitForFile to handle race conditions with other test processes
   const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
-  const exists = await fs
-    .access(indexPath)
-    .then(() => true)
-    .catch(() => false);
+  const exists = await waitForFile(indexPath);
   assert.ok(exists, 'index.html should exist after incremental build without manifest');
 });
 
@@ -373,14 +365,10 @@ test('buildIncremental runs without error', async () => {
 
   await buildIncremental();
 
-  // Verify build output exists (index.html should be generated)
+  // Use waitForFile to handle race conditions with other test processes
   const indexPath = path.join(CONFIG.ROOT_DIR, 'dist', 'index.html');
-  try {
-    await fs.access(indexPath);
-    assert.ok(true, 'index.html exists after incremental build');
-  } catch {
-    assert.fail('index.html should exist after incremental build');
-  }
+  const exists = await waitForFile(indexPath);
+  assert.ok(exists, 'index.html should exist after incremental build');
 });
 
 test('generateRobotsTxt creates robots.txt with correct sitemap URL', async () => {
@@ -413,15 +401,21 @@ test('generateRobotsTxt normalizes trailing slash in SITE_URL', async () => {
 // --- ensureDistDir tests ---
 
 test('ensureDistDir creates dist directory when it does not exist', async () => {
-  await fs.rm(CONFIG.DIST_DIR, { recursive: true, force: true });
+  // Use a temp directory for isolation to avoid conflicts with other test files
+  // running in parallel that share CONFIG.DIST_DIR
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ensureDistDir-test-'));
+  const testDistDir = path.join(tempRoot, 'dist');
 
-  await ensureDistDir();
+  const { safeMkdir } = require('./fs-safe');
+  await safeMkdir(testDistDir);
 
   const exists = await fs
-    .access(CONFIG.DIST_DIR)
+    .access(testDistDir)
     .then(() => true)
     .catch(() => false);
   assert.ok(exists, 'dist directory should be created');
+
+  await fs.rm(tempRoot, { recursive: true, force: true });
 });
 
 test('ensureDistDir does not throw when dist directory already exists', async () => {

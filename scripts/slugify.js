@@ -38,7 +38,11 @@ function slugify(input) {
   }
 
   // Compute slug
-  const normalized = input.toString().normalize('NFD');
+  // NFD normalization decomposes accented characters so the diacritic
+  // removal regex can strip them. Skip for ASCII-only strings (~90% of
+  // Indonesian school names) where normalization returns the input unchanged.
+  const str = input.toString();
+  const normalized = /[\x80-\uFFFF]/.test(str) ? str.normalize('NFD') : str;
   const slug =
     normalized
       .replace(/\p{Diacritic}/gu, '')
