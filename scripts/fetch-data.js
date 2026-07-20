@@ -371,6 +371,7 @@ module.exports = {
   execGitCommand,
   useCachedData,
   fetchCircuitBreaker,
+  main,
 };
 
 if (require.main === module) {
