@@ -16,7 +16,7 @@
 const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { safeWriteFile } = require('./fs-safe');
+const { safeWriteFile, safeMkdir } = require('./fs-safe');
 const { walkDirectory, terminate } = require('./utils');
 const { getSchoolRelativePath, getUniqueProvinces } = require('../src/services/PageBuilder');
 
@@ -179,6 +179,8 @@ async function generateSitemaps(schools) {
   const distDir = CONFIG.DIST_DIR;
   const outDir = distDir;
   const baseUrl = CONFIG.SITE_URL;
+
+  await safeMkdir(distDir, { recursive: true });
 
   let urls;
   if (schools && schools.length > 0) {

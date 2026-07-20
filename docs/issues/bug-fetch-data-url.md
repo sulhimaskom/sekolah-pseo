@@ -13,6 +13,7 @@ const DEFAULT_SOURCE_REPO = 'https://github.com/玩家们/daftar-sekolah-indones
 ```
 
 When the URL is parsed by `validateRepoUrl()`, it gets percent-encoded to:
+
 ```
 https://github.com/%E7%8E%A9%E5%AE%B6%E4%BB%AC/daftar-sekolah-indonesia.git
 ```

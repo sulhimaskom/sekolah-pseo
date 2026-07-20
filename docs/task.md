@@ -5112,6 +5112,7 @@ async function fileExists(filePath) {
 ```
 
 Replace the three call sites:
+
 - `check-freshness.js`: `fs.existsSync(schoolsPath)` → `await fileExists(schoolsPath)`
 - `manifest.js` loadManifest: try/catch → `if (!await fileExists(manifestPath)) return null;`
 - `manifest.js` clearManifest: try/catch → `if (await fileExists(manifestPath)) await safeUnlink(manifestPath);`
@@ -5186,6 +5187,7 @@ Add test file `scripts/interactive.test.js` with coverage for:
 The three page templates access the `CONFIG.TEXT` translation object with different patterns:
 
 - **`school-page.js`** (lines 9-12): Pre-escapes all TEXT values into local `T` object at module load:
+
   ```javascript
   const T = Object.fromEntries(
     Object.entries(CONFIG.TEXT).map(([key, value]) => [key, escapeHtml(value)])
