@@ -12,18 +12,18 @@ The on-push.yml and parallel.yml workflows expose 8+ secrets at the job level. M
 
 ## Secret Audit
 
-| Secret                    | Needed? | Workflow      | Risk                        |
-| ------------------------- | ------- | ------------- | --------------------------- |
-| `GITHUB_TOKEN`            | ✅ Yes  | on-push       | Standard, auto-generated    |
-| `IFLOW_API_KEY`           | ❓ TBD  | on-push       | Unknown purpose             |
-| `VITE_SUPABASE_URL`       | ❓ TBD  | on-push       | Infra credential            |
-| `VITE_SUPABASE_KEY`       | ❓ TBD  | on-push       | Infra credential            |
-| `CLOUDFLARE_ACCOUNT_ID`   | ❌      | on-push       | Not used by build pipeline  |
-| `CLOUDFLARE_API_TOKEN`    | ❌      | on-push       | Not used by build pipeline  |
-| `GEMINI_API_KEY`          | ✅ Yes  | on-push       | Used by OpenCode AI agent   |
-| `API_KEY` (alias)         | ❌      | on-push       | Duplicate of GEMINI_API_KEY |
-| `SUPABASE_ANON_KEY`       | ❓ TBD  | on-push       | Public key, low risk         |
-| `VITE_SUPABASE_ANON_KEY`  | ❓ TBD  | on-push       | Duplicate of SUPABASE_ANON_KEY|
+| Secret                   | Needed? | Workflow | Risk                           |
+| ------------------------ | ------- | -------- | ------------------------------ |
+| `GITHUB_TOKEN`           | ✅ Yes  | on-push  | Standard, auto-generated       |
+| `IFLOW_API_KEY`          | ❓ TBD  | on-push  | Unknown purpose                |
+| `VITE_SUPABASE_URL`      | ❓ TBD  | on-push  | Infra credential               |
+| `VITE_SUPABASE_KEY`      | ❓ TBD  | on-push  | Infra credential               |
+| `CLOUDFLARE_ACCOUNT_ID`  | ❌      | on-push  | Not used by build pipeline     |
+| `CLOUDFLARE_API_TOKEN`   | ❌      | on-push  | Not used by build pipeline     |
+| `GEMINI_API_KEY`         | ✅ Yes  | on-push  | Used by OpenCode AI agent      |
+| `API_KEY` (alias)        | ❌      | on-push  | Duplicate of GEMINI_API_KEY    |
+| `SUPABASE_ANON_KEY`      | ❓ TBD  | on-push  | Public key, low risk           |
+| `VITE_SUPABASE_ANON_KEY` | ❓ TBD  | on-push  | Duplicate of SUPABASE_ANON_KEY |
 
 ## Acceptance Criteria
 
