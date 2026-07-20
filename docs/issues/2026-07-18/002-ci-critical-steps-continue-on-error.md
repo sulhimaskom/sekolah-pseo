@@ -13,14 +13,14 @@ In `.github/workflows/on-pull.yml`, two critical CI steps use `continue-on-error
 ```yaml
 - name: Checkout Code
   uses: actions/checkout@v7
-  continue-on-error: true    # <-- masks checkout failures
+  continue-on-error: true # <-- masks checkout failures
   with:
     fetch-depth: 0
     token: ${{ secrets.GITHUB_TOKEN }}
 
 - name: Setup Node.js
   uses: actions/setup-node@v6
-  continue-on-error: true    # <-- masks setup failures
+  continue-on-error: true # <-- masks setup failures
   with:
     node-version: 20
     cache: 'npm'
@@ -35,6 +35,7 @@ In `.github/workflows/on-pull.yml`, two critical CI steps use `continue-on-error
 ## Risk
 
 **Severity: High** — masked failures in CI lead to:
+
 1. False-positive CI passes (deploying untested code)
 2. Wasted debugging time on downstream errors
 3. Reduced trust in CI pipeline reliability
