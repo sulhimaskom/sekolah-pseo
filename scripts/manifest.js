@@ -82,7 +82,9 @@ async function saveManifest(manifest) {
   const manifestPath = path.join(CONFIG.ROOT_DIR, MANIFEST_FILE);
 
   try {
-    await safeWriteFile(manifestPath, JSON.stringify(manifest, null, 2));
+    // Compact JSON: manifest is consumed only by JSON.parse, never read by humans.
+    // Skipping pretty-print reduces stringify CPU cost and file I/O at scale.
+    await safeWriteFile(manifestPath, JSON.stringify(manifest));
   } catch (error) {
     logger.error({ err: error }, 'Failed to save manifest');
     if (error instanceof IntegrationError) throw error;
