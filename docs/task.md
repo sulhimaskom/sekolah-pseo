@@ -8841,26 +8841,26 @@ Added targeted test coverage for uncovered critical business logic in the ETL pi
 
 ### Verification
 
-| Check                    | Result                |
-| ------------------------ | --------------------- |
-| JS Tests                 | 1005/1005 pass (+29)  |
-| Lint                     | 0 errors              |
-| Prettier                 | All formatted         |
-| etl.js coverage (stmts)  | 71.93% → **93.76%**   |
-| fetch-data.js (stmts)    | 68.51% → **96.04%**   |
-| Overall coverage (stmts) | 92.98% → **95.32%**   |
-| Zero regressions         | Confirmed             |
+| Check                    | Result               |
+| ------------------------ | -------------------- |
+| JS Tests                 | 1005/1005 pass (+29) |
+| Lint                     | 0 errors             |
+| Prettier                 | All formatted        |
+| etl.js coverage (stmts)  | 71.93% → **93.76%**  |
+| fetch-data.js (stmts)    | 68.51% → **96.04%**  |
+| Overall coverage (stmts) | 92.98% → **95.32%**  |
+| Zero regressions         | Confirmed            |
 
 ### Coverage Impact
 
-| Module             | Before  | After   | Δ         |
-| ------------------ | ------- | ------- | --------- |
-| etl.js (stmts)     | 71.93%  | 93.76%  | **+21.83%** |
-| etl.js (branches)  | 70.59%  | 93.25%  | **+22.66%** |
-| fetch-data.js (stmts) | 68.51% | 96.04%  | **+27.53%** |
+| Module                   | Before | After  | Δ           |
+| ------------------------ | ------ | ------ | ----------- |
+| etl.js (stmts)           | 71.93% | 93.76% | **+21.83%** |
+| etl.js (branches)        | 70.59% | 93.25% | **+22.66%** |
+| fetch-data.js (stmts)    | 68.51% | 96.04% | **+27.53%** |
 | fetch-data.js (branches) | 63.93% | 91.80% | **+27.87%** |
-| Overall (stmts)    | 92.98%  | 95.32%  | **+2.34%**  |
-| Overall (branches) | 89.82%  | 92.05%  | **+2.23%**  |
+| Overall (stmts)          | 92.98% | 95.32% | **+2.34%**  |
+| Overall (branches)       | 89.82% | 92.05% | **+2.23%**  |
 
 ### Acceptance Criteria
 
