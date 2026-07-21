@@ -22,7 +22,13 @@ const { parseCsv, processInBatches } = require('../../scripts/utils');
 const logger = require('../../scripts/logger');
 const CONFIG = require('../../scripts/config');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
-const { safeReadFile, safeWriteFile, fastWriteFile, safeMkdir } = require('../../scripts/fs-safe');
+const {
+  safeReadFile,
+  safeWriteFile,
+  fastWriteFile,
+  safeMkdir,
+  fastMkdir,
+} = require('../../scripts/fs-safe');
 const {
   buildSchoolPageData,
   buildHomepageData,
@@ -50,7 +56,7 @@ const distDir = CONFIG.DIST_DIR;
  */
 async function ensureDistDir() {
   try {
-    await safeMkdir(distDir);
+    await fastMkdir(distDir);
   } catch (error) {
     logger.error({ err: error }, 'Failed to create dist directory');
     throw error;
@@ -110,7 +116,7 @@ async function preCreateDirectories(schools) {
   const dirPromises = uniqueDirs.map(async dir => {
     const fullPath = path.join(distDir, dir);
     try {
-      await safeMkdir(fullPath);
+      await fastMkdir(fullPath);
     } catch (err) {
       logger.error({ err, path: fullPath }, 'Failed to create directory');
       failures.push(fullPath);
@@ -213,7 +219,7 @@ async function preCreateProvinceDirectories(schools, provinces) {
 
   const dirPromises = provinceList.map(province => {
     const fullPath = path.join(distDir, 'provinsi', province.slug);
-    return safeMkdir(fullPath).catch(err => {
+    return fastMkdir(fullPath).catch(err => {
       logger.error({ err, path: fullPath }, 'Failed to create province directory');
     });
   });

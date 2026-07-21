@@ -33,6 +33,13 @@ const {
 } = require('./enrichment');
 const SCHEMA = require('./data-schema');
 
+// Hoisted regex patterns for sanitize — avoids recreating them on every call.
+// For ~42K calls (3474 records × ~12 fields each) this eliminates ~126K regex
+// object allocations per ETL run.
+const WHITESPACE_RE = /\s+/g;
+const CONTROL_CHARS_RE = /[\u0000-\u001F]/g;
+const NON_PRINTABLE_RE = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
+
 // Export functions for testing
 module.exports = {
   parseCsv,
@@ -58,16 +65,11 @@ function sanitize(value) {
     return '';
   }
 
-  // Cache regex patterns to avoid recreating them each time
-  const whitespaceRegex = /\s+/g;
-  const controlCharsRegex = /[\u0000-\u001F]/g;
-  const nonPrintableRegex = /[^\x20-\x7E\u00A0-\u017F\u0190-\u024F\u1E00-\u1EFF]/g;
-
   return value
-    .replace(whitespaceRegex, ' ') // collapse whitespace
-    .replace(controlCharsRegex, '') // remove control chars
+    .replace(WHITESPACE_RE, ' ')
+    .replace(CONTROL_CHARS_RE, '')
     .trim()
-    .replace(nonPrintableRegex, ''); // remove non-printable characters except common Unicode
+    .replace(NON_PRINTABLE_RE, '');
 }
 
 /**
