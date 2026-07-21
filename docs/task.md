@@ -8880,3 +8880,72 @@ Added targeted test coverage for uncovered critical business logic in the ETL pi
 - [x] Prettier formatting clean
 - [x] Overall coverage improved (92.98% → 95.32% stmts)
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-062] Code Sanitization — Full Health Check (Build, Lint, Tests, Dead Code, Hardcoded Values, Dependencies)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive code sanitization pass. Fixed missing dependencies (missing `node_modules/` causing build/lint/test failures), fixed `brace-expansion` high severity vulnerability via `npm audit fix`, and verified all quality gates pass cleanly.
+
+### Diagnosis Results
+
+| Check                       | Result                                        |
+| --------------------------- | --------------------------------------------- |
+| Build                       | ✅ 2 pages, 0 failed, 299ms                   |
+| ESLint                      | ✅ 0 errors, 0 warnings                       |
+| Prettier                    | ✅ All files formatted                        |
+| JS Tests                    | ✅ 1001/1001 pass, 4 skipped (intentional), 0 fail |
+| Python Tests                | ✅ 27/27 pass                                 |
+| npm audit                   | ✅ 0 vulnerabilities (1 fixed)                |
+| Empty catch blocks          | ✅ None found                                 |
+| `eslint-disable` directives | ✅ None found                                 |
+| TODO/FIXME/HACK in source   | ✅ None found                                 |
+| Dead/unused files           | ✅ None found                                 |
+| Commented-out code          | ✅ None found                                 |
+| Hardcoded secrets           | ✅ None found                                 |
+| Hardcoded paths/URLs        | ✅ All in config with `.env` overrides        |
+| Magic numbers               | ✅ All self-documenting or config-bounded     |
+| .env.example completeness   | ✅ Matches config defaults (6 vars)           |
+
+### Actions Taken
+
+**1. Fixed missing dependencies (CRITICAL)**:
+- `node_modules/` was absent (same root cause as TASK-029, TASK-042, TASK-053)
+- Ran `npm ci` — installed 127 packages
+- All build/lint/test failures resolved immediately
+
+**2. Fixed `brace-expansion` high severity vulnerability**:
+- Ran `npm audit fix` — resolved GHSA-3jxr-9vmj-r5cp (DoS via exponential-time expansion)
+- 0 vulnerabilities remaining
+
+### Verification
+
+| Check            | Result                      |
+| ---------------- | --------------------------- |
+| Build            | 2 pages, 0 failed, 299ms    |
+| ESLint           | 0 errors, 0 warnings        |
+| Prettier         | All files formatted         |
+| JS Tests         | 1001/1001 pass, 0 fail      |
+| Python Tests     | 27/27 pass                  |
+| npm audit        | 0 vulnerabilities           |
+| Zero regressions | Confirmed                   |
+
+### Acceptance Criteria
+
+- [x] Build passes (2 pages, 0 failed)
+- [x] ESLint passes (0 errors, 0 warnings)
+- [x] Prettier check passes (all files formatted)
+- [x] JS Tests pass (1001/1001)
+- [x] Python Tests pass (27/27)
+- [x] npm audit clean (0 vulnerabilities, 1 fixed)
+- [x] No dead code or unused files
+- [x] No hardcoded secrets or credentials
+- [x] No empty catch blocks or eslint-disable directives
+- [x] No TODO/FIXME/HACK in source code
+- [x] `.env.example` matches config defaults
+- [x] Zero regressions introduced
