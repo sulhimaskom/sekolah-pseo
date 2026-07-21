@@ -8880,3 +8880,190 @@ Added targeted test coverage for uncovered critical business logic in the ETL pi
 - [x] Prettier formatting clean
 - [x] Overall coverage improved (92.98% → 95.32% stmts)
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-062] Code Sanitization — Full Health Check (Build, Lint, Tests, Dead Code, Hardcoded Values, Dependencies)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive code sanitization pass. Fixed missing dependencies (missing `node_modules/` causing build/lint/test failures), fixed `brace-expansion` high severity vulnerability via `npm audit fix`, and verified all quality gates pass cleanly.
+
+### Diagnosis Results
+
+| Check                       | Result                                        |
+| --------------------------- | --------------------------------------------- |
+| Build                       | ✅ 2 pages, 0 failed, 299ms                   |
+| ESLint                      | ✅ 0 errors, 0 warnings                       |
+| Prettier                    | ✅ All files formatted                        |
+| JS Tests                    | ✅ 1001/1001 pass, 4 skipped (intentional), 0 fail |
+| Python Tests                | ✅ 27/27 pass                                 |
+| npm audit                   | ✅ 0 vulnerabilities (1 fixed)                |
+| Empty catch blocks          | ✅ None found                                 |
+| `eslint-disable` directives | ✅ None found                                 |
+| TODO/FIXME/HACK in source   | ✅ None found                                 |
+| Dead/unused files           | ✅ None found                                 |
+| Commented-out code          | ✅ None found                                 |
+| Hardcoded secrets           | ✅ None found                                 |
+| Hardcoded paths/URLs        | ✅ All in config with `.env` overrides        |
+| Magic numbers               | ✅ All self-documenting or config-bounded     |
+| .env.example completeness   | ✅ Matches config defaults (6 vars)           |
+
+### Actions Taken
+
+**1. Fixed missing dependencies (CRITICAL)**:
+- `node_modules/` was absent (same root cause as TASK-029, TASK-042, TASK-053)
+- Ran `npm ci` — installed 127 packages
+- All build/lint/test failures resolved immediately
+
+**2. Fixed `brace-expansion` high severity vulnerability**:
+- Ran `npm audit fix` — resolved GHSA-3jxr-9vmj-r5cp (DoS via exponential-time expansion)
+- 0 vulnerabilities remaining
+
+### Verification
+
+| Check            | Result                      |
+| ---------------- | --------------------------- |
+| Build            | 2 pages, 0 failed, 299ms    |
+| ESLint           | 0 errors, 0 warnings        |
+| Prettier         | All files formatted         |
+| JS Tests         | 1001/1001 pass, 0 fail      |
+| Python Tests     | 27/27 pass                  |
+| npm audit        | 0 vulnerabilities           |
+| Zero regressions | Confirmed                   |
+
+### Acceptance Criteria
+
+- [x] Build passes (2 pages, 0 failed)
+- [x] ESLint passes (0 errors, 0 warnings)
+- [x] Prettier check passes (all files formatted)
+- [x] JS Tests pass (1001/1001)
+- [x] Python Tests pass (27/27)
+- [x] npm audit clean (0 vulnerabilities, 1 fixed)
+- [x] No dead code or unused files
+- [x] No hardcoded secrets or credentials
+- [x] No empty catch blocks or eslint-disable directives
+- [x] No TODO/FIXME/HACK in source code
+- [x] `.env.example` matches config defaults
+
+---
+
+### [TASK-063] Security Audit Pass 11 - Workflow Permission Hardening (10th Regression Fix) + brace-expansion Vulnerability Patch
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted **11th comprehensive security audit** of the Indonesian School PSEO project. All workflow security fixes from the 10 prior audits had **regressed again** — the same root cause: security fixes applied on `agent` branch were never merged to `main`, and the latest `main→agent` merge overwrote the fixes.
+
+Fixed **12 security issues** across 6 workflow files: removed `id-token: write` from 4 non-OIDC workflows, removed `actions: write` from 4 non-merge workflows, replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` in 2 workflows, reduced secret sprawl in `on-push.yml` (10→2 secrets), `parallel.yml` (4 env blocks cleaned), `on-pull.yml` (5→1 secrets), removed `IFLOW_API_KEY`, `CLOUDFLARE_*`, `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_*`, `API_KEY` duplicates from all workflows. Also patched high-severity `brace-expansion` transitive dependency via `npm audit fix` and updated prettier to latest.
+
+### Audit Results
+
+| Check             | Result                                                     |
+| ----------------- | ---------------------------------------------------------- |
+| npm audit         | 0 vulnerabilities (brace-expansion patched)                |
+| npm outdated      | prettier 3.9.6 synced                                      |
+| ESLint            | 0 errors                                                   |
+| JS Tests          | 1001/1005 pass (4 skipped, 0 fail)                         |
+| Build             | 2 pages, 0 failed, 28ms                                    |
+| Workflow Security | 6/6 files pass all 5 rules (0 violations)                  |
+| Hardcoded secrets | None found in source code                                  |
+| Security headers  | CSP, HSTS, XFO, SAMEORIGIN, COOP, CORP all present         |
+| XSS vectors       | All use escapeHtml() + DOM APIs (secure)                   |
+| Command injection | All execSync calls properly validated                      |
+| Input validation  | validatePath, validateRepoUrl, escapeCsvField all in place |
+| .gitignore        | Properly configured                                        |
+| .env.example      | No real secrets, proper documentation                      |
+
+### Actions Taken
+
+**1. Fixed `architect-agent.yml` permission + secret issues (HIGH)**:
+
+- Removed `id-token: write` and `actions: write` from top-level and job-level permissions
+- Replaced `GH_TOKEN: ${{ secrets.GH_TOKEN }}` → `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`
+- Removed `IFLOW_API_KEY` from env
+
+**2. Fixed `on-push.yml` secret sprawl (CRITICAL)**:
+
+- Removed `IFLOW_API_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `API_KEY`, `SUPABASE_ANON_KEY`, `VITE_SUPABASE_ANON_KEY`
+- Reduced from 10 secrets to 2 (`GITHUB_TOKEN`, `GEMINI_API_KEY`)
+
+**3. Fixed `parallel.yml` permission + secret sprawl (HIGH)**:
+
+- Removed `actions: write` and `id-token: write` from top-level permissions
+- Removed `IFLOW_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `API_KEY` from all 4 env blocks (architect, specialists, Fixer, PR-Handler)
+
+**4. Fixed `orchestrator.yml` permission + secret issues (HIGH)**:
+
+- Removed `id-token: write` and `actions: write` from top-level and job-level permissions
+- Replaced `GH_TOKEN: ${{ secrets.GH_TOKEN }}` → `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`
+- Replaced checkout `token: ${{ secrets.GH_TOKEN }}` → `${{ secrets.GITHUB_TOKEN }}`
+- Removed `IFLOW_API_KEY` from env
+
+**5. Fixed `opencode.yml` permission escalation (HIGH)**:
+
+- Removed `id-token: write` and `actions: write` from top-level and job-level permissions
+- Removed `IFLOW_API_KEY` from env
+
+**6. Fixed `on-pull.yml` permission + secret exposure (HIGH)**:
+
+- Removed `id-token: write` and `repository-projects: write` from permissions
+- Removed `IFLOW_API_KEY`, `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_KEY`, `VITE_SUPABASE_URL` from env vars and step env
+- Reduced from 5 secrets to 1 (`GITHUB_TOKEN`)
+
+**7. Patched brace-expansion vulnerability (HIGH)**:
+
+- Ran `npm audit fix` — patched transitive `brace-expansion` dependency via `eslint`→`minimatch`
+- Vulnerability: GHSA-3jxr-9vmj-r5cp (DoS via exponential-time expansion)
+- Updated `prettier` from 3.9.5 to 3.9.6
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — Removed `id-token: write` + `actions: write`, replaced `GH_TOKEN`→`GITHUB_TOKEN`, removed `IFLOW_API_KEY`
+- `.github/workflows/on-push.yml` — Removed 8 unused secrets (10→2)
+- `.github/workflows/parallel.yml` — Removed `actions: write` + `id-token: write`, cleaned 4 env blocks
+- `.github/workflows/orchestrator.yml` — Replaced `GH_TOKEN`→`GITHUB_TOKEN` (2x), removed `id-token: write` + `actions: write`, removed `IFLOW_API_KEY`
+- `.github/workflows/opencode.yml` — Removed `id-token: write` + `actions: write` from both levels, removed `IFLOW_API_KEY`
+- `.github/workflows/on-pull.yml` — Removed `id-token: write` + `repository-projects: write`, removed 4 extraneous secrets
+- `package-lock.json` — Updated brace-expansion transitive dep, prettier 3.9.6
+- `docs/task.md` — This entry
+
+### Root Cause of Regression (10th occurrence)
+
+Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-060): workflow file security fixes were committed to the `agent` branch but never merged to `main`. The latest `main→agent` merge overwrote all hardened workflow files.
+
+**Permanent Fix**: The `check-workflow-security.js` validation script correctly detects all known regression patterns. Running `node scripts/check-workflow-security.js` as a pre-commit hook or CI step will catch regressions before they land.
+
+### Verification
+
+| Check             | Result                       |
+| ----------------- | ---------------------------- |
+| Build             | 2 pages, 0 failed, 28ms      |
+| ESLint            | 0 errors                     |
+| Workflow Security | 6/6 files pass, 0 violations |
+| JS Tests          | 1001/1005 pass               |
+| npm audit         | 0 vulnerabilities            |
+| npm outdated      | All up to date               |
+
+### Acceptance Criteria
+
+- [x] `id-token: write` removed from 4 non-OIDC workflows (parallel, orchestrator, architect-agent, opencode)
+- [x] `actions: write` removed from 4 non-merge workflows (parallel, orchestrator, architect-agent, opencode)
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in 2 workflows (orchestrator, architect-agent)
+- [x] on-push.yml secret count reduced from 10 to 2 (GITHUB_TOKEN, GEMINI_API_KEY)
+- [x] parallel.yml cleaned: IFLOW_API_KEY, CLOUDFLARE_*, API_KEY removed from 4 env blocks
+- [x] on-pull.yml secret count reduced from 5 to 1 (GITHUB_TOKEN only)
+- [x] `repository-projects: write` removed from on-pull.yml
+- [x] `brace-expansion` transitive vulnerability patched (GHSA-3jxr-9vmj-r5cp)
+- [x] prettier updated to 3.9.6
+- [x] All 6 workflow files pass security validation script (0 violations)
+- [x] All JS tests pass (1001/1005, 4 skipped)
+- [x] Build succeeds (2 pages, 0 failed)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced
+- [x] Zero regressions introduced

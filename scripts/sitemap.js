@@ -37,20 +37,28 @@ module.exports = {
  * @property {string} [lastmod] - Last modified date (ISO format)
  */
 
+// Lookup map for XML entity replacements — avoids branching in the replace callback.
+const XML_ESCAPE_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&apos;',
+};
+// Single-pass regex matching all five XML special characters.
+// Single pass replaces 5 chained .replace() (5× character scanning) with one
+// linear scan and a fast object-lookup per match. For ~3500 URLs during
+// sitemap generation this eliminates ~14K redundant regex evaluations.
+const XML_ESCAPE_RE = /[&<>"']/g;
+
 /**
  * Escape XML special characters to prevent XML injection.
- * Handles: & < > " '
  * @param {string} text - Text to escape
  * @returns {string} XML-escaped text
  */
 function escapeXml(text) {
   if (typeof text !== 'string') return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+  return text.replace(XML_ESCAPE_RE, char => XML_ESCAPE_MAP[char]);
 }
 
 /**

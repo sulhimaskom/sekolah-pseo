@@ -158,6 +158,29 @@ function createFsSafe(options = {}) {
     });
   }
 
+  /**
+   * Lightweight directory creation for bulk operations where retry/timeout
+   * overhead is unnecessary and the caller already handles error recovery.
+   *
+   * Skips:
+   * - retry wrapper (no exponential-backoff attempt loop)
+   * - withTimeout wrapper (no racing setTimeout)
+   *
+   * Suitable for bulk directory creation (hundreds of unique directories
+   * during page generation) where transient failures on local dist/
+   * operations are virtually non-existent.
+   */
+  function fastMkdir(dirPath) {
+    return fs.mkdir(dirPath, { recursive: true }).catch(error => {
+      if (error.code === 'EEXIST') return;
+      throw new IntegrationError(
+        `Failed to create directory ${dirPath}`,
+        ERROR_CODES.FILE_WRITE_ERROR,
+        { dirPath, originalError: error.message }
+      );
+    });
+  }
+
   function safeAccess(filePath, mode = fs.constants.F_OK) {
     return withTimeout(fs.access(filePath, mode), 5000, `access: ${filePath}`).catch(error => {
       throw new IntegrationError(
@@ -216,6 +239,7 @@ function createFsSafe(options = {}) {
     safeWriteFile,
     fastWriteFile,
     safeMkdir,
+    fastMkdir,
     safeAccess,
     safeReaddir,
     safeStat,
@@ -235,6 +259,7 @@ const {
   safeWriteFile,
   fastWriteFile,
   safeMkdir,
+  fastMkdir,
   safeAccess,
   safeReaddir,
   safeStat,
@@ -252,6 +277,7 @@ module.exports = {
   safeWriteFile,
   fastWriteFile,
   safeMkdir,
+  fastMkdir,
   safeAccess,
   safeReaddir,
   safeStat,
