@@ -276,7 +276,7 @@ describe('fs-safe', () => {
 
     it('writes binary content', async () => {
       const binFile = path.join(testDir, 'fast-binary.bin');
-      const buffer = Buffer.from([0x00, 0x01, 0x02, 0xFF]);
+      const buffer = Buffer.from([0x00, 0x01, 0x02, 0xff]);
 
       await fastWriteFile(binFile, buffer, { encoding: 'binary' });
 

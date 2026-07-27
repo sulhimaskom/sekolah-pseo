@@ -88,8 +88,12 @@ describe('finalizeBuild', () => {
     let stopCalled = false;
     let logReportCalled = false;
 
-    tracker.stop = () => { stopCalled = true; };
-    tracker.logReport = () => { logReportCalled = true; };
+    tracker.stop = () => {
+      stopCalled = true;
+    };
+    tracker.logReport = () => {
+      logReportCalled = true;
+    };
 
     finalizeBuild(tracker);
 
@@ -128,7 +132,10 @@ describe('finalizeBuild', () => {
 
     // Verify the summary was written
     const content = require('fs').readFileSync(tempFile, 'utf8');
-    assert.ok(content.includes('Build Summary'), 'GITHUB_STEP_SUMMARY should contain build summary');
+    assert.ok(
+      content.includes('Build Summary'),
+      'GITHUB_STEP_SUMMARY should contain build summary'
+    );
     assert.ok(content.includes('Pages: 100'), 'GITHUB_STEP_SUMMARY should contain page count');
 
     // Cleanup
@@ -153,7 +160,10 @@ describe('prepareBuildEnvironment', () => {
     assert.ok(result.schools.length > 0, 'should have at least one school');
     assert.ok(result.enrichmentMap, 'enrichmentMap should exist');
     assert.ok(typeof result.enrichmentMap === 'object', 'enrichmentMap should be an object');
-    assert.ok(result.sharedPagesPromise instanceof Promise, 'sharedPagesPromise should be a Promise');
+    assert.ok(
+      result.sharedPagesPromise instanceof Promise,
+      'sharedPagesPromise should be a Promise'
+    );
 
     // Verify school objects have required fields
     for (const school of result.schools) {
@@ -173,11 +183,17 @@ describe('prepareBuildEnvironment', () => {
 
     // Verify key files were generated
     const indexPath = path.join(CONFIG.DIST_DIR, 'index.html');
-    const indexExists = await fs.access(indexPath).then(() => true).catch(() => false);
+    const indexExists = await fs
+      .access(indexPath)
+      .then(() => true)
+      .catch(() => false);
     assert.ok(indexExists, 'index.html should exist after sharedPagesPromise resolves');
 
     const schoolsJsonPath = path.join(CONFIG.DIST_DIR, 'schools.json');
-    const jsonExists = await fs.access(schoolsJsonPath).then(() => true).catch(() => false);
+    const jsonExists = await fs
+      .access(schoolsJsonPath)
+      .then(() => true)
+      .catch(() => false);
     assert.ok(jsonExists, 'schools.json should exist after sharedPagesPromise resolves');
   });
 });

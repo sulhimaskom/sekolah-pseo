@@ -9435,7 +9435,7 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 - **Issue**: Two `require()` calls are placed inside function bodies instead of at the module top level:
   1. Line 162: `const { generateSchoolPageStyles } = require('../presenters/styles');` inside `writeExternalStylesFile()`
   2. Line 438: `const fs = require('fs');` inside `finalizeBuild()`
-  This is inconsistent with the 13 other module-level `require()` calls at the top of the same file. Dynamic requires inside functions add unnecessary module resolution overhead on every call, obscure the module's dependency graph, and are an anti-pattern in CommonJS modules where `require()` is synchronous and cached.
+     This is inconsistent with the 13 other module-level `require()` calls at the top of the same file. Dynamic requires inside functions add unnecessary module resolution overhead on every call, obscure the module's dependency graph, and are an anti-pattern in CommonJS modules where `require()` is synchronous and cached.
 - **Suggestion**: Hoist both `require()` calls to module level (top of file, after existing requires). `fs` is a core module — caching it at module scope costs nothing. The styles import is already cached by Node.js module system after first call, but the hoisting makes the dependency explicit at a glance.
 - **Priority**: Low
 - **Effort**: Trivial (2 lines moved, no behavior change)
@@ -9450,7 +9450,7 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
   1. `src/services/SearchDataService.js` — `writeSearchDataFile()` (search data + gzip)
   2. `src/services/ExportService.js` — `exportSchoolsCsv()`, potentially `writeExternalStylesFile()`
   3. Keep orchestration flow in `BuildOrchestrator.js` but delegate specialized operations
-  This follows the existing ADR-0005 layer separation pattern (controller → service → presentation).
+     This follows the existing ADR-0005 layer separation pattern (controller → service → presentation).
 - **Priority**: Medium
 - **Effort**: Medium
 
