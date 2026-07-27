@@ -22,7 +22,7 @@ const path = require('path');
 const crypto = require('crypto');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { safeReadFile, safeWriteFile, safeAccess, safeUnlink } = require('./fs-safe');
+const { safeReadFile, safeAccess, safeUnlink, fastWriteFile } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 const MANIFEST_FILE = '.build-manifest.json';
@@ -84,7 +84,9 @@ async function saveManifest(manifest) {
   try {
     // Compact JSON: manifest is consumed only by JSON.parse, never read by humans.
     // Skipping pretty-print reduces stringify CPU cost and file I/O at scale.
-    await safeWriteFile(manifestPath, JSON.stringify(manifest));
+    // Uses fastWriteFile (no retry/timeout/circuit-breaker) since manifest
+    // writes are local filesystem operations — same pattern as bulk school pages.
+    await fastWriteFile(manifestPath, JSON.stringify(manifest));
   } catch (error) {
     logger.error({ err: error }, 'Failed to save manifest');
     if (error instanceof IntegrationError) throw error;
