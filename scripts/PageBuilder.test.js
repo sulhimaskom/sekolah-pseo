@@ -4,6 +4,7 @@ const path = require('path');
 const {
   buildSchoolPageData,
   getUniqueDirectories,
+  getUniqueProvinces,
   buildProvincePageData,
   groupSchoolsByProvince,
   prepareSchoolDataForSearch,
@@ -656,6 +657,91 @@ describe('groupSchoolsByProvince', () => {
     assert.ok(result.has('Bali'));
     assert.ok(result.has('Aceh'));
     assert.ok(result.has('Papua'));
+  });
+});
+
+describe('getUniqueProvinces', () => {
+  it('throws IntegrationError for null input', () => {
+    assert.throws(() => getUniqueProvinces(null), { name: 'IntegrationError' });
+  });
+
+  it('throws IntegrationError for undefined input', () => {
+    assert.throws(() => getUniqueProvinces(undefined), { name: 'IntegrationError' });
+  });
+
+  it('throws IntegrationError for string input', () => {
+    assert.throws(() => getUniqueProvinces('invalid'), { name: 'IntegrationError' });
+  });
+
+  it('throws IntegrationError for object input', () => {
+    assert.throws(() => getUniqueProvinces({}), { name: 'IntegrationError' });
+  });
+
+  it('returns empty array for empty schools list', () => {
+    const result = getUniqueProvinces([]);
+
+    assert.ok(Array.isArray(result));
+    assert.strictEqual(result.length, 0);
+  });
+
+  it('returns unique provinces with correct structure', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Timur' },
+    ];
+
+    const result = getUniqueProvinces(schools);
+
+    assert.strictEqual(result.length, 2);
+    assert.strictEqual(result[0].name, 'Jawa Barat');
+    assert.ok(typeof result[0].slug === 'string');
+    assert.strictEqual(result[0].slug, 'jawa-barat');
+    assert.strictEqual(result[0].count, 1);
+  });
+
+  it('counts schools per province correctly', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat' },
+      { npsn: '3', nama: 'School 3', provinsi: 'Jawa Timur' },
+    ];
+
+    const result = getUniqueProvinces(schools);
+
+    assert.strictEqual(result.length, 2);
+    const jabar = result.find(p => p.name === 'Jawa Barat');
+    const jatim = result.find(p => p.name === 'Jawa Timur');
+    assert.strictEqual(jabar.count, 2);
+    assert.strictEqual(jatim.count, 1);
+  });
+
+  it('skips schools without provinsi field', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Bali' },
+      { npsn: '2', nama: 'School 2' },
+      { npsn: '3', nama: 'School 3', provinsi: null },
+      { npsn: '4', nama: 'School 4', provinsi: '' },
+    ];
+
+    const result = getUniqueProvinces(schools);
+
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].name, 'Bali');
+  });
+
+  it('generates correct slugs for multi-word provinces', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'DKI Jakarta' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Kepulauan Riau' },
+    ];
+
+    const result = getUniqueProvinces(schools);
+
+    assert.strictEqual(result.length, 2);
+    assert.strictEqual(result[0].slug, 'dki-jakarta');
+    assert.strictEqual(result[1].slug, 'kepulauan-riau');
+    assert.strictEqual(result[0].count, 1);
+    assert.strictEqual(result[1].count, 1);
   });
 });
 

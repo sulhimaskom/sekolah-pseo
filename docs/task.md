@@ -2,6 +2,72 @@
 
 ## Completed Tasks
 
+### [TASK-064] Test Coverage Enhancement — getUniqueProvinces, BuildOrchestrator, fs-safe fast-paths
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive test coverage analysis and added 25 new test cases covering 6 previously untested exported functions across 3 modules. All tests pass deterministically without external dependencies.
+
+### Coverage Gap Analysis
+
+| Module | Previously Untested Exports | Tests Added |
+|--------|---------------------------|-------------|
+| `src/services/PageBuilder.js` | `getUniqueProvinces()` | 9 |
+| `src/services/BuildOrchestrator.js` | `prepareBuildEnvironment()`, `finalizeBuild()`, `preCreateDirectories()` | 8 |
+| `scripts/fs-safe.js` | `fastWriteFile()`, `fastMkdir()` | 8 |
+
+### Changes Made
+
+**1. `scripts/PageBuilder.test.js` — Added `getUniqueProvinces` tests (9 tests)**:
+
+- Input validation: null, undefined, string, object — all throw `IntegrationError`
+- Empty array returns empty array
+- Returns correctly structured province objects with `name`, `slug`, `count`
+- Correctly counts schools per province
+- Skips schools without `provinsi` field (null, undefined, empty string)
+- Generates correct slugs for multi-word provinces (e.g., "DKI Jakarta" → "dki-jakarta")
+
+**2. `scripts/build-orchestrator.test.js` — New test file for BuildOrchestrator (8 tests)**:
+
+- `preCreateDirectories`: Returns array for valid schools, empty array for empty input, handles schools with missing fields gracefully
+- `finalizeBuild`: Calls `tracker.stop()` and `tracker.logReport()`, does not throw when `GITHUB_STEP_SUMMARY` write fails, writes summary content when env var is set
+- `prepareBuildEnvironment`: Returns expected object shape (`schools`, `enrichmentMap`, `sharedPagesPromise`), generates `index.html` and `schools.json` via `sharedPagesPromise`
+
+**3. `scripts/fs-safe.test.js` — Added `fastWriteFile` and `fastMkdir` tests (8 tests)**:
+
+- `fastWriteFile`: Writes to new file, overwrites existing content, writes binary content, writes to deeply nested path
+- `fastMkdir`: Creates directory, does not throw on existing directory, creates deeply nested directories, creates multi-level nested directories
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| JS Tests | 1026/1026 pass (25 new, 0 failures, 4 skipped) |
+| Python Tests | 27/27 pass |
+| ESLint | 0 errors |
+| New PageBuilder tests | 89/89 (9 new getUniqueProvinces) |
+| New BuildOrchestrator tests | 8/8 (3 suites) |
+| New fs-safe tests | 32/32 (8 new fastWriteFile/fastMkdir) |
+| Zero regressions | Confirmed |
+
+### Acceptance Criteria
+
+- [x] `getUniqueProvinces()` tested: input validation, empty input, valid output structure, school counting, missing provinsi handling, slug generation
+- [x] `prepareBuildEnvironment()` tested: return shape validation, shared page generation verification
+- [x] `finalizeBuild()` tested: tracker methods called, GITHUB_STEP_SUMMARY error handling, content writing
+- [x] `preCreateDirectories()` tested: success path, empty input, missing fields handling
+- [x] `fastWriteFile()` tested: new file, overwrite, binary, nested path
+- [x] `fastMkdir()` tested: new directory, existing directory, nested directories
+- [x] All 1026 JS tests pass (0 failures)
+- [x] All 27 Python tests pass
+- [x] ESLint passes (0 errors)
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-058] DevOps - CI/CD Health Check, Prettier Fix, ESLint Cleanup
 
 **Status**: Complete
