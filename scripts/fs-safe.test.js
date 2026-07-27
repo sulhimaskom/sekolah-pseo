@@ -11,6 +11,8 @@ const {
   safeAccess,
   safeReaddir,
   safeStat,
+  fastWriteFile,
+  fastMkdir,
   DEFAULT_FILE_TIMEOUT_MS,
   resetCircuitBreakers,
 } = require('./fs-safe');
@@ -248,6 +250,89 @@ describe('fs-safe', () => {
     it('is defined as a positive number', () => {
       assert.strictEqual(typeof DEFAULT_FILE_TIMEOUT_MS, 'number');
       assert(DEFAULT_FILE_TIMEOUT_MS > 0);
+    });
+  });
+
+  describe('fastWriteFile', () => {
+    it('writes content to new file successfully', async () => {
+      const newFile = path.join(testDir, 'fast-new-file.txt');
+      const testContent = 'Fast write test content';
+
+      await fastWriteFile(newFile, testContent);
+
+      const result = await fs.readFile(newFile, 'utf8');
+      assert.strictEqual(result, testContent);
+    });
+
+    it('overwrites existing file content', async () => {
+      const existingFile = path.join(testDir, 'fast-overwrite.txt');
+      await fs.writeFile(existingFile, 'Old content');
+
+      await fastWriteFile(existingFile, 'Updated content');
+
+      const result = await fs.readFile(existingFile, 'utf8');
+      assert.strictEqual(result, 'Updated content');
+    });
+
+    it('writes binary content', async () => {
+      const binFile = path.join(testDir, 'fast-binary.bin');
+      const buffer = Buffer.from([0x00, 0x01, 0x02, 0xff]);
+
+      await fastWriteFile(binFile, buffer, { encoding: 'binary' });
+
+      const result = await fs.readFile(binFile);
+      assert.deepStrictEqual(Array.from(result), Array.from(buffer));
+    });
+
+    it('writes content to deeply nested path', async () => {
+      const nestedDir = path.join(testDir, 'fast', 'nested', 'deep');
+      await fs.mkdir(nestedDir, { recursive: true });
+      const nestedFile = path.join(nestedDir, 'nested-file.txt');
+
+      await fastWriteFile(nestedFile, 'Nested content');
+
+      const result = await fs.readFile(nestedFile, 'utf8');
+      assert.strictEqual(result, 'Nested content');
+    });
+  });
+
+  describe('fastMkdir', () => {
+    it('creates directory successfully', async () => {
+      const newDir = path.join(testDir, 'fast-mkdir-test');
+
+      await fastMkdir(newDir);
+
+      const stats = await fs.stat(newDir);
+      assert.strictEqual(stats.isDirectory(), true);
+    });
+
+    it('does not throw if directory already exists', async () => {
+      const existingDir = path.join(testDir, 'fast-exists');
+      await fs.mkdir(existingDir);
+
+      // Should not throw
+      await fastMkdir(existingDir);
+
+      const stats = await fs.stat(existingDir);
+      assert.strictEqual(stats.isDirectory(), true);
+    });
+
+    it('creates deeply nested directories', async () => {
+      const nestedDir = path.join(testDir, 'fast', 'a', 'b', 'c');
+
+      await fastMkdir(nestedDir);
+
+      const stats = await fs.stat(nestedDir);
+      assert.strictEqual(stats.isDirectory(), true);
+    });
+
+    it('creates nested directories in single call', async () => {
+      const deepNested = path.join(testDir, 'fast', 'multi', 'level', 'deep');
+
+      await fastMkdir(deepNested);
+
+      const stats = await fs.stat(deepNested);
+      assert.strictEqual(stats.isDirectory(), true);
     });
   });
 });
