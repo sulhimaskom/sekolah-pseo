@@ -9149,20 +9149,20 @@ Conducted comprehensive code sanitization pass. Fixed the 9th regression cycle o
 
 ### Diagnosis Results
 
-| Check                       | Result                                        |
-| --------------------------- | --------------------------------------------- |
-| Build                       | ✅ 2 pages, 0 failed, 27ms                    |
-| ESLint                      | ✅ 0 errors                                   |
-| Prettier                    | ✅ All files formatted                        |
-| JS Tests                    | ✅ 1001/1001 pass                             |
-| Python Tests                | ✅ 27/27 pass                                 |
-| npm audit                   | ✅ 0 vulnerabilities                          |
-| Workflow Security           | ✅ 6/6 files, 0 violations                    |
-| Empty catch blocks          | ✅ None found                                 |
-| eslint-disable directives   | ✅ None found                                 |
-| TODO/FIXME/HACK in source   | ✅ None found                                 |
-| Hardcoded paths/URLs        | ✅ All in config                              |
-| .env.example completeness   | ✅ Already matched                            |
+| Check                     | Result                     |
+| ------------------------- | -------------------------- |
+| Build                     | ✅ 2 pages, 0 failed, 27ms |
+| ESLint                    | ✅ 0 errors                |
+| Prettier                  | ✅ All files formatted     |
+| JS Tests                  | ✅ 1001/1001 pass          |
+| Python Tests              | ✅ 27/27 pass              |
+| npm audit                 | ✅ 0 vulnerabilities       |
+| Workflow Security         | ✅ 6/6 files, 0 violations |
+| Empty catch blocks        | ✅ None found              |
+| eslint-disable directives | ✅ None found              |
+| TODO/FIXME/HACK in source | ✅ None found              |
+| Hardcoded paths/URLs      | ✅ All in config           |
+| .env.example completeness | ✅ Already matched         |
 
 ### Actions Taken
 
@@ -9223,4 +9223,86 @@ Same root cause as all prior cycles: workflow security fixes on agent branch are
 - [x] opencode.yml permissions hardened + IFLOW_API_KEY removed
 - [x] brace-expansion vulnerability patched
 - [x] No empty catch blocks, eslint-disable directives, or TODO/FIXME/HACK
+- [x] Zero regressions introduced
+
+---
+
+### [TASK-065] Security Hardening — on-pull.yml Permissions & Secrets, Dependency Update
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive security audit. Fixed `on-pull.yml` which had regressed (same root cause as prior audits — main→agent merge overwrote hardened files). Also updated 3 dev dependencies to latest versions.
+
+### Audit Results
+
+| Check             | Result                                                     |
+| ----------------- | ---------------------------------------------------------- |
+| npm audit         | 0 vulnerabilities (prod + dev)                             |
+| npm outdated      | eslint 10.8.0, globals 17.8.0, lint-staged 17.2.0 (all current) |
+| ESLint            | 0 errors                                                   |
+| JS Tests          | 1026/1026 pass                                             |
+| Build             | 2 pages, 0 failed, 26ms                                    |
+| Workflow Security | 6/6 files pass all 5 rules (0 violations)                  |
+| Hardcoded secrets | None found in source code                                  |
+| Security headers  | CSP, HSTS, XFO, SAMEORIGIN, COOP, CORP all present         |
+| XSS vectors       | All use escapeHtml() + DOM APIs (secure)                   |
+| Command injection | All execSync calls properly validated                      |
+| Input validation  | validatePath, validateRepoUrl, escapeCsvField all in place |
+| .gitignore        | Properly configured                                        |
+| .env.example      | No real secrets, proper documentation                      |
+
+### Actions Taken
+
+1. **Fixed `on-pull.yml` permission escalation + secret exposure (HIGH)**:
+   - Removed `id-token: write` from permissions (no OIDC used)
+   - Removed `repository-projects: write` from permissions (unnecessary)
+   - Removed `IFLOW_API_KEY`, `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_KEY`, `VITE_SUPABASE_URL` from both top-level and step-level env blocks
+   - Reduced from 5 secrets to 1 (`GITHUB_TOKEN` only) — critical for PR workflows from forks
+
+2. **Updated 3 dev dependencies (LOW)**:
+   - eslint 10.7.0 → 10.8.0
+   - globals 17.7.0 → 17.8.0
+   - lint-staged 17.1.0 → 17.2.0
+
+### Files Modified
+
+- `.github/workflows/on-pull.yml` — Removed `id-token: write`, `repository-projects: write`, 4 extraneous secrets from both env blocks
+- `package-lock.json` — Updated eslint, globals, lint-staged
+- `docs/task.md` — This entry
+
+### Root Cause of Regression (9th occurrence)
+
+Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055): workflow file security fixes were committed to the `agent` branch but never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions.
+
+**Permanent Fix**: The `check-workflow-security.js` validation script catches all known regression patterns. Running `node scripts/check-workflow-security.js` as a pre-commit hook or CI step prevents regressions.
+
+### Verification
+
+| Check             | Result                       |
+| ----------------- | ---------------------------- |
+| Build             | 2 pages, 0 failed, 26ms      |
+| ESLint            | 0 errors                     |
+| Workflow Security | 6/6 files pass, 0 violations |
+| JS Tests          | 1026/1026 pass               |
+| npm audit         | 0 vulnerabilities            |
+| npm outdated      | All up to date               |
+| Zero regressions  | Confirmed                    |
+
+### Acceptance Criteria
+
+- [x] `id-token: write` removed from on-pull.yml (no OIDC)
+- [x] `repository-projects: write` removed from on-pull.yml
+- [x] `IFLOW_API_KEY`, `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_KEY`, `VITE_SUPABASE_URL` removed from on-pull.yml env blocks
+- [x] on-pull.yml secrets reduced from 5 to 1 (GITHUB_TOKEN only)
+- [x] All 6 workflow files pass security validation script (0 violations)
+- [x] eslint updated to 10.8.0
+- [x] globals updated to 17.8.0
+- [x] lint-staged updated to 17.2.0
+- [x] All 1026 JS tests pass
+- [x] Build succeeds (0 failed)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Secret exposure surface reduced in PR workflows
 - [x] Zero regressions introduced
