@@ -9069,3 +9069,92 @@ Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, 
 - [x] npm audit clean (0 vulnerabilities)
 - [x] Secret exposure surface reduced
 - [x] Zero regressions introduced
+
+---
+
+### [TASK-063] Code Sanitization — Workflow Security Regression Fix (9th Cycle), Missing Deps, Vulnerability Patch
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Conducted comprehensive code sanitization pass. Fixed the 9th regression cycle of workflow security issues (same root cause — main→agent merge overwrote hardened files). Also restored missing node_modules (build/lint/tests were all failing) and patched brace-expansion high severity vulnerability.
+
+### Diagnosis Results
+
+| Check                       | Result                                        |
+| --------------------------- | --------------------------------------------- |
+| Build                       | ✅ 2 pages, 0 failed, 27ms                    |
+| ESLint                      | ✅ 0 errors                                   |
+| Prettier                    | ✅ All files formatted                        |
+| JS Tests                    | ✅ 1001/1001 pass                             |
+| Python Tests                | ✅ 27/27 pass                                 |
+| npm audit                   | ✅ 0 vulnerabilities                          |
+| Workflow Security           | ✅ 6/6 files, 0 violations                    |
+| Empty catch blocks          | ✅ None found                                 |
+| eslint-disable directives   | ✅ None found                                 |
+| TODO/FIXME/HACK in source   | ✅ None found                                 |
+| Hardcoded paths/URLs        | ✅ All in config                              |
+| .env.example completeness   | ✅ Already matched                            |
+
+### Actions Taken
+
+1. **Fixed 12 workflow security violations across 5 files (CRITICAL)**:
+   - architect-agent.yml — Removed id-token/actions write, GH_TOKEN→GITHUB_TOKEN, IFLOW_API_KEY
+   - on-push.yml — Reduced 10→2 secrets (GITHUB_TOKEN, GEMINI_API_KEY)
+   - opencode.yml — Removed id-token/actions write, IFLOW_API_KEY
+   - orchestrator.yml — Removed id-token/actions write, GH_TOKEN→GITHUB_TOKEN (2x), IFLOW_API_KEY
+   - parallel.yml — Removed actions+id-token write, cleaned 4 env blocks
+
+2. **Restored missing node_modules** — ran npm ci, resolved all failures
+
+3. **Patched brace-expansion vulnerability** — npm audit fix, 0 vulns now
+
+4. **Fixed Prettier formatting** in docs/task.md
+
+### Root Cause of Regression (9th occurrence)
+
+Same root cause as all prior cycles: workflow security fixes on agent branch are overwritten by main→agent merge synchronization. The check-workflow-security.js validation script catches regressions post-merge.
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — Permissions hardened, GH_TOKEN→GITHUB_TOKEN
+- `.github/workflows/on-push.yml` — 10→2 secrets
+- `.github/workflows/opencode.yml` — Permissions hardened
+- `.github/workflows/orchestrator.yml` — Permissions hardened, GH_TOKEN→GITHUB_TOKEN
+- `.github/workflows/parallel.yml` — Permissions hardened, 4 env blocks cleaned
+- `docs/task.md` — This entry
+- `package-lock.json` — npm audit fix
+- `package.json` — npm audit fix
+
+### Verification
+
+| Check             | Result                       |
+| ----------------- | ---------------------------- |
+| Build             | 2 pages, 0 failed, 27ms      |
+| ESLint            | 0 errors                     |
+| Prettier          | All files formatted          |
+| Workflow Security | 6/6 files pass, 0 violations |
+| JS Tests          | 1001/1001 pass               |
+| Python Tests      | 27/27 pass                   |
+| npm audit         | 0 vulnerabilities            |
+| Zero regressions  | Confirmed                    |
+
+### Acceptance Criteria
+
+- [x] Build passes (2 pages, 0 failed)
+- [x] ESLint passes (0 errors)
+- [x] Prettier check passes (all files formatted)
+- [x] JS Tests pass (1001/1001)
+- [x] Python Tests pass (27/27)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] All 6 workflow files pass security validation (0 violations)
+- [x] on-push.yml reduced from 10→2 secrets
+- [x] parallel.yml permissions hardened + 4 env blocks cleaned
+- [x] orchestrator.yml permissions hardened + GH_TOKEN→GITHUB_TOKEN
+- [x] architect-agent.yml permissions hardened + GH_TOKEN→GITHUB_TOKEN
+- [x] opencode.yml permissions hardened + IFLOW_API_KEY removed
+- [x] brace-expansion vulnerability patched
+- [x] No empty catch blocks, eslint-disable directives, or TODO/FIXME/HACK
+- [x] Zero regressions introduced
