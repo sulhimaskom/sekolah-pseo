@@ -67,13 +67,15 @@ cp .env.example .env
 
 ### Configuration Options
 
-| Variable                       | Description                             | Default               |
-| ------------------------------ | --------------------------------------- | --------------------- |
-| `SITE_URL`                     | Base URL for sitemap generation         | `https://example.com` |
-| `RAW_DATA_PATH`                | Path to raw CSV data                    | `external/raw.csv`    |
-| `BUILD_CONCURRENCY_LIMIT`      | Max concurrent page builds (1-1000)     | `100`                 |
-| `VALIDATION_CONCURRENCY_LIMIT` | Max concurrent link validations (1-500) | `50`                  |
-| `MAX_URLS_PER_SITEMAP`         | Max URLs per sitemap file (max: 50000)  | `50000`               |
+| Variable                       | Description                                             | Default               |
+| ------------------------------ | ------------------------------------------------------- | --------------------- |
+| `SITE_URL`                     | Base URL for sitemap generation                         | `https://example.com` |
+| `RAW_DATA_PATH`                | Path to raw CSV data                                    | `external/raw.csv`    |
+| `BUILD_CONCURRENCY_LIMIT`      | Max concurrent page builds (1-1000)                     | `100`                 |
+| `VALIDATION_CONCURRENCY_LIMIT` | Max concurrent link validations (1-500)                 | `50`                  |
+| `MAX_URLS_PER_SITEMAP`         | Max URLs per sitemap file (max: 50000)                  | `50000`               |
+| `LOG_LEVEL`                    | Pino log level (trace, debug, info, warn, error, fatal) | `info`                |
+| `ENRICHMENT_ENABLED`           | Enable Wikipedia data enrichment (true/false)           | `false`               |
 
 ### Edit .env
 
@@ -92,6 +94,8 @@ RAW_DATA_PATH=external/raw.csv
 BUILD_CONCURRENCY_LIMIT=100
 VALIDATION_CONCURRENCY_LIMIT=50
 MAX_URLS_PER_SITEMAP=50000
+LOG_LEVEL=info
+# ENRICHMENT_ENABLED=false
 ```
 
 ## Running the Project
