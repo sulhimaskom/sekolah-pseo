@@ -239,6 +239,8 @@
 | 9   | Insufficient Python test coverage; pytest not installed                           | test     | P2       | Recurring | 009-insufficient-python-test-coverage.md |
 | 10  | Missing E2E/integration tests                                                     | test     | P2       | Recurring | 010-missing-e2e-integration-tests.md     |
 | 11  | Missing automated release process                                                 | chore    | P3       | Recurring | 011-missing-automated-release-process.md |
+| 12  | lint-staged@17.2.0 requires Node >=22.22.1 — 3-way version mismatch               | chore    | P2       | **NEW**   | 012-lint-staged-engine-mismatch.md       |
+| 13  | Workflow security checker: 12 violations (2 CRITICAL); guard non-blocking         | security | P2       | **NEW**   | 013-workflow-permissions-violations.md   |
 
 ---
 
@@ -256,3 +258,63 @@ Attempted `gh issue create` (GraphQL) and REST `POST /issues` with the runner to
 - **Phase**: Phase 1 — Audit Complete
 - **GitHub Issues**: Blocked (token lacks `issues: write`; PR/issue #2 addresses the fix)
 - **Status**: **waiting for human review** (issue creation requires `issues: write` permission)
+
+---
+
+## Addendum — Fresh Re-Scoring (third same-day run, see 04-verification-2026-07-31.md)
+
+Evaluation date 2026-07-31, full suite re-executed from scratch. Global penalty rules: no build failure, **no test failure this run** (1026 pass / 0 fail — the flaky test did not trigger; defect confirmed in code), 0 vulnerabilities. New evidence: 12 workflow security violations (own checker), orchestrator scheduled run failing on unset `secrets.GH_TOKEN`, lint-staged engine mismatch.
+
+### A. CODE QUALITY (Weighted Score: **84.55/100**)
+
+| Criterion                    | Weight | Score | Weighted | Rationale                                                                  |
+| ---------------------------- | ------ | ----- | -------- | -------------------------------------------------------------------------- |
+| Correctness                  | 15%    | 90    | 13.50    | Build + full suite pass; floating-promise defect confirmed in code (-10)   |
+| Readability & Naming         | 10%    | 90    | 9.00     | JSDoc, camelCase, uniform conventions                                      |
+| Simplicity                   | 10%    | 78    | 7.80     | Core pipeline clean; CI 2045 lines / 7 workflows overengineered            |
+| Modularity & SRP             | 15%    | 84    | 12.60    | Good layering; styles.js 1275 lines                                        |
+| Consistency                  | 5%     | 90    | 4.50     | CommonJS + pino + IntegrationError uniform                                 |
+| Testability                  | 15%    | 84    | 12.60    | 95.32% coverage; 0 fail this run; residual order-dependent flake risk (-6) |
+| Maintainability (Complexity) | 10%    | 80    | 8.00     | styles.js oversized; CI complexity                                         |
+| Error Handling               | 10%    | 82    | 8.20     | retry/circuit-breaker/timeout; floating promise defeats catch path (-10)   |
+| Dependency Discipline        | 5%     | 85    | 4.25     | Single prod dep, 0 vulns; lint-staged engine mismatch (-10)                |
+| Determinism & Predictability | 5%     | 82    | 4.10     | Manifest deterministic; async leak nondeterministic                        |
+
+### B. SYSTEM QUALITY (RUNTIME) (Weighted Score: **85.35/100**)
+
+| Criterion                    | Weight | Score | Weighted | Rationale                                                                 |
+| ---------------------------- | ------ | ----- | -------- | ------------------------------------------------------------------------- |
+| Stability                    | 20%    | 90    | 18.00    | Build/lint/Python deterministic; known intermittent JS flake (0 this run) |
+| Performance Efficiency       | 15%    | 92    | 13.80    | Build 27ms / 2 pages; full suite 4.6s                                     |
+| Security Practices           | 20%    | 78    | 15.60    | HTML escaping/CSP/0 vulns; 12 workflow violations + 57 secrets refs (-22) |
+| Scalability Readiness        | 15%    | 86    | 12.90    | Static gen, rate limiter, sitemap split                                   |
+| Resilience & Fault Tolerance | 15%    | 82    | 12.30    | retry/breaker/timeout; cache fallback unreachable (-10)                   |
+| Observability                | 15%    | 85    | 12.75    | pino structured logs + perf report; stdout-only                           |
+
+### C. EXPERIENCE QUALITY (UX / DX) (Weighted Score: **87.45/100**)
+
+UX: Accessibility 92, User Flow Clarity 86, Feedback & Error Messaging 84, Responsiveness 88 (avg 87.5)
+DX: API Clarity 88, Local Dev Setup 88 (pytest missing, engine mismatch), Documentation Accuracy 84 (prettier violations + stale reports), Debuggability 82, Build/Test Feedback Loop 95 (avg 87.4)
+
+### D. DELIVERY & EVOLUTION READINESS (Weighted Score: **72.40/100**)
+
+| Criterion                      | Weight | Score | Weighted | Rationale                                                                                                   |
+| ------------------------------ | ------ | ----- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| CI/CD Health                   | 20%    | 62    | 12.40    | 2045 lines/7 workflows; global concurrency; no issues:write; orchestrator failing; guard non-blocking (-38) |
+| Release & Rollback Safety      | 20%    | 72    | 14.40    | Static artifacts rollback-safe; no automated release                                                        |
+| Config & Env Parity            | 15%    | 74    | 11.10    | SITE_URL placeholder; 3-way Node version mismatch; secret alias duplication (-4)                            |
+| Migration Safety               | 15%    | 82    | 12.30    | Manifest incremental builds; ADRs                                                                           |
+| Technical Debt Exposure        | 15%    | 76    | 11.40    | styles.js, floating promise, CI complexity, 12 workflow violations                                          |
+| Change Velocity & Blast Radius | 15%    | 72    | 10.80    | Global concurrency group + sequential 90-min steps throttle throughput                                      |
+
+### Composite (fresh run)
+
+| Domain                            | Score     |
+| --------------------------------- | --------- |
+| A. Code Quality                   | 84.55     |
+| B. System Quality                 | 85.35     |
+| C. Experience Quality             | 87.45     |
+| D. Delivery & Evolution Readiness | 72.40     |
+| **Composite Score**               | **82.44** |
+
+**Delta vs 07-31 audit (82.63): -0.19** — security/CI degradations (12 violations, orchestrator CI failure, engine mismatch) partially offset by a clean test run this cycle (no -15 global penalty).
