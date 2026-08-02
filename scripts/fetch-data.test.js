@@ -314,6 +314,41 @@ describe('fetch-data', () => {
       assert.ok(result.startsWith('https://'));
       assert.ok(result.endsWith('.git'));
     });
+
+    it('rejects semicolon command-chaining payload (F015)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/bar;id.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects command-substitution payload (F015)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/$(id).git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects ampersand chaining payload (F015)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/bar&&rm -rf x.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects pipe payload (F015)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/bar|cat /etc/passwd.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects hostname-side semicolon injection (F015)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com;id/foo.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('still accepts legitimate complex URLs after F015 hardening', () => {
+      const result = validateRepoUrl('https://github.com/user/foo-bar_baz.qux.git');
+      assert.strictEqual(result, 'https://github.com/user/foo-bar_baz.qux.git');
+    });
   });
 
   describe('main() - CLI entry point', () => {
