@@ -33,6 +33,10 @@ const DEFAULT_SOURCE_REPO = 'https://github.com/suryavip/daftar-sekolah-indonesi
 const DEFAULT_BRANCH = 'main';
 const EXTERNAL_DATA_DIR = path.join(process.cwd(), 'external-data');
 
+// Shell-active characters that must never appear in a URL interpolated into
+// execSync. The WHATWG URL parser leaves these intact in hostname/pathname.
+const SHELL_METACHARACTER_REGEX = /[;&|`$()<>*?'"#!\\\s]/;
+
 // Integration hardening - resilience thresholds for external operations
 const GIT_OPERATION_TIMEOUT_MS = 120000; // 2 minutes for git clone/fetch
 const GIT_RETRY_MAX_ATTEMPTS = 3;
@@ -77,6 +81,17 @@ function validateRepoUrl(url) {
 
     // Reconstruct URL to ensure it's clean (removes any injected characters)
     const sanitizedUrl = `${parsed.protocol}//${parsed.hostname}${parsed.pathname}`;
+
+    // Reject shell metacharacters that survive URL parsing and would be
+    // interpolated into execSync ('git clone ... ${url}'). The WHATWG parser
+    // percent-encodes spaces/backticks but leaves ; $ & ( ) intact.
+    if (SHELL_METACHARACTER_REGEX.test(sanitizedUrl)) {
+      throw new IntegrationError(
+        'Repository URL contains shell metacharacters and was rejected.',
+        ERROR_CODES.INVALID_URL,
+        { reason: 'shell_metacharacters' }
+      );
+    }
 
     // Validate it ends with .git (common for git repos)
     if (!sanitizedUrl.endsWith('.git')) {
