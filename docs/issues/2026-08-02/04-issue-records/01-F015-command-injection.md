@@ -1,6 +1,6 @@
 # ISSUE RECORD — F015: OS command injection in fetch-data.js validateRepoUrl
 
-> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 22nd consecutive block).
+> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 23rd consecutive block). Re-verified ✅ **EXPLOITABLE (4th consecutive)** in 26th run (2026-08-02): fresh PoC via exported `validateRepoUrl` confirmed `bar;id.git` AND `bar$(id).git` both pass validation (`VALIDATED: ... reaches execSync? true`); `/bin/sh: 1: id.git: not found` observed in shell.
 > **Labels**: `security`, `P1`
 > **Evaluation date**: 2026-08-02
 > **File affected**: `scripts/fetch-data.js` (lines 55–97, 165–180)

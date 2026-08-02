@@ -1,4 +1,4 @@
-# ISSUE RECORD — F002: Loop runner token lacks issues:write (22nd consecutive block)
+# ISSUE RECORD — F002: Loop runner token lacks issues:write (23rd consecutive block)
 
 > **Status**: GitHub issue creation BLOCKED (403) — this record is the fallback per repo convention.
 > **Labels**: `ci`, `P1`

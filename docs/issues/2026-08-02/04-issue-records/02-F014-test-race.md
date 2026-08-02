@@ -1,6 +1,6 @@
 # ISSUE RECORD — F014: Parallel test-file race on dist/ (flaky CI)
 
-> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 22nd consecutive block).
+> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 23rd consecutive block). Re-verified in 26th run (2026-08-02): **NOT OBSERVED (0/5)** — 5 consecutive clean full-suite runs (1026 pass / 0 fail / 4 skip each); cleanest session since 19th run. Race window remains latent at `build-orchestrator.test.js:178`.
 > **Labels**: `test`, `P1`
 > **Evaluation date**: 2026-08-02
 > **File affected**: `scripts/build-orchestrator.test.js` (line 178), `src/services/BuildOrchestrator.js`

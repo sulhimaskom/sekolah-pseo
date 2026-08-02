@@ -1,6 +1,6 @@
 # ISSUE RECORD — F018: schools.csv data regression 3474→1 school (undocumented)
 
-> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 22nd consecutive block).
+> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 23rd consecutive block). Re-verified ✅ in 26th run (2026-08-02): `wc -l data/schools.csv` → still 2; `git show HEAD~20:data/schools.csv | wc -l` → 3475; build still outputs 2 pages.
 > **Labels**: `bug`, `P1`
 > **Evaluation date**: 2026-08-02
 > **File affected**: `data/schools.csv`, `external/raw.csv`
