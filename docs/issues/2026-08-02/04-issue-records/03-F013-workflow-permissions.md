@@ -1,6 +1,6 @@
 # ISSUE RECORD — F013: Workflow permission violations (12) — 5th+ regression
 
-> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 22nd consecutive block).
+> **Status**: GitHub issue creation BLOCKED (403, `permission: none`) — record persisted per repo convention (finding 002, 23rd consecutive block).
 > **Labels**: `security`, `P1`
 > **Evaluation date**: 2026-08-02
 > **Files affected**: `.github/workflows/architect-agent.yml`, `on-push.yml`, `opencode.yml`, `orchestrator.yml`, `parallel.yml`
