@@ -1,0 +1,355 @@
+# Phase 1 — Comprehensive Scoring Report (ULW Loop) — 2026-08-02 (24th verification)
+
+**Evaluation Date**: 2026-08-02
+**Evaluator**: Sisyphus (ULW Loop, autonomous run)
+**Repository**: sulhimaskom/sekolah-pseo
+**Default Branch**: main (@ 3361b8e)
+**Trigger**: ULW loop invocation (Phase 0 → no open PRs, no open issues → Phase 1)
+**Mode**: Independent fresh verification — all commands re-executed, no cached results
+
+---
+
+## Executive Summary
+
+| Domain                                | Score        | Grade |
+| ------------------------------------- | ------------ | ----- |
+| **A. Code Quality**                   | **81.8/100** | B     |
+| **B. System Quality**                 | **76.3/100** | B     |
+| **C. Experience Quality**             | **85.2/100** | B     |
+| **D. Delivery & Evolution Readiness** | **70.1/100** | C+    |
+| **COMPOSITE**                         | **78.4/100** | B     |
+
+Delta vs 2026-08-02 23rd run (78.7): **−0.3** — driven by **F014 parallel
+test-file race OBSERVED at highest frequency yet (5/13 runs)** and F015 RCE
+PoC re-confirmed live (4th consecutive confirmation). Prettier file count up
+17→18 (F005). No application-code regression.
+
+## Global Penalties
+
+| Rule                   | Penalty | Justification                                                                            |
+| ---------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| Build failure          | —       | ✅ PASS — `npm run build` → exit 0, 2 pages, 0 failed, 37ms, budgets met                 |
+| Test failure           | −15     | ⚠️ F014 parallel test-file race **OBSERVED 5/13 runs** (highest frequency in 6 sessions) |
+| Critical vulnerability | −20     | ❌ F015 OS command injection PoC-confirmed (4th live confirmation)                       |
+
+---
+
+## Audit Commands (fresh, this run)
+
+| Command                                   | Result                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| `npm install`                             | ✅ 0 vulnerabilities                                                            |
+| `npm run build`                           | ✅ exit 0, 2 pages, 0 failed, 37ms, 54.05 pages/sec, 57.34MB RSS, budgets met   |
+| `npm run lint` (eslint)                   | ✅ clean — 0 errors, 0 warnings                                                 |
+| `npm run test:js` (×13)                   | ⚠️ nominal 1026 pass / 0 fail / 4 skip; **5 failures observed in 13 runs**      |
+| `python3 tests/run_tests.py`              | ✅ 27/27 pass (100%)                                                            |
+| `python3 -m pytest tests/`                | ❌ `No module named pytest` (finding 009 — not wired into CI)                   |
+| `npm run test:js:coverage`                | ✅ 95.32% stmt / 92.28% branch / 96.63% funcs — above 80/75 thresholds          |
+| `npm audit`                               | ✅ 0 vulnerabilities                                                            |
+| `node scripts/check-workflow-security.js` | ❌ **12 violations: 2 CRITICAL + 10 HIGH** (finding 013, stable)                |
+| `gh issue create` (dry)                   | ❌ **403 `Resource not accessible by integration (createIssue)`** (finding 002) |
+| `npm run format:check`                    | ❌ **18 files unformatted** (up from 17)                                        |
+| `git tag`                                 | ❌ 0 tags (finding 011)                                                         |
+| F015 live PoC (`validateRepoUrl`)         | ❌ **`bar;id.git` and `bar$(id).git` both ACCEPTED** → reach `execSync`         |
+
+---
+
+## A. CODE QUALITY (Weighted: 81.8/100)
+
+| Criterion                    | Weight  | Score | Weighted  | Rationale                                                           |
+| ---------------------------- | ------- | ----- | --------- | ------------------------------------------------------------------- |
+| Correctness                  | 15      | 82    | 12.30     | F015 RCE (PoC); F001 floating promise; F014 flake observed this run |
+| Readability & Naming         | 10      | 90    | 9.00      | Consistent camelCase, JSDoc on major modules                        |
+| Simplicity                   | 10      | 85    | 8.50      | Straightforward CSV→HTML pipeline                                   |
+| Modularity & SRP             | 15      | 75    | 11.25     | styles.js 1275L (008); homepage.js 716L; utils.js 415L              |
+| Consistency                  | 5       | 80    | 4.00      | console.log ×2 data-quality.js; mixed naming; dual Python runners   |
+| Testability                  | 15      | 80    | 12.00     | Coverage 95.32/92.28 met; pytest not wired (009); F014 freq rising  |
+| Maintainability (Complexity) | 10      | 78    | 7.80      | styles.js + 2045 workflow lines + silent catches                    |
+| Error Handling               | 10      | 88    | 8.80      | IntegrationError + codes, retry/timeout/circuit-breaker             |
+| Dependency Discipline        | 5       | 95    | 4.75      | 1 runtime dep (pino), 0 npm vulns                                   |
+| Determinism & Predictability | 5       | 68    | 3.40      | **F014 OBSERVED (5/13)** — highest in 6 sessions; F001; ETL churn   |
+| **TOTAL**                    | **100** |       | **81.80** |                                                                     |
+
+### A1. Correctness (82/100) ⚠️
+
+- **Observations**: Full suite nominally green (1026 JS pass; 27 Python pass). Two latent
+  defects confirmed live this run: (a) **F015** — `validateRepoUrl` (`fetch-data.js:55`)
+  reconstructs URL with zero shell-metacharacter stripping, flowing into `execSync`
+  (`fetch-data.js:150`); PoC `bar;id.git` and `bar$(id).git` both survive validation and
+  reach the `git clone` command string (verified live this run). (b) **F001** —
+  `fetch-data.js:338` `fetchFromGitHub(sourceRepo)` not awaited in sync `main()` (line 319).
+- **Evidence**: `fetch-data.js:55,150,164-190,319,338`; live PoC output this run.
+- **Impact**: High — RCE if untrusted `--source` reaches `fetchFromGitHub`.
+- **Deductions**: −10 F001 floating promise; −8 F015 (overlapping with B3 penalty).
+
+### A2. Readability & Naming (90/100)
+
+- **Observations**: Consistent camelCase, JSDoc headers on all major modules, descriptive filenames.
+- **Evidence**: All modules reviewed this run.
+- **Risk**: Low.
+
+### A3. Simplicity (85/100)
+
+- **Observations**: Straightforward CSV→HTML→dist pipeline, clean separation of concerns.
+- **Evidence**: Project structure, data flow (README).
+- **Risk**: Low.
+
+### A4. Modularity & SRP (75/100) ⚠️
+
+- **Observations**: `src/presenters/styles.js` = **1275 lines** — single module handles all
+  CSS generation. `homepage.js` 716L, `utils.js` 415L.
+- **Evidence**: `wc -l` → styles.js 1275, homepage.js 716, utils.js 415 (finding 008).
+- **Impact**: Medium — every style change risks the largest module in the repo.
+
+### A5. Consistency (80/100) ⚠️
+
+- **Observations**: `scripts/data-quality.js` uses `console.log` (2 calls) instead of the
+  structured `logger.*` API; `check-workflow-security.js` ×12, `interactive.js` ×24; mixed
+  naming conventions; two Python test runners.
+- **Evidence**: `grep -c "console.log"` on scripts.
+- **Impact**: Low — operational inconsistency only.
+
+### A6. Testability (80/100) ⚠️
+
+- **Observations**: Coverage 95.32% stmt / 92.28% branch — above 80/75 thresholds. 97
+  suites. pytest NOT installed in runner (finding 009); no E2E tests (finding 010);
+  **F014 race observed 5/13 runs this session — exact failure captured**.
+- **Evidence**: `npm run test:js:coverage` output; F014 failure: `build-orchestrator.test.js:153`
+  `prepareBuildEnvironment` suite (ERR_ASSERTION, subtest failed).
+- **Impact**: Medium — Python tests are thin; F014 makes CI intermittently red.
+- **Deductions**: −5 for F014 test-file race surfacing at rising frequency.
+
+### A7. Maintainability (78/100)
+
+- **Observations**: styles.js (1275L) and workflow files (2045L total) concentrate risk;
+  18 unformatted docs files; silent catches in enrichment.js:318, PageBuilder.js:112.
+- **Evidence**: Line counts; findings 005, 007, 008.
+- **Impact**: Medium.
+
+### A8. Error Handling (88/100)
+
+- **Observations**: IntegrationError class with error codes, consistent try-catch, path
+  traversal protection, resilience patterns (circuit breaker, retry, rate limiter).
+- **Evidence**: `scripts/config.js`, `scripts/resilience.js`, `scripts/rate-limiter.js`.
+- **Impact**: Low.
+
+### A9. Dependency Discipline (95/100)
+
+- **Observations**: 1 runtime dep (pino), small devDeps set, 0 npm vulnerabilities.
+- **Evidence**: `package.json`, `npm audit` → 0 vulnerabilities.
+- **Impact**: Low.
+
+### A10. Determinism (68/100) ⚠️
+
+- **Observations**: Content-hash incremental builds, no global state — but **F014 test
+  race OBSERVED (5/13 runs) this session — highest observed frequency in 6 sessions**
+  (rising: 0/3 → 4/28 → 3/31 → 5/14 → 0/6 → 3/11 → 5/13), F001 floating promise,
+  ETL `updated_at` churn + sitemap `lastmod`=today.
+- **Evidence**: 13 full-suite runs this session (5 fail / 8 clean); findings 001, 014.
+- **Impact**: Low-moderate — intermittent CI red without code change; frequency trending up.
+
+---
+
+## B. SYSTEM QUALITY (RUNTIME) (Weighted: 76.3/100)
+
+| Criterion                    | Weight  | Score | Weighted  | Rationale                                                                  |
+| ---------------------------- | ------- | ----- | --------- | -------------------------------------------------------------------------- |
+| Stability                    | 20      | 74    | 14.80     | **F014 observed 5/13 (highest)**; CI no gate before 12 AI flows (007)      |
+| Performance Efficiency       | 15      | 90    | 13.50     | 37ms build, 54.05 pages/sec, budgets met, 57.34MB RSS                      |
+| Security Practices           | 20      | 54    | 10.80     | **−10 F015 RCE**; **−20** 2 CRITICAL workflow violations; −12 5 HIGH (013) |
+| Scalability Readiness        | 15      | 82    | 12.30     | Rate limiter, batch concurrency, sitemap split at 50K                      |
+| Resilience & Fault Tolerance | 15      | 88    | 13.20     | Circuit breaker, exponential backoff, rate limiter, fs-safe                |
+| Observability                | 15      | 78    | 11.70     | Pino structured logging; console.log in 3 scripts; no alerting             |
+| **TOTAL**                    | **100** |       | **76.30** |                                                                            |
+
+### B1. Stability (74/100) ⚠️
+
+- **Observations**: Build passes consistently; F014 **OBSERVED 5/13 runs** (highest
+  frequency in 6 sessions; trend rising). CI still runs 12 sequential AI flows with no
+  build/lint/test gate.
+- **Evidence**: 13 full-suite runs this session; failure captured at
+  `build-orchestrator.test.js:153` (`prepareBuildEnvironment`, `dist/` race); finding 007.
+- **Deductions**: −16 F014 observed; −10 CI not gating (on-push.yml).
+
+### B2. Performance (90/100)
+
+- **Observations**: 37ms build, 54.05 pages/sec, 57.34MB peak RSS, all budgets met.
+- **Evidence**: `npm run build` performance report.
+- **Risk**: Low.
+
+### B3. Security Practices (54/100) 🔴
+
+- **Observations**: 0 npm vulns, path-traversal/XSS protections present. BUT:
+  - **F015 OS command injection** (PoC re-confirmed live this run — 4th consecutive) —
+    RCE if untrusted URL input reaches `fetchFromGitHub`.
+  - **12 workflow violations** (2 CRITICAL DUPLICATE_API_KEY + 4 ID_TOKEN_WRITE + 4
+    ACTIONS_WRITE_NON_MERGE + 2 GH_TOKEN_INSTEAD_OF_GITHUB_TOKEN) in 4 workflow files.
+  - **57 `secrets.*` references** across workflows, 10 distinct secret names (finding 004).
+- **Evidence**: Live PoC (`validateRepoUrl` accepts `;id`/`$(id)` — verified this run);
+  `node scripts/check-workflow-security.js` → 12 violations.
+- **Impact**: High — duplicated keys and over-privileged tokens expand blast radius of a
+  leaked secret; RCE path in fetch-data.
+- **Deductions**: −20 (F015 RCE), −20 (2 CRITICAL workflow violations), −12 (5 HIGH).
+
+### B4. Scalability (82/100)
+
+- **Observations**: Concurrency controls, rate limiting, sitemap splitting at 50K URLs.
+- **Evidence**: `config.js`, `sitemap.js`, `rate-limiter.js`.
+- **Risk**: Low.
+
+### B5. Resilience (88/100)
+
+- **Observations**: Circuit breaker, exponential backoff, rate limiter, graceful error handling.
+- **Evidence**: `resilience.js`, `fs-safe.js`.
+- **Risk**: Low.
+
+### B6. Observability (78/100) ⚠️
+
+- **Observations**: Pino structured logging in most modules; `console.log` in
+  data-quality.js (×2), check-workflow-security.js (×12), interactive.js (×24); no
+  centralized monitoring/alerting.
+- **Evidence**: `logger.js`, grep counts above.
+- **Impact**: Medium — production-only tools rely on stdout.
+
+---
+
+## C. EXPERIENCE QUALITY (85.2/100)
+
+### UX Criteria
+
+| Criterion                  | Score | Notes                                                              |
+| -------------------------- | ----- | ------------------------------------------------------------------ |
+| Accessibility              | 92    | ARIA landmarks, skip links, sr-only, semantic HTML, reduced-motion |
+| User Flow Clarity          | 85    | Clear navigation, breadcrumbs, search/filter, province drill-down  |
+| Feedback & Error Messaging | 78    | Status messages during build; limited user-facing error feedback   |
+| Responsiveness             | 88    | Mobile-first, responsive breakpoints, system font stack            |
+
+**UX Total**: 85.75
+
+### DX Criteria
+
+| Criterion                | Score | Notes                                                                                            |
+| ------------------------ | ----- | ------------------------------------------------------------------------------------------------ |
+| API Clarity              | 88    | JSDoc, clear exports; −2: `addNumbers` documented but absent (F017)                              |
+| Local Dev Setup          | 90    | README, npm scripts, CLI menu, devcontainer                                                      |
+| Documentation Accuracy   | 70    | 18 unformatted docs (005, up from 17); `gitignore-check` ghost (F016); `addNumbers` ghost (F017) |
+| Debuggability            | 80    | Structured logging, named errors, build perf metrics                                             |
+| Build/Test Feedback Loop | 95    | Build 37ms, JS tests <5s, coverage gate enforced                                                 |
+
+**DX Total**: (88+90+70+80+95)/5 = 84.6
+**Experience Quality**: (85.75 + 84.6) / 2 = **85.2**
+
+---
+
+## D. DELIVERY & EVOLUTION READINESS (Weighted: 70.1/100)
+
+| Criterion                      | Weight  | Score | Weighted  | Notes                                                                                |
+| ------------------------------ | ------- | ----- | --------- | ------------------------------------------------------------------------------------ |
+| CI/CD Health                   | 20      | 61    | 12.20     | No build/lint/test gate before 12 sequential AI flows; 6 workflows 2045L; issue dead |
+| Release & Rollback Safety      | 20      | 65    | 13.00     | No release workflow/tags/rollback (011); 0 tags                                      |
+| Config & Env Parity            | 15      | 78    | 11.70     | SITE_URL placeholder (006); PERF_* env vars undocumented                             |
+| Migration Safety               | 15      | 70    | 10.50     | CSV + idempotent ETL; no formal migrations                                           |
+| Technical Debt Exposure        | 15      | 66    | 9.90      | styles.js 1275L; 18 unformatted docs (005); lint-staged engine mismatch (012)        |
+| Change Velocity & Blast Radius | 15      | 85    | 12.75     | Modular, atomic commits, fast loop                                                   |
+| **TOTAL**                      | **100** |       | **70.05** |                                                                                      |
+
+### D1. CI/CD Health (61/100) ⚠️
+
+- **Observations**: 6 workflows, 2045 lines total. on-push.yml (533L) runs 12 sequential
+  opencode flows with NO build/lint/test gate first. Global concurrency group
+  (on-push.yml:11 `group: global`). Loop runner (on-pull.yml) missing `issues: write` +
+  `workflows: write` — **root cause of 24 blocked audit runs** (fresh 403 this run).
+- **Evidence**: workflow files; `gh issue create` → 403 (finding 002).
+- **Impact**: High — hours of AI compute wasted on broken code; issue tracking dead.
+- **Deductions**: −15 missing gate, −10 overcomplexity, −8 concurrency/permissions.
+
+### D2. Release & Rollback (65/100)
+
+- **Observations**: No release workflow, no version tags, no rollback procedure. Version pinned 1.0.0.
+- **Evidence**: `git tag` → 0 (finding 011).
+- **Impact**: Medium.
+
+### D3. Config & Env Parity (78/100)
+
+- **Observations**: Centralized config with env support, but SITE_URL defaults to
+  `https://example.com` placeholder (warning observed in this run's build output,
+  `config.js:50-54`); no startup env validation; PERF_* env vars undocumented.
+- **Evidence**: `scripts/config.js:50-54` (finding 006).
+- **Impact**: Low-moderate — placeholder leaks into prod if env missing.
+
+### D4. Migration Safety (70/100)
+
+- **Observations**: CSV data, idempotent ETL, no formal migration scripts.
+- **Evidence**: `scripts/etl.js`.
+- **Impact**: Medium — schema changes require reprocessing.
+
+### D5. Technical Debt (66/100)
+
+- **Observations**: styles.js 1275L; **18 unformatted docs files (up from 17)**; lint-staged
+  engine mismatch (`.nvmrc`=22, lint-staged@17.2.0 needs >=22.22.1, runner Node v20.20.2) —
+  finding 012; docs drift F016/F017.
+- **Evidence**: findings 005, 008, 012.
+- **Impact**: Medium.
+
+### D6. Change Velocity (85/100)
+
+- **Observations**: Modular architecture, atomic commits, fast feedback loop (~66 commits/30d).
+- **Evidence**: Git history, build perf.
+- **Risk**: Low.
+
+---
+
+## Findings Re-Verification Matrix (17/17 — all re-verified fresh this run)
+
+| #   | Finding                                                    | Cat      | Pri | Re-verified                   | Fresh evidence (this run)                                                |
+| --- | ---------------------------------------------------------- | -------- | --- | ----------------------------- | ------------------------------------------------------------------------ |
+| 001 | Floating promise in `fetch-data.js` main()                 | bug      | P1  | ✅ valid                      | `fetch-data.js:338` no `await`; sync `main()` at 319                     |
+| 002 | Missing `issues: write` + `workflows: write` (loop runner) | ci       | P1  | ✅ valid (24th consecutive)   | `gh issue create` → 403 `createIssue`                                    |
+| 003 | Global concurrency groups                                  | ci       | P2  | ✅ valid                      | `on-push.yml:11` `group: global`                                         |
+| 004 | Excessive CI secret exposure/aliasing                      | security | P1  | ✅ valid                      | **57 `secrets.*` refs**, 10 distinct names; API_KEY=GEMINI alias         |
+| 005 | Prettier violations in docs                                | docs     | P3  | ✅ valid                      | **18 files unformatted** (up from 17)                                    |
+| 006 | SITE_URL placeholder                                       | chore    | P2  | ✅ valid                      | Build warning observed this run (`config.js:51-54`)                      |
+| 007 | CI workflow overcomplexity                                 | refactor | P2  | ✅ valid                      | 6 workflows, 2045 lines                                                  |
+| 008 | styles.js oversized                                        | refactor | P2  | ✅ valid                      | `wc -l` → 1275                                                           |
+| 009 | pytest tooling not wired into CI                           | test     | P2  | ✅ valid                      | `No module named pytest` in runner; passes only locally (13)             |
+| 010 | Missing E2E/integration tests                              | test     | P3  | ✅ valid                      | No e2e framework in package.json/workflows                               |
+| 011 | Missing automated release process                          | ci       | P2  | ✅ valid                      | No release workflow; 0 tags                                              |
+| 012 | lint-staged engine mismatch                                | chore    | P3  | ✅ valid                      | `.nvmrc`=22 vs Node v20.20.2 vs lint-staged>=22.22.1                     |
+| 013 | Workflow permissions violations (12)                       | security | P1  | ✅ valid (stable)             | `check-workflow-security.js` → 12 violations (2 CRITICAL + 10 HIGH)      |
+| 014 | Parallel test-file race (`dist/` + `external-data/`)       | test     | P1  | ✅ valid — **OBSERVED 5/13**  | `build-orchestrator.test.js:153` ERR_ASSERTION captured; 5 fails/13 runs |
+| 015 | OS command injection in `fetch-data.js`                    | security | P1  | ✅ **EXPLOITABLE (live PoC)** | `bar;id.git` + `bar$(id).git` survive `validateRepoUrl` → `execSync`     |
+| 016 | README documents non-existent `gitignore-check` workflow   | docs     | P3  | ✅ valid                      | README.md:283 references workflow not in `.github/workflows/`            |
+| 017 | `docs/api.md` documents `addNumbers()` that does not exist | docs     | P3  | ✅ valid                      | docs/api.md:553-574; 0 occurrences in `scripts/utils.js`                 |
+
+---
+
+## Phase 1 Output — GitHub Issue Creation: BLOCKED (24th consecutive)
+
+Per Phase 1 mandate, GitHub issues must be created from all findings. **ATTEMPTED and
+BLOCKED this run**:
+
+- `gh issue create --title "PERMISSION-TEST <ts>"` → `GraphQL: Resource not accessible by
+integration (createIssue)`
+- Runner token grants `contents: write`, `pull-requests: write` — **no `issues: write`**
+- This is the **24th consecutive blocked run** (finding 002).
+
+**Required human/org action** (documented in `docs/issues/2026-08-01/01-root-cause-correction.md`):
+
+1. Grant the loop runner (`on-pull.yml`) token `issues: write` (and `workflows: write`
+   for the loop to self-fix workflow files), OR
+2. Provide a fine-grained PAT with `Issues: write` to the `pull` workflow.
+
+**Fallback used (repo convention, 24 prior runs)**: findings persisted as markdown in
+`docs/issues/` with full evidence — this file serves as the issue record until
+permissions are restored. No information is lost.
+
+---
+
+## Final State
+
+- **Phase**: Phase 1 (Audit) — complete
+- **GitHub Issues**: **blocked** — `issues: write` missing (24th consecutive 403);
+  requires human/org permission fix
+- **Composite Score**: 78.4/100 (−0.3 vs 23rd run, F014 observed 5/13 — highest frequency
+  in 6 sessions; F015 PoC re-confirmed 4th time)
+- **Status**: **blocked (issue creation)** — waiting for human review on permission fix
