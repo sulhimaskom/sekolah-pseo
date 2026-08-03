@@ -5,7 +5,7 @@
 'use strict';
 
 const path = require('path');
-const { safeReaddir, safeStat, safeWriteFile } = require('./fs-safe');
+const { safeReaddir, safeStat, safeWriteFile, safeAccess } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 const { RateLimiter } = require('./rate-limiter');
 const logger = require('./logger');
@@ -398,6 +398,26 @@ function generateMetaDescription(school) {
   return description.length > 155 ? description.substring(0, 152) + '...' : description;
 }
 
+/**
+ * Check whether a file or directory exists.
+ *
+ * Wraps safeAccess() so existence checks benefit from the standard
+ * resilience wrappers (timeout, retry, circuit breaker). Intended to
+ * replace the inconsistent raw `fs.existsSync` / try-catch-on-safeAccess
+ * patterns previously spread across modules (check-freshness, manifest).
+ *
+ * @param {string} filePath - Path to check
+ * @returns {Promise<boolean>} true if the path exists, false otherwise
+ */
+async function fileExists(filePath) {
+  try {
+    await safeAccess(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   parseCsv,
   escapeHtml,
@@ -412,4 +432,5 @@ module.exports = {
   processConcurrently,
   processInBatches,
   generateMetaDescription,
+  fileExists,
 };

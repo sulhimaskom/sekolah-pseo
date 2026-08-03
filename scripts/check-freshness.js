@@ -12,23 +12,23 @@
 
 'use strict';
 
-const fs = require('fs');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+const { safeReadFile } = require('./fs-safe');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { parseCsv, terminate } = require('./utils');
+const { parseCsv, terminate, fileExists } = require('./utils');
 
 const DEFAULT_MAX_AGE_DAYS = 7;
 
 /**
  * Get the most recent update date from schools.csv
- * @returns {Object} { date: Date, daysAgo: number, recordCount: number }
+ * @returns {Promise<Object>} { date: Date, daysAgo: number, recordCount: number }
  */
-function getDataFreshness() {
+async function getDataFreshness() {
   const schoolsPath = CONFIG.SCHOOLS_CSV_PATH;
 
   try {
-    if (!fs.existsSync(schoolsPath)) {
+    if (!(await fileExists(schoolsPath))) {
       return {
         exists: false,
         date: null,
@@ -38,7 +38,7 @@ function getDataFreshness() {
       };
     }
 
-    const content = fs.readFileSync(schoolsPath, 'utf-8');
+    const content = await safeReadFile(schoolsPath);
     const schools = parseCsv(content);
 
     if (schools.length === 0) {
@@ -96,17 +96,17 @@ function getDataFreshness() {
 
 /**
  * Calculate data quality metrics
- * @returns {Object} Quality metrics
+ * @returns {Promise<Object|null>} Quality metrics
  */
-function getDataQualityMetrics() {
+async function getDataQualityMetrics() {
   const schoolsPath = CONFIG.SCHOOLS_CSV_PATH;
 
   try {
-    if (!fs.existsSync(schoolsPath)) {
+    if (!(await fileExists(schoolsPath))) {
       return null;
     }
 
-    const content = fs.readFileSync(schoolsPath, 'utf-8');
+    const content = await safeReadFile(schoolsPath);
     const schools = parseCsv(content);
 
     if (schools.length === 0) {
@@ -169,13 +169,13 @@ function getDataQualityMetrics() {
 /**
  * Main function
  */
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const jsonOutput = args.includes('--json');
   const verbose = args.includes('--verbose');
 
-  const freshness = getDataFreshness();
-  const quality = getDataQualityMetrics();
+  const freshness = await getDataFreshness();
+  const quality = await getDataQualityMetrics();
 
   const result = {
     ...freshness,
@@ -229,5 +229,8 @@ module.exports = {
 };
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    logger.error({ err: error }, 'Data freshness check failed');
+    process.exit(1);
+  });
 }

@@ -22,8 +22,9 @@ const path = require('path');
 const crypto = require('crypto');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { safeReadFile, safeAccess, safeUnlink, fastWriteFile } = require('./fs-safe');
+const { safeReadFile, safeUnlink, fastWriteFile } = require('./fs-safe');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+const { fileExists } = require('./utils');
 
 const MANIFEST_FILE = '.build-manifest.json';
 
@@ -52,9 +53,7 @@ module.exports = {
 async function loadManifest() {
   const manifestPath = path.join(CONFIG.ROOT_DIR, MANIFEST_FILE);
 
-  try {
-    await safeAccess(manifestPath);
-  } catch {
+  if (!(await fileExists(manifestPath))) {
     return null;
   }
 
@@ -193,10 +192,8 @@ function getUnchangedSchools(schools, manifest) {
 async function clearManifest() {
   const manifestPath = path.join(CONFIG.ROOT_DIR, MANIFEST_FILE);
 
-  try {
+  if (await fileExists(manifestPath)) {
     await safeUnlink(manifestPath);
     logger.info('Build manifest cleared');
-  } catch {
-    // File doesn't exist - that's fine
   }
 }
