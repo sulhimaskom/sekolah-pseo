@@ -17,11 +17,11 @@ Also hoisted `generateBackToTopScript().replace('<script>','').replace('</script
 
 ### Metrics
 
-| Metric                    | Before   | After    | Improvement |
-| ------------------------- | -------- | -------- | ----------- |
-| 7-keystroke search burst  | 8.1ms    | 2.0ms    | 4× faster   |
-| Full build (3474 schools) | ~350ms   | ~350ms   | unchanged (I/O-bound) |
-| Build throughput          | 8907–9785 pages/sec | same | — |
+| Metric                    | Before              | After  | Improvement           |
+| ------------------------- | ------------------- | ------ | --------------------- |
+| 7-keystroke search burst  | 8.1ms               | 2.0ms  | 4× faster             |
+| Full build (3474 schools) | ~350ms              | ~350ms | unchanged (I/O-bound) |
+| Build throughput          | 8907–9785 pages/sec | same   | —                     |
 
 ### Files Modified
 
@@ -32,14 +32,14 @@ Also hoisted `generateBackToTopScript().replace('<script>','').replace('</script
 
 ### Verification
 
-| Check        | Result                                      |
-| ------------ | ------------------------------------------- |
-| ESLint       | 0 errors                                    |
-| Prettier     | All changed source files formatted cleanly  |
-| JS Tests     | 1041/1041 pass, 0 fail, 4 skipped           |
-| Python Tests | 27/27 pass (pytest)                         |
-| Search parity fuzz | 200/200 cases identical results       |
-| Zero regressions | Confirmed                              |
+| Check              | Result                                     |
+| ------------------ | ------------------------------------------ |
+| ESLint             | 0 errors                                   |
+| Prettier           | All changed source files formatted cleanly |
+| JS Tests           | 1041/1041 pass, 0 fail, 4 skipped          |
+| Python Tests       | 27/27 pass (pytest)                        |
+| Search parity fuzz | 200/200 cases identical results            |
+| Zero regressions   | Confirmed                                  |
 
 ### Acceptance Criteria
 
