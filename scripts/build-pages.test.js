@@ -20,6 +20,7 @@ const {
   createManifestFromSchools,
 } = require('./build-pages');
 const { resetCircuitBreakers } = require('./fs-safe');
+const { MANIFEST_VERSION } = require('./manifest');
 const CONFIG = require('./config');
 const slugify = require('./slugify');
 
@@ -271,7 +272,11 @@ test('createManifestFromSchools creates valid manifest structure', () => {
   const manifest = createManifestFromSchools(schools);
 
   assert.ok(manifest, 'manifest should be created');
-  assert.strictEqual(manifest.version, 1, 'manifest version should be 1');
+  assert.strictEqual(
+    manifest.version,
+    MANIFEST_VERSION,
+    'manifest version should match MANIFEST_VERSION'
+  );
   assert.ok(manifest.lastBuild, 'manifest should have lastBuild timestamp');
   assert.ok(manifest.schools, 'manifest should have schools object');
   assert.strictEqual(Object.keys(manifest.schools).length, 2, 'manifest should have 2 schools');
@@ -294,7 +299,11 @@ test('createManifestFromSchools handles empty array', () => {
   const manifest = createManifestFromSchools([]);
 
   assert.ok(manifest, 'manifest should be created');
-  assert.strictEqual(manifest.version, 1, 'manifest version should be 1');
+  assert.strictEqual(
+    manifest.version,
+    MANIFEST_VERSION,
+    'manifest version should match MANIFEST_VERSION'
+  );
   assert.ok(manifest.lastBuild, 'manifest should have lastBuild timestamp');
   assert.deepStrictEqual(manifest.schools, {}, 'schools should be empty object');
 });
