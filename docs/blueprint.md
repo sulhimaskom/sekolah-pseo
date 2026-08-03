@@ -40,19 +40,26 @@ sekolah-pseo/
 │       └── ExportService.js     # Static artifact exports (styles.css, schools.csv)
 ├── scripts/                     # Controllers/Orchestrators
 │   ├── build-pages.js           # Page build controller (full + incremental)
-│   ├── etl.js                   # Data ETL pipeline
-│   ├── sitemap.js               # Sitemap generator
-│   ├── validate-links.js        # Link validation
-│   ├── config.js                # Shared configuration with validation
-│   ├── utils.js                 # Utility functions (CSV, HTML, directory walk, concurrency)
-│   ├── slugify.js               # URL slug generation with caching
-│   ├── resilience.js            # Resilience patterns (retry, timeout, circuit breaker)
-│   ├── fs-safe.js               # Resilient file system wrappers
-│   ├── rate-limiter.js          # Rate limiting for concurrent operations
-│   ├── manifest.js              # Build manifest for incremental builds
-│   ├── logger.js                # Pino-based logging
-│   ├── fetch-data.js            # External data fetch from GitHub
+│   ├── build-performance.js     # Build performance profiling
 │   ├── check-freshness.js       # Data freshness check
+│   ├── check-workflow-security.js # GitHub Actions workflow security validation
+│   ├── config.js                # Shared configuration with validation
+│   ├── data-quality.js          # Data quality metrics and reports
+│   ├── data-schema.js           # Centralized data schema (field types, constraints, mappings)
+│   ├── enrichment.js            # External data enrichment (Wikipedia)
+│   ├── etl.js                   # Data ETL pipeline
+│   ├── fetch-data.js            # External data fetch from GitHub
+│   ├── freshness-report.js      # Detailed freshness report generation
+│   ├── fs-safe.js               # Resilient file system wrappers
+│   ├── interactive.js           # Interactive CLI menu
+│   ├── logger.js                # Pino-based logging
+│   ├── manifest.js              # Build manifest for incremental builds
+│   ├── rate-limiter.js          # Rate limiting for concurrent operations
+│   ├── resilience.js            # Resilience patterns (retry, timeout, circuit breaker)
+│   ├── sitemap.js               # Sitemap generator
+│   ├── slugify.js               # URL slug generation with caching
+│   ├── utils.js                 # Utility functions (CSV, HTML, directory walk, concurrency)
+│   ├── validate-links.js        # Link validation
 │   └── *.test.js                # Test files
 ├── data/
 │   └── schools.csv              # Processed school data
