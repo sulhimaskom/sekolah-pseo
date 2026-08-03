@@ -50,7 +50,7 @@ Memeriksa usia data sekolah dan menghasilkan laporan kualitas data.
 ```
 external/raw.csv → ETL Process → data/schools.csv → Build Process → dist/
                                                                     ├── index.html (Homepage)
-                                                                    ├── Provinsi/
+                                                                    ├── provinsi/
                                                                     │   └── {province}/index.html
                                                                     ├── {path}/{npsn}-{slug}.html (School pages)
                                                                     └── styles.css
@@ -194,12 +194,19 @@ sekolah-pseo/
 ├── external/               # Data mentah dalam format CSV
 ├── public/                # Asset statis (favicon, dll)
 ├── scripts/               # Script pemrosesan data dan utilitas
-│   ├── build-pages.js     # Halaman pembangunan
+│   ├── build-pages.js     # Halaman pembangunan (full + incremental)
+│   ├── build-performance.js # Profiling performa build
 │   ├── check-freshness.js # Pengecekkan kesegaran data
+│   ├── check-workflow-security.js # Validasi keamanan GitHub Actions
 │   ├── config.js          # Konfigurasi
+│   ├── data-quality.js    # Laporan kualitas data
+│   ├── data-schema.js     # Skema data terpusat (single source of truth)
+│   ├── enrichment.js      # Pengayaan data eksternal (Wikipedia)
 │   ├── etl.js            # Proses ETL
 │   ├── fetch-data.js      # Pengambilan data eksternal
+│   ├── freshness-report.js # Laporan kesegaran data detail
 │   ├── fs-safe.js        # File system wrapper aman
+│   ├── interactive.js    # Menu CLI interaktif
 │   ├── logger.js         # Logging
 │   ├── manifest.js       # Build manifest
 │   ├── rate-limiter.js   # Rate limiting
@@ -223,7 +230,9 @@ sekolah-pseo/
 │   │           └── footer.js       # Shared footer component
 │   └── services/
 │       ├── PageBuilder.js       # Page data builders (paths, grouping, search)
-│       └── BuildOrchestrator.js # Build pipeline orchestration service
+│       ├── BuildOrchestrator.js # Build pipeline orchestration service
+│       ├── SearchDataService.js # Artifact data pencarian (schools.json + gzip)
+│       └── ExportService.js     # Ekspor artifact statis (styles.css, schools.csv)
 ├── tests/                 # Test Python
 ├── docs/                  # Dokumentasi
 ├── CONTRIBUTING.md       # Panduan kontribusi
@@ -280,15 +289,30 @@ Repositori ini menggunakan `.gitignore` yang telah dikonfigurasi untuk mencegah 
 
 ### CI Verification
 
-Setiap push ke branch `main` dan pull request yang mengubah `.gitignore` akan diverifikasi oleh workflow `gitignore-check` yang:
+Repositori ini menggunakan GitHub Actions (`.github/workflows/`) untuk otomatisasi:
 
-1. Memastikan pola kritis ada di `.gitignore`
-2. Memeriksa pola file sensitif umum
-3. Memverifikasi tidak ada file rahasia yang akan ter-commit
+- **`on-push.yml`** — dijalankan saat push ke branch, termasuk quality gate (lint + format check) sebelum menjalankan agent workflow.
+- **`on-pull.yml`** — dijalankan saat pull request dan terjadwal (setiap jam), termasuk quality gate, build, dan test.
+- **`orchestrator.yml`**, **`architect-agent.yml`**, **`opencode.yml`**, **`parallel.yml`** — workflow agent otomatis untuk pemeliharaan repositori.
+
+Semua workflow tervalidasi terhadap aturan keamanan oleh `scripts/check-workflow-security.js` yang memeriksa:
+
+1. Tidak ada `API_KEY` yang menduplikasi `GEMINI_API_KEY`
+2. Tidak ada `id-token: write` pada workflow non-OIDC
+3. Tidak ada `actions: write` pada workflow non-merge
+4. Menggunakan `secrets.GITHUB_TOKEN`, bukan `secrets.GH_TOKEN`
+
+Jalankan validasi secara lokal:
+
+```bash
+node scripts/check-workflow-security.js
+```
 
 ## Dokumentasi Lanjutan
 
 - [Dokumentasi API](docs/api.md) - Dokumentasi API lengkap untuk semua modul
+- [Panduan Setup](docs/setup.md) - Panduan instalasi dan konfigurasi lingkungan
+- [Panduan Pengujian](docs/testing.md) - Panduan test JavaScript dan Python
 - [Panduan Kontribusi](CONTRIBUTING.md) - Cara berkontribusi pada proyek
 - [Keamanan](SECURITY.md) - Kebijakan keamanan
 - [Dokumentasi Deployment](docs/deployment.md) - Panduan deployment

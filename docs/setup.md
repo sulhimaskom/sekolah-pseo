@@ -180,17 +180,36 @@ npm run format:check
 sekolah-pseo/
 ├── src/
 │   ├── presenters/          # Presentation layer (templates, styles)
-│   │   ├── templates/      # HTML templates
+│   │   ├── templates/      # HTML templates (homepage, school-page, province-page, shared/)
 │   │   ├── design-system.js # Design tokens
 │   │   └── styles.js       # CSS generation
 │   └── services/           # Business logic
-│       └── PageBuilder.js  # Page generation service
+│       ├── PageBuilder.js       # Page data builders (paths, grouping, search)
+│       ├── BuildOrchestrator.js # Build pipeline orchestration
+│       ├── SearchDataService.js # Search data artifact generation (schools.json + gzip)
+│       └── ExportService.js     # Static artifact exports (styles.css, schools.csv)
 ├── scripts/                # Build scripts and utilities
-│   ├── etl.js            # Data processing
-│   ├── build-pages.js   # Page generation controller
-│   ├── sitemap.js       # Sitemap generator
-│   ├── validate-links.js # Link validator
-│   └── *.js             # Utility modules
+│   ├── build-pages.js      # Page generation controller (full + incremental)
+│   ├── etl.js              # Data processing (Extract, Transform, Load)
+│   ├── data-schema.js      # Centralized data schema (single source of truth)
+│   ├── data-quality.js     # Data quality metrics and reports
+│   ├── check-freshness.js  # Data freshness check
+│   ├── freshness-report.js # Detailed freshness report
+│   ├── fetch-data.js       # External data fetch
+│   ├── enrichment.js       # Wikipedia data enrichment
+│   ├── sitemap.js          # Sitemap generator
+│   ├── validate-links.js   # Link validator
+│   ├── interactive.js      # Interactive CLI menu
+│   ├── build-performance.js # Build performance profiling
+│   ├── check-workflow-security.js # GitHub Actions security validation
+│   ├── config.js           # Shared configuration
+│   ├── fs-safe.js          # Resilient file system wrappers
+│   ├── manifest.js         # Incremental build manifest
+│   ├── rate-limiter.js     # Concurrency rate limiting
+│   ├── resilience.js       # Retry/timeout/circuit-breaker patterns
+│   ├── slugify.js          # URL slug generation
+│   ├── logger.js           # Pino-based logging
+│   └── utils.js            # Utility functions
 ├── data/                   # Processed school data
 ├── dist/                   # Generated HTML output
 ├── external/              # Raw data files

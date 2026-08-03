@@ -2841,7 +2841,11 @@ Aggregates school data by province and extracts filter options in a single pass.
   provinces: [
     { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
   ],
-  types: ['SMA', 'SMP', 'SD'],
+  filterOptions: {
+    provinces: ['DKI Jakarta', 'Jawa Barat'],
+    types: ['SMA', 'SMP', 'SD'],
+    statuses: ['N', 'S'],
+  },
 }
 ```
 
@@ -2851,28 +2855,29 @@ Aggregates school data by province and extracts filter options in a single pass.
 
 ```javascript
 const { aggregateProvinceAndFilters } = require('./templates/homepage');
-const { provinces, types } = aggregateProvinceAndFilters(schools);
+const { provinces, filterOptions } = aggregateProvinceAndFilters(schools);
+const { types } = filterOptions;
 ```
 
 #### `extractFilterOptions(schools)`
 
-Extracts unique filter options (education types) from school data.
+Extracts unique filter options (provinces, education types, statuses) from school data.
 
 **Parameters:**
 
 - `schools` (Array<Object>): Array of school data objects
 
-**Returns:** `Array<string>` - Sorted array of unique education types
+**Returns:** `Object` - `{ provinces: string[], types: string[], statuses: string[] }` — sorted arrays of unique values. Returns empty arrays for non-array input.
 
 ```javascript
-// Returns: ['SD', 'SMA', 'SMK', 'SMP']
+// Returns: { provinces: [...], types: ['SD', 'SMA', 'SMK', 'SMP'], statuses: ['N', 'S'] }
 ```
 
 **Usage:**
 
 ```javascript
 const { extractFilterOptions } = require('./templates/homepage');
-const types = extractFilterOptions(schools);
+const { provinces, types, statuses } = extractFilterOptions(schools);
 ```
 
 ---

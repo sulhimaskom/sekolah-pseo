@@ -2,6 +2,46 @@
 
 ## Completed Tasks
 
+### [TASK-077] Technical Writing — Doc-Code Alignment Pass (README, setup, blueprint, api, REFACTOR-007)
+
+**Status**: Complete
+**Agent**: Senior Technical Writer (Sisyphus)
+
+### Description
+
+Audited documentation against the actual codebase and fixed 6 doc-code mismatches. Two were actively misleading (a fabricated CI workflow and a "removed" function that still exists), the rest were stale directory trees and an incorrect API return type.
+
+### Findings & Changes
+
+**1. README.md — fabricated `gitignore-check` workflow (CRITICAL)**:
+
+- The "CI Verification" section claimed a workflow named `gitignore-check` verifies `.gitignore` on every push to `main`. **No such workflow exists** — `.github/workflows/` contains only `on-push.yml`, `on-pull.yml`, `orchestrator.yml`, `architect-agent.yml`, `opencode.yml`, `parallel.yml`, and `template.md`. Replaced with an accurate description of the real CI workflows and the `scripts/check-workflow-security.js` validation rules (5 rules: DUPLICATE_API_KEY, ID_TOKEN_WRITE, ACTIONS_WRITE_NON_MERGE, GH_TOKEN_INSTEAD_OF_GITHUB_TOKEN, CHECKOUT_TOKEN_DISCREPANCY), verified against the script source.
+
+**2. README.md — stale directory tree**:
+
+- `scripts/` was missing 7 modules that exist on disk: `data-schema.js`, `data-quality.js`, `freshness-report.js`, `build-performance.js`, `check-workflow-security.js`, `enrichment.js`, `interactive.js`.
+- `src/services/` was missing `SearchDataService.js` and `ExportService.js` (created in TASK-069; the blueprint had them but README did not).
+- Data flow diagram showed `dist/Provinsi/` (capital P) — actual output directory is lowercase `provinsi/` (verified `PageBuilder.js:179`, `BuildOrchestrator.js:169`).
+
+**3. `docs/setup.md` — stale Project Structure Overview**:
+
+- Listed only `PageBuilder.js` under `src/services/` and 5 scripts with a `*.js` placeholder. Replaced with the full service set (PageBuilder, BuildOrchestrator, SearchDataService, ExportService) and complete scripts inventory.
+
+**4. `docs/blueprint.md` — incomplete scripts tree**:
+
+- Added 6 missing entries: `data-quality.js`, `freshness-report.js`, `enrichment.js`, `interactive.js`, `build-performance.js`, `check-workflow-security.js`.
+
+**5. `docs/api.md` — incorrect API contracts (homepage.js)**:
+
+- `extractFilterOptions()` was documented as returning `Array<string>` (education types only) — the code returns `{ provinces: [], types: [], statuses: [] }` (verified `homepage.js:22-42`). Corrected the return type, example, and destructuring usage.
+- `aggregateProvinceAndFilters()` was documented as returning `{ provinces, types }` — the code returns `{ provinces, filterOptions: { provinces, types, statuses } }` (verified `homepage.js:119-159`). Corrected the return shape and usage example.
+
+- [x] REFACTOR-007 marked Resolved; misleading "Removed" statements corrected
+- [x] All changed files Prettier-clean
+- [x] Zero regressions introduced
+
+---
+
 ### [TASK-076] DevOps — CI Pipeline Health Check, Transient-Failure Retry on `On-Pull` Step
 
 **Status**: Complete
@@ -3729,7 +3769,7 @@ Optimized the homepage payload size and eliminated duplicate computation in the 
 2. **Eliminated duplicate full-school iteration in homepage generation** (`src/presenters/templates/homepage.js`):
    - Created `aggregateProvinceAndFilters()` combining `aggregateByProvince()` and `extractFilterOptions()` into a single O(n) pass
    - Reduced from 3 full school array iterations to 2 for homepage generation
-   - Removed now-unused `extractFilterOptions()` function (detected and cleaned via lint)
+   - `extractFilterOptions()` retained as exported API for backward compatibility (still tested and documented in `docs/api.md`)
 
 3. **Removed duplicate HTML generation in manifest creation** (`scripts/build-pages.js`, `src/services/PageBuilder.js`):
    - Identified that `createManifestFromSchools()` was calling `buildSchoolPageData()` (full HTML generation) for every school, only to extract the relative path
@@ -3803,7 +3843,7 @@ Optimized the homepage payload size and eliminated duplicate computation in the 
 
 **Code Quality:**
 
-- Removed unused `extractFilterOptions()` function (detected by lint)
+- `extractFilterOptions()` retained as exported backward-compatible API (previously misdocumented as removed — corrected per REFACTOR-007)
 - Combined related operations into single-pass utility function
 - Consistent `CURRENT_YEAR` constant pattern across template files
 - All optimizations maintain backward compatibility
@@ -9271,9 +9311,11 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-007] Doc-Code Mismatch: `extractFilterOptions()` Status Incorrectly Documented as Removed
 
+**Status**: Resolved (2026-08-03, Technical Writer pass)
+
 - **Location**: `docs/task.md` (TASK-019, lines 2822 and 2896) vs `src/presenters/templates/homepage.js:14-34,715`
 - **Issue**: Multiple task entries state that `extractFilterOptions()` was "Removed now-unused" (line 2822) and "Removed unused `extractFilterOptions()` function (detected and cleaned via lint)" (line 2896). However, the function is still present in the source — defined at line 14, exported at line 715, and tested in `homepage.test.js`. This is either: (a) the removal was documented but never applied to the code, or (b) the function was re-added after removal without updating the documentation. Either way, the documentation is actively misleading.
-- **Suggestion**: Determine the correct status: if `extractFilterOptions()` truly should be removed (since `aggregateProvinceAndFilters()` covers both `aggregateByProvince` and `extractFilterOptions` in a single pass), remove it from source, update tests to use `aggregateProvinceAndFilters()` for direct testing, and correct the doc. If it should be kept for backward compatibility, remove the "Removed" statements from the doc.
+- **Resolution**: The function is **kept for backward compatibility** — it remains exported from `homepage.js` (`module.exports.extractFilterOptions`), covered by `homepage.test.js`, and documented in `docs/api.md`. The two misleading "Removed" statements were corrected to state the function is retained as exported API. The `docs/api.md` contract for `extractFilterOptions()` was also corrected (it returns `{ provinces, types, statuses }`, not `Array<string>`), along with the `aggregateProvinceAndFilters()` return shape (`filterOptions` nested object).
 - **Priority**: Low
 - **Effort**: Small
 
