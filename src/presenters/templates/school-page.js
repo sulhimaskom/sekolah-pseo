@@ -12,6 +12,14 @@ const T = Object.fromEntries(
   Object.entries(CONFIG.TEXT).map(([key, value]) => [key, escapeHtml(value)])
 );
 
+// Hoisted static back-to-top script body — computed once at module load.
+// Avoids rebuilding the template literal + 2 regex replaces + trim for every
+// one of ~3474 school pages per full build.
+const BACK_TO_TOP_SCRIPT_BODY = generateBackToTopScript()
+  .replace('<script>', '')
+  .replace('</script>', '')
+  .trim();
+
 /**
  * Generate canonical URL for the school page
  * @param {string} relativePath - Relative path to the HTML file
@@ -169,7 +177,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   <script>
     (function() {
       // Back to top (shared module)
-      ${generateBackToTopScript().replace('<script>', '').replace('</script>', '').trim()}
+      ${BACK_TO_TOP_SCRIPT_BODY}
 
       // Copy to clipboard functionality
       var copyButtons = document.querySelectorAll('.btn-copy');

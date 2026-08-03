@@ -2,6 +2,55 @@
 
 ## Completed Tasks
 
+### [TASK-072] Performance — Client-Side Search Precompute + Static Script Hoisting
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Profiled the full build pipeline at production scale (3474 schools) and found it already near-optimal: ~350ms full build, 8907–9785 pages/sec, ~110MB RSS, 0 failures — all performance budgets met. CPU profiling showed ~34% of build time is filesystem syscalls (unlink 10.6%, open 8.8%, close 8.0%, writeBuffer 7.0%) with `fastWriteFile`'s unlink+write already optimal for existing files (99ms vs 160ms plain write). Build pipeline left untouched.
+
+The real user-facing bottleneck was **client-side search**: `filterSchools()` rebuilt a 5-concatenation + `toLowerCase()` search string per school on every keystroke. Fixed by precomputing the lowercase searchable text once (`t` field) when `schools.json` loads — both flat-array and legacy object-format payloads get a uniform `map` — reducing the hot path to a single `indexOf`. Measured **4× faster keystroke handling** at 3474-school scale (8.1ms → 2.0ms per 7-keystroke query burst). 200-case fuzz parity check confirms identical search results.
+
+Also hoisted `generateBackToTopScript().replace('<script>','').replace('</script>','').trim()` — a fully static string that previously ran per page (~3474 template-literal + regex evaluations per full build) — to module-level `BACK_TO_TOP_SCRIPT_BODY` constants in both `school-page.js` and `homepage.js`, following the existing hoisting pattern (`HTML_HEAD_PREFIX`, `CURRENT_YEAR`, `T` pre-escape).
+
+### Metrics
+
+| Metric                    | Before              | After  | Improvement           |
+| ------------------------- | ------------------- | ------ | --------------------- |
+| 7-keystroke search burst  | 8.1ms               | 2.0ms  | 4× faster             |
+| Full build (3474 schools) | ~350ms              | ~350ms | unchanged (I/O-bound) |
+| Build throughput          | 8907–9785 pages/sec | same   | —                     |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` — Precomputed `t` search field + `filterSchools` indexOf-only hot path; hoisted `BACK_TO_TOP_SCRIPT_BODY`
+- `src/presenters/templates/school-page.js` — Hoisted `BACK_TO_TOP_SCRIPT_BODY`
+- `docs/blueprint.md` — Performance Log entries (precompute + hoisting)
+- `docs/task.md` — This entry
+
+### Verification
+
+| Check              | Result                                     |
+| ------------------ | ------------------------------------------ |
+| ESLint             | 0 errors                                   |
+| Prettier           | All changed source files formatted cleanly |
+| JS Tests           | 1041/1041 pass, 0 fail, 4 skipped          |
+| Python Tests       | 27/27 pass (pytest)                        |
+| Search parity fuzz | 200/200 cases identical results            |
+| Zero regressions   | Confirmed                                  |
+
+### Acceptance Criteria
+
+- [x] Client search precomputes `t` at load, single `indexOf` per school in `filterSchools`
+- [x] Both flat-array and legacy object-format search payloads supported
+- [x] Back-to-top script body computed once at module load in both templates
+- [x] 4× measured keystroke improvement at production scale
+- [x] Zero regressions (lint, prettier, all tests, parity fuzz)
+
+---
+
 ### [TASK-071] Security Hardening — Workflow Permission Repair (11th Regression Fix)
 
 **Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission)
