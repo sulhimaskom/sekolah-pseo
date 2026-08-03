@@ -2,6 +2,70 @@
 
 ## Completed Tasks
 
+### [TASK-075] UI/UX Accessibility — Search Loading States, Copy-Feedback Announcement, Dark-Mode Autocomplete
+
+**Status**: Complete
+**Agent**: UI/UX Engineer (Sisyphus)
+
+### Description
+
+Focused accessibility pass over the two interactive surfaces (homepage search/autocomplete, school-page copy button). Fixed one UX bug (permanently dimmed province list), made copy feedback screen-reader-announceable with a plain-HTTP clipboard fallback, added an `aria-busy` search loading state, hardened the `/` keyboard shortcut, removed a color-only active-state indication, and aligned the autocomplete dropdown with the dark-mode design system (it previously rendered as a light popup on dark UI).
+
+### Changes Made
+
+**1. School-page copy button — accessible feedback + clipboard resilience** (`src/presenters/templates/school-page.js`):
+
+- `.copy-feedback` span now carries `role="status"` + `aria-atomic="true"` — "Tersalin!" is announced to screen readers on success; a new "Gagal menyalin" state is announced on failure (previously only `console.error`).
+- The `role="status"` region is emptied after the 2s tooltip timeout so repeat copies re-announce.
+- Added `copyTextToClipboard()` fallback: `navigator.clipboard.writeText` in secure contexts, temporary-textarea + `document.execCommand('copy')` otherwise — the button keeps working over plain HTTP.
+- The copy icon SVG is now `aria-hidden="true"` + `focusable="false"` (decorative).
+
+**2. Homepage search — bug fix + loading state** (`src/presenters/templates/homepage.js`):
+
+- **Bug fix**: removed the `.search-active` focus listener — it added the class on focus and never removed it, leaving the province list permanently dimmed at 50% opacity (`opacity: 0.5`) after the first focus of the search input. The dimming was also an a11y problem (visually de-emphasized but still keyboard-focusable content); the province list is already properly hidden via the `hidden` attribute while searching.
+- The search input now starts with `aria-busy="true"` and is cleared when `schools.json` finishes loading (both success and failure paths) — screen readers hear the loading state instead of silence.
+- The `/` keyboard shortcut no longer hijacks when a form control (`INPUT`/`TEXTAREA`/`SELECT`) is focused.
+
+**3. CSS — dark-mode alignment + non-color-only state** (`src/presenters/styles.js`):
+
+- `html` now sets `color-scheme: light dark` so native form controls (select dropdowns, scrollbars, autofill) follow the OS scheme in dark mode.
+- `.autocomplete-item:hover`/`.autocomplete-item-active` now adds an inset 3px primary-color accent (`box-shadow: inset 3px 0 0 var(--color-primary)`) — the active option is no longer indicated by background color alone.
+- Removed the `.search-section.search-active .province-list { opacity: 0.5; }` rule (buggy dimming).
+- Added dark-mode overrides for `.search-autocomplete`, `.autocomplete-item`, `.autocomplete-item-name`, `.autocomplete-item-meta`, and hover/active states — the dropdown previously stayed light-themed (white background) in dark mode.
+
+### Verification
+
+| Check            | Result                                                                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ESLint           | 0 errors (all 3 changed files)                                                                                                                                    |
+| Prettier         | All changed files formatted cleanly                                                                                                                               |
+| JS Tests         | 1032/1032 pass (main baseline; 0 fail, 4 skipped)                                                                                                                 |
+| Build            | 2 pages, 0 failed, all performance budgets met                                                                                                                    |
+| Output smoke     | `role="status"` in school pages; `aria-busy` in homepage; no `search-active` in HTML or CSS; `color-scheme` + inset accent + dark autocomplete vars in styles.css |
+| Zero regressions | Confirmed                                                                                                                                                         |
+
+### Files Modified
+
+- `src/presenters/templates/school-page.js` — `role="status"`/`aria-atomic` feedback, `copyTextToClipboard()` fallback, failure feedback, decorative SVG `aria-hidden`
+- `src/presenters/templates/homepage.js` — removed `.search-active` listener, `aria-busy` loading state, hardened `/` shortcut
+- `src/presenters/styles.js` — `color-scheme`, autocomplete active accent, removed dimming rule, dark-mode autocomplete overrides
+- `docs/blueprint.md` — decisions log entry
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] Copy feedback announced to screen readers (role="status" + aria-atomic, re-announce on repeat copies)
+- [x] Copy works over plain HTTP (execCommand fallback) with announced failure state
+- [x] Province list no longer permanently dimmed after focusing search (bug fixed)
+- [x] Search input communicates loading via aria-busy (cleared on success and failure)
+- [x] `/` shortcut does not hijack form-control typing
+- [x] Autocomplete active state indicated beyond color (inset accent + aria-selected)
+- [x] Autocomplete dropdown follows dark-mode design tokens
+- [x] Native form controls follow OS color scheme (color-scheme: light dark)
+- [x] Zero regressions (lint, prettier, JS tests, build)
+
+---
+
 ### [TASK-074] Integration Hardening — Shared `fileExists()` Utility + Resilient File Access in Data-Reporting Modules
 
 **Status**: Complete
