@@ -2,6 +2,69 @@
 
 ## Completed Tasks
 
+### [TASK-076] DevOps — CI Pipeline Health Check, Transient-Failure Retry on `On-Pull` Step
+
+**Status**: Complete
+**Agent**: Principal DevOps Engineer (Sisyphus)
+
+### Description
+
+Conducted CI/CD health check after the hourly scheduled `pull` workflow failed (run 30806136631, 2026-08-03T10:34Z). The `On-Pull` step failed 5m26s into the run with `Streaming response failed: [503] The request queue is full` — a transient model-API infrastructure error. The step had **no retry logic**, so the transient failure failed the entire run (first failure in 15+ scheduled runs). Added a bounded retry loop that re-attempts only fast failures, so transient API 503s self-heal without blowing the 120-minute job timeout.
+
+### CI Health Check Results
+
+| Check             | Result                                                  |
+| ----------------- | ------------------------------------------------------- |
+| Failed run cause  | Model API `503 "The request queue is full"` (transient) |
+| Build             | ✅ 2 pages, 0 failed, 25ms                              |
+| ESLint            | ✅ 0 errors                                             |
+| Prettier          | ✅ All files formatted                                  |
+| JS Tests          | ✅ 1047/1047 pass (0 failures, 4 skipped)               |
+| Workflow Security | ✅ 6/6 files pass, 0 violations                         |
+| YAML validity     | ✅ on-pull.yml parses; extracted bash passes `bash -n`  |
+
+### Changes Made
+
+**1. Added transient-failure retry to the `On-Pull` step in `.github/workflows/on-pull.yml` (P1)**:
+
+- The step previously ran a bare `timeout -k 1m 90m opencode run /ulw-loop ...` — any transient model-API error (503/429/5xx) or queue-full condition failed the whole hourly run.
+- Wrapped the command in a `while` loop with **max 3 attempts** and **backoff sleep (30s, 60s)**.
+- **Retry only fast failures**: retries only when the failing attempt elapsed < 900s (15 min). Rationale: transient infrastructure errors (like the 503 at 5m26s) fail early; an attempt that ran 15+ minutes and then failed is a genuine agent failure, and re-running it would exceed the 120-min job `timeout-minutes` budget.
+- Each attempt logs start time, elapsed seconds, exit code, and the retry delay to the step output for observability.
+
+### Root Cause
+
+`timeout -k 1m 90m opencode run` had zero resilience for transient infrastructure failures. The model API returned `503` (request queue full) mid-run; with no retry, the scheduled job failed end-to-end. All other agent workflows (`on-push.yml`, `opencode.yml`, `orchestrator.yml`, `architect-agent.yml`, `parallel.yml`) share the same bare pattern and are equally exposed — this fix establishes the pattern on the failing workflow; the others are candidates for the same hardening.
+
+### Verification
+
+| Check             | Result                               |
+| ----------------- | ------------------------------------ |
+| YAML parse        | ✅ on-pull.yml valid                 |
+| Bash syntax       | ✅ extracted script passes `bash -n` |
+| Workflow Security | ✅ 6/6 files, 0 violations           |
+| Prettier          | ✅ All changed files formatted       |
+| ESLint            | ✅ 0 errors                          |
+| JS Tests          | ✅ 1047/1047 pass                    |
+| Build             | ✅ 2 pages, 0 failed, 25ms           |
+| Zero regressions  | ✅ Confirmed                         |
+
+### Files Modified
+
+- `.github/workflows/on-pull.yml` — `On-Pull` step: bounded retry loop (3 attempts, backoff, fast-failure-only retry)
+- `docs/blueprint.md` — Decisions log entry
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] `On-Pull` step retries transient failures (max 3 attempts, 30s/60s backoff)
+- [x] Retry only applies to fast failures (< 15 min elapsed) — long runs are not re-executed
+- [x] Per-attempt timing and exit codes logged for observability
+- [x] Workflow YAML parses; extracted bash passes `bash -n`
+- [x] All 6 workflow files pass security validation (0 violations)
+
+---
+
 ### [TASK-072] Performance — Client-Side Search Precompute + Static Script Hoisting
 
 **Status**: Complete
