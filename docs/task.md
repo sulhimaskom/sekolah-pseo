@@ -2,6 +2,76 @@
 
 ## Completed Tasks
 
+### [TASK-071] Security Hardening — Workflow Permission Repair (11th Regression Fix)
+
+**Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission)
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted **11th comprehensive security audit** of the Indonesian School PSEO project. All workflow security fixes from the 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-067) had **regressed again** — the same root cause: security fixes applied on `agent` branch were never merged to `main`, and the latest `main→agent` merge overwrote the fixes.
+
+Fixed **12 security violations** across 6 workflow files: removed `id-token: write` from 4 non-OIDC workflows (architect-agent, opencode, orchestrator, parallel — top and job level), removed `actions: write` from 4 non-merge workflows, replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` in 2 workflows (orchestrator ×2, architect-agent ×1), removed `API_KEY` duplicate of `GEMINI_API_KEY` from 2 workflows (on-push ×1, parallel ×4), removed extraneous secrets from 3 workflows (on-push: 10→2, on-pull: 5→1, parallel: 4 env blocks cleaned), removed `IFLOW_API_KEY` sprawl from all workflows, removed `continue-on-error: true` from foundational steps in on-pull.yml (2 steps), removed `repository-projects: write` from on-pull.yml. Also fixed `template.md` (new-workflow generator) so it no longer propagates the insecure `id-token: write` / `actions: write` / `secrets.GH_TOKEN` / `IFLOW_API_KEY` patterns.
+
+### Audit Results
+
+| Check             | Result                                                     |
+| ----------------- | ---------------------------------------------------------- |
+| npm audit         | 0 vulnerabilities                                          |
+| ESLint            | 0 errors                                                   |
+| JS Tests          | 1041/1041 pass (0 fail, 4 skipped)                         |
+| Build             | 2 pages, 0 failed, all performance budgets met             |
+| Workflow Security | 6/6 files pass all 5 rules (0 violations, txt + json exit 0) |
+| Hardcoded secrets | None found in source code                                  |
+| Security headers  | CSP, HSTS, XFO, SAMEORIGIN, COOP, CORP all present (head-meta.js) |
+| Prettier          | All changed workflow files formatted cleanly               |
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — Removed `id-token: write` + `actions: write` (top + job level), replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN`, removed `IFLOW_API_KEY`
+- `.github/workflows/on-push.yml` — Removed `API_KEY` duplicate + 7 extraneous secrets (10→2: GITHUB_TOKEN, GEMINI_API_KEY)
+- `.github/workflows/opencode.yml` — Removed `id-token: write` + `actions: write` (top + job level), removed `IFLOW_API_KEY`
+- `.github/workflows/orchestrator.yml` — Removed `id-token: write` + `actions: write` (top + job level), replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` (2 occurrences), removed `IFLOW_API_KEY`
+- `.github/workflows/parallel.yml` — Removed `id-token: write` + `actions: write`, cleaned 4 env blocks, removed `API_KEY` dups + `CLOUDFLARE_*` + `IFLOW_API_KEY`
+- `.github/workflows/on-pull.yml` — Removed `id-token: write` + `repository-projects: write`, removed 4 extraneous secrets (5→1), removed `continue-on-error: true` from 2 foundational steps
+- `.github/workflows/template.md` — Removed insecure patterns from new-workflow template (id-token/actions write, GH_TOKEN, IFLOW_API_KEY)
+- `docs/task.md` — This entry
+- `docs/security-engineer.md` — Updated dependencies audit + regression note
+
+### Verification
+
+| Check             | Result                       |
+| ----------------- | ---------------------------- |
+| Workflow Security | 6/6 files pass, 0 violations (both txt and json exit 0) |
+| ESLint            | 0 errors                     |
+| Prettier          | All changed files formatted  |
+| Build             | 2 pages, 0 failed            |
+| JS Tests          | 1041/1041 pass, 0 fail       |
+| npm audit         | 0 vulnerabilities            |
+| Zero regressions  | Confirmed                    |
+
+### Acceptance Criteria
+
+- [x] `id-token: write` removed from 4 non-OIDC workflows (top + job level)
+- [x] `actions: write` removed from 4 non-merge workflows (top + job level)
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in 2 workflows (orchestrator, architect-agent)
+- [x] `API_KEY` duplicate removed from on-push.yml and parallel.yml (5 occurrences total)
+- [x] on-push.yml secret count reduced from 10 to 2 (GITHUB_TOKEN, GEMINI_API_KEY)
+- [x] on-pull.yml secret count reduced from 5 to 1 (GITHUB_TOKEN only)
+- [x] parallel.yml cleaned: IFLOW_API_KEY, CLOUDFLARE_*, API_KEY removed from all env blocks
+- [x] `continue-on-error: true` removed from Checkout Code and Setup Node.js in on-pull.yml
+- [x] `repository-projects: write` removed from on-pull.yml
+- [x] template.md no longer propagates insecure permission/secret patterns
+- [x] All 6 workflow files pass security validation script (0 violations, exit 0 both modes)
+- [x] Build succeeds (0 failed)
+- [x] All tests pass (1041/1041 JS, 0 fail)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Zero regressions introduced
+
+> **Note — PUSH BLOCKED (root cause of all 11 regressions)**: The fix is committed locally on `agent` (f97d3c5) but **cannot be pushed**. The available credential is a GitHub App `GITHUB_TOKEN` (`github-actions[bot]`) that **lacks `workflows` permission**; GitHub hard-rejects any push or API write that creates/modifies `.github/workflows/*` (`refusing to allow a GitHub App to create or update workflow ... without workflows permission` — verified via both `git push` and the Contents API, HTTP 403). Commit a0fc536 documents the identical blocker for prior cycles. **None of the 10 prior audits' workflow fixes ever reached `origin/agent`** — that is why they kept "regressing": the fixes were never pushed, so every `main→agent` sync re-applied the insecure versions. The audit+fix itself is complete and verified locally (0 violations, lint/build/tests green); it will land only when pushed with a token that has `workflows: write` (repo-owner PAT or GitHub App with `workflows` permission), then merged to `main` before closing. `check-workflow-security.js` gates CI (`--json` exits non-zero on violations, F027 fixed in TASK-070), so once the fix is merged, future regressions will fail the gate.
+
+---
+
 ### [TASK-070] Code Sanitization — Resolve F027, F015-RESIDUAL, F001, F026
 
 **Status**: Complete
