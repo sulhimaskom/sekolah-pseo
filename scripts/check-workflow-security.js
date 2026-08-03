@@ -204,6 +204,9 @@ function run() {
         2
       )
     );
+
+    // JSON mode doubles as a CI gate — non-zero exit on violations (F027).
+    process.exit(allViolations.length === 0 ? 0 : 1);
   } else {
     console.log('\n\u{1F512} Workflow Security Regression Check');
     console.log('   Files checked: ' + files.length);

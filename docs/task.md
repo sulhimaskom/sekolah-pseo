@@ -2,6 +2,222 @@
 
 ## Completed Tasks
 
+### [TASK-071] Security Hardening — Workflow Permission Repair (11th Regression Fix)
+
+**Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission)
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted **11th comprehensive security audit** of the Indonesian School PSEO project. All workflow security fixes from the 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-067) had **regressed again** — the same root cause: security fixes applied on `agent` branch were never merged to `main`, and the latest `main→agent` merge overwrote the fixes.
+
+Fixed **12 security violations** across 6 workflow files: removed `id-token: write` from 4 non-OIDC workflows (architect-agent, opencode, orchestrator, parallel — top and job level), removed `actions: write` from 4 non-merge workflows, replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` in 2 workflows (orchestrator ×2, architect-agent ×1), removed `API_KEY` duplicate of `GEMINI_API_KEY` from 2 workflows (on-push ×1, parallel ×4), removed extraneous secrets from 3 workflows (on-push: 10→2, on-pull: 5→1, parallel: 4 env blocks cleaned), removed `IFLOW_API_KEY` sprawl from all workflows, removed `continue-on-error: true` from foundational steps in on-pull.yml (2 steps), removed `repository-projects: write` from on-pull.yml. Also fixed `template.md` (new-workflow generator) so it no longer propagates the insecure `id-token: write` / `actions: write` / `secrets.GH_TOKEN` / `IFLOW_API_KEY` patterns.
+
+### Audit Results
+
+| Check             | Result                                                            |
+| ----------------- | ----------------------------------------------------------------- |
+| npm audit         | 0 vulnerabilities                                                 |
+| ESLint            | 0 errors                                                          |
+| JS Tests          | 1041/1041 pass (0 fail, 4 skipped)                                |
+| Build             | 2 pages, 0 failed, all performance budgets met                    |
+| Workflow Security | 6/6 files pass all 5 rules (0 violations, txt + json exit 0)      |
+| Hardcoded secrets | None found in source code                                         |
+| Security headers  | CSP, HSTS, XFO, SAMEORIGIN, COOP, CORP all present (head-meta.js) |
+| Prettier          | All changed workflow files formatted cleanly                      |
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — Removed `id-token: write` + `actions: write` (top + job level), replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN`, removed `IFLOW_API_KEY`
+- `.github/workflows/on-push.yml` — Removed `API_KEY` duplicate + 7 extraneous secrets (10→2: GITHUB_TOKEN, GEMINI_API_KEY)
+- `.github/workflows/opencode.yml` — Removed `id-token: write` + `actions: write` (top + job level), removed `IFLOW_API_KEY`
+- `.github/workflows/orchestrator.yml` — Removed `id-token: write` + `actions: write` (top + job level), replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` (2 occurrences), removed `IFLOW_API_KEY`
+- `.github/workflows/parallel.yml` — Removed `id-token: write` + `actions: write`, cleaned 4 env blocks, removed `API_KEY` dups + `CLOUDFLARE_*` + `IFLOW_API_KEY`
+- `.github/workflows/on-pull.yml` — Removed `id-token: write` + `repository-projects: write`, removed 4 extraneous secrets (5→1), removed `continue-on-error: true` from 2 foundational steps
+- `.github/workflows/template.md` — Removed insecure patterns from new-workflow template (id-token/actions write, GH_TOKEN, IFLOW_API_KEY)
+- `docs/task.md` — This entry
+- `docs/security-engineer.md` — Updated dependencies audit + regression note
+
+### Verification
+
+| Check             | Result                                                  |
+| ----------------- | ------------------------------------------------------- |
+| Workflow Security | 6/6 files pass, 0 violations (both txt and json exit 0) |
+| ESLint            | 0 errors                                                |
+| Prettier          | All changed files formatted                             |
+| Build             | 2 pages, 0 failed                                       |
+| JS Tests          | 1041/1041 pass, 0 fail                                  |
+| npm audit         | 0 vulnerabilities                                       |
+| Zero regressions  | Confirmed                                               |
+
+### Acceptance Criteria
+
+- [x] `id-token: write` removed from 4 non-OIDC workflows (top + job level)
+- [x] `actions: write` removed from 4 non-merge workflows (top + job level)
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` in 2 workflows (orchestrator, architect-agent)
+- [x] `API_KEY` duplicate removed from on-push.yml and parallel.yml (5 occurrences total)
+- [x] on-push.yml secret count reduced from 10 to 2 (GITHUB_TOKEN, GEMINI_API_KEY)
+- [x] on-pull.yml secret count reduced from 5 to 1 (GITHUB_TOKEN only)
+- [x] parallel.yml cleaned: IFLOW_API_KEY, CLOUDFLARE_*, API_KEY removed from all env blocks
+- [x] `continue-on-error: true` removed from Checkout Code and Setup Node.js in on-pull.yml
+- [x] `repository-projects: write` removed from on-pull.yml
+- [x] template.md no longer propagates insecure permission/secret patterns
+- [x] All 6 workflow files pass security validation script (0 violations, exit 0 both modes)
+- [x] Build succeeds (0 failed)
+- [x] All tests pass (1041/1041 JS, 0 fail)
+- [x] npm audit clean (0 vulnerabilities)
+- [x] Zero regressions introduced
+
+> **Note — PUSH BLOCKED (root cause of all 11 regressions)**: The fix is committed locally on `agent` (f97d3c5) but **cannot be pushed**. The available credential is a GitHub App `GITHUB_TOKEN` (`github-actions[bot]`) that **lacks `workflows` permission**; GitHub hard-rejects any push or API write that creates/modifies `.github/workflows/*` (`refusing to allow a GitHub App to create or update workflow ... without workflows permission` — verified via both `git push` and the Contents API, HTTP 403). Commit a0fc536 documents the identical blocker for prior cycles. **None of the 10 prior audits' workflow fixes ever reached `origin/agent`** — that is why they kept "regressing": the fixes were never pushed, so every `main→agent` sync re-applied the insecure versions. The audit+fix itself is complete and verified locally (0 violations, lint/build/tests green); it will land only when pushed with a token that has `workflows: write` (repo-owner PAT or GitHub App with `workflows` permission), then merged to `main` before closing. `check-workflow-security.js` gates CI (`--json` exits non-zero on violations, F027 fixed in TASK-070), so once the fix is merged, future regressions will fail the gate.
+
+---
+
+### [TASK-070] Code Sanitization — Resolve F027, F015-RESIDUAL, F001, F026
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Resolved four tracked verification findings in a single health-check pass (build ✅, lint ✅, tests ✅, no TODO/FIXME/HACK comments found):
+
+| Finding           | Severity      | Root Cause                                                                                                                                                                                                | Fix                                                                                                                                                                                                                                                                                                               |
+| ----------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F027**          | P2 (security) | `check-workflow-security.js --json` exited `0` even with 12 violations — the documented "JSON for CI" gate was a no-op                                                                                    | JSON branch now exits `1` when violations exist (`process.exit(allViolations.length === 0 ? 0 : 1)`)                                                                                                                                                                                                              |
+| **F015-RESIDUAL** | P1 (RCE)      | `validateRepoUrl()` scanned only the WHATWG-parsed URL; the parser re-encodes backtick (`%60`) and `<>` (`%3C`/`%3E`), and attackers can percent-encode any shell-active char (`%3B`=`;`, `%26`=`&`, ...) | Decode `sanitizedUrl` via `decodeURIComponent()` and re-scan against `SHELL_METACHARACTER_REGEX`; malformed percent-encoding is rejected (`malformed_percent_encoding`), encoded hits reject with `shell_metacharacters_encoded`. All 7 payload classes + malformed encodings now rejected; legit URLs unaffected |
+| **F001**          | P1 (runtime)  | `main()` treated `fetchFromGitHub()`'s Promise as a sync string — `csvPath` was a Promise passed to `fs.copyFileSync`, so the CLI always fell back to cache or failed                                     | `main()` is now `async` and `await`s `fetchFromGitHub()`; bootstrap uses `main().catch(...)`; JSDoc updated to `Promise<string                                                                                                                                                                                    | null>` |
+| **F026**          | P3 (cosmetic) | `formatBytes()` computed `Math.log(bytes)` on negative memory deltas → `"NaN undefined"`                                                                                                                  | Handle sign explicitly: `Math.abs(bytes)` + `-` prefix; `-1536` → `-1.50 KB`                                                                                                                                                                                                                                      |
+
+### Changes Made
+
+**`scripts/check-workflow-security.js`** — JSON output branch now exits non-zero on violations.
+
+**`scripts/fetch-data.js`** — `validateRepoUrl()` decodes and re-scans for encoded shell metacharacters (2 new error reasons); `main()` is async and awaits `fetchFromGitHub()`; bootstrap `main().catch(...)`.
+
+**`scripts/build-performance.js`** — `formatBytes()` handles negative input without NaN.
+
+**`scripts/fetch-data.test.js`** — 3 `main()` tests converted to async `assert.rejects`/`await` (F001); 8 new `validateRepoUrl` tests covering F015-RESIDUAL encoded payloads (`%3B`, `%24`, `%60`, `%3C%3E`, `%20`, backtick/`<>` literal re-encoding, malformed `%zz`).
+
+**`scripts/build-performance.test.js`** — new negative-bytes `formatBytes` test.
+
+**`docs/api.md`** — `fetchFromGitHub` Returns corrected to `Promise<string|null>`; Workflow Security exit-code docs clarify `--json` is a CI gate.
+
+### Verification
+
+| Check                    | Result                                              |
+| ------------------------ | --------------------------------------------------- |
+| ESLint                   | 0 errors                                            |
+| Prettier (changed files) | Clean                                               |
+| JS Tests                 | 1041/1041 pass (9 new), 0 fail, 4 skipped           |
+| Build                    | 0 failed, all performance budgets met               |
+| F027 repro (`--json`)    | exit 1 with 12 violations (was 0)                   |
+| F015-RESIDUAL repro      | all 7 payload classes rejected, legit URLs accepted |
+| Zero regressions         | Confirmed                                           |
+
+### Files Modified
+
+- `scripts/check-workflow-security.js`
+- `scripts/fetch-data.js`
+- `scripts/build-performance.js`
+- `scripts/fetch-data.test.js`
+- `scripts/build-performance.test.js`
+- `docs/api.md`
+- `docs/task.md` — this entry
+
+### Acceptance Criteria
+
+- [x] F027: `--json` exits non-zero on violations
+- [x] F015-RESIDUAL: encoded/re-encoded shell metacharacters rejected
+- [x] F001: `fetchFromGitHub()` awaited in `main()`
+- [x] F026: `formatBytes()` handles negative deltas
+- [x] All tests pass, lint clean, build passes
+- [x] Documentation updated (api.md, task.md)
+
+> **Note**: F005 (49 Prettier-drift files in `docs/issues/2026-07-30` → `2026-08-02`, recurring main-merge drift) remains a tracked finding and is out of scope here, consistent with prior task precedent.
+
+---
+
+### [TASK-069] Module Extraction — Decompose BuildOrchestrator into SearchDataService + ExportService
+
+**Status**: Complete
+**Agent**: Code Architect (Sisyphus)
+
+### Description
+
+Decomposed the 556-line `src/services/BuildOrchestrator.js` (SRP violation — 10+ distinct concerns, 21 exports) into focused service modules per the documented ADR-0005 layer separation pattern (controller → service → presentation). Specialized output concerns now live in dedicated modules; the orchestrator keeps only orchestration flow and delegates. This resolves the backlog item "[REFACTOR] Module Growing Complexity — BuildOrchestrator.js at 551 Lines with Multiple Responsibilities".
+
+### Changes Made
+
+**1. Created `src/services/SearchDataService.js`** (new module):
+
+- Owns `writeSearchDataFile()` — search payload serialization (`prepareSchoolDataForSearch` → `schools.json`) + gzip pre-compression (`schools.json.gz`, level 6)
+- Verbatim move of the function body from BuildOrchestrator (behavior, log messages, and comments unchanged)
+- Module-level requires: `path`, `zlib`, `promisify`, `prepareSchoolDataForSearch` (PageBuilder), `logger`, `CONFIG`, `safeWriteFile`
+
+**2. Created `src/services/ExportService.js`** (new module):
+
+- Owns `exportSchoolsCsv()` — copies `data/schools.csv` → `dist/data/schools.csv`
+- Owns `writeExternalStylesFile()` — writes `styles.css` to target dir
+- Both are verbatim moves; the previously lazy `require('../presenters/styles')` inside `writeExternalStylesFile` is hoisted to module level
+- Module-level requires: `path`, `generateSchoolPageStyles` (presenters/styles), `logger`, `CONFIG`, `safeMkdir`/`safeWriteFile`/`safeReadFile`
+
+**3. Slimmed `src/services/BuildOrchestrator.js`** (556 → 482 lines):
+
+- Imports the 3 moved functions from the new services and **re-exports them under identical names** — the 21-export public interface is fully preserved, so `scripts/build-pages.js` (which re-exports 15 functions) and all test imports keep resolving
+- Removed now-dead imports: `zlib`, `promisify`, `gzipAsync`, `prepareSchoolDataForSearch`, `safeMkdir`
+- `generateExternalStyles()` retained in the orchestrator as a thin flow wrapper delegating to `writeExternalStylesFile(distDir)`
+- No behavior, log message, error, or export changes — pure structural extraction
+
+### Architectural Rationale
+
+| Concern                                                         | Before                                                           | After                                                        |
+| --------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| Search data format/compression policy                           | `BuildOrchestrator.writeSearchDataFile`                          | `SearchDataService.writeSearchDataFile`                      |
+| CSV export / stylesheet artifact writes                         | `BuildOrchestrator.exportSchoolsCsv` / `writeExternalStylesFile` | `ExportService.exportSchoolsCsv` / `writeExternalStylesFile` |
+| Orchestration flow (build, incremental, env prep, page writing) | `BuildOrchestrator`                                              | `BuildOrchestrator` (unchanged)                              |
+
+Changes to search-data format or export layout no longer require touching the orchestration module. No circular dependencies introduced (`styles.js` imports only `design-system`; new services import only PageBuilder/presenters/scripts).
+
+### Verification
+
+| Check            | Result                                 |
+| ---------------- | -------------------------------------- |
+| JS Tests         | 1036/1036 pass (0 failures, 4 skipped) |
+| ESLint           | 0 errors on all files                  |
+| Prettier         | 3 changed files formatted cleanly      |
+| Build            | 0 failed, all performance budgets met  |
+| Zero regressions | Confirmed                              |
+
+> **Note**: 49 pre-existing prettier warnings remain in `docs/issues/2026-07-30` → `2026-08-02` files (recurring main-merge drift, tracked finding F005). They predate this change (50 warnings existed before) and are out of scope for this task.
+
+### Files Modified
+
+- `src/services/SearchDataService.js` — NEW: `writeSearchDataFile()` (search data + gzip)
+- `src/services/ExportService.js` — NEW: `exportSchoolsCsv()`, `writeExternalStylesFile()`
+- `src/services/BuildOrchestrator.js` — Removed 3 function bodies, added 2 service imports, removed 5 dead imports, re-exported moved functions
+- `docs/api.md` — Added SearchDataService + ExportService API contracts, updated BuildOrchestrator section
+- `docs/blueprint.md` — Updated project structure + Decisions Log entry
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] `writeSearchDataFile()` moved to `SearchDataService.js` (verbatim, behavior unchanged)
+- [x] `exportSchoolsCsv()` + `writeExternalStylesFile()` moved to `ExportService.js` (verbatim)
+- [x] Lazy `require('../presenters/styles')` hoisted to module level in ExportService
+- [x] BuildOrchestrator public interface unchanged — all 21 exports re-exported, same names/order
+- [x] Dead imports removed from BuildOrchestrator (zlib, promisify, gzipAsync, prepareSchoolDataForSearch, safeMkdir)
+- [x] `scripts/build-pages.js` re-export chain intact (no changes needed)
+- [x] No circular dependencies introduced
+- [x] All 1036 JS tests pass (0 failures)
+- [x] ESLint passes (0 errors)
+- [x] Prettier clean on all changed files
+- [x] Build succeeds (0 failed, budgets met)
+- [x] Zero regressions introduced
+- [x] Documentation updated (blueprint.md, api.md, task.md)
+- [x] Backlog item "[REFACTOR] Module Growing Complexity" resolved
+
+---
+
 ### [TASK-068] Performance Optimization — CSS Memoization, Manifest Fast Write, Parallelized Finalization
 
 **Status**: Complete
@@ -9704,12 +9920,14 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 
 ### [REFACTOR] Module Growing Complexity — BuildOrchestrator.js at 551 Lines with Multiple Responsibilities
 
+**Status**: ✅ Resolved in TASK-069 (Module Extraction)
+
 - **Location**: `src/services/BuildOrchestrator.js` (551 lines)
 - **Issue**: The orchestrator module has grown to handle too many distinct concerns: directory preparation, school page writing/coordination, province page generation, external styles generation, search data file writing, robots.txt generation, CSV export, manifest loading/saving, build performance tracking, enrichment loading, and incremental build logic. The `build()` function alone orchestrates 5+ asynchronous phases (lines 464-515). With 20 exported functions, the module violates the Single Responsibility Principle — changes to any specific concern (e.g., CSV export format, search data structure) require modifying this single large file.
 - **Suggestion**: Decompose into focused sub-modules under `src/services/`:
-  1. `src/services/SearchDataService.js` — `writeSearchDataFile()` (search data + gzip)
-  2. `src/services/ExportService.js` — `exportSchoolsCsv()`, potentially `writeExternalStylesFile()`
-  3. Keep orchestration flow in `BuildOrchestrator.js` but delegate specialized operations
+  1. `src/services/SearchDataService.js` — `writeSearchDataFile()` (search data + gzip) ✅ done
+  2. `src/services/ExportService.js` — `exportSchoolsCsv()`, potentially `writeExternalStylesFile()` ✅ done (both)
+  3. Keep orchestration flow in `BuildOrchestrator.js` but delegate specialized operations ✅ done — 556 → 482 lines
      This follows the existing ADR-0005 layer separation pattern (controller → service → presentation).
 - **Priority**: Medium
 - **Effort**: Medium

@@ -93,6 +93,29 @@ function validateRepoUrl(url) {
       );
     }
 
+    // Security: the WHATWG parser percent-encodes backtick (`%60`) and <> (`%3C`/`%3E`),
+    // and attackers can percent-encode any shell-active character (%3B=';', %26='&', ...),
+    // so the encoded form is decoded and scanned too. Malformed percent-encoding is
+    // itself suspicious and rejected.
+    let decodedUrl;
+    try {
+      decodedUrl = decodeURIComponent(sanitizedUrl);
+    } catch {
+      throw new IntegrationError(
+        'Repository URL contains malformed percent-encoding and was rejected.',
+        ERROR_CODES.INVALID_URL,
+        { reason: 'malformed_percent_encoding' }
+      );
+    }
+
+    if (SHELL_METACHARACTER_REGEX.test(decodedUrl)) {
+      throw new IntegrationError(
+        'Repository URL contains shell metacharacters (including percent-encoded forms) and was rejected.',
+        ERROR_CODES.INVALID_URL,
+        { reason: 'shell_metacharacters_encoded' }
+      );
+    }
+
     // Validate it ends with .git (common for git repos)
     if (!sanitizedUrl.endsWith('.git')) {
       throw new IntegrationError('Repository URL must end with .git', ERROR_CODES.INVALID_URL, {
@@ -173,7 +196,7 @@ function execGitCommand(command, execOptions, operationName) {
  * Falls back to cached data if fetch fails after retries.
  * @param {string} repoUrl - Git repository URL
  * @param {string} branch - Branch name
- * @returns {string|null} Path to CSV file or null if no data source available
+ * @returns {Promise<string|null>} Path to CSV file or null if no data source available
  * @throws {IntegrationError} If validation fails or circuit breaker is open
  */
 function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH) {
@@ -331,7 +354,7 @@ function useCachedData(destPath) {
 /**
  * Main function
  */
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   let outputPath = CONFIG.RAW_DATA_PATH;
   let sourceRepo = DEFAULT_SOURCE_REPO;
@@ -350,7 +373,9 @@ function main() {
   logger.info('=== External Data Fetch ===');
 
   try {
-    const csvPath = fetchFromGitHub(sourceRepo);
+    // fetchFromGitHub returns a Promise (async circuit breaker + retry) —
+    // must be awaited, otherwise csvPath is a Promise and copyToRaw fails (F001).
+    const csvPath = await fetchFromGitHub(sourceRepo);
     const success = copyToRaw(csvPath, outputPath);
 
     if (!success) {
@@ -390,5 +415,10 @@ module.exports = {
 };
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    logger.error({ err: error }, 'External data fetch failed');
+    terminate(
+      'Could not fetch external data and no cache available. Manual intervention required.'
+    );
+  });
 }

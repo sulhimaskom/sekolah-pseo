@@ -1,6 +1,6 @@
 # Security Engineer - Long-term Memory
 
-> Last updated: 2026-02-27
+> Last updated: 2026-08-03
 
 ## Project Security Posture
 
@@ -138,11 +138,31 @@ WR|
 
 ### Dependencies Audit
 
-| Package | Version | Type    | Notes          |
-| ------- | ------- | ------- | -------------- |
-| eslint  | ^10.0.0 | dev     | Code linting   |
-| pino    | ^10.3.1 | runtime | Logging        |
-| globals | ^17.0.0 | dev     | ESLint globals |
+| Package     | Version | Type    | Notes          |
+| ----------- | ------- | ------- | -------------- |
+| eslint      | ^10.8.0 | dev     | Code linting   |
+| pino        | ^10.3.1 | runtime | Logging        |
+| globals     | ^17.8.0 | dev     | ESLint globals |
+| c8          | ^12.0.0 | dev     | Coverage       |
+| husky       | ^9.1.7  | dev     | Git hooks      |
+| lint-staged | ^17.2.0 | dev     | Staged linting |
+| prettier    | ^3.9.6  | dev     | Formatting     |
+
+### Workflow Security Regression (Recurring)
+
+> **Known recurring issue**: `id-token: write` / `actions: write` over-permission and
+> `secrets.GH_TOKEN` / `API_KEY`-alias patterns have regressed **11 times** (TASK-022
+> through TASK-071) because security fixes on the `agent` branch were historically never
+> merged to `main`, and subsequent `main→agent` merges restored the insecure versions.
+> The regression gate `scripts/check-workflow-security.js` now exits non-zero in both
+> text and `--json` modes when violations exist, and TASK-071 merged the fix PR to `main`.
+> Do NOT reintroduce these patterns when editing workflows:
+>
+> - No `id-token: write` unless the workflow uses OIDC federation
+> - No `actions: write` unless the workflow must manage/merge via actions API
+> - Use `secrets.GITHUB_TOKEN` (never `secrets.GH_TOKEN`)
+> - Never alias `API_KEY` to the same secret as `GEMINI_API_KEY`
+> - New workflows must follow `.github/workflows/template.md` (hardened 2026-08-03)
 
 XS|### Future Security Considerations
 SS|

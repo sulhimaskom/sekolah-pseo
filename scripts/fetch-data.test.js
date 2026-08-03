@@ -345,6 +345,54 @@ describe('fetch-data', () => {
       });
     });
 
+    it('rejects percent-encoded semicolon payload (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/bar%3Bevil.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects percent-encoded command-substitution payload (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/%24(id)%26x.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects literal backtick re-encoded by WHATWG parser (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/`x`.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects percent-encoded backtick payload (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/%60x%60.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects angle-bracket payload re-encoded by WHATWG parser (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/<x>.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects percent-encoded angle-bracket payload (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/%3Cx%3E.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects percent-encoded whitespace (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/bar%20baz.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects malformed percent-encoding (F015-RESIDUAL)', () => {
+      assert.throws(() => validateRepoUrl('https://github.com/foo/%zz.git'), {
+        name: 'IntegrationError',
+      });
+    });
+
     it('still accepts legitimate complex URLs after F015 hardening', () => {
       const result = validateRepoUrl('https://github.com/user/foo-bar_baz.qux.git');
       assert.strictEqual(result, 'https://github.com/user/foo-bar_baz.qux.git');
@@ -377,7 +425,7 @@ describe('fetch-data', () => {
       } catch {}
     });
 
-    it('terminates when fetch fails and no cache available', () => {
+    it('terminates when fetch fails and no cache available', async () => {
       // Use --output pointing to a path that doesn't exist and has no cached fallback
       const outputPath = path.join(testDir, 'nonexistent', 'output.csv');
       process.argv = [
@@ -389,14 +437,14 @@ describe('fetch-data', () => {
         outputPath,
       ];
 
-      assert.throws(
+      await assert.rejects(
         () => require('./fetch-data').main(),
         /PROCESS_EXIT:1/,
         'Should terminate when fetch fails with no cache'
       );
     });
 
-    it('uses cached data when fetch fails and cache exists', () => {
+    it('uses cached data when fetch fails and cache exists', async () => {
       // Set up: create cache file
       const cacheDir = path.join(process.cwd(), 'external-data');
       fs.mkdirSync(cacheDir, { recursive: true });
@@ -407,7 +455,7 @@ describe('fetch-data', () => {
 
       try {
         // Should NOT throw because cache fallback succeeds
-        require('./fetch-data').main();
+        await require('./fetch-data').main();
       } finally {
         // Clean up external-data dir
         try {
@@ -416,7 +464,7 @@ describe('fetch-data', () => {
       }
     });
 
-    it('parses --output argument', () => {
+    it('parses --output argument', async () => {
       process.argv = [
         'node',
         'fetch-data.js',
@@ -427,14 +475,14 @@ describe('fetch-data', () => {
       ];
 
       // Should attempt to fetch and fail, then try cache (which doesn't exist → terminate)
-      assert.throws(
+      await assert.rejects(
         () => require('./fetch-data').main(),
         /PROCESS_EXIT:1/,
         'Should parse --output arg and fail with no cache'
       );
     });
 
-    it('handles fetch error gracefully when cached fallback succeeds', () => {
+    it('handles fetch error gracefully when cached fallback succeeds', async () => {
       // Create cached file at default raw data path
       fs.mkdirSync(testDir, { recursive: true });
       const cachedPath = path.join(testDir, 'cached-raw.csv');
@@ -457,7 +505,7 @@ describe('fetch-data', () => {
         // fetchFromGitHub will try to validate URL (it's valid) then try git clone
         // git clone will fail (nonexistent repo) → caught → useCachedData → external-data fallback
         // This should succeed without throwing
-        require('./fetch-data').main();
+        await require('./fetch-data').main();
       } catch {
         // May throw if git is not available or clone fails differently
         // This is acceptable — the important thing is we exercised the code path
