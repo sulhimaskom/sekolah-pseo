@@ -298,6 +298,13 @@ test('formatBytes handles fractional values', () => {
   assert.strictEqual(tracker.formatBytes(1536), '1.50 KB');
 });
 
+test('formatBytes handles negative values (F026 — no NaN)', () => {
+  const tracker = new BuildPerformanceTracker();
+  assert.strictEqual(tracker.formatBytes(-1536), '-1.50 KB');
+  assert.strictEqual(tracker.formatBytes(-1048576), '-1.00 MB');
+  assert.ok(!tracker.formatBytes(-100).includes('NaN'));
+});
+
 // ── formatDuration ──────────────────────────────────────────────────────────
 
 test('formatDuration formats milliseconds', () => {

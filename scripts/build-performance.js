@@ -185,10 +185,12 @@ class BuildPerformanceTracker {
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 B';
+    const sign = bytes < 0 ? '-' : '';
+    const absBytes = Math.abs(bytes);
     const units = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    const val = bytes / Math.pow(1024, i);
-    return `${val.toFixed(2)} ${units[i]}`;
+    const i = Math.floor(Math.log(absBytes) / Math.log(1024));
+    const val = absBytes / Math.pow(1024, i);
+    return `${sign}${val.toFixed(2)} ${units[i]}`;
   }
 
   /**

@@ -4516,7 +4516,7 @@ Clones or updates the external data repository and finds the best CSV file.
 - `repoUrl` (string, optional): Git repository URL
 - `branch` (string, optional): Branch name
 
-**Returns:** `string|null` - Path to CSV file or null if failed
+**Returns:** `Promise<string|null>` - Resolves to the path of the CSV file or null if no data source is available. The function is async (circuit breaker + retry); callers must `await` it (F001).
 
 **Behavior:**
 
@@ -5734,6 +5734,8 @@ node scripts/check-workflow-security.js --json    # JSON output for CI integrati
 
 - `0`: All checks passed — no security regressions
 - `1`: Violations found — security regressions detected
+
+Both human-readable and `--json` modes exit non-zero when violations are found, so `--json` works as a CI gate (F027).
 
 **JSON Output:**
 

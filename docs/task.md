@@ -2,6 +2,71 @@
 
 ## Completed Tasks
 
+### [TASK-070] Code Sanitization — Resolve F027, F015-RESIDUAL, F001, F026
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Resolved four tracked verification findings in a single health-check pass (build ✅, lint ✅, tests ✅, no TODO/FIXME/HACK comments found):
+
+| Finding | Severity | Root Cause | Fix |
+| ------- | -------- | ---------- | --- |
+| **F027** | P2 (security) | `check-workflow-security.js --json` exited `0` even with 12 violations — the documented "JSON for CI" gate was a no-op | JSON branch now exits `1` when violations exist (`process.exit(allViolations.length === 0 ? 0 : 1)`) |
+| **F015-RESIDUAL** | P1 (RCE) | `validateRepoUrl()` scanned only the WHATWG-parsed URL; the parser re-encodes backtick (`%60`) and `<>` (`%3C`/`%3E`), and attackers can percent-encode any shell-active char (`%3B`=`;`, `%26`=`&`, ...) | Decode `sanitizedUrl` via `decodeURIComponent()` and re-scan against `SHELL_METACHARACTER_REGEX`; malformed percent-encoding is rejected (`malformed_percent_encoding`), encoded hits reject with `shell_metacharacters_encoded`. All 7 payload classes + malformed encodings now rejected; legit URLs unaffected |
+| **F001** | P1 (runtime) | `main()` treated `fetchFromGitHub()`'s Promise as a sync string — `csvPath` was a Promise passed to `fs.copyFileSync`, so the CLI always fell back to cache or failed | `main()` is now `async` and `await`s `fetchFromGitHub()`; bootstrap uses `main().catch(...)`; JSDoc updated to `Promise<string|null>` |
+| **F026** | P3 (cosmetic) | `formatBytes()` computed `Math.log(bytes)` on negative memory deltas → `"NaN undefined"` | Handle sign explicitly: `Math.abs(bytes)` + `-` prefix; `-1536` → `-1.50 KB` |
+
+### Changes Made
+
+**`scripts/check-workflow-security.js`** — JSON output branch now exits non-zero on violations.
+
+**`scripts/fetch-data.js`** — `validateRepoUrl()` decodes and re-scans for encoded shell metacharacters (2 new error reasons); `main()` is async and awaits `fetchFromGitHub()`; bootstrap `main().catch(...)`.
+
+**`scripts/build-performance.js`** — `formatBytes()` handles negative input without NaN.
+
+**`scripts/fetch-data.test.js`** — 3 `main()` tests converted to async `assert.rejects`/`await` (F001); 8 new `validateRepoUrl` tests covering F015-RESIDUAL encoded payloads (`%3B`, `%24`, `%60`, `%3C%3E`, `%20`, backtick/`<>` literal re-encoding, malformed `%zz`).
+
+**`scripts/build-performance.test.js`** — new negative-bytes `formatBytes` test.
+
+**`docs/api.md`** — `fetchFromGitHub` Returns corrected to `Promise<string|null>`; Workflow Security exit-code docs clarify `--json` is a CI gate.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| ESLint | 0 errors |
+| Prettier (changed files) | Clean |
+| JS Tests | 1041/1041 pass (9 new), 0 fail, 4 skipped |
+| Build | 0 failed, all performance budgets met |
+| F027 repro (`--json`) | exit 1 with 12 violations (was 0) |
+| F015-RESIDUAL repro | all 7 payload classes rejected, legit URLs accepted |
+| Zero regressions | Confirmed |
+
+### Files Modified
+
+- `scripts/check-workflow-security.js`
+- `scripts/fetch-data.js`
+- `scripts/build-performance.js`
+- `scripts/fetch-data.test.js`
+- `scripts/build-performance.test.js`
+- `docs/api.md`
+- `docs/task.md` — this entry
+
+### Acceptance Criteria
+
+- [x] F027: `--json` exits non-zero on violations
+- [x] F015-RESIDUAL: encoded/re-encoded shell metacharacters rejected
+- [x] F001: `fetchFromGitHub()` awaited in `main()`
+- [x] F026: `formatBytes()` handles negative deltas
+- [x] All tests pass, lint clean, build passes
+- [x] Documentation updated (api.md, task.md)
+
+> **Note**: F005 (49 Prettier-drift files in `docs/issues/2026-07-30` → `2026-08-02`, recurring main-merge drift) remains a tracked finding and is out of scope here, consistent with prior task precedent.
+
+---
+
 ### [TASK-069] Module Extraction — Decompose BuildOrchestrator into SearchDataService + ExportService
 
 **Status**: Complete
