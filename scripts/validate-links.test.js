@@ -250,6 +250,38 @@ test('validateLinksInFile handles non-directory target as broken link', async ()
   assert.ok(Array.isArray(result));
 });
 
+test('validateLinksInFile does not report existing file targets as broken', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-exists-' + Date.now()));
+  try {
+    fs.writeFileSync(path.join(tempDir, 'about.html'), '<html><body>About</body></html>');
+    const file = path.join(tempDir, 'index.html');
+    const result = await validateLinksInFile(file, ['about.html'], tempDir);
+    assert.deepStrictEqual(result, []);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('validateLinksInFile does not report directory targets as broken', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-dir-' + Date.now()));
+  try {
+    fs.mkdirSync(path.join(tempDir, 'provinsi'));
+    const file = path.join(tempDir, 'index.html');
+    const result = await validateLinksInFile(file, ['provinsi/'], tempDir);
+    assert.deepStrictEqual(result, []);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test('validateLinks processes HTML files with links and returns false on broken links', async () => {
   const CONFIG = require('./config');
   const os = require('os');

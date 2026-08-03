@@ -83,19 +83,13 @@ async function validateLinksInFile(file, links, distDir) {
     }
 
     try {
-      await safeAccess(targetPath);
+      // Existence probe: stat succeeds for both regular files and directories,
+      // so either means the target resolves — the link is valid.
+      await safeStat(targetPath);
     } catch (error) {
       if (error.name === 'IntegrationError') {
-        try {
-          const stat = await safeStat(targetPath);
-          if (!stat.isDirectory()) {
-            brokenInFile.push({ source: file, link: link });
-          }
-        } catch (statError) {
-          if (statError.name === 'IntegrationError') {
-            brokenInFile.push({ source: file, link: link });
-          }
-        }
+        // Target does not exist (or is inaccessible) → broken link.
+        brokenInFile.push({ source: file, link: link });
       }
     }
   }

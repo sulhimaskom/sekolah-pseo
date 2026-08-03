@@ -2,6 +2,62 @@
 
 ## Completed Tasks
 
+### [TASK-078] Code Review — Simplify `validateLinksInFile()` Nested try/catch (REFACTOR-011)
+
+**Status**: Complete
+**Agent**: Senior Code Reviewer & Refactoring Specialist (Sisyphus)
+
+### Description
+
+Executed backlog item **REFACTOR-011** from `docs/task.md` (MODE B — Refactoring: the backlog holds >10 open items). `validateLinksInFile()` in `scripts/validate-links.js` used a 4-level-deep try/catch that probed the target path **twice** — `safeAccess()` then a nested `safeStat()` fallback inside its catch — to answer a single question: "does the target exist?" Both `fs.access` (F_OK) and `fs.stat` succeed/fail together on existence, so the double-probe was redundant defensive nesting.
+
+**Important deviation from the backlog's literal suggestion**: the backlog proposed collapsing to `safeStat()` + `if (!stat.isDirectory()) broken`. That would have **regressed behavior** — the old `safeAccess` success path never checked `isDirectory`, so links to _existing regular files_ (e.g. `styles.css`, `about.html`) were valid; the literal suggestion would have flagged every existing-file link as broken (the existing end-to-end test "validateLinks processes HTML files with valid links and returns true" would have failed). The correct behavior-preserving collapse reports a link as broken **iff the target fails to stat** (missing or inaccessible) — existing files and directories are both valid targets.
+
+### Changes Made
+
+**1. `scripts/validate-links.js` — single-probe collapse (REFACTOR-011)**:
+
+- Replaced the `try { safeAccess } catch { try { safeStat + isDirectory } catch { ... } }` block with one `try { await safeStat(targetPath) }` — stat succeeds (regular file OR directory) → target resolves → valid link; stat rejects with `IntegrationError` → broken link.
+- Verified behavior-identical against the pre-refactor code on the same built `dist/` (both old and new report exactly the same 2 pre-existing broken links: `404.html → /sitemap-index.xml` since the build does not emit the sitemap, and `provinsi/jawa-timur/index.html → /provinsi/jawa-timur/kabupaten/surabaya/` since empty kabupaten dirs are not created by the build).
+- The `safeAccess` import is retained (still used by `validateLinks()` for the dist-directory existence check).
+
+**2. `scripts/validate-links.test.js` — 2 regression tests locking preserved semantics**:
+
+- `validateLinksInFile does not report existing file targets as broken` — real temp file target → `[]`.
+- `validateLinksInFile does not report directory targets as broken` — real temp directory target → `[]`.
+- These two cases are exactly the behavior the literal backlog suggestion would have broken.
+
+### Verification
+
+| Check                 | Result                                                                    |
+| --------------------- | ------------------------------------------------------------------------- |
+| validate-links tests  | 36/36 pass (34 baseline + 2 new)                                          |
+| JS Tests (full suite) | 1046/1046 pass, 0 fail, 4 skipped (on `agent` branch)                     |
+| ESLint                | 0 errors (both changed files)                                             |
+| Prettier              | All changed files formatted cleanly                                       |
+| Build                 | 2 pages, 0 failed, all performance budgets met                            |
+| validate-links smoke  | Identical output before/after refactor (same 2 pre-existing broken links) |
+| Behavior preservation | Old vs new code produce identical broken-link reports on same `dist/`     |
+| Zero regressions      | Confirmed                                                                 |
+
+### Files Modified
+
+- `scripts/validate-links.js` — collapsed 4-level nested try/catch into a single `safeStat` existence probe
+- `scripts/validate-links.test.js` — +2 regression tests (existing-file valid, existing-directory valid)
+- `docs/task.md` — This entry; REFACTOR-011 Complete; REFACTOR-001/003 Resolved
+
+### Acceptance Criteria
+
+- [x] 4-level try/catch nesting in `validateLinksInFile()` reduced to a single `safeStat` probe
+- [x] Existing regular-file targets NOT reported as broken (regression test added)
+- [x] Existing directory targets NOT reported as broken (regression test added)
+- [x] Missing/inaccessible targets reported as broken (existing tests unchanged, still pass)
+- [x] Old vs new code produce identical broken-link reports on the same built `dist/`
+- [x] All 1046 JS tests pass, ESLint + Prettier clean, build 0 failed
+- [x] Backlog REFACTOR-011 marked Complete; stale items (REFACTOR-001/003) accurately marked Resolved
+
+---
+
 ### [TASK-077] Technical Writing — Doc-Code Alignment Pass (README, setup, blueprint, api, REFACTOR-007)
 
 **Status**: Complete
@@ -5558,7 +5614,7 @@ Clear, actionable. Agent can execute without questions.
 
 ### [REFACTOR-001] DRY violation: `getUniqueDirectories()` duplicates path computation logic
 
-**Status**: Backlog
+**Status**: Resolved (implemented in commit `d6ec7db` / PR #471 — `getUniqueDirectories()` now derives each directory via `path.dirname(getSchoolRelativePath(school))`, eliminating the duplicated inline slugify path computation)
 **Priority**: Medium
 **Effort**: Small
 
@@ -5642,7 +5698,7 @@ Replace `filter(Boolean).join('|')` with a format that unambiguously delimits ea
 
 ### [REFACTOR-003] Module-level `distDir` in `build-pages.js` creates implicit coupling
 
-**Status**: Backlog
+**Status**: Resolved (superseded — `build-pages.js` was refactored in TASK-069 into a thin CLI wrapper that re-exports `BuildOrchestrator`; no module-level `distDir` coupling remains in the entry point)
 **Priority**: Medium
 **Effort**: Medium
 
@@ -5817,7 +5873,7 @@ This requires marking the functions as `async` and updating callers (which are a
 
 ### [REFACTOR-011] Simplify `validateLinksInFile()` excessive try/catch nesting
 
-**Status**: Backlog
+**Status**: Complete (TASK-078)
 **Priority**: Low
 **Effort**: Small
 
