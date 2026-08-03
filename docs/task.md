@@ -15,16 +15,16 @@ Fixed **12 security violations** across 6 workflow files: removed `id-token: wri
 
 ### Audit Results
 
-| Check             | Result                                                     |
-| ----------------- | ---------------------------------------------------------- |
-| npm audit         | 0 vulnerabilities                                          |
-| ESLint            | 0 errors                                                   |
-| JS Tests          | 1041/1041 pass (0 fail, 4 skipped)                         |
-| Build             | 2 pages, 0 failed, all performance budgets met             |
-| Workflow Security | 6/6 files pass all 5 rules (0 violations, txt + json exit 0) |
-| Hardcoded secrets | None found in source code                                  |
+| Check             | Result                                                            |
+| ----------------- | ----------------------------------------------------------------- |
+| npm audit         | 0 vulnerabilities                                                 |
+| ESLint            | 0 errors                                                          |
+| JS Tests          | 1041/1041 pass (0 fail, 4 skipped)                                |
+| Build             | 2 pages, 0 failed, all performance budgets met                    |
+| Workflow Security | 6/6 files pass all 5 rules (0 violations, txt + json exit 0)      |
+| Hardcoded secrets | None found in source code                                         |
 | Security headers  | CSP, HSTS, XFO, SAMEORIGIN, COOP, CORP all present (head-meta.js) |
-| Prettier          | All changed workflow files formatted cleanly               |
+| Prettier          | All changed workflow files formatted cleanly                      |
 
 ### Files Modified
 
@@ -40,15 +40,15 @@ Fixed **12 security violations** across 6 workflow files: removed `id-token: wri
 
 ### Verification
 
-| Check             | Result                       |
-| ----------------- | ---------------------------- |
+| Check             | Result                                                  |
+| ----------------- | ------------------------------------------------------- |
 | Workflow Security | 6/6 files pass, 0 violations (both txt and json exit 0) |
-| ESLint            | 0 errors                     |
-| Prettier          | All changed files formatted  |
-| Build             | 2 pages, 0 failed            |
-| JS Tests          | 1041/1041 pass, 0 fail       |
-| npm audit         | 0 vulnerabilities            |
-| Zero regressions  | Confirmed                    |
+| ESLint            | 0 errors                                                |
+| Prettier          | All changed files formatted                             |
+| Build             | 2 pages, 0 failed                                       |
+| JS Tests          | 1041/1041 pass, 0 fail                                  |
+| npm audit         | 0 vulnerabilities                                       |
+| Zero regressions  | Confirmed                                               |
 
 ### Acceptance Criteria
 
@@ -81,12 +81,12 @@ Fixed **12 security violations** across 6 workflow files: removed `id-token: wri
 
 Resolved four tracked verification findings in a single health-check pass (build ✅, lint ✅, tests ✅, no TODO/FIXME/HACK comments found):
 
-| Finding | Severity | Root Cause | Fix |
-| ------- | -------- | ---------- | --- |
-| **F027** | P2 (security) | `check-workflow-security.js --json` exited `0` even with 12 violations — the documented "JSON for CI" gate was a no-op | JSON branch now exits `1` when violations exist (`process.exit(allViolations.length === 0 ? 0 : 1)`) |
-| **F015-RESIDUAL** | P1 (RCE) | `validateRepoUrl()` scanned only the WHATWG-parsed URL; the parser re-encodes backtick (`%60`) and `<>` (`%3C`/`%3E`), and attackers can percent-encode any shell-active char (`%3B`=`;`, `%26`=`&`, ...) | Decode `sanitizedUrl` via `decodeURIComponent()` and re-scan against `SHELL_METACHARACTER_REGEX`; malformed percent-encoding is rejected (`malformed_percent_encoding`), encoded hits reject with `shell_metacharacters_encoded`. All 7 payload classes + malformed encodings now rejected; legit URLs unaffected |
-| **F001** | P1 (runtime) | `main()` treated `fetchFromGitHub()`'s Promise as a sync string — `csvPath` was a Promise passed to `fs.copyFileSync`, so the CLI always fell back to cache or failed | `main()` is now `async` and `await`s `fetchFromGitHub()`; bootstrap uses `main().catch(...)`; JSDoc updated to `Promise<string|null>` |
-| **F026** | P3 (cosmetic) | `formatBytes()` computed `Math.log(bytes)` on negative memory deltas → `"NaN undefined"` | Handle sign explicitly: `Math.abs(bytes)` + `-` prefix; `-1536` → `-1.50 KB` |
+| Finding           | Severity      | Root Cause                                                                                                                                                                                                | Fix                                                                                                                                                                                                                                                                                                               |
+| ----------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F027**          | P2 (security) | `check-workflow-security.js --json` exited `0` even with 12 violations — the documented "JSON for CI" gate was a no-op                                                                                    | JSON branch now exits `1` when violations exist (`process.exit(allViolations.length === 0 ? 0 : 1)`)                                                                                                                                                                                                              |
+| **F015-RESIDUAL** | P1 (RCE)      | `validateRepoUrl()` scanned only the WHATWG-parsed URL; the parser re-encodes backtick (`%60`) and `<>` (`%3C`/`%3E`), and attackers can percent-encode any shell-active char (`%3B`=`;`, `%26`=`&`, ...) | Decode `sanitizedUrl` via `decodeURIComponent()` and re-scan against `SHELL_METACHARACTER_REGEX`; malformed percent-encoding is rejected (`malformed_percent_encoding`), encoded hits reject with `shell_metacharacters_encoded`. All 7 payload classes + malformed encodings now rejected; legit URLs unaffected |
+| **F001**          | P1 (runtime)  | `main()` treated `fetchFromGitHub()`'s Promise as a sync string — `csvPath` was a Promise passed to `fs.copyFileSync`, so the CLI always fell back to cache or failed                                     | `main()` is now `async` and `await`s `fetchFromGitHub()`; bootstrap uses `main().catch(...)`; JSDoc updated to `Promise<string                                                                                                                                                                                    | null>` |
+| **F026**          | P3 (cosmetic) | `formatBytes()` computed `Math.log(bytes)` on negative memory deltas → `"NaN undefined"`                                                                                                                  | Handle sign explicitly: `Math.abs(bytes)` + `-` prefix; `-1536` → `-1.50 KB`                                                                                                                                                                                                                                      |
 
 ### Changes Made
 
@@ -104,15 +104,15 @@ Resolved four tracked verification findings in a single health-check pass (build
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| ESLint | 0 errors |
-| Prettier (changed files) | Clean |
-| JS Tests | 1041/1041 pass (9 new), 0 fail, 4 skipped |
-| Build | 0 failed, all performance budgets met |
-| F027 repro (`--json`) | exit 1 with 12 violations (was 0) |
-| F015-RESIDUAL repro | all 7 payload classes rejected, legit URLs accepted |
-| Zero regressions | Confirmed |
+| Check                    | Result                                              |
+| ------------------------ | --------------------------------------------------- |
+| ESLint                   | 0 errors                                            |
+| Prettier (changed files) | Clean                                               |
+| JS Tests                 | 1041/1041 pass (9 new), 0 fail, 4 skipped           |
+| Build                    | 0 failed, all performance budgets met               |
+| F027 repro (`--json`)    | exit 1 with 12 violations (was 0)                   |
+| F015-RESIDUAL repro      | all 7 payload classes rejected, legit URLs accepted |
+| Zero regressions         | Confirmed                                           |
 
 ### Files Modified
 
