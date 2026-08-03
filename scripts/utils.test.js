@@ -15,6 +15,7 @@ const {
   escapeHtml,
   processConcurrently,
   generateMetaDescription,
+  fileExists,
 } = require('./utils');
 
 test('parseCsv handles empty data', () => {
@@ -594,6 +595,30 @@ test('walkDirectory ignores non-HTML files in subdirectories', async () => {
     const results = await walkDirectory(tmpDir, (fullPath, relPath) => relPath);
     results.sort();
     assert.deepStrictEqual(results, ['assets/page.html', 'index.html']);
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('fileExists returns true for existing file', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'fileexists-test-'));
+  try {
+    const target = path.join(tmpDir, 'existing.txt');
+    await fs.writeFile(target, 'content');
+    assert.strictEqual(await fileExists(target), true);
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('fileExists returns false for non-existent file', async () => {
+  assert.strictEqual(await fileExists('/nonexistent/path/definitely-missing.txt'), false);
+});
+
+test('fileExists returns true for existing directory', async () => {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'fileexists-test-'));
+  try {
+    assert.strictEqual(await fileExists(tmpDir), true);
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }

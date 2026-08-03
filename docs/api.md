@@ -458,6 +458,7 @@ module.exports = {
   terminate: function,
   processConcurrently: function,
   generateMetaDescription: function,
+  fileExists: function,
 };
 ```
 
@@ -809,6 +810,30 @@ terminate('Schools CSV not found. Run ETL first.');
 terminate('Build completed successfully', 0);
 // Logs: INFO: Build completed successfully
 // Then: process.exit(0)
+```
+
+---
+
+#### `fileExists(filePath)`
+
+Checks whether a file or directory exists, using `safeAccess()` from `fs-safe.js` so existence checks benefit from the standard resilience wrappers (timeout, retry, circuit breaker). This is the canonical existence check for the codebase — it replaced the inconsistent patterns previously spread across modules (raw `fs.existsSync` in `check-freshness.js`/`data-quality.js`, try/catch on `safeAccess`/`safeUnlink` in `manifest.js`).
+
+**Parameters:**
+
+- `filePath` (string): Path to check
+
+**Returns:** `Promise<boolean>` - `true` if the path exists, `false` otherwise (never throws for missing paths)
+
+**Error Handling:** Returns `false` for any `safeAccess()` failure (missing path, permission denied, etc.) — existence checks are intentionally non-throwing.
+
+**Usage:**
+
+```javascript
+const { fileExists } = require('./utils');
+
+if (await fileExists(CONFIG.SCHOOLS_CSV_PATH)) {
+  const content = await safeReadFile(CONFIG.SCHOOLS_CSV_PATH);
+}
 ```
 
 ---
@@ -4306,9 +4331,9 @@ module.exports = {
 
 #### `getDataFreshness()`
 
-Gets the most recent update date from schools.csv and determines if data is fresh.
+Gets the most recent update date from schools.csv and determines if data is fresh. Async — reads via `fileExists()` + `safeReadFile()` from `fs-safe.js`, so the underlying file access benefits from the standard resilience wrappers (timeout, retry, circuit breaker).
 
-**Returns:** `Object` - Freshness information
+**Returns:** `Promise<Object>` - Freshness information
 
 ```javascript
 {
@@ -4320,13 +4345,15 @@ Gets the most recent update date from schools.csv and determines if data is fres
 }
 ```
 
+**Throws:** `IntegrationError` (`FILE_READ_ERROR`) if reading schools.csv fails
+
 **Freshness Threshold:** Data is considered fresh if `daysAgo <= 7` (DEFAULT_MAX_AGE_DAYS)
 
 **Usage:**
 
 ```javascript
 const { getDataFreshness } = require('./check-freshness');
-const freshness = getDataFreshness();
+const freshness = await getDataFreshness();
 
 // If freshness.isFresh is false, data needs updating
 if (!freshness.isFresh) {
@@ -4338,9 +4365,9 @@ if (!freshness.isFresh) {
 
 #### `getDataQualityMetrics()`
 
-Calculates data quality metrics from schools.csv.
+Calculates data quality metrics from schools.csv. Async — reads via `fileExists()` + `safeReadFile()` from `fs-safe.js`, so the underlying file access benefits from the standard resilience wrappers (timeout, retry, circuit breaker).
 
-**Returns:** `Object|null` - Quality metrics or null if file doesn't exist
+**Returns:** `Promise<Object|null>` - Quality metrics or null if file doesn't exist
 
 ```javascript
 {
@@ -4354,6 +4381,8 @@ Calculates data quality metrics from schools.csv.
 }
 ```
 
+**Throws:** `IntegrationError` (`FILE_READ_ERROR`) if reading schools.csv fails
+
 **Quality Metrics:**
 
 - **coordinates**: Records with valid lat/lon values
@@ -4365,7 +4394,7 @@ Calculates data quality metrics from schools.csv.
 
 ```javascript
 const { getDataQualityMetrics } = require('./check-freshness');
-const quality = getDataQualityMetrics();
+const quality = await getDataQualityMetrics();
 if (quality) {
   console.log(`Records with coordinates: ${quality.metrics.coordinates.percentage}%`);
 }
@@ -5527,6 +5556,8 @@ node scripts/data-quality.js --threshold       # Exit 1 if quality below thresho
 node scripts/data-quality.js --verbose         # Detailed per-record stats
 ```
 
+`main()` is async and reads schools.csv via `fileExists()` + `safeReadFile()` from `fs-safe.js`, so the underlying file access benefits from the standard resilience wrappers (timeout, retry, circuit breaker).
+
 **Exit Codes:**
 
 - `0`: Quality meets thresholds (or thresholds not enforced)
@@ -5580,17 +5611,17 @@ Generates a complete HTML report page with cards for status, last updated, schoo
 
 ```javascript
 const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');
-const html = generateHtml(getDataFreshness(), getDataQualityMetrics());
+const html = generateHtml(await getDataFreshness(), await getDataQualityMetrics());
 await safeWriteFile('dist/freshness-report/index.html', html);
 ```
 
 ---
 
-#### `getReportData()**
+#### `getReportData()`
 
-Returns a combined report data object with freshness, quality, and generation timestamp.
+Returns a combined report data object with freshness, quality, and generation timestamp. Async — delegates to the async `getDataFreshness()` / `getDataQualityMetrics()` from `check-freshness.js`.
 
-**Returns:** `Object`
+**Returns:** `Promise<Object>`
 
 ```javascript
 {
@@ -5608,7 +5639,7 @@ Returns a combined report data object with freshness, quality, and generation ti
 **Usage:**
 
 ```javascript
-const data = getReportData();
+const data = await getReportData();
 console.log(data.isFresh ? 'Data is fresh' : 'Data is stale');
 ```
 

@@ -163,10 +163,10 @@ test('generateHtml renders metric bar colors based on percentage', () => {
 
 // ── getReportData ───────────────────────────────────────────────────────────
 
-test('getReportData returns an object with freshness and quality', () => {
+test('getReportData returns an object with freshness and quality', async () => {
   // NOTE: This reads the actual CSV file at CONFIG.SCHOOLS_CSV_PATH
   // If schools.csv does not exist, exists will be false
-  const data = getReportData();
+  const data = await getReportData();
   assert.strictEqual(typeof data, 'object');
   assert.ok('exists' in data);
   assert.ok('isFresh' in data);
@@ -175,8 +175,8 @@ test('getReportData returns an object with freshness and quality', () => {
   assert.ok(typeof data.generatedAt === 'string');
 });
 
-test('getReportData contains generatedAt timestamp', () => {
-  const data = getReportData();
+test('getReportData contains generatedAt timestamp', async () => {
+  const data = await getReportData();
   const ts = new Date(data.generatedAt);
   assert.ok(ts instanceof Date);
   assert.ok(!isNaN(ts.getTime()));

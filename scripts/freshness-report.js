@@ -258,11 +258,11 @@ function generateHtml(freshness, quality) {
 
 /**
  * Generate JSON report data
- * @returns {Object} Report data
+ * @returns {Promise<Object>} Report data
  */
-function getReportData() {
-  const freshness = getDataFreshness();
-  const quality = getDataQualityMetrics();
+async function getReportData() {
+  const freshness = await getDataFreshness();
+  const quality = await getDataQualityMetrics();
   return {
     ...freshness,
     quality,
@@ -277,13 +277,13 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.includes('--json')) {
-    const data = getReportData();
+    const data = await getReportData();
     process.stdout.write(JSON.stringify(data, null, 2) + '\n');
     return;
   }
 
-  const freshness = getDataFreshness();
-  const quality = getDataQualityMetrics();
+  const freshness = await getDataFreshness();
+  const quality = await getDataQualityMetrics();
 
   if (!freshness.exists) {
     terminate('No schools.csv found. Run ETL first.');
@@ -311,5 +311,8 @@ async function main() {
 module.exports = { generateHtml, getReportData };
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    logger.error({ err: error }, 'Freshness report generation failed');
+    process.exit(1);
+  });
 }

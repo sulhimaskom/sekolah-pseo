@@ -25,10 +25,10 @@
 
 'use strict';
 
-const fs = require('fs');
 const CONFIG = require('./config');
 const logger = require('./logger');
-const { parseCsv, terminate } = require('./utils');
+const { safeReadFile } = require('./fs-safe');
+const { parseCsv, terminate, fileExists } = require('./utils');
 const SCHEMA = require('./data-schema');
 
 // ── Configuration ───────────────────────────────────────────────────────────
@@ -341,7 +341,7 @@ function formatJson(report) {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const useJson = args.includes('--json');
   const enforceThreshold = args.includes('--threshold');
@@ -349,11 +349,11 @@ function main() {
 
   const csvPath = CONFIG.SCHOOLS_CSV_PATH;
 
-  if (!fs.existsSync(csvPath)) {
+  if (!(await fileExists(csvPath))) {
     terminate('Schools CSV not found. Run ETL first.');
   }
 
-  const csvData = fs.readFileSync(csvPath, 'utf-8');
+  const csvData = await safeReadFile(csvPath);
   const schools = parseCsv(csvData);
 
   logger.info({ recordCount: schools.length }, 'Analyzing data quality');
@@ -408,5 +408,8 @@ module.exports = {
 };
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    logger.error({ err: error }, 'Data quality analysis failed');
+    process.exit(1);
+  });
 }

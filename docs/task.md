@@ -2,6 +2,76 @@
 
 ## Completed Tasks
 
+### [TASK-074] Integration Hardening — Shared `fileExists()` Utility + Resilient File Access in Data-Reporting Modules
+
+**Status**: Complete
+**Agent**: Integration Engineer (Sisyphus)
+
+### Description
+
+Resolved three backlog items (REFACTOR-010, REFACTOR-012, REFACTOR-004) in a single integration-hardening pass. `check-freshness.js` and `data-quality.js` were the last production modules reading schools.csv with **raw synchronous `fs.*` calls** (`fs.existsSync`/`fs.readFileSync`), bypassing the project's established resilience layer (timeout, retry, circuit breaker from `fs-safe.js`). Additionally, file-existence checking was implemented four different ways across the codebase — a standardization hazard.
+
+**1. Shared `fileExists()` utility** (`scripts/utils.js`, REFACTOR-012 core):
+
+- New async `fileExists(filePath)` wrapping `safeAccess()` — returns `Promise<boolean>`, never throws for missing paths.
+- Replaced **4 inconsistent existence-check patterns**:
+  - `check-freshness.js` (×2): raw `fs.existsSync` → `await fileExists()`
+  - `data-quality.js` (×1): raw `fs.existsSync` → `await fileExists()`
+  - `manifest.js` `loadManifest()` (×1): try/catch on `safeAccess` → `if (!(await fileExists(path))) return null;` (REFACTOR-004/012)
+  - `manifest.js` `clearManifest()` (×1): try/catch on `safeUnlink` → `if (await fileExists(path)) await safeUnlink(path);` (REFACTOR-004/012)
+
+**2. Resilient file reads** (`scripts/check-freshness.js`, `scripts/data-quality.js`; REFACTOR-010):
+
+- `getDataFreshness()`, `getDataQualityMetrics()`, and `data-quality.js` `main()` migrated from `fs.readFileSync` to `await safeReadFile()` — reads now flow through timeout (30s), retry (3 attempts, exponential backoff), and the file-read circuit breaker.
+- All three public functions are now **async** (return `Promise`); error contract unchanged (rethrow `IntegrationError` `FILE_READ_ERROR`).
+- `freshness-report.js` `getReportData()` made async + `main()` awaits the now-async calls (its `main()` was already async).
+
+**3. Bootstrap error handling**: CLI entry points for all three scripts now use `main().catch(...)` (log + `process.exit(1)`), matching the `fetch-data.js` pattern — no unhandled promise rejections on read failure.
+
+### Verification
+
+| Check                                | Result                                                                                                               |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| ESLint                               | 0 errors (all changed files)                                                                                         |
+| Prettier                             | All changed source files formatted cleanly                                                                           |
+| JS Tests                             | 1032/1032 pass (1029 baseline + 3 new `fileExists` tests), 0 fail, 4 skipped                                         |
+| Build                                | 2 pages, 0 failed, all performance budgets met                                                                       |
+| CLI smoke                            | `check-freshness --json`, `data-quality --json`, `freshness-report --stdout/--json` all exit 0 with unchanged output |
+| Raw `fs.*` in data-reporting modules | Eliminated (only deliberate local-cache `fs` in `fetch-data.js` + CI tool `check-workflow-security.js` remain)       |
+| Zero regressions                     | Confirmed                                                                                                            |
+
+### Files Modified
+
+- `scripts/utils.js` — NEW `fileExists()` (async, wraps `safeAccess`), exported
+- `scripts/check-freshness.js` — `getDataFreshness`/`getDataQualityMetrics` → async, `fileExists()` + `safeReadFile()`; `main()` async with `.catch` bootstrap; removed raw `fs` import (REFACTOR-010)
+- `scripts/freshness-report.js` — `getReportData()` → async; `main()` awaits; `.catch` bootstrap
+- `scripts/manifest.js` — `loadManifest`/`clearManifest` use `fileExists()`; removed unused `safeAccess` import (REFACTOR-004/012)
+- `scripts/data-quality.js` — `main()` → async, `fileExists()` + `safeReadFile()`; removed raw `fs` import; `.catch` bootstrap
+- `scripts/check-freshness.test.js` — 31 call sites updated to `await` + async `it()` callbacks
+- `scripts/freshness-report.test.js` — 2 `getReportData` tests updated to `await`
+- `scripts/utils.test.js` — +3 `fileExists` tests (existing file, non-existent file, existing directory)
+- `docs/api.md` — `fileExists` in Utility Module exports + function doc; async signatures/usage for check-freshness, freshness-report, data-quality
+- `docs/blueprint.md` — decisions log entries
+- `docs/task.md` — This entry; REFACTOR-010/012/004 marked Complete
+
+### Acceptance Criteria
+
+- [x] `fileExists()` added to `utils.js` (async, `safeAccess`-backed, exported)
+- [x] All 6 raw-`fs`/try-catch existence checks replaced with `fileExists()` (check-freshness ×2, data-quality ×1, manifest ×3)
+- [x] `getDataFreshness()`/`getDataQualityMetrics()` read via `safeReadFile()` (resilience wrappers: timeout, retry, circuit breaker)
+- [x] `data-quality.js` `main()` reads via `safeReadFile()`
+- [x] All public functions made async with callers updated (check-freshness, freshness-report, tests)
+- [x] CLI behavior unchanged (exit codes, output formats) — verified by smoke tests
+- [x] `main().catch(...)` bootstrap on all three CLI entry points
+- [x] No unhandled promise rejections
+- [x] All 1032 JS tests pass (0 regressions, 3 new)
+- [x] ESLint + Prettier clean on all changed files
+- [x] Build succeeds (0 failed, budgets met)
+- [x] Documentation updated (api.md, blueprint.md, task.md)
+- [x] Backlog items REFACTOR-010, REFACTOR-012, REFACTOR-004 resolved
+
+---
+
 ### [TASK-073] Data Architecture — Unambiguous School Content Hash for Incremental Builds (REFACTOR-002)
 
 **Status**: Complete

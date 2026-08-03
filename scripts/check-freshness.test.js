@@ -10,8 +10,8 @@ const CONFIG = require('./config');
 
 describe('check-freshness', () => {
   describe('getDataFreshness', () => {
-    it('returns object with required properties when schools.csv exists', () => {
-      const result = getDataFreshness();
+    it('returns object with required properties when schools.csv exists', async () => {
+      const result = await getDataFreshness();
 
       // Verify result structure
       assert.strictEqual(result.hasOwnProperty('exists'), true);
@@ -21,38 +21,38 @@ describe('check-freshness', () => {
       assert.strictEqual(result.hasOwnProperty('isFresh'), true);
     });
 
-    it('returns isFresh as boolean', () => {
-      const result = getDataFreshness();
+    it('returns isFresh as boolean', async () => {
+      const result = await getDataFreshness();
       assert.strictEqual(typeof result.isFresh, 'boolean');
     });
 
-    it('returns recordCount as number', () => {
-      const result = getDataFreshness();
+    it('returns recordCount as number', async () => {
+      const result = await getDataFreshness();
       assert.strictEqual(typeof result.recordCount, 'number');
     });
 
-    it('returns daysAgo as number or null', () => {
-      const result = getDataFreshness();
+    it('returns daysAgo as number or null', async () => {
+      const result = await getDataFreshness();
       assert.ok(result.daysAgo === null || typeof result.daysAgo === 'number');
     });
   });
 
   describe('getDataQualityMetrics', () => {
-    it('returns object with required properties when schools.csv exists', () => {
-      const result = getDataQualityMetrics();
+    it('returns object with required properties when schools.csv exists', async () => {
+      const result = await getDataQualityMetrics();
 
       assert.ok(result !== null);
       assert.ok(result.hasOwnProperty('totalRecords'));
       assert.ok(result.hasOwnProperty('metrics'));
     });
 
-    it('returns totalRecords as number', () => {
-      const result = getDataQualityMetrics();
+    it('returns totalRecords as number', async () => {
+      const result = await getDataQualityMetrics();
       assert.strictEqual(typeof result.totalRecords, 'number');
     });
 
-    it('returns metrics with expected structure', () => {
-      const result = getDataQualityMetrics();
+    it('returns metrics with expected structure', async () => {
+      const result = await getDataQualityMetrics();
 
       assert.ok(result.metrics.hasOwnProperty('coordinates'));
       assert.ok(result.metrics.hasOwnProperty('address'));
@@ -60,8 +60,8 @@ describe('check-freshness', () => {
       assert.ok(result.metrics.hasOwnProperty('province'));
     });
 
-    it('metrics have count and percentage', () => {
-      const result = getDataQualityMetrics();
+    it('metrics have count and percentage', async () => {
+      const result = await getDataQualityMetrics();
 
       for (const metric of ['coordinates', 'address', 'npsn', 'province']) {
         assert.ok(result.metrics[metric].hasOwnProperty('count'));
@@ -91,25 +91,25 @@ describe('check-freshness', () => {
       }
     });
 
-    it('returns null when schools.csv does not exist', () => {
+    it('returns null when schools.csv does not exist', async () => {
       CONFIG.SCHOOLS_CSV_PATH = '/nonexistent/path/schools.csv';
-      const result = getDataQualityMetrics();
+      const result = await getDataQualityMetrics();
       assert.strictEqual(result, null);
     });
 
-    it('returns zero metrics when CSV has header but no records', () => {
+    it('returns zero metrics when CSV has header but no records', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(csvPath, 'npsn,nama,lat,lon,alamat,provinsi\n', 'utf-8');
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataQualityMetrics();
+      const result = await getDataQualityMetrics();
       assert.ok(result !== null);
       assert.strictEqual(result.totalRecords, 0);
       assert.deepStrictEqual(result.metrics, {});
     });
 
-    it('calculates metrics correctly with mixed data', () => {
+    it('calculates metrics correctly with mixed data', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(
@@ -122,7 +122,7 @@ describe('check-freshness', () => {
       );
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataQualityMetrics();
+      const result = await getDataQualityMetrics();
       assert.strictEqual(result.totalRecords, 3);
       assert.strictEqual(result.metrics.coordinates.count, 2);
       assert.strictEqual(result.metrics.coordinates.percentage, '66.67');
@@ -132,13 +132,13 @@ describe('check-freshness', () => {
       assert.strictEqual(result.metrics.province.count, 3);
     });
 
-    it('counts schools with non-numeric NPSN as missing NPSN', () => {
+    it('counts schools with non-numeric NPSN as missing NPSN', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(csvPath, 'npsn,nama\nABCDE,Invalid NPSN\n67890,Valid NPSN\n', 'utf-8');
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataQualityMetrics();
+      const result = await getDataQualityMetrics();
       assert.strictEqual(result.totalRecords, 2);
       assert.strictEqual(result.metrics.npsn.count, 1);
       assert.strictEqual(result.metrics.npsn.percentage, '50.00');
@@ -146,11 +146,11 @@ describe('check-freshness', () => {
   });
 
   describe('module exports', () => {
-    it('exports getDataFreshness function', () => {
+    it('exports getDataFreshness function', async () => {
       assert.strictEqual(typeof getDataFreshness, 'function');
     });
 
-    it('exports getDataQualityMetrics function', () => {
+    it('exports getDataQualityMetrics function', async () => {
       assert.strictEqual(typeof getDataQualityMetrics, 'function');
     });
   });
@@ -174,9 +174,9 @@ describe('check-freshness', () => {
       }
     });
 
-    it('returns exists:false when schools.csv does not exist', () => {
+    it('returns exists:false when schools.csv does not exist', async () => {
       CONFIG.SCHOOLS_CSV_PATH = '/nonexistent/path/schools.csv';
-      const result = getDataFreshness();
+      const result = await getDataFreshness();
       assert.strictEqual(result.exists, false);
       assert.strictEqual(result.date, null);
       assert.strictEqual(result.daysAgo, null);
@@ -184,13 +184,13 @@ describe('check-freshness', () => {
       assert.strictEqual(result.isFresh, false);
     });
 
-    it('returns exists:true, recordCount:0 when CSV has header but no records', () => {
+    it('returns exists:true, recordCount:0 when CSV has header but no records', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(csvPath, 'npsn,nama,updated_at\n', 'utf-8');
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataFreshness();
+      const result = await getDataFreshness();
       assert.strictEqual(result.exists, true);
       assert.strictEqual(result.date, null);
       assert.strictEqual(result.daysAgo, null);
@@ -198,13 +198,13 @@ describe('check-freshness', () => {
       assert.strictEqual(result.isFresh, false);
     });
 
-    it('returns date:null when records have no updated_at field', () => {
+    it('returns date:null when records have no updated_at field', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(csvPath, 'npsn,nama\n12345,Test School\n67890,Test School 2\n', 'utf-8');
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataFreshness();
+      const result = await getDataFreshness();
       assert.strictEqual(result.exists, true);
       assert.strictEqual(result.date, null);
       assert.strictEqual(result.daysAgo, null);
@@ -212,7 +212,7 @@ describe('check-freshness', () => {
       assert.strictEqual(result.isFresh, false);
     });
 
-    it('returns date:null when records have empty updated_at values', () => {
+    it('returns date:null when records have empty updated_at values', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(
@@ -222,7 +222,7 @@ describe('check-freshness', () => {
       );
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataFreshness();
+      const result = await getDataFreshness();
       assert.strictEqual(result.exists, true);
       assert.strictEqual(result.date, null);
       assert.strictEqual(result.daysAgo, null);
@@ -230,13 +230,13 @@ describe('check-freshness', () => {
       assert.strictEqual(result.isFresh, false);
     });
 
-    it('returns date:null when updated_at values are not valid ISO dates', () => {
+    it('returns date:null when updated_at values are not valid ISO dates', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       fs.writeFileSync(csvPath, 'npsn,nama,updated_at\n12345,Test School,not-a-date\n', 'utf-8');
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataFreshness();
+      const result = await getDataFreshness();
       assert.strictEqual(result.exists, true);
       assert.strictEqual(result.date, null);
       assert.strictEqual(result.daysAgo, null);
@@ -244,14 +244,14 @@ describe('check-freshness', () => {
       assert.strictEqual(result.isFresh, false);
     });
 
-    it('parses valid updated_at and calculates daysAgo correctly', () => {
+    it('parses valid updated_at and calculates daysAgo correctly', async () => {
       testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-freshness-test-'));
       const csvPath = path.join(testDir, 'schools.csv');
       const today = new Date().toISOString().split('T')[0];
       fs.writeFileSync(csvPath, `npsn,nama,updated_at\n12345,Test School,${today}\n`, 'utf-8');
       CONFIG.SCHOOLS_CSV_PATH = csvPath;
 
-      const result = getDataFreshness();
+      const result = await getDataFreshness();
       assert.strictEqual(result.exists, true);
       assert.strictEqual(result.date, today);
       assert.strictEqual(result.daysAgo, 0);
@@ -261,8 +261,8 @@ describe('check-freshness', () => {
   });
 
   describe('getDataFreshness edge cases', () => {
-    it('returns correct structure when file exists', () => {
-      const result = getDataFreshness();
+    it('returns correct structure when file exists', async () => {
+      const result = await getDataFreshness();
       // Verify result structure for existing file
       assert.strictEqual(result.exists, true);
       assert.ok(result.hasOwnProperty('date'));
@@ -271,8 +271,8 @@ describe('check-freshness', () => {
       assert.ok(result.hasOwnProperty('isFresh'));
     });
 
-    it('handles stale data correctly', () => {
-      const result = getDataFreshness();
+    it('handles stale data correctly', async () => {
+      const result = await getDataFreshness();
       // daysAgo should be a number when file has valid dates
       if (result.daysAgo !== null) {
         assert.ok(typeof result.daysAgo === 'number');
@@ -282,16 +282,16 @@ describe('check-freshness', () => {
       }
     });
 
-    it('handles date parsing edge cases', () => {
-      const result = getDataFreshness();
+    it('handles date parsing edge cases', async () => {
+      const result = await getDataFreshness();
       // When date exists, it should be in ISO format
       if (result.date !== null) {
         assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(result.date));
       }
     });
 
-    it('recordCount reflects actual data lines', () => {
-      const result = getDataFreshness();
+    it('recordCount reflects actual data lines', async () => {
+      const result = await getDataFreshness();
       // recordCount should be a positive number for existing file
       assert.ok(typeof result.recordCount === 'number');
       if (result.exists) {
@@ -301,15 +301,15 @@ describe('check-freshness', () => {
   });
 
   describe('getDataQualityMetrics edge cases', () => {
-    it('returns valid metrics structure when file exists', () => {
-      const result = getDataQualityMetrics();
+    it('returns valid metrics structure when file exists', async () => {
+      const result = await getDataQualityMetrics();
       assert.ok(result !== null);
       assert.ok(result.hasOwnProperty('totalRecords'));
       assert.ok(result.hasOwnProperty('metrics'));
     });
 
-    it('calculates metrics for all field types', () => {
-      const result = getDataQualityMetrics();
+    it('calculates metrics for all field types', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         // All metric types should exist
         assert.ok(result.metrics.hasOwnProperty('coordinates'));
@@ -325,8 +325,8 @@ describe('check-freshness', () => {
       }
     });
 
-    it('percentages are within valid range 0-100', () => {
-      const result = getDataQualityMetrics();
+    it('percentages are within valid range 0-100', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         for (const metric of ['coordinates', 'address', 'npsn', 'province']) {
           const pct = parseFloat(result.metrics[metric].percentage);
@@ -335,40 +335,40 @@ describe('check-freshness', () => {
       }
     });
 
-    it('handles coordinate validation correctly', () => {
-      const result = getDataQualityMetrics();
+    it('handles coordinate validation correctly', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         // Coordinates count should not exceed total records
         assert.ok(result.metrics.coordinates.count <= result.totalRecords);
       }
     });
 
-    it('handles address field validation correctly', () => {
-      const result = getDataQualityMetrics();
+    it('handles address field validation correctly', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         // Address count should not exceed total records
         assert.ok(result.metrics.address.count <= result.totalRecords);
       }
     });
 
-    it('handles NPSN validation correctly', () => {
-      const result = getDataQualityMetrics();
+    it('handles NPSN validation correctly', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         // NPSN count should not exceed total records
         assert.ok(result.metrics.npsn.count <= result.totalRecords);
       }
     });
 
-    it('handles province field validation correctly', () => {
-      const result = getDataQualityMetrics();
+    it('handles province field validation correctly', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         // Province count should not exceed total records
         assert.ok(result.metrics.province.count <= result.totalRecords);
       }
     });
 
-    it('metrics counts are consistent with totalRecords', () => {
-      const result = getDataQualityMetrics();
+    it('metrics counts are consistent with totalRecords', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         for (const metric of ['coordinates', 'address', 'npsn', 'province']) {
           assert.ok(
@@ -381,8 +381,8 @@ describe('check-freshness', () => {
       }
     });
 
-    it('percentages are consistent with counts', () => {
-      const result = getDataQualityMetrics();
+    it('percentages are consistent with counts', async () => {
+      const result = await getDataQualityMetrics();
       if (result.totalRecords > 0) {
         for (const metric of ['coordinates', 'address', 'npsn', 'province']) {
           const expectedPct = ((result.metrics[metric].count / result.totalRecords) * 100).toFixed(
@@ -416,7 +416,7 @@ describe('check-freshness', () => {
       return null;
     }
 
-    it('outputs JSON with --json flag', () => {
+    it('outputs JSON with --json flag', async () => {
       const result = execSync('node scripts/check-freshness.js --json', {
         encoding: 'utf-8',
         timeout: 10000,
@@ -429,7 +429,7 @@ describe('check-freshness', () => {
       assert.ok(data.hasOwnProperty('checkedAt'));
     });
 
-    it('JSON output includes quality metrics', () => {
+    it('JSON output includes quality metrics', async () => {
       const result = execSync('node scripts/check-freshness.js --json', {
         encoding: 'utf-8',
         timeout: 10000,
@@ -440,7 +440,7 @@ describe('check-freshness', () => {
       assert.ok(data.quality === null || data.quality.hasOwnProperty('totalRecords'));
     });
 
-    it('JSON output shows freshness data correctly', () => {
+    it('JSON output shows freshness data correctly', async () => {
       const result = execSync('node scripts/check-freshness.js --json', {
         encoding: 'utf-8',
         timeout: 10000,
@@ -453,7 +453,7 @@ describe('check-freshness', () => {
       assert.ok(data.recordCount > 0);
     });
 
-    it('verbose output includes quality metrics section', () => {
+    it('verbose output includes quality metrics section', async () => {
       try {
         const result = execSync('node scripts/check-freshness.js --verbose', {
           encoding: 'utf-8',
@@ -466,7 +466,7 @@ describe('check-freshness', () => {
       }
     });
 
-    it('exits appropriately based on data freshness', () => {
+    it('exits appropriately based on data freshness', async () => {
       try {
         execSync('node scripts/check-freshness.js', {
           encoding: 'utf-8',
