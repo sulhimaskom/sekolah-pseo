@@ -14,21 +14,12 @@
 'use strict';
 
 const path = require('path');
-const zlib = require('zlib');
-const { promisify } = require('util');
 const slugify = require('../../scripts/slugify');
-const gzipAsync = promisify(zlib.gzip);
 const { parseCsv, processInBatches } = require('../../scripts/utils');
 const logger = require('../../scripts/logger');
 const CONFIG = require('../../scripts/config');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
-const {
-  safeReadFile,
-  safeWriteFile,
-  fastWriteFile,
-  safeMkdir,
-  fastMkdir,
-} = require('../../scripts/fs-safe');
+const { safeReadFile, safeWriteFile, fastWriteFile, fastMkdir } = require('../../scripts/fs-safe');
 const {
   buildSchoolPageData,
   buildHomepageData,
@@ -37,8 +28,9 @@ const {
   getUniqueProvinces,
   buildProvincePageData,
   groupSchoolsByProvince,
-  prepareSchoolDataForSearch,
 } = require('./PageBuilder');
+const { writeSearchDataFile } = require('./SearchDataService');
+const { exportSchoolsCsv, writeExternalStylesFile } = require('./ExportService');
 const {
   loadManifest,
   saveManifest,
@@ -151,57 +143,12 @@ async function generateRobotsTxt(siteUrl) {
 }
 
 /**
- * Write the external styles.css file to disk.
- * CSS generation (pure presentation) lives in src/presenters/styles.js,
- * while file I/O belongs here alongside other file operations.
- *
- * @param {string} targetDir - Path to the dist directory
- * @returns {Promise<string>} Path to the written styles.css file
- */
-async function writeExternalStylesFile(targetDir) {
-  const { generateSchoolPageStyles } = require('../presenters/styles');
-  const css = generateSchoolPageStyles();
-  const outputPath = path.join(targetDir, 'styles.css');
-  await safeMkdir(targetDir);
-  await safeWriteFile(outputPath, css);
-  return outputPath;
-}
-
-/**
  * Generate external styles.css file.
  */
 async function generateExternalStyles() {
   logger.info('Generating external styles.css...');
   await writeExternalStylesFile(distDir);
   logger.info('Generated styles.css');
-}
-
-/**
- * Generate external search data file (schools.json) for lazy-loaded client-side search.
- * This separates the ~1.3MB JSON search data from the homepage HTML,
- * allowing the homepage to load as a lightweight ~14KB page.
- * The JS client fetches the JSON asynchronously after page load.
- *
- * @param {Array<Object>} schools
- */
-async function writeSearchDataFile(schools) {
-  const searchData = prepareSchoolDataForSearch(schools);
-  const jsonContent = JSON.stringify(searchData);
-  const outputPath = path.join(distDir, 'schools.json');
-  await safeWriteFile(outputPath, jsonContent);
-
-  // Pre-compress schools.json.gz for servers with gzip_static support.
-  // This enables ~86% transfer size reduction without per-request compression overhead.
-  // Uses level 6 (vs 9) for ~3x faster compression at <2% size penalty — the gzip
-  // is served statically by nginx, so decompression speed is irrelevant at the edge.
-  const gzipped = await gzipAsync(jsonContent, { level: 6 });
-  const gzipPath = path.join(distDir, 'schools.json.gz');
-  await safeWriteFile(gzipPath, gzipped);
-
-  logger.info(
-    `Generated schools.json (${(Buffer.byteLength(jsonContent, 'utf-8') / 1024).toFixed(0)} KB)` +
-      `, gzip: ${(gzipped.length / 1024).toFixed(0)} KB`
-  );
 }
 
 /**
@@ -301,21 +248,6 @@ async function generateProvincePages(schools) {
 
   logger.info(`Generated ${successful} province pages (${failed} failed)`);
   return { successful, failed };
-}
-
-/**
- * Export schools CSV to dist directory for user download.
- */
-async function exportSchoolsCsv() {
-  const csvPath = CONFIG.SCHOOLS_CSV_PATH;
-  const distDataDir = path.join(distDir, 'data');
-  await safeMkdir(distDataDir);
-  const csvContent = await safeReadFile(csvPath);
-  const outputPath = path.join(distDataDir, 'schools.csv');
-  await safeWriteFile(outputPath, csvContent);
-  logger.info(
-    `Exported schools data (${(Buffer.byteLength(csvContent, 'utf-8') / 1024 / 1024).toFixed(1)} MB)`
-  );
 }
 
 /**

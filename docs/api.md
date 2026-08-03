@@ -2151,7 +2151,12 @@ const searchData = prepareSchoolDataForSearch(schools);
 
 ### Purpose
 
-Build pipeline orchestration service that encapsulates the static site generation pipeline — data loading, page generation, file output, manifest tracking, performance reporting, and shared resource generation (homepage, province pages, search data). Controllers (`scripts/build-pages.js`) delegate to this service rather than implementing pipeline logic directly.
+Build pipeline orchestration service that encapsulates the static site generation pipeline — data loading, page generation, file output, manifest tracking, performance reporting, and shared resource generation (homepage, province pages). Controllers (`scripts/build-pages.js`) delegate to this service rather than implementing pipeline logic directly.
+
+Specialized output concerns are delegated to focused service modules (see [Search Data Service](#search-data-service-srcservicessearchdataservicejs) and [Export Service](#export-service-srcservicesexportservicejs)):
+
+- `writeSearchDataFile()` → owned by `SearchDataService.js`, re-exported here for backward compatibility
+- `exportSchoolsCsv()`, `writeExternalStylesFile()` → owned by `ExportService.js`, re-exported here for backward compatibility
 
 ### Exports
 
@@ -2173,6 +2178,7 @@ module.exports = {
   generateProvincePages: function,
   generateRobotsTxt: function,
   generateExternalStyles: function,
+  // Re-exported from SearchDataService / ExportService (see sections below)
   writeExternalStylesFile: function,
   writeSearchDataFile: function,
   exportSchoolsCsv: function,
@@ -2423,6 +2429,8 @@ await generateExternalStyles();
 
 Generates `schools.json` for lazy-loaded client-side search and a pre-compressed `schools.json.gz` (gzip level 6, ~86% transfer reduction).
 
+**Ownership:** Implemented in `SearchDataService.js`; re-exported by BuildOrchestrator for backward compatibility (imports from `scripts/build-pages.js` and tests continue to resolve).
+
 **Parameters:**
 
 - `schools` (Array<Object>): School records
@@ -2447,6 +2455,8 @@ await writeSearchDataFile(schools);
 #### `exportSchoolsCsv()`
 
 Exports `schools.csv` to `dist/data/schools.csv` for user download. Only runs during full builds.
+
+**Ownership:** Implemented in `ExportService.js`; re-exported by BuildOrchestrator for backward compatibility.
 
 **Returns:** `Promise<void>`
 
@@ -2505,6 +2515,106 @@ Stops the performance tracker, logs the report, and optionally writes a GitHub A
 **Returns:** `void`
 
 **Usage:** Internal — called by `build()` in a `finally` block.
+
+---
+
+## Search Data Service (`src/services/SearchDataService.js`)
+
+### Purpose
+
+Service-layer module owning search-data artifact generation for the static site build. Extracted from BuildOrchestrator (ADR-0005 layer separation) so changes to the search-data format or compression policy stay isolated from the orchestration flow.
+
+### Exports
+
+```javascript
+module.exports = {
+  writeSearchDataFile: function,
+};
+```
+
+### Functions
+
+#### `writeSearchDataFile(schools)`
+
+Generates `schools.json` for lazy-loaded client-side search and a pre-compressed `schools.json.gz` (gzip level 6, ~86% transfer reduction).
+
+**Parameters:**
+
+- `schools` (Array<Object>): School records
+
+**Returns:** `Promise<void>`
+
+**Dependencies:**
+
+- `prepareSchoolDataForSearch` (from `./PageBuilder.js`)
+- `safeWriteFile` (from `scripts/fs-safe.js`)
+
+**Output:** `dist/schools.json`, `dist/schools.json.gz`
+
+**Usage:**
+
+```javascript
+const { writeSearchDataFile } = require('./SearchDataService');
+await writeSearchDataFile(schools);
+```
+
+---
+
+## Export Service (`src/services/ExportService.js`)
+
+### Purpose
+
+Service-layer module owning static artifact exports for the build: the external stylesheet (`styles.css`) and the school data CSV copy into the distributable output. Extracted from BuildOrchestrator (ADR-0005 layer separation) so artifact export concerns stay isolated from the orchestration flow.
+
+### Exports
+
+```javascript
+module.exports = {
+  writeExternalStylesFile: function,
+  exportSchoolsCsv: function,
+};
+```
+
+### Functions
+
+#### `writeExternalStylesFile(targetDir)`
+
+Writes the external `styles.css` file to disk. CSS generation (pure presentation) lives in `src/presenters/styles.js`; file I/O lives here.
+
+**Parameters:**
+
+- `targetDir` (string): Path to the dist directory
+
+**Returns:** `Promise<string>` — Path to the written `styles.css` file
+
+**Dependencies:**
+
+- `generateSchoolPageStyles` (from `src/presenters/styles.js`)
+- `safeMkdir`, `safeWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+const { writeExternalStylesFile } = require('./ExportService');
+const stylesPath = await writeExternalStylesFile(CONFIG.DIST_DIR);
+```
+
+#### `exportSchoolsCsv()`
+
+Exports `schools.csv` to `dist/data/schools.csv` for user download. Only runs during full builds.
+
+**Returns:** `Promise<void>`
+
+**Dependencies:**
+
+- `safeReadFile`, `safeWriteFile`, `safeMkdir` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+const { exportSchoolsCsv } = require('./ExportService');
+await exportSchoolsCsv();
+```
 
 ---
 

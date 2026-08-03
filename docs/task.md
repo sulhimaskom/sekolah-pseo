@@ -2,6 +2,87 @@
 
 ## Completed Tasks
 
+### [TASK-069] Module Extraction — Decompose BuildOrchestrator into SearchDataService + ExportService
+
+**Status**: Complete
+**Agent**: Code Architect (Sisyphus)
+
+### Description
+
+Decomposed the 556-line `src/services/BuildOrchestrator.js` (SRP violation — 10+ distinct concerns, 21 exports) into focused service modules per the documented ADR-0005 layer separation pattern (controller → service → presentation). Specialized output concerns now live in dedicated modules; the orchestrator keeps only orchestration flow and delegates. This resolves the backlog item "[REFACTOR] Module Growing Complexity — BuildOrchestrator.js at 551 Lines with Multiple Responsibilities".
+
+### Changes Made
+
+**1. Created `src/services/SearchDataService.js`** (new module):
+
+- Owns `writeSearchDataFile()` — search payload serialization (`prepareSchoolDataForSearch` → `schools.json`) + gzip pre-compression (`schools.json.gz`, level 6)
+- Verbatim move of the function body from BuildOrchestrator (behavior, log messages, and comments unchanged)
+- Module-level requires: `path`, `zlib`, `promisify`, `prepareSchoolDataForSearch` (PageBuilder), `logger`, `CONFIG`, `safeWriteFile`
+
+**2. Created `src/services/ExportService.js`** (new module):
+
+- Owns `exportSchoolsCsv()` — copies `data/schools.csv` → `dist/data/schools.csv`
+- Owns `writeExternalStylesFile()` — writes `styles.css` to target dir
+- Both are verbatim moves; the previously lazy `require('../presenters/styles')` inside `writeExternalStylesFile` is hoisted to module level
+- Module-level requires: `path`, `generateSchoolPageStyles` (presenters/styles), `logger`, `CONFIG`, `safeMkdir`/`safeWriteFile`/`safeReadFile`
+
+**3. Slimmed `src/services/BuildOrchestrator.js`** (556 → 482 lines):
+
+- Imports the 3 moved functions from the new services and **re-exports them under identical names** — the 21-export public interface is fully preserved, so `scripts/build-pages.js` (which re-exports 15 functions) and all test imports keep resolving
+- Removed now-dead imports: `zlib`, `promisify`, `gzipAsync`, `prepareSchoolDataForSearch`, `safeMkdir`
+- `generateExternalStyles()` retained in the orchestrator as a thin flow wrapper delegating to `writeExternalStylesFile(distDir)`
+- No behavior, log message, error, or export changes — pure structural extraction
+
+### Architectural Rationale
+
+| Concern                                                         | Before                                                           | After                                                        |
+| --------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| Search data format/compression policy                           | `BuildOrchestrator.writeSearchDataFile`                          | `SearchDataService.writeSearchDataFile`                      |
+| CSV export / stylesheet artifact writes                         | `BuildOrchestrator.exportSchoolsCsv` / `writeExternalStylesFile` | `ExportService.exportSchoolsCsv` / `writeExternalStylesFile` |
+| Orchestration flow (build, incremental, env prep, page writing) | `BuildOrchestrator`                                              | `BuildOrchestrator` (unchanged)                              |
+
+Changes to search-data format or export layout no longer require touching the orchestration module. No circular dependencies introduced (`styles.js` imports only `design-system`; new services import only PageBuilder/presenters/scripts).
+
+### Verification
+
+| Check            | Result                                 |
+| ---------------- | -------------------------------------- |
+| JS Tests         | 1036/1036 pass (0 failures, 4 skipped) |
+| ESLint           | 0 errors on all files                  |
+| Prettier         | 3 changed files formatted cleanly      |
+| Build            | 0 failed, all performance budgets met  |
+| Zero regressions | Confirmed                              |
+
+> **Note**: 49 pre-existing prettier warnings remain in `docs/issues/2026-07-30` → `2026-08-02` files (recurring main-merge drift, tracked finding F005). They predate this change (50 warnings existed before) and are out of scope for this task.
+
+### Files Modified
+
+- `src/services/SearchDataService.js` — NEW: `writeSearchDataFile()` (search data + gzip)
+- `src/services/ExportService.js` — NEW: `exportSchoolsCsv()`, `writeExternalStylesFile()`
+- `src/services/BuildOrchestrator.js` — Removed 3 function bodies, added 2 service imports, removed 5 dead imports, re-exported moved functions
+- `docs/api.md` — Added SearchDataService + ExportService API contracts, updated BuildOrchestrator section
+- `docs/blueprint.md` — Updated project structure + Decisions Log entry
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] `writeSearchDataFile()` moved to `SearchDataService.js` (verbatim, behavior unchanged)
+- [x] `exportSchoolsCsv()` + `writeExternalStylesFile()` moved to `ExportService.js` (verbatim)
+- [x] Lazy `require('../presenters/styles')` hoisted to module level in ExportService
+- [x] BuildOrchestrator public interface unchanged — all 21 exports re-exported, same names/order
+- [x] Dead imports removed from BuildOrchestrator (zlib, promisify, gzipAsync, prepareSchoolDataForSearch, safeMkdir)
+- [x] `scripts/build-pages.js` re-export chain intact (no changes needed)
+- [x] No circular dependencies introduced
+- [x] All 1036 JS tests pass (0 failures)
+- [x] ESLint passes (0 errors)
+- [x] Prettier clean on all changed files
+- [x] Build succeeds (0 failed, budgets met)
+- [x] Zero regressions introduced
+- [x] Documentation updated (blueprint.md, api.md, task.md)
+- [x] Backlog item "[REFACTOR] Module Growing Complexity" resolved
+
+---
+
 ### [TASK-068] Performance Optimization — CSS Memoization, Manifest Fast Write, Parallelized Finalization
 
 **Status**: Complete
@@ -9704,12 +9785,14 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 
 ### [REFACTOR] Module Growing Complexity — BuildOrchestrator.js at 551 Lines with Multiple Responsibilities
 
+**Status**: ✅ Resolved in TASK-069 (Module Extraction)
+
 - **Location**: `src/services/BuildOrchestrator.js` (551 lines)
 - **Issue**: The orchestrator module has grown to handle too many distinct concerns: directory preparation, school page writing/coordination, province page generation, external styles generation, search data file writing, robots.txt generation, CSV export, manifest loading/saving, build performance tracking, enrichment loading, and incremental build logic. The `build()` function alone orchestrates 5+ asynchronous phases (lines 464-515). With 20 exported functions, the module violates the Single Responsibility Principle — changes to any specific concern (e.g., CSV export format, search data structure) require modifying this single large file.
 - **Suggestion**: Decompose into focused sub-modules under `src/services/`:
-  1. `src/services/SearchDataService.js` — `writeSearchDataFile()` (search data + gzip)
-  2. `src/services/ExportService.js` — `exportSchoolsCsv()`, potentially `writeExternalStylesFile()`
-  3. Keep orchestration flow in `BuildOrchestrator.js` but delegate specialized operations
+  1. `src/services/SearchDataService.js` — `writeSearchDataFile()` (search data + gzip) ✅ done
+  2. `src/services/ExportService.js` — `exportSchoolsCsv()`, potentially `writeExternalStylesFile()` ✅ done (both)
+  3. Keep orchestration flow in `BuildOrchestrator.js` but delegate specialized operations ✅ done — 556 → 482 lines
      This follows the existing ADR-0005 layer separation pattern (controller → service → presentation).
 - **Priority**: Medium
 - **Effort**: Medium
