@@ -36,6 +36,7 @@ const {
   saveManifest,
   getChangedSchools,
   computeSchoolHash,
+  MANIFEST_VERSION,
 } = require('../../scripts/manifest');
 const { BuildPerformanceTracker } = require('../../scripts/build-performance');
 const { loadEnrichmentData } = require('../../scripts/enrichment');
@@ -181,7 +182,7 @@ async function preCreateProvinceDirectories(schools, provinces) {
 function createManifestFromSchools(schools) {
   const nowISO = new Date().toISOString();
   const manifest = {
-    version: 1,
+    version: MANIFEST_VERSION,
     lastBuild: nowISO,
     schools: {},
   };

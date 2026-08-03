@@ -4,7 +4,7 @@
  * Tracks built files with content hashes for incremental build support.
  * Manifest format:
  * {
- *   version: 1,
+ *   version: 2,
  *   lastBuild: "ISO timestamp",
  *   schools: {
  *     "npsn": {
@@ -26,7 +26,12 @@ const { safeReadFile, safeAccess, safeUnlink, fastWriteFile } = require('./fs-sa
 const { IntegrationError, ERROR_CODES } = require('./resilience');
 
 const MANIFEST_FILE = '.build-manifest.json';
-const MANIFEST_VERSION = 1;
+
+// Bumped to 2 in TASK-073: computeSchoolHash switched from filter(Boolean).join('|')
+// to length-prefixed field serialization, so hashes from version-1 manifests are
+// no longer comparable. The version gate in loadManifest() discards stale manifests,
+// forcing one full rebuild after upgrade (safe, non-destructive, reversible).
+const MANIFEST_VERSION = 2;
 
 // Export functions for testing
 module.exports = {
@@ -37,6 +42,7 @@ module.exports = {
   getUnchangedSchools,
   clearManifest,
   MANIFEST_FILE,
+  MANIFEST_VERSION,
 };
 
 /**
@@ -102,6 +108,13 @@ async function saveManifest(manifest) {
  * Compute a hash for a school record based on its content.
  * Only uses fields that affect the generated page content.
  *
+ * Fields are serialized with a length prefix ("<len>:<value>") joined by "|",
+ * making every field boundary unambiguous even when a field is empty or contains
+ * the delimiter. The previous filter(Boolean).join('|') produced identical hash
+ * input for different records — e.g. {nama:'A', alamat:'B'} and {nama:'A',
+ * kecamatan:'B'} both serialized to 'A|B' — which could silently skip rebuilding
+ * a changed page and serve stale content.
+ *
  * @param {Object} school - School record
  * @returns {string} MD5 hash of relevant fields
  */
@@ -120,7 +133,10 @@ function computeSchoolHash(school) {
     school.kab_kota,
     school.provinsi,
   ]
-    .filter(Boolean)
+    .map(field => {
+      const value = String(field ?? '');
+      return `${value.length}:${value}`;
+    })
     .join('|');
 
   return crypto.createHash('md5').update(relevantFields).digest('hex');

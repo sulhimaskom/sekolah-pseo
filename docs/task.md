@@ -2,6 +2,71 @@
 
 ## Completed Tasks
 
+### [TASK-073] Data Architecture — Unambiguous School Content Hash for Incremental Builds (REFACTOR-002)
+
+**Status**: Complete
+**Agent**: Principal Data Architect (Sisyphus)
+
+### Description
+
+Fixed a data-integrity defect in `computeSchoolHash()` (`scripts/manifest.js`) — the hash that drives incremental-build correctness. The old serialization, `filter(Boolean).join('|')`, produced **identical hash input for different school records**:
+
+1. **Empty-string ambiguity**: `filter(Boolean)` silently dropped empty fields, so `{nama:'A', alamat:'B'}` and `{nama:'A', kecamatan:'B'}` (with the other field empty) both serialized to `'A|B'` — a record replacement with a shifted field could be misclassified as "unchanged".
+2. **Delimiter collision**: a `|` inside a field value collided with the join delimiter — `{nama:'X', alamat:'Y'}` and `{nama:'X|Y'}` (empty `alamat`) both serialized to `'X|Y'`.
+
+Both cases could cause the incremental build to **silently skip rebuilding a changed page**, serving stale content — the worst failure mode for data integrity in a static-site pipeline.
+
+### Changes Made
+
+**1. Length-prefixed serialization** (`scripts/manifest.js`):
+
+- Each field is serialized as `"<len>:<value>"` joined by `|` — every field boundary is unambiguous regardless of empty values or delimiter content.
+- Missing fields (`undefined`/`null`) are normalized to `''` and hash identically to empty strings, preserving the old semantics (missing optional field renders the same page content as an empty string).
+
+**2. Manifest version bump 1 → 2 + SSOT fix** (`scripts/manifest.js`, `src/services/BuildOrchestrator.js`):
+
+- `MANIFEST_VERSION` bumped to `2` — old version-1 hashes were computed with a different serialization and are no longer comparable. The existing version gate in `loadManifest()` discards stale manifests, forcing **one full rebuild after upgrade** (safe, non-destructive, reversible; no data loss — pages regenerate from current CSV).
+- `MANIFEST_VERSION` now exported from `manifest.js` and reused in `createManifestFromSchools()` (`BuildOrchestrator.js`), removing the hardcoded `version: 1` duplicate (Single Source of Truth).
+
+**3. Regression tests** (`scripts/manifest.test.js`, +3 tests):
+
+- `computes distinct hashes when empty-string positions differ`
+- `computes distinct hashes when fields containing the delimiter`
+- `treats missing fields as empty strings`
+
+**4. Test fixtures updated** (`scripts/manifest.test.js`, `scripts/build-pages.test.js`): version-literal fixtures/assertions replaced with the exported `MANIFEST_VERSION` constant.
+
+### Verification
+
+| Check           | Result                                                    |
+| --------------- | --------------------------------------------------------- |
+| ESLint          | 0 errors (full repo)                                      |
+| Prettier        | All changed files formatted                               |
+| JS Tests        | 1044/1044 pass (1041 baseline + 3 new), 0 fail, 4 skipped |
+| Build           | 0 failed pages                                            |
+| Incremental     | 0 pages rebuilt on stable data (hash determinism)         |
+| Collision check | Empty-position and `                                      | `-content scenarios produce distinct hashes |
+
+### Files Modified
+
+- `scripts/manifest.js` — length-prefixed `computeSchoolHash` serialization; `MANIFEST_VERSION = 2` (exported); header doc updated
+- `src/services/BuildOrchestrator.js` — `createManifestFromSchools` uses `MANIFEST_VERSION` (removes hardcoded `version: 1`)
+- `scripts/manifest.test.js` — 3 new regression tests; version fixtures use `MANIFEST_VERSION`
+- `scripts/build-pages.test.js` — version assertions use `MANIFEST_VERSION`
+- `docs/api.md` — `computeSchoolHash` docs (corrected hash-field list: `kelurahan`/`lat`/`lon` were wrongly listed as hashed), `MANIFEST_VERSION` export, saveManifest example
+- `docs/blueprint.md` — decisions log entry
+- `docs/task.md` — This entry; backlog REFACTOR-002 marked Complete
+
+### Acceptance Criteria
+
+- [x] Different records can no longer produce identical hash input (empty-position + delimiter cases covered by tests)
+- [x] Missing optional fields hash identically to empty strings (rendered-output equivalence preserved)
+- [x] `MANIFEST_VERSION` exported and reused by `createManifestFromSchools` (no duplicated literal)
+- [x] Version gate invalidates old-format manifests → one-time full rebuild, then incremental builds stable (0 rebuilds on unchanged data)
+- [x] Zero regressions (lint, prettier, 1044 JS tests, build)
+
+---
+
 ### [TASK-078] Code Review — Simplify `validateLinksInFile()` Nested try/catch (REFACTOR-011)
 
 **Status**: Complete
@@ -5655,7 +5720,7 @@ Alternatively, extract the shared path computation into a private helper like `_
 
 ### [REFACTOR-002] `computeSchoolHash()` uses fragile delimiter-based field joining
 
-**Status**: Backlog
+**Status**: Complete (TASK-073)
 **Priority**: Low
 **Effort**: Small
 

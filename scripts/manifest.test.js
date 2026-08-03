@@ -131,6 +131,101 @@ test('computeSchoolHash handles missing optional fields', () => {
   assert.strictEqual(hash.length, 32);
 });
 
+test('computeSchoolHash distinguishes empty-string positions', () => {
+  const { computeSchoolHash } = require('./manifest');
+
+  // Different fields empty but identical non-empty values: the old
+  // filter(Boolean).join('|') serialized both records as the same string.
+  const school1 = {
+    npsn: '12345678',
+    nama: 'SMA Negeri 1',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    alamat: 'Jl. Test No. 1',
+    kecamatan: '',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+  };
+  const school2 = {
+    npsn: '12345678',
+    nama: 'SMA Negeri 1',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    alamat: '',
+    kecamatan: 'Jl. Test No. 1',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+  };
+
+  const hash1 = computeSchoolHash(school1);
+  const hash2 = computeSchoolHash(school2);
+
+  assert.notStrictEqual(hash1, hash2);
+});
+
+test('computeSchoolHash distinguishes fields containing the delimiter', () => {
+  const { computeSchoolHash } = require('./manifest');
+
+  // A '|' inside a field collided with the join delimiter under the old
+  // serialization: {nama:'X', alamat:'Y'} and {nama:'X|Y'} both became 'X|Y'.
+  const school1 = {
+    npsn: '12345678',
+    nama: 'X',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    alamat: 'Y',
+    kecamatan: 'Test District',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+  };
+  const school2 = {
+    npsn: '12345678',
+    nama: 'X|Y',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    alamat: '',
+    kecamatan: 'Test District',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+  };
+
+  const hash1 = computeSchoolHash(school1);
+  const hash2 = computeSchoolHash(school2);
+
+  assert.notStrictEqual(hash1, hash2);
+});
+
+test('computeSchoolHash treats missing fields as empty strings', () => {
+  const { computeSchoolHash } = require('./manifest');
+
+  // A field that is absent and a field that is an empty string render the
+  // same page content, so they must hash identically.
+  const school1 = {
+    npsn: '12345678',
+    nama: 'SMA Negeri 1',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    alamat: '',
+    kecamatan: 'Test District',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+  };
+  const school2 = {
+    npsn: '12345678',
+    nama: 'SMA Negeri 1',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    kecamatan: 'Test District',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+  };
+
+  const hash1 = computeSchoolHash(school1);
+  const hash2 = computeSchoolHash(school2);
+
+  assert.strictEqual(hash1, hash2);
+});
+
 test('getChangedSchools returns all schools when no manifest exists', () => {
   const { getChangedSchools } = require('./manifest');
 
@@ -349,7 +444,7 @@ test('loadManifest returns null when manifest version mismatches', async () => {
 });
 
 test('saveManifest and loadManifest work correctly', async () => {
-  const { saveManifest, loadManifest } = require('./manifest');
+  const { saveManifest, loadManifest, MANIFEST_VERSION } = require('./manifest');
 
   const testDir = process.env.TEST_TEMP_DIR;
   const originalRoot = CONFIG.ROOT_DIR;
@@ -357,7 +452,7 @@ test('saveManifest and loadManifest work correctly', async () => {
 
   try {
     const testManifest = {
-      version: 1,
+      version: MANIFEST_VERSION,
       lastBuild: new Date().toISOString(),
       schools: {
         12345: {
@@ -372,7 +467,7 @@ test('saveManifest and loadManifest work correctly', async () => {
     const loaded = await loadManifest();
 
     assert.ok(loaded, 'manifest should be loaded');
-    assert.strictEqual(loaded.version, 1);
+    assert.strictEqual(loaded.version, MANIFEST_VERSION);
     assert.ok(loaded.schools['12345']);
     assert.strictEqual(loaded.schools['12345'].hash, 'abc123');
   } finally {
@@ -381,7 +476,7 @@ test('saveManifest and loadManifest work correctly', async () => {
 });
 
 test('clearManifest removes manifest file', async () => {
-  const { saveManifest, loadManifest, clearManifest } = require('./manifest');
+  const { saveManifest, loadManifest, clearManifest, MANIFEST_VERSION } = require('./manifest');
 
   const testDir = process.env.TEST_TEMP_DIR;
   const originalRoot = CONFIG.ROOT_DIR;
@@ -390,7 +485,7 @@ test('clearManifest removes manifest file', async () => {
   try {
     // First create a manifest
     const testManifest = {
-      version: 1,
+      version: MANIFEST_VERSION,
       lastBuild: new Date().toISOString(),
       schools: {},
     };

@@ -3524,7 +3524,7 @@ const { successful, failed } = await writeSchoolPagesConcurrently(schools, 100, 
 
 #### `computeSchoolHash(school)`
 
-Computes a deterministic hash for a school record to detect changes for incremental builds.
+Computes a deterministic hash for a school record to detect changes for incremental builds. Fields are serialized with length prefixes (`"<len>:<value>"` joined by `|`) so empty fields and delimiter-containing values cannot produce ambiguous hash input. See the manifest module docs for the full field list.
 
 **Parameters:**
 
@@ -4688,7 +4688,8 @@ module.exports = {
   getChangedSchools: function,
   getUnchangedSchools: function,
   clearManifest: function,
-  MANIFEST_FILE: string
+  MANIFEST_FILE: string,
+  MANIFEST_VERSION: number
 };
 ```
 
@@ -4749,7 +4750,7 @@ Saves the build manifest to disk.
 
 ```javascript
 const manifest = {
-  version: 1,
+  version: MANIFEST_VERSION,
   lastBuild: new Date().toISOString(),
   schools: {},
 };
@@ -4771,7 +4772,13 @@ Computes a hash for a school record based on its content.
 **Hash Fields:**
 
 - `npsn`, `nama`, `bentuk_pendidikan`, `status`, `alamat`
-- `kelurahan`, `kecamatan`, `kab_kota`, `provinsi`, `lat`, `lon`
+- `kecamatan`, `kab_kota`, `provinsi`
+
+**Excluded Fields** (do not affect generated page content): `kelurahan`, `lat`, `lon`
+
+**Serialization:**
+
+Fields are serialized with a byte-length prefix (`"<len>:<value>"`) joined by `|`, so field boundaries are unambiguous even when a field is empty or contains the `|` delimiter. The previous `filter(Boolean).join('|')` could produce identical hash input for different records (e.g. `{nama:'A', alamat:'B'}` and `{nama:'A', kecamatan:'B'}` both serialized to `'A|B'`), which could silently skip rebuilding a changed page. Missing fields hash identically to empty strings (same rendered output).
 
 **Usage:**
 
