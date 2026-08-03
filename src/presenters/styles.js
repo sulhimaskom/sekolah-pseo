@@ -25,6 +25,8 @@ html {
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
+  /* Native form controls (select dropdowns, scrollbars, autofill) follow the OS scheme */
+  color-scheme: light dark;
 }
 
 body {
@@ -964,6 +966,8 @@ footer[role="contentinfo"] {
 .autocomplete-item:hover,
 .autocomplete-item-active {
   background-color: var(--color-bg-secondary);
+  /* Inset accent so the active option isn't indicated by color alone */
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .autocomplete-item-name {
@@ -1098,11 +1102,6 @@ footer[role="contentinfo"] {
   color: var(--color-text-secondary);
 }
 
-/* Search Active State */
-.search-section.search-active .province-list {
-  opacity: 0.5;
-}
-
 /* Responsive Search Styles */
 @media (max-width: ${DESIGN_TOKENS.breakpoints.sm}) {
   .search-container {
@@ -1168,6 +1167,28 @@ footer[role="contentinfo"] {
     background-color: var(--color-dark-bg-accent);
     border-color: var(--color-dark-border);
     color: var(--color-dark-text-secondary);
+  }
+
+  .search-autocomplete {
+    background-color: var(--color-dark-bg-primary);
+    border-color: var(--color-dark-border);
+  }
+
+  .autocomplete-item {
+    border-bottom-color: var(--color-dark-border);
+  }
+
+  .autocomplete-item:hover,
+  .autocomplete-item-active {
+    background-color: var(--color-dark-bg-secondary);
+  }
+
+  .autocomplete-item-name {
+    color: var(--color-dark-text-primary);
+  }
+
+  .autocomplete-item-meta {
+    color: var(--color-dark-text-light);
   }
 }
 

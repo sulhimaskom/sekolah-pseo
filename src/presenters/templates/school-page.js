@@ -135,11 +135,11 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
             <dd>
               <span id="npsn-value">${escapeHtml(school.npsn)}</span>
               <button class="btn-copy" aria-label="${T.COPY_NPSN}" data-copy-target="npsn-value">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
-                <span class="copy-feedback">${T.COPIED}</span>
+                <span class="copy-feedback" role="status" aria-atomic="true">${T.COPIED}</span>
               </button>
             </dd>
             
@@ -180,18 +180,61 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
       ${BACK_TO_TOP_SCRIPT_BODY}
 
       // Copy to clipboard functionality
+      // Fallback (textarea + execCommand) keeps the button working over plain HTTP.
+      function copyTextToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function(resolve, reject) {
+          var textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'absolute';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            var ok = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            if (ok) {
+              resolve();
+            } else {
+              reject(new Error('execCommand copy returned false'));
+            }
+          } catch (err) {
+            document.body.removeChild(textarea);
+            reject(err);
+          }
+        });
+      }
+
       var copyButtons = document.querySelectorAll('.btn-copy');
       copyButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {
           var targetId = btn.getAttribute('data-copy-target');
           var textToCopy = document.getElementById(targetId).textContent;
+          var feedback = btn.querySelector('.copy-feedback');
+          var defaultText = feedback ? feedback.textContent : 'Tersalin!';
 
-          navigator.clipboard.writeText(textToCopy).then(function() {
-            btn.classList.add('show');
+          copyTextToClipboard(textToCopy).then(function() {
+            if (feedback) {
+              feedback.textContent = defaultText;
+              btn.classList.add('show');
+            }
             setTimeout(function() {
               btn.classList.remove('show');
+              // Empty the role="status" region so the next copy re-announces
+              if (feedback) feedback.textContent = '';
             }, 2000);
           }).catch(function(err) {
+            if (feedback) {
+              feedback.textContent = 'Gagal menyalin';
+              btn.classList.add('show');
+              setTimeout(function() {
+                btn.classList.remove('show');
+                feedback.textContent = '';
+              }, 2000);
+            }
             console.error('Gagal menyalin teks: ', err);
           });
         });

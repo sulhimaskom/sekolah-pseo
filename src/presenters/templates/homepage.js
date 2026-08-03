@@ -230,6 +230,7 @@ function generateHomepageHtml(schools) {
             placeholder="Cari sekolah... (Tekan / untuk fokus)"
             aria-label="${escapeHtml(CONFIG.TEXT.SEARCH_ARIA_LABEL)}"
             aria-describedby="search-hint"
+            aria-busy="true"
             role="combobox"
             aria-expanded="false"
             aria-controls="search-autocomplete"
@@ -348,12 +349,14 @@ function generateHomepageHtml(schools) {
           });
         }
         searchLoaded = true;
+        if (searchInput) searchInput.setAttribute('aria-busy', 'false');
         // Re-run search if input already has value
         if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value || statusFilter.value)) {
           handleSearch();
         }
       }).catch(function() {
         // Search will remain disabled
+        if (searchInput) searchInput.setAttribute('aria-busy', 'false');
       });
       
       // DOM Elements
@@ -677,8 +680,8 @@ function generateHomepageHtml(schools) {
       
       // Keyboard shortcuts
       document.addEventListener('keydown', function(e) {
-        // "/" to focus search
-        if (e.key === '/' && document.activeElement !== searchInput) {
+        // "/" to focus search — don't hijack when a form control is focused
+        if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
           e.preventDefault();
           searchInput.focus();
         }
@@ -719,11 +722,6 @@ function generateHomepageHtml(schools) {
           isSearching = false;
           handleSearch();
         }
-      });
-      
-      // Show search section when user starts typing (accessibility)
-      searchInput.addEventListener('focus', function() {
-        document.querySelector('.search-section').classList.add('search-active');
       });
     })();
   </script>
