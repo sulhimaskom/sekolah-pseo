@@ -501,13 +501,18 @@ async function build(options = {}) {
       tracker.recordPageCounts(successful + failed, failed);
     }
 
-    // Save manifest for future incremental builds
-    await saveManifest(createManifestFromSchools(schools));
-    logger.info('Build manifest saved');
+    // Save manifest and (for full builds) export CSV in parallel.
+    // These are independent I/O operations — manifest writes to dist/.build-manifest.json,
+    // CSV export copies to dist/data/schools.csv. Running them concurrently
+    // reduces critical-path wall time.
+    const manifestPromise = saveManifest(createManifestFromSchools(schools));
 
-    // Full build also exports CSV; incremental does not re-export
     if (!incremental) {
-      await exportSchoolsCsv();
+      await Promise.all([manifestPromise, exportSchoolsCsv()]);
+      logger.info('Build manifest saved');
+    } else {
+      await manifestPromise;
+      logger.info('Build manifest saved');
     }
   } finally {
     finalizeBuild(tracker);

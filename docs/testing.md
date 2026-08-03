@@ -69,6 +69,8 @@ Located in `scripts/*.test.js`:
 - `navigation.test.js` - Breadcrumb navigation component tests
 - `footer.test.js` - Footer component tests
 - `back-to-top.test.js` - Back-to-top button component tests
+- `build-orchestrator.test.js` - Build pipeline orchestration tests
+- `etl-run.test.js` - ETL end-to-end run tests
 
 ### Python Tests
 
@@ -204,9 +206,9 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 29 test files, 963 test cases
+- JavaScript: 31 test files, 1030 test cases
 - Python: 27 test cases (standalone runner)
-- Total: 990 tests, 100% pass rate
+- Total: 1057 tests, 100% pass rate
 
 ## Test Output Examples
 

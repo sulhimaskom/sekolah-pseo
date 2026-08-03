@@ -2,8 +2,17 @@
 
 const { getCssVariables, DESIGN_TOKENS } = require('./design-system');
 
+// Memoized CSS string — the CSS is static (design tokens never change at runtime),
+// so we compute it once and cache it. This eliminates the template literal
+// evaluation and string allocation on every build call.
+let _cachedCss = null;
+
 function generateSchoolPageStyles() {
-  return `${getCssVariables()}
+  if (_cachedCss !== null) {
+    return _cachedCss;
+  }
+
+  const css = `${getCssVariables()}
 
 * {
   box-sizing: border-box;
@@ -1256,6 +1265,9 @@ footer[role="contentinfo"] {
   outline-offset: 2px;
 }
 `;
+
+  _cachedCss = css;
+  return css;
 }
 
 module.exports = {
