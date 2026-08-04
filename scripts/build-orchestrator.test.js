@@ -6,13 +6,20 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
 
+// F014 fix: node --test runs test files in parallel child processes;
+// build-pages.test.js removes CONFIG.DIST_DIR in its before-hook, racing with
+// the prepareBuildEnvironment smoke tests below (observed mkdir dist/ ENOENT,
+// 3 of 4 paired runs failed). Redirect DIST_DIR per-process BEFORE requiring
+// BuildOrchestrator — it captures CONFIG.DIST_DIR at module load.
+const CONFIG = require('./config');
+CONFIG.DIST_DIR = path.join(os.tmpdir(), `build-orchestrator-test-${process.pid}`);
+
 const {
   preCreateDirectories,
   finalizeBuild,
   prepareBuildEnvironment,
 } = require('../src/services/BuildOrchestrator');
 const { resetCircuitBreakers } = require('./fs-safe');
-const CONFIG = require('./config');
 
 // ── Setup / Teardown ─────────────────────────────────────────────────────────
 
