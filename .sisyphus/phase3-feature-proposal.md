@@ -1,99 +1,102 @@
-# Phase 3 — Strategic Expansion: Search Autocomplete
+# Phase 3 — Strategic Expansion: School Comparison Tool (FEAT-005)
 
-**Date**: 2026-05-30  
-**Source Gap**: docs/roadmap.md → FEAT-002 "Search Functionality → Real-time search with autocomplete"
+**Date**: 2026-08-04 (updated — supersedes 2026-05-30 autocomplete proposal, which
+was delivered as FEAT-002 in commit `46e2b0b` on 2026-06-08)
+**Source Gap**: docs/roadmap.md:50-53 → FEAT-005 "Comparison Tool" (deferred)
 
 ---
 
 ## User Story
 
-As a parent searching for schools,
-I want to see autocomplete suggestions as I type in the search box,
-So that I can quickly find my target school without typing the full name or navigating results manually.
+As a parent evaluating multiple school options,
+I want to compare up to 3 schools side-by-side,
+So that I can make an informed enrollment decision without juggling multiple tabs.
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] As the user types in the search box, a dropdown list of matching school suggestions appears within 300ms
-- [ ] Suggestions are filtered by the currently selected province and type filters
-- [ ] Each suggestion shows: school name, type (SD/SMP/SMA/etc.), and location (kab_kota)
-- [ ] The user can navigate suggestions with keyboard (arrow keys, Enter, Escape)
-- [ ] Clicking or pressing Enter on a suggestion navigates to the school's page
-- [ ] No external dependencies — uses the already-embedded `#school-data` JSON
-- [ ] Works on mobile (touch-friendly, properly sized)
-- [ ] Falls back to current search behavior if JavaScript fails
-- [ ] Accessible: ARIA attributes for screen readers (combobox pattern)
+- [ ] A "Bandingkan" (Compare) action is available on each school page, adding the school to a comparison tray (max 3)
+- [ ] A comparison page/view renders selected schools side-by-side in a table
+- [ ] Compared metrics: NPSN, status (Negeri/Swasta), bentuk (SD/SMP/SMA/SMK), kecamatan, kab_kota, provinsi, coordinates
+- [ ] Tray is persisted in `localStorage` so selections survive navigation between static pages
+- [ ] Duplicate selection is rejected; a 4th selection is blocked with a clear message
+- [ ] Users can remove a school from the comparison
+- [ ] Works on mobile (horizontal scroll or stacked responsive layout)
+- [ ] No external dependencies — reuses embedded `#school-data` JSON and existing data schema
+- [ ] Accessible: comparison table marked up with proper headers, keyboard operable tray
 
 ---
 
 ## Value Justification
 
-1. **Search completion rate** (roadmap metric: >80%): Autocomplete reduces the friction of finding a school, directly improving the search completion rate.
-2. **User engagement**: Instant feedback keeps users engaged vs. typing then waiting for results.
-3. **Low implementation cost**: The school data is already embedded in the page (`#school-data` JSON). The search and filter logic already exists. Only the autocomplete dropdown UI needs to be added — ~100 lines of JavaScript and ~50 lines of CSS.
-4. **No new dependencies**: Pure vanilla JS using existing data structure.
+1. **Decision support** (roadmap Phase 1 goal "improve user ability to find relevant
+   schools"): side-by-side comparison directly reduces the effort of shortlisting
+   schools — the natural next step after search/filter (FEAT-002/FEAT-004).
+2. **No new dependencies or data pipeline work**: school data is already embedded in
+   every page (`#school-data` JSON); the comparison is a pure front-end composition
+   of existing fields. Low blast radius, fully static-site compatible.
+3. **Engagement**: increases pages-per-session (comparison flow touches 3-4 school
+   pages), supporting roadmap engagement goals.
+4. **Deferred in roadmap with no technical blocker** — the only reason it was
+   deferred was scope prioritization, not feasibility.
 
 ---
 
 ## Implementation Sketch
 
-### JavaScript changes (src/presenters/templates/homepage.js)
+### Data
 
-Extend the existing search script with:
+Reuse the per-school schema from `src/services/PageBuilder.js` / `data-schema.js`.
+A comparison payload can be built client-side from `#school-data` on each page.
 
-1. **Autocomplete state management**:
-   - Track focused suggestion index
-   - Debounce input handler (~150ms)
+### New module
 
-2. **Suggestion rendering**:
-   - Filter schools by query + current filter selections
-   - Render top 10 matches in a dropdown overlay
-   - Show: school name (bold the matching part), type badge, location
+- `src/presenters/templates/shared/comparison.js` — tray state (localStorage),
+  add/remove/limit-3 logic, table renderer.
+- Injected into the shared `footer`/`navigation` components so the tray is present on
+  all pages (compare button per school page + tray widget in the shared shell).
 
-3. **Keyboard navigation**:
-   - Arrow Down: move to next suggestion
-   - Arrow Up: move to previous suggestion
-   - Enter: navigate to selected school
-   - Escape: close autocomplete
+### Styles
 
-4. **Accessibility**:
-   - `role="combobox"` on input
-   - `role="listbox"` on suggestions container
-   - `aria-activedescendant` for focused option
-   - `aria-expanded` for visibility state
+- `src/presenters/design-system.js` tokens (existing variables)
+- `src/presenters/styles.js` — tray + responsive table styles
 
-### CSS changes (src/presenters/styles.js or design-system.js)
+### Pages
 
-- Dropdown positioning below search input
-- Selected/hover state styling
-- Responsive: full-width on mobile, max-width on desktop
-- Z-index layering above content
-- Loading/empty state styling
+- Comparison view can be a client-rendered overlay/section (static-site safe) reading
+  from localStorage — no new build-time page required. If server-rendered table is
+  preferred, `scripts/build-pages.js` can emit `/bandingkan/index.html` from selected
+  NPSNs via query string — deferred decision; client-render is the minimal path.
 
 ---
 
 ## Risk Assessment
 
-| Risk                          | Mitigation                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------------- |
-| Performance with 3474 schools | Limit to top 10 suggestions; debounce input; the data is already parsed in memory |
-| Screen reader confusion       | Proper ARIA combobox pattern with live region announcements                       |
-| Mobile tap targets            | Minimum 44px touch targets for suggestion items                                   |
-| Styling conflicts             | Use existing CSS variables from design-system.js                                  |
+| Risk                          | Mitigation                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------- |
+| localStorage unavailability   | Graceful fallback: no tray persistence, single-session comparison only          |
+| Large school count rendering  | Max 3 rows; data already in memory; table is trivial DOM                        |
+| Screen reader confusion       | ARIA table semantics + live region on tray add/remove                           |
+| Styling conflicts             | Use existing design-system tokens; tray z-index layered below nav               |
 
 ---
 
-## Files Affected
+## Files Affected (estimate)
 
-- `src/presenters/templates/homepage.js` — Add autocomplete JavaScript
-- `src/presenters/styles.js` — Add autocomplete CSS
-- `src/presenters/design-system.js` — May need autocomplete-specific tokens
+- `src/presenters/templates/shared/navigation.js` / `footer.js` — tray mount point
+- `src/presenters/templates/shared/comparison.js` (new)
+- `src/presenters/templates/school-page.js` — "Bandingkan" button
+- `src/presenters/styles.js` — tray + table CSS
+- `src/presenters/design-system.js` — comparison tokens (if any)
 
 ---
 
-## Status (2026-06-06 — ULW Loop Iteration)
+## Status (2026-08-04 — ULW Loop, 42nd run)
 
-**Status**: 🟡 Still valid — autocomplete not yet implemented
-**Current Phase**: Phase 1/2 complete (scoring + hardening)
-**Next Step**: Implement when entering Phase 3 execution mode
+**Status**: 🟡 Proposed — issue record created (docs/issues/2026-08-04/19-phase3-FEAT-005-comparison-tool.md)
+**Blockers**: F002 (no `issues: write` — GitHub issue not created, docs record
+shipped instead); F050 (no `workflows: write` — CI workflow cannot be updated, but
+this feature is front-end only and does not require workflow changes)
+**Recommended execution**: after F037/F038 + F039–F044 security hardening is applied
+(Phase 2 debt), per the scoring ledger's prioritization.
