@@ -51,7 +51,7 @@ items in the ledger.
 | `npm run lint`                                   | ✅ clean — 0 errors, 0 warnings                                                                                                  |
 | `npx prettier --check .`                         | ❌ **59 files fail Prettier (F005 HELD at 59, all docs/issues ledger; source clean)**                                             |
 | `npm run test:js`                                | ✅ **1053 tests / 1049 pass / 0 fail (4 skipped) — F014 NOT observed**                                                            |
-| post-test `git status` (F029 trace)              | ❌ **F029 RE-OBSERVED**: external/raw.csv → `col1\nval1`; restored via `git checkout`; no new residue this run                    |
+| post-test `git status` (F029 trace)              | ❌ **F029 RE-OBSERVED**: external/raw.csv → `col1\nval1`; restored; **FIXED in Phase 2 (PR #566)** — raw.csv clean after full suite        |
 | `npm run test:js:coverage`                       | ✅ 95.23% stmt / 92.56% branch / 96.65% funcs — above 80/75 thresholds                                                            |
 | `python3 tests/run_tests.py`                     | ✅ 27/27 pass                                                                                                                    |
 | `npm audit`                                      | ❌ **1 high severity (brace-expansion@5.0.8, F028 held)**                                                                        |
@@ -171,11 +171,12 @@ output for the 39th run, and the live site still 404s behind a green deploy (F02
 | F002    | Loop token lacks `issues: write` (403 createIssue)               | ci       | P1       | RE-CONFIRMED (**39th**) — output blocked            |
 | F005    | Prettier drift                                                   | docs     | P3       | **HELD at 59 files** (no growth; PR #564 files clean) |
 | F014    | Parallel test-file race on DIST_DIR                              | test     | P1       | **NOT observed this run**                           |
-| F029    | fetch-data.test.js corrupts tracked `external/raw.csv`           | test     | P1       | **RE-OBSERVED** (restored; no new residue)          |
-| F037    | issue_comment → unauthenticated write-token agent (public repo)  | security | P1       | **UNFIXED — CRITICAL, 4th run**                     |
-| F038    | custom_prompt heredoc shell RCE                                  | security | P1       | **UNFIXED — CRITICAL, 4th run**                     |
+| F029    | fetch-data.test.js corrupts tracked `external/raw.csv`           | test     | P1       | **FIXED in Phase 2** — PR #566 (verified: raw.csv clean after full suite) |
+| F037    | issue_comment → unauthenticated write-token agent (public repo)  | security | P1       | **FIX PREPARED** — patch on branch fix/phase2-harden-F037-F038-F029; push blocked by F050 |
+| F038    | custom_prompt heredoc shell RCE                                  | security | P1       | **FIX PREPARED** — patch on branch fix/phase2-harden-F037-F038-F029; push blocked by F050 |
 | F039–F044 | Workflow supply-chain / secret / branch-protection cluster     | security | P1/P2    | **ALL UNFIXED — 4th run**                           |
 | F045–F049 | Code defects (stale pages, build abort, JSON-LD, dead code, copy-feedback) | bug/refactor | P2/P3 | **ALL UNFIXED — 4th run**                 |
+| F050    | Loop token lacks `workflows: write` — cannot push workflow changes | ci      | P1       | **NEW (42nd run)** — blocks F037/F038 patch push    |
 
 All other tracked findings (F001–F036 minus the rows above) re-verified HELD or
 maintained RESOLVED per the 39th-run ledger; F001/F015/F016/F027 maintained RESOLVED.
