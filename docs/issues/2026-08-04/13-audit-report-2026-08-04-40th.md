@@ -34,61 +34,61 @@ the 39th run) remain UNFIXED** — the two highest-severity items in the ledger.
 
 ## Global Penalties
 
-| Rule                   | Penalty    | Justification                                                                                                              |
-| ---------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Build failure          | —          | ✅ PASS — `npm run build` exit 0, 2 pages, 0 failed, 36ms, budgets met                                                    |
-| Test failure           | —          | ✅ PASS — 1049/1049 JS + 27/27 Python pass; F014 NOT observed; F029 test side-effect handled at criterion level            |
-| Critical vulnerability | ⚠️ applied  | **F037 + F038 (CRITICAL, workflow CI)** — criterion-level Security deduction (66→50) as in 39th; not the global −20 (CI-pipeline, not production runtime) |
+| Rule                   | Penalty    | Justification                                                                                                                                             |
+| ---------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build failure          | —          | ✅ PASS — `npm run build` exit 0, 2 pages, 0 failed, 36ms, budgets met                                                                                    |
+| Test failure           | —          | ✅ PASS — 1049/1049 JS + 27/27 Python pass; F014 NOT observed; F029 test side-effect handled at criterion level                                           |
+| Critical vulnerability | ⚠️ applied | **F037 + F038 (CRITICAL, workflow CI)** — criterion-level Security deduction (66→50) as in 39th; not the global −20 (CI-pipeline, not production runtime) |
 
 ## Audit Commands (fresh, this run)
 
-| Command                                          | Result                                                                                                                                  |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm ci`                                         | ⚠️ **1 HIGH vuln (F028 brace-expansion@5.0.8)**; F012 EBADENGINE persists                                                               |
-| `npm run build`                                  | ✅ exit 0, 2 pages, 0 failed, 36ms; budgets met                                                                                        |
-| `npm run lint`                                   | ✅ clean — 0 errors, 0 warnings                                                                                                        |
-| `npx prettier --check .`                         | ❌ **60 files flagged / 59 fail Prettier (F005 WORSENED 56→59, all docs/issues ledger; source clean)**                                  |
-| `npm run test:js`                                | ✅ **1053 tests / 1049 pass / 0 fail (4 skipped) — F014 NOT observed**                                                                 |
-| post-test `git status` (F029 trace)              | ❌ **F029 RE-OBSERVED**: external/raw.csv → `col1\nval1`; restored via `git checkout`; no new residue this run                          |
-| `npm run test:js:coverage`                       | ✅ 95.23% stmt / 92.56% branch / 96.65% funcs — above 80/75 thresholds                                                                 |
-| `python3 tests/run_tests.py`                     | ✅ 27/27 pass                                                                                                                           |
+| Command                                          | Result                                                                                                                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm ci`                                         | ⚠️ **1 HIGH vuln (F028 brace-expansion@5.0.8)**; F012 EBADENGINE persists                                                                |
+| `npm run build`                                  | ✅ exit 0, 2 pages, 0 failed, 36ms; budgets met                                                                                          |
+| `npm run lint`                                   | ✅ clean — 0 errors, 0 warnings                                                                                                          |
+| `npx prettier --check .`                         | ❌ **60 files flagged / 59 fail Prettier (F005 WORSENED 56→59, all docs/issues ledger; source clean)**                                   |
+| `npm run test:js`                                | ✅ **1053 tests / 1049 pass / 0 fail (4 skipped) — F014 NOT observed**                                                                   |
+| post-test `git status` (F029 trace)              | ❌ **F029 RE-OBSERVED**: external/raw.csv → `col1\nval1`; restored via `git checkout`; no new residue this run                           |
+| `npm run test:js:coverage`                       | ✅ 95.23% stmt / 92.56% branch / 96.65% funcs — above 80/75 thresholds                                                                   |
+| `python3 tests/run_tests.py`                     | ✅ 27/27 pass                                                                                                                            |
 | `npm audit`                                      | ❌ **1 high severity (brace-expansion@5.0.8, F028 held)**                                                                                |
-| `node scripts/check-workflow-security.js`        | ❌ 12 violations (2 CRITICAL + 10 HIGH), human exit 1 (F013)                                                                            |
+| `node scripts/check-workflow-security.js`        | ❌ 12 violations (2 CRITICAL + 10 HIGH), human exit 1 (F013)                                                                             |
 | `node scripts/check-workflow-security.js --json` | ✅ **F027 maintained RESOLVED — exit 1 with 12 violations**                                                                              |
-| `npm run check-freshness`                        | ⚠️ STALE — 2026-07-20 (15 days, threshold 7); 2 records (F018, held)                                                                    |
-| `gh repo view` (visibility)                      | ✅ **PUBLIC** — F037 remains exploitable                                                                                                |
+| `npm run check-freshness`                        | ⚠️ STALE — 2026-07-20 (15 days, threshold 7); 2 records (F018, held)                                                                     |
+| `gh repo view` (visibility)                      | ✅ **PUBLIC** — F037 remains exploitable                                                                                                 |
 | `gh issue create` (probe)                        | ❌ **403 `createIssue` (F002, 37th consecutive)**                                                                                        |
-| F004 re-count (`secrets.*`)                      | ❌ 57 refs / 10 unique names (held)                                                                                                     |
-| F007 line count                                  | ❌ 2045 total workflow lines (held)                                                                                                     |
+| F004 re-count (`secrets.*`)                      | ❌ 57 refs / 10 unique names (held)                                                                                                      |
+| F007 line count                                  | ❌ 2045 total workflow lines (held)                                                                                                      |
 | F008 line count                                  | ❌ src/presenters/styles.js **1296 lines** (held)                                                                                        |
 | F011 tag count                                   | ❌ 0 tags (held)                                                                                                                         |
-| F012 engine probe (`npm ls`)                     | ⚠️ lint-staged@17.3.0 requires node ≥22.22.1, runtime v20.20.2 (held)                                                                   |
+| F012 engine probe (`npm ls`)                     | ⚠️ lint-staged@17.3.0 requires node ≥22.22.1, runtime v20.20.2 (held)                                                                    |
 | F017 api.md probe (`addNumbers`)                 | ❌ RE-VERIFIED — documented at docs/api.md:554 (phantom)                                                                                 |
 | F026 unit repro (formatBytes NaN)                | ❌ RE-CONFIRMED — `formatBytes(NaN)` → `"NaN undefined"`                                                                                 |
 | F030–F036 source re-verification                 | ❌ ALL CONFIRMED at source (monitorBuild, hash, sitemap, --json, retry, fallback, layering)                                              |
-| F037–F044 source re-verification                 | ❌ **ALL CONFIRMED at source — workflows unchanged since 39th run** (opencode.yml:8-9/174, architect-agent.yml:208, on-push.yml:4, etc.)  |
+| F037–F044 source re-verification                 | ❌ **ALL CONFIRMED at source — workflows unchanged since 39th run** (opencode.yml:8-9/174, architect-agent.yml:208, on-push.yml:4, etc.) |
 | F045–F049 source re-verification                 | ❌ ALL CONFIRMED at source (BuildOrchestrator.js, PageBuilder.js, school-page.js, homepage.js)                                           |
 
 ---
 
 ## A. CODE QUALITY (74.1/100, −0.1 vs 39th)
 
-| Criterion             | Weight  | Score | Weighted  | Rationale                                                                                                                            |
-| --------------------- | ------- | ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Correctness           | 15      | 74    | 11.10     | F014 clean; F045 (stale pages), F046 (whole-build abort), F047 (JSON-LD), F049 (copy-feedback) all held                                 |
-| Readability & Naming  | 10      | 88    | 8.80      | camelCase + JSDoc; test-file naming inconsistency (held)                                                                             |
-| Simplicity            | 10      | 80    | 8.00      | F048 dead searchLoaded + test-only exports (held); F035 dead fallback (held); CI overcomplexity F007                                  |
-| Modularity & SRP      | 15      | 72    | 10.80     | F036 layering inversion (held); F008 styles.js 1296L; homepage 737L; F045/F046 boundary drift (held)                                 |
-| Consistency           | 5       | 62    | 3.10      | **F005 worsened 56→59 (−5)**; 3× required-fields list; console.log vs pino split                                                     |
-| Testability           | 15      | 64    | 9.60      | F014 clean but latent; F029 RE-OBSERVED (−3); F030 masked by test (−2)                                                               |
-| Maintainability       | 10      | 72    | 7.20      | F045/F046/F048 held debt; F035/F036 held; oversized files (F008)                                                                     |
-| Error Handling        | 10      | 78    | 7.80      | F046 held (−4): inconsistent per-school vs whole-build error handling; F034 held (−2); IntegrationError/ERROR_CODES otherwise solid     |
-| Dependency Discipline | 5       | 84    | 4.20      | 1 prod dep (pino); F028 held (high dev vuln); F012 mismatch                                                                          |
-| Determinism           | 5       | 70    | 3.50      | F014 clean; F032 held (−3) sitemap lastmod; F045 held-delta                                                                          |
+| Criterion             | Weight  | Score | Weighted  | Rationale                                                                                                                           |
+| --------------------- | ------- | ----- | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Correctness           | 15      | 74    | 11.10     | F014 clean; F045 (stale pages), F046 (whole-build abort), F047 (JSON-LD), F049 (copy-feedback) all held                             |
+| Readability & Naming  | 10      | 88    | 8.80      | camelCase + JSDoc; test-file naming inconsistency (held)                                                                            |
+| Simplicity            | 10      | 80    | 8.00      | F048 dead searchLoaded + test-only exports (held); F035 dead fallback (held); CI overcomplexity F007                                |
+| Modularity & SRP      | 15      | 72    | 10.80     | F036 layering inversion (held); F008 styles.js 1296L; homepage 737L; F045/F046 boundary drift (held)                                |
+| Consistency           | 5       | 62    | 3.10      | **F005 worsened 56→59 (−5)**; 3× required-fields list; console.log vs pino split                                                    |
+| Testability           | 15      | 64    | 9.60      | F014 clean but latent; F029 RE-OBSERVED (−3); F030 masked by test (−2)                                                              |
+| Maintainability       | 10      | 72    | 7.20      | F045/F046/F048 held debt; F035/F036 held; oversized files (F008)                                                                    |
+| Error Handling        | 10      | 78    | 7.80      | F046 held (−4): inconsistent per-school vs whole-build error handling; F034 held (−2); IntegrationError/ERROR_CODES otherwise solid |
+| Dependency Discipline | 5       | 84    | 4.20      | 1 prod dep (pino); F028 held (high dev vuln); F012 mismatch                                                                         |
+| Determinism           | 5       | 70    | 3.50      | F014 clean; F032 held (−3) sitemap lastmod; F045 held-delta                                                                         |
 | **TOTAL**             | **100** |       | **74.10** |
 
 **A1. Correctness (74)** — no change from 39th: the four code defects introduced with
-F045–F049 remain open. Build + tests green, so correctness of *current* behavior is
+F045–F049 remain open. Build + tests green, so correctness of _current_ behavior is
 good; the deductions reflect latent defects (stale pages, whole-build abort, corrupted
 JSON-LD, copy-feedback) that only manifest under specific conditions.
 
@@ -106,15 +106,15 @@ test-file race on DIST_DIR) clean again — it is a latent flake, not a current 
 
 ## B. SYSTEM QUALITY (RUNTIME) (71.7/100, ±0.0 vs 39th)
 
-| Criterion            | Weight  | Score | Weighted  | Rationale                                                                                                                              |
-| -------------------- | ------- | ----- | --------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Stability            | 20      | 72    | 14.40     | F014 clean; F045 stale-page accumulation (held); F013 CI nondeterminism (−2)                                                             |
-| Performance          | 15      | 90    | 13.50     | 36ms build, budgets met                                                                                                                 |
-| Security             | 20      | 50    | 10.00     | **F037+F038 CRITICAL UNFIXED (−11)**; F039–F044 held (−8); F028 (−2); F013 (−2); unchanged since 39th — workflows never edited            |
-| Scalability          | 15      | 74    | 11.10     | F031 held (−3) hash misses enrichment; F045 held (−2); data truncated (F018)                                                              |
-| Resilience           | 15      | 80    | 12.00     | F046 held (−3) whole-build abort on one bad row; F034 held (−2); retry/circuit-breaker/timeout present otherwise                          |
-| Observability        | 15      | 71    | 10.65     | F033 held (−4) pino-wrapped --json; F026 NaN (−2); console.log escapes (held)                                                            |
-| **TOTAL**            | **100** |       | **71.65** |
+| Criterion     | Weight  | Score | Weighted  | Rationale                                                                                                                      |
+| ------------- | ------- | ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Stability     | 20      | 72    | 14.40     | F014 clean; F045 stale-page accumulation (held); F013 CI nondeterminism (−2)                                                   |
+| Performance   | 15      | 90    | 13.50     | 36ms build, budgets met                                                                                                        |
+| Security      | 20      | 50    | 10.00     | **F037+F038 CRITICAL UNFIXED (−11)**; F039–F044 held (−8); F028 (−2); F013 (−2); unchanged since 39th — workflows never edited |
+| Scalability   | 15      | 74    | 11.10     | F031 held (−3) hash misses enrichment; F045 held (−2); data truncated (F018)                                                   |
+| Resilience    | 15      | 80    | 12.00     | F046 held (−3) whole-build abort on one bad row; F034 held (−2); retry/circuit-breaker/timeout present otherwise               |
+| Observability | 15      | 71    | 10.65     | F033 held (−4) pino-wrapped --json; F026 NaN (−2); console.log escapes (held)                                                  |
+| **TOTAL**     | **100** |       | **71.65** |
 
 **B3. Security (50, unchanged)** — the defining story of the ledger. F037 (public-repo
 `issue_comment` → unauthenticated write-token LLM agent) and F038 (proven shell RCE
@@ -130,17 +130,17 @@ are the top-priority remediation targets for Phase 2.
 
 ## C. EXPERIENCE QUALITY (81.3/100, −0.1 vs 39th)
 
-| Criterion                | Weight  | Score | Weighted  | Rationale                                                                  |
-| ------------------------ | ------- | ----- | --------- | -------------------------------------------------------------------------- |
+| Criterion                | Weight  | Score | Weighted  | Rationale                                                                          |
+| ------------------------ | ------- | ----- | --------- | ---------------------------------------------------------------------------------- |
 | Accessibility            | 10      | 92    | 9.20      | ARIA landmarks, skip links, sr-only, reduced-motion; F049 (−1) status region blank |
-| User Flow Clarity        | 10      | 88    | 8.80      | Breadcrumbs, search/filter, province drill-down                            |
-| Feedback & Error         | 10      | 78    | 7.80      | F049 held (−2): copy success announces once then blank                     |
-| Responsiveness           | 10      | 92    | 9.20      | Mobile-first breakpoints                                                   |
-| API Clarity (DX)         | 12      | 86    | 10.32     | F046 held (−2): search-data contract aborts whole build; F033 --json       |
-| Local Dev Setup (DX)     | 12      | 85    | 10.20     | Clear README; `npm install` works; pytest dep gap                          |
-| Documentation Accuracy   | 14      | 53    | 7.42      | **F005 worsened 56→59 (−5)**; F017 phantom api.md persists                 |
-| Debuggability (DX)       | 10      | 78    | 7.80      | F033 --json unusable raw; F030 zeroed report misleading                    |
-| Build/Test Feedback (DX) | 12      | 88    | 10.56     | F014 clean; ~36ms build; F046 (−2) whole-build abort on dirty row          |
+| User Flow Clarity        | 10      | 88    | 8.80      | Breadcrumbs, search/filter, province drill-down                                    |
+| Feedback & Error         | 10      | 78    | 7.80      | F049 held (−2): copy success announces once then blank                             |
+| Responsiveness           | 10      | 92    | 9.20      | Mobile-first breakpoints                                                           |
+| API Clarity (DX)         | 12      | 86    | 10.32     | F046 held (−2): search-data contract aborts whole build; F033 --json               |
+| Local Dev Setup (DX)     | 12      | 85    | 10.20     | Clear README; `npm install` works; pytest dep gap                                  |
+| Documentation Accuracy   | 14      | 53    | 7.42      | **F005 worsened 56→59 (−5)**; F017 phantom api.md persists                         |
+| Debuggability (DX)       | 10      | 78    | 7.80      | F033 --json unusable raw; F030 zeroed report misleading                            |
+| Build/Test Feedback (DX) | 12      | 88    | 10.56     | F014 clean; ~36ms build; F046 (−2) whole-build abort on dirty row                  |
 | **TOTAL**                | **100** |       | **81.30** |
 
 **C4. Documentation Accuracy (53, −1)** — the only movement: F005's Prettier drift now
@@ -154,12 +154,12 @@ stable; the ledger (the loop's own output artifact) is accumulating format debt.
 
 | Criterion           | Weight  | Score | Weighted  | Rationale                                                                                                              |
 | ------------------- | ------- | ----- | --------- | ---------------------------------------------------------------------------------------------------------------------- |
-| CI/CD Health        | 20      | 52    | 10.40     | **F037/F038 CRITICAL unfixed (−6)**; F013 (12 violations); F002 (37th); F025 (deploy ≠ site); F027 maintained resolved  |
+| CI/CD Health        | 20      | 52    | 10.40     | **F037/F038 CRITICAL unfixed (−6)**; F013 (12 violations); F002 (37th); F025 (deploy ≠ site); F027 maintained resolved |
 | Release & Rollback  | 20      | 50    | 10.00     | no release process (F011); 0 tags; F025 site 404 (−15)                                                                 |
-| Config & Env Parity | 15      | 76    | 11.40     | F044 held (−2) job-level secret over-scoping; F006 SITE_URL; node drift (.nvmrc22 vs CI20 vs engines20)                 |
-| Migration Safety    | 15      | 65    | 9.75      | F029 re-observed (−3); F045 school deletion/move unhandled; F018 STALE 15d                                                |
-| Tech Debt           | 15      | 56    | 8.40      | **F005 worsened 56→59 (−5)**; 49 tracked findings, 13 introduced 39th run still open                                        |
-| Change Velocity     | 15      | 85    | 12.75     | atomic commits; fast loop; docs-led throughput (PRs #551–#562 merged)                                                   |
+| Config & Env Parity | 15      | 76    | 11.40     | F044 held (−2) job-level secret over-scoping; F006 SITE_URL; node drift (.nvmrc22 vs CI20 vs engines20)                |
+| Migration Safety    | 15      | 65    | 9.75      | F029 re-observed (−3); F045 school deletion/move unhandled; F018 STALE 15d                                             |
+| Tech Debt           | 15      | 56    | 8.40      | **F005 worsened 56→59 (−5)**; 49 tracked findings, 13 introduced 39th run still open                                   |
+| Change Velocity     | 15      | 85    | 12.75     | atomic commits; fast loop; docs-led throughput (PRs #551–#562 merged)                                                  |
 | **TOTAL**           | **100** |       | **62.70** |
 
 **D5. Tech Debt (56, −1)** — F005's worsening is the sole driver. The finding ledger
@@ -171,16 +171,16 @@ concentration of open P1/P2 debt in the ledger.
 
 ## Findings Matrix delta (this run — no new findings, 3 movements)
 
-| ID      | Finding                                                          | Category | Priority | Status (this run)                                  |
-| ------- | ---------------------------------------------------------------- | -------- | -------- | -------------------------------------------------- |
-| F002    | Loop token lacks `issues: write` (403 createIssue)               | ci       | P1       | RE-CONFIRMED (**37th**) — output blocked            |
-| F005    | Prettier drift                                                   | docs     | P3       | **WORSENED — 59 files (56→59, all docs/issues)**    |
-| F014    | Parallel test-file race on DIST_DIR                              | test     | P1       | **NOT observed this run** (clean again)             |
-| F029    | fetch-data.test.js corrupts tracked `external/raw.csv`           | test     | P1       | **RE-OBSERVED** (restored; no new residue)          |
-| F037    | issue_comment → unauthenticated write-token agent (public repo)  | security | P1       | **UNFIXED — CRITICAL, 2nd run**                     |
-| F038    | custom_prompt heredoc shell RCE                                  | security | P1       | **UNFIXED — CRITICAL, 2nd run**                     |
-| F039–F044 | Workflow supply-chain / secret / branch-protection cluster     | security | P1/P2    | **ALL UNFIXED — 2nd run**                           |
-| F045–F049 | Code defects (stale pages, build abort, JSON-LD, dead code, copy-feedback) | bug/refactor | P2/P3 | **ALL UNFIXED — 2nd run**                 |
+| ID        | Finding                                                                    | Category     | Priority | Status (this run)                                |
+| --------- | -------------------------------------------------------------------------- | ------------ | -------- | ------------------------------------------------ |
+| F002      | Loop token lacks `issues: write` (403 createIssue)                         | ci           | P1       | RE-CONFIRMED (**37th**) — output blocked         |
+| F005      | Prettier drift                                                             | docs         | P3       | **WORSENED — 59 files (56→59, all docs/issues)** |
+| F014      | Parallel test-file race on DIST_DIR                                        | test         | P1       | **NOT observed this run** (clean again)          |
+| F029      | fetch-data.test.js corrupts tracked `external/raw.csv`                     | test         | P1       | **RE-OBSERVED** (restored; no new residue)       |
+| F037      | issue_comment → unauthenticated write-token agent (public repo)            | security     | P1       | **UNFIXED — CRITICAL, 2nd run**                  |
+| F038      | custom_prompt heredoc shell RCE                                            | security     | P1       | **UNFIXED — CRITICAL, 2nd run**                  |
+| F039–F044 | Workflow supply-chain / secret / branch-protection cluster                 | security     | P1/P2    | **ALL UNFIXED — 2nd run**                        |
+| F045–F049 | Code defects (stale pages, build abort, JSON-LD, dead code, copy-feedback) | bug/refactor | P2/P3    | **ALL UNFIXED — 2nd run**                        |
 
 All other tracked findings (F001–F036 minus the rows above) re-verified HELD or
 maintained RESOLVED per the 39th-run ledger; F015/F016/F027 maintained RESOLVED.
@@ -206,13 +206,13 @@ ready to be bulk-created as GitHub issues the moment token permissions are grant
 
 ## Composite Score Calculation
 
-| Domain                                | Weight | Score | Weighted |
-| ------------------------------------- | ------ | ----- | -------- |
-| A. Code Quality                       | 25%    | 74.1  | 18.53    |
-| B. System Quality                     | 25%    | 71.7  | 17.91    |
-| C. Experience Quality                 | 25%    | 81.3  | 20.33    |
-| D. Delivery & Evolution Readiness     | 25%    | 62.7  | 15.68    |
-| **COMPOSITE**                         | 100%   |       | **72.45 → 72.4** |
+| Domain                            | Weight | Score | Weighted         |
+| --------------------------------- | ------ | ----- | ---------------- |
+| A. Code Quality                   | 25%    | 74.1  | 18.53            |
+| B. System Quality                 | 25%    | 71.7  | 17.91            |
+| C. Experience Quality             | 25%    | 81.3  | 20.33            |
+| D. Delivery & Evolution Readiness | 25%    | 62.7  | 15.68            |
+| **COMPOSITE**                     | 100%   |       | **72.45 → 72.4** |
 
 ## Notes on scoring movement
 
@@ -231,6 +231,7 @@ ready to be bulk-created as GitHub issues the moment token permissions are grant
 
 **Phase 2 (Feature Hardening)** should execute in this order, all traceable to
 documented findings:
+
 1. **F037 + F038** (CRITICAL): gate `issue_comment` trigger on author association;
    move `custom_prompt` out of the `run:` heredoc into an env var.
 2. **F039 + F040 + F041 + F043 + F044**: branch-filter `push`, pin install script +
