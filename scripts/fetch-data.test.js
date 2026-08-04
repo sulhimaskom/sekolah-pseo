@@ -451,11 +451,23 @@ describe('fetch-data', () => {
       fs.writeFileSync(path.join(cacheDir, 'cached.csv'), 'col1,col2\nval1,val2');
 
       // Set up: invalid repo URL to force fetch failure
-      process.argv = ['node', 'fetch-data.js', '--source', 'not-a-valid-url'];
+      // Pass --output to a temp path so the fallback copy never overwrites tracked external/raw.csv
+      process.argv = [
+        'node',
+        'fetch-data.js',
+        '--output',
+        path.join(testDir, 'cache-output.csv'),
+        '--source',
+        'not-a-valid-url',
+      ];
 
       try {
         // Should NOT throw because cache fallback succeeds
         await require('./fetch-data').main();
+        assert.ok(
+          fs.existsSync(path.join(testDir, 'cache-output.csv')),
+          'Cached data should be written to temp output path'
+        );
       } finally {
         // Clean up external-data dir
         try {
@@ -494,9 +506,13 @@ describe('fetch-data', () => {
 
       // CONFIG.RAW_DATA_PATH points to non-existent file → no direct cache
       // But external-data dir has a CSV → useCachedData falls back to it
+      // F029 fix: pass --output to a temp path so the fallback copy never
+      // overwrites the tracked external/raw.csv
       process.argv = [
         'node',
         'fetch-data.js',
+        '--output',
+        path.join(testDir, 'fallback-output.csv'),
         '--source',
         'https://github.com/nonexistent/repo.git',
       ];
@@ -506,6 +522,8 @@ describe('fetch-data', () => {
         // git clone will fail (nonexistent repo) → caught → useCachedData → external-data fallback
         // This should succeed without throwing
         await require('./fetch-data').main();
+        const fallbackFile = path.join(testDir, 'fallback-output.csv');
+        assert.ok(fs.existsSync(fallbackFile), 'Fallback output should be written to temp path');
       } catch {
         // May throw if git is not available or clone fails differently
         // This is acceptable — the important thing is we exercised the code path
