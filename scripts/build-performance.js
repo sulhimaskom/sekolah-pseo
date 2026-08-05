@@ -185,10 +185,20 @@ class BuildPerformanceTracker {
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 B';
+    // F026: guard non-finite inputs (NaN/Infinity). Without this, Math.log
+    // yields NaN, Math.floor(NaN) is NaN, and `units[NaN]` is undefined —
+    // producing output like "NaN undefined".
+    if (!Number.isFinite(bytes)) return `${bytes}`;
     const sign = bytes < 0 ? '-' : '';
     const absBytes = Math.abs(bytes);
     const units = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(absBytes) / Math.log(1024));
+    // Clamp the unit index to [0, units.length - 1] so sub-1 byte values
+    // (absBytes < 1, e.g. 0.5) do not index units[-1] (also undefined) and
+    // very large values stay on the largest unit instead of overflowing.
+    const i = Math.min(
+      Math.max(Math.floor(Math.log(absBytes) / Math.log(1024)), 0),
+      units.length - 1
+    );
     const val = absBytes / Math.pow(1024, i);
     return `${sign}${val.toFixed(2)} ${units[i]}`;
   }
