@@ -43,37 +43,37 @@ labeled docs records per the established pattern.
 
 ## Global Penalties
 
-| Rule                   | Penalty    | Justification                                                                                                                                                                                          |
-| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Build failure          | —          | ✅ PASS — `npm run build` exit 0, 2 pages, 0 failed, 29ms, all performance budgets met                                                                                                                 |
-| Test failure           | —          | ✅ PASS — 1053/1049/0 fail JS + 27/27 Python + 13/13 pytest; F014 NOT observed; F029 no residue (5/5 clean trees)                                                                                      |
+| Rule                   | Penalty    | Justification                                                                                                                                                                                             |
+| ---------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build failure          | —          | ✅ PASS — `npm run build` exit 0, 2 pages, 0 failed, 29ms, all performance budgets met                                                                                                                    |
+| Test failure           | —          | ✅ PASS — 1053/1049/0 fail JS + 27/27 Python + 13/13 pytest; F014 NOT observed; F029 no residue (5/5 clean trees)                                                                                         |
 | Critical vulnerability | ⚠️ applied | **F037 + F038 (CRITICAL, workflow CI-Pipeline)** — criterion-level Security deduction (50) as in 39th–45th; not the global −20 (CI-pipeline, not production runtime); F025 partial outage also mined in D |
 
 ## Audit Commands (fresh, this run)
 
-| Command                                   | Result                                                                                                                                                                       |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm install`                             | ✅ installed; ⚠️ **1 HIGH vuln (F028 brace-expansion@5.0.8, GHSA-rgw5-rvv9-x895)**; F012 EBADENGINE persists (lint-staged wants node ≥22.22.1, run v20.20.2)                   |
-| `npm run lint`                            | ✅ clean — 0 errors, 0 warnings                                                                                                                                              |
-| `npm run format:check`                    | ❌ **59 files fail Prettier (F005 HELD at 59; all docs/issues ledger, source clean)**                                                                                        |
-| `npm audit`                               | ❌ 1 high severity (brace-expansion@5.0.8, F028 held)                                                                                                                        |
-| `npm run build`                           | ✅ exit 0, 2 pages, 0 failed, 29ms, budgets met                                                                                                                              |
-| `npm run test:js`                         | ✅ **1053 tests / 1049 pass / 0 fail / 4 skipped — F014 NOT observed (maintained)**                                                                                          |
-| `npm run test:js:coverage`                | ✅ 95.23% stmt / 92.56% branch / 96.65% funcs — above 80/75 thresholds                                                                                                       |
-| `python3 tests/run_tests.py`              | ✅ 27/27 pass (100%)                                                                                                                                                         |
-| `pip3 install pytest` + `pytest tests/`   | ⚠️ pytest absent from runner image (env gap) → installed ad hoc → ✅ 13/13 pass                                                                                              |
-| `node scripts/check-workflow-security.js` | ❌ **12 violations (2 CRITICAL + 10 HIGH), exit 1 (F013 held)**                                                                                                              |
-| `node scripts/check-freshness.js`         | ⚠️ **STALE — 2026-07-20 (16 days, threshold 7; held)**; 2 records (F018)                                                                                                     |
-| `gh issue create` (probe)                 | ❌ **403/GraphQL `createIssue` (F002, 43rd consecutive)**                                                                                                                    |
-| F004 re-count (`secrets.*`)               | ❌ 59 refs / 10 unique names (held)                                                                                                                                          |
-| F007 line count                           | ❌ 2045 total workflow lines (held)                                                                                                                                          |
-| F008 line count                           | ❌ src/presenters/styles.js **1296 lines** (held)                                                                                                                            |
-| F011 tag count                            | ❌ 0 tags (held)                                                                                                                                                             |
-| F017 api.md probe (`addNumbers`)          | ❌ RE-VERIFIED — documented at docs/api.md:554 (phantom)                                                                                                                     |
-| F025 live-site probe (curl ×3 + Pages)    | ⚠️ **PARTIAL RESTORATION — root 404, index.html 404, robots.txt 200 (was 404), Pages status "built"**                                                                        |
-| F026 unit repro (`formatBytes(NaN)`)      | ❌ RE-CONFIRMED — returns `"NaN undefined"` (units[NaN] undefined)                                                                                                           |
-| F037 source re-verification               | ❌ CONFIRMED — opencode.yml:8-9 `issue_comment: [created]`, no author-association gate, PUBLIC repo (**8th run**)                                                            |
-| F038 source re-verification               | ❌ CONFIRMED — architect-agent.yml:208 `${{ github.event.inputs.custom_prompt }}` inside `run:` heredoc (proven RCE; **8th run**)                                            |
+| Command                                   | Result                                                                                                                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm install`                             | ✅ installed; ⚠️ **1 HIGH vuln (F028 brace-expansion@5.0.8, GHSA-rgw5-rvv9-x895)**; F012 EBADENGINE persists (lint-staged wants node ≥22.22.1, run v20.20.2)                               |
+| `npm run lint`                            | ✅ clean — 0 errors, 0 warnings                                                                                                                                                            |
+| `npm run format:check`                    | ❌ **59 files fail Prettier (F005 HELD at 59; all docs/issues ledger, source clean)**                                                                                                      |
+| `npm audit`                               | ❌ 1 high severity (brace-expansion@5.0.8, F028 held)                                                                                                                                      |
+| `npm run build`                           | ✅ exit 0, 2 pages, 0 failed, 29ms, budgets met                                                                                                                                            |
+| `npm run test:js`                         | ✅ **1053 tests / 1049 pass / 0 fail / 4 skipped — F014 NOT observed (maintained)**                                                                                                        |
+| `npm run test:js:coverage`                | ✅ 95.23% stmt / 92.56% branch / 96.65% funcs — above 80/75 thresholds                                                                                                                     |
+| `python3 tests/run_tests.py`              | ✅ 27/27 pass (100%)                                                                                                                                                                       |
+| `pip3 install pytest` + `pytest tests/`   | ⚠️ pytest absent from runner image (env gap) → installed ad hoc → ✅ 13/13 pass                                                                                                            |
+| `node scripts/check-workflow-security.js` | ❌ **12 violations (2 CRITICAL + 10 HIGH), exit 1 (F013 held)**                                                                                                                            |
+| `node scripts/check-freshness.js`         | ⚠️ **STALE — 2026-07-20 (16 days, threshold 7; held)**; 2 records (F018)                                                                                                                   |
+| `gh issue create` (probe)                 | ❌ **403/GraphQL `createIssue` (F002, 43rd consecutive)**                                                                                                                                  |
+| F004 re-count (`secrets.*`)               | ❌ 59 refs / 10 unique names (held)                                                                                                                                                        |
+| F007 line count                           | ❌ 2045 total workflow lines (held)                                                                                                                                                        |
+| F008 line count                           | ❌ src/presenters/styles.js **1296 lines** (held)                                                                                                                                          |
+| F011 tag count                            | ❌ 0 tags (held)                                                                                                                                                                           |
+| F017 api.md probe (`addNumbers`)          | ❌ RE-VERIFIED — documented at docs/api.md:554 (phantom)                                                                                                                                   |
+| F025 live-site probe (curl ×3 + Pages)    | ⚠️ **PARTIAL RESTORATION — root 404, index.html 404, robots.txt 200 (was 404), Pages status "built"**                                                                                      |
+| F026 unit repro (`formatBytes(NaN)`)      | ❌ RE-CONFIRMED — returns `"NaN undefined"` (units[NaN] undefined)                                                                                                                         |
+| F037 source re-verification               | ❌ CONFIRMED — opencode.yml:8-9 `issue_comment: [created]`, no author-association gate, PUBLIC repo (**8th run**)                                                                          |
+| F038 source re-verification               | ❌ CONFIRMED — architect-agent.yml:208 `${{ github.event.inputs.custom_prompt }}` inside `run:` heredoc (proven RCE; **8th run**)                                                          |
 | F045–F049 source spot-checks              | ❌ ALL HELD — BuildOrchestrator stale pages (F045), search-data build abort (F046), school-page JSON-LD double-escape (F047), homepage searchLoaded dead code (F048), copy-feedback (F049) |
 
 ---
@@ -89,9 +89,9 @@ labeled docs records per the established pattern.
 | Consistency           | 5       | 62    | 3.10      | **F005 HELD at 59 files** (no growth); 3× required-fields list; console.log vs pino split                                           |
 | Testability           | 15      | 69    | 10.35     | **F014 maintained resolved (+3)**; **F029 maintained resolved (+2)**; F030 masked by test (−2)                                      |
 | Maintainability       | 10      | 72    | 7.20      | F045/F046/F048 held debt; F035/F036 held; oversized files (F008)                                                                    |
-| Error Handling        | 10      | 78    | 7.80      | F046 held (−4): inconsistent per-school vs whole-build error handling; F034 held (−2); IntegrationError/ERROR_CODES otherwise solid   |
+| Error Handling        | 10      | 78    | 7.80      | F046 held (−4): inconsistent per-school vs whole-build error handling; F034 held (−2); IntegrationError/ERROR_CODES otherwise solid |
 | Dependency Discipline | 5       | 84    | 4.20      | 1 prod dep (pino); F028 held (high dev vuln); F012 mismatch                                                                         |
-| Determinism           | 5       | 72    | 3.60      | **F014 on main, stable (+2)**; F032 held (−3) sitemap lastmod; F045 held-delta                                                     |
+| Determinism           | 5       | 72    | 3.60      | **F014 on main, stable (+2)**; F032 held (−3) sitemap lastmod; F045 held-delta                                                      |
 | **TOTAL**             | **100** |       | **75.10** |
 
 **A1. Correctness (75, ±0)** — F014's fix is permanent on main (PR #568); this run's
@@ -150,14 +150,14 @@ PUBLIC, so both remain externally triggerable. F039–F044 held. Remediation req
 
 ## D. DELIVERY & EVOLUTION READINESS (63.4/100, +0.6 vs 45th)
 
-| Criterion           | Weight  | Score | Weighted  | Rationale                                                                                                  |
-| ------------------- | ------- | ----- | --------- | ---------------------------------------------------------------------------------------------------------- |
-| CI/CD Health        | 20      | 52    | 10.40     | **F037/F038 CRITICAL unfixed 8th run (−6)**; F013 (12 violations); F002 (43rd); F027 maintained resolved   |
-| Release & Rollback  | 20      | 51    | 10.20     | **F025 PARTIAL restoration — root/index 404 but robots 200 + Pages "built" (−14, eased from −17)**         |
-| Config & Env Parity | 15      | 76    | 11.40     | F044 held (−2) job-level secret over-scoping; F006 SITE_URL; node drift (.nvmrc22 vs CI20 vs engines20)    |
-| Migration Safety    | 15      | 67    | 10.05     | **F029 maintained resolved (+3)**; F045 school deletion/move unhandled; **F018 STALE 16d (held)**          |
-| Tech Debt           | 15      | 57    | 8.55      | F014+F029 resolved (+1); **F005 held at 59 files**; 49 tracked findings, 13 from 39th run open             |
-| Change Velocity     | 15      | 85    | 12.75     | atomic commits; fast loop; F014 landed via PR #568 (maintained)                                            |
+| Criterion           | Weight  | Score | Weighted  | Rationale                                                                                                |
+| ------------------- | ------- | ----- | --------- | -------------------------------------------------------------------------------------------------------- |
+| CI/CD Health        | 20      | 52    | 10.40     | **F037/F038 CRITICAL unfixed 8th run (−6)**; F013 (12 violations); F002 (43rd); F027 maintained resolved |
+| Release & Rollback  | 20      | 51    | 10.20     | **F025 PARTIAL restoration — root/index 404 but robots 200 + Pages "built" (−14, eased from −17)**       |
+| Config & Env Parity | 15      | 76    | 11.40     | F044 held (−2) job-level secret over-scoping; F006 SITE_URL; node drift (.nvmrc22 vs CI20 vs engines20)  |
+| Migration Safety    | 15      | 67    | 10.05     | **F029 maintained resolved (+3)**; F045 school deletion/move unhandled; **F018 STALE 16d (held)**        |
+| Tech Debt           | 15      | 57    | 8.55      | F014+F029 resolved (+1); **F005 held at 59 files**; 49 tracked findings, 13 from 39th run open           |
+| Change Velocity     | 15      | 85    | 12.75     | atomic commits; fast loop; F014 landed via PR #568 (maintained)                                          |
 | **TOTAL**           | **100** |       | **63.35** |
 
 **D2. Release & Rollback (51, +3)** — F025 eased: the 45th run observed a full
@@ -170,24 +170,24 @@ finding stays OPEN.
 
 ## Tracked-findings status (delta vs 45th)
 
-| Finding | Severity | Status this run |
-| ------- | -------- | --------------- |
-| F002 (no `issues: write`)              | P1 | HELD — 43rd consecutive (probe 403) |
-| F005 (prettier drift)                  | P3 | HELD at 59 files |
-| F007 (workflow 2045 lines)             | P3 | HELD |
-| F008 (styles.js 1296 lines)            | P3 | HELD |
-| F011 (0 tags)                          | P3 | HELD |
-| F013 (workflow-security 12 violations) | P1 | HELD — 2 CRITICAL + 10 HIGH |
-| F014 (parallel test race)              | P2 | ✅ MAINTAINED RESOLVED (1049/0 fail) |
-| F017 (phantom api.md)                  | P3 | HELD |
-| F018 (data stale 16 days)              | P2 | HELD (no further drift) |
-| F025 (live site outage)                | P1 | ⚠️ PARTIAL IMPROVEMENT — root/index 404, robots 200, Pages built |
-| F026 (formatBytes NaN)                 | P3 | HELD — `"NaN undefined"` repro'd |
-| F028 (brace-expansion HIGH vuln)       | P2 | HELD |
-| F029 (test corrupts raw.csv)           | P2 | ✅ MAINTAINED RESOLVED (clean tree ×5) |
-| F037 (issue_comment write-token agent) | **CRITICAL** | HELD — **8th run unfixed** |
-| F038 (custom_prompt heredoc RCE)       | **CRITICAL** | HELD — **8th run unfixed** |
-| F045–F049 (code defects)               | P2/P3 | ALL HELD |
+| Finding                                | Severity     | Status this run                                                  |
+| -------------------------------------- | ------------ | ---------------------------------------------------------------- |
+| F002 (no `issues: write`)              | P1           | HELD — 43rd consecutive (probe 403)                              |
+| F005 (prettier drift)                  | P3           | HELD at 59 files                                                 |
+| F007 (workflow 2045 lines)             | P3           | HELD                                                             |
+| F008 (styles.js 1296 lines)            | P3           | HELD                                                             |
+| F011 (0 tags)                          | P3           | HELD                                                             |
+| F013 (workflow-security 12 violations) | P1           | HELD — 2 CRITICAL + 10 HIGH                                      |
+| F014 (parallel test race)              | P2           | ✅ MAINTAINED RESOLVED (1049/0 fail)                             |
+| F017 (phantom api.md)                  | P3           | HELD                                                             |
+| F018 (data stale 16 days)              | P2           | HELD (no further drift)                                          |
+| F025 (live site outage)                | P1           | ⚠️ PARTIAL IMPROVEMENT — root/index 404, robots 200, Pages built |
+| F026 (formatBytes NaN)                 | P3           | HELD — `"NaN undefined"` repro'd                                 |
+| F028 (brace-expansion HIGH vuln)       | P2           | HELD                                                             |
+| F029 (test corrupts raw.csv)           | P2           | ✅ MAINTAINED RESOLVED (clean tree ×5)                           |
+| F037 (issue_comment write-token agent) | **CRITICAL** | HELD — **8th run unfixed**                                       |
+| F038 (custom_prompt heredoc RCE)       | **CRITICAL** | HELD — **8th run unfixed**                                       |
+| F045–F049 (code defects)               | P2/P3        | ALL HELD                                                         |
 
 ## Issues created (Phase 1 output)
 

@@ -69,10 +69,10 @@ backtick characters** besides the custom_prompt line, so switching
 `<<'PROMPT'` → `<<PROMPT` is safe.
 
 ```yaml
-    env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
-      CUSTOM_PROMPT: ${{ github.event.inputs.custom_prompt }}
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
+  CUSTOM_PROMPT: ${{ github.event.inputs.custom_prompt }}
 ```
 
 and inside the `run:` step: `<<'PROMPT'` → `<<PROMPT`, and line 208 →
