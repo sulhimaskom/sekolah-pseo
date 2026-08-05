@@ -305,6 +305,19 @@ test('formatBytes handles negative values (F026 — no NaN)', () => {
   assert.ok(!tracker.formatBytes(-100).includes('NaN'));
 });
 
+test('formatBytes handles NaN/Infinity (F026 — no undefined units)', () => {
+  const tracker = new BuildPerformanceTracker();
+  assert.ok(!String(tracker.formatBytes(NaN)).includes('undefined'));
+  assert.ok(!String(tracker.formatBytes(Infinity)).includes('undefined'));
+  assert.ok(!String(tracker.formatBytes(-Infinity)).includes('undefined'));
+});
+
+test('formatBytes handles sub-1 byte values (F026 — clamped to B)', () => {
+  const tracker = new BuildPerformanceTracker();
+  assert.strictEqual(tracker.formatBytes(0.5), '0.50 B');
+  assert.strictEqual(tracker.formatBytes(-0.5), '-0.50 B');
+});
+
 // ── formatDuration ──────────────────────────────────────────────────────────
 
 test('formatDuration formats milliseconds', () => {

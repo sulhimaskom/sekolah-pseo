@@ -245,6 +245,9 @@ schools.csv
 # Test temporary directories
 test-temp-*
 
+# fetch-data clone/cache directory (created by fetch-data.js and its tests)
+external-data/
+
 # OpenCode internal session data
 .omo/
 
