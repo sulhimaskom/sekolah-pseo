@@ -1,8 +1,17 @@
-const { describe, it, beforeEach, afterEach } = require('node:test');
+const { describe, it, beforeEach, afterEach, after } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { IntegrationError, ERROR_CODES } = require('./resilience');
+
+// Isolate the external-data clone/cache away from the repo working directory
+// into a per-process temp dir BEFORE fetch-data is required, so parallel
+// `node --test` runs cannot leave `external-data/` residue in the repo cwd.
+const TEST_EXTERNAL_DATA_DIR = fs.mkdtempSync(
+  path.join(os.tmpdir(), 'sekolah-pseo-external-data-')
+);
+process.env.EXTERNAL_DATA_DIR = TEST_EXTERNAL_DATA_DIR;
 
 const {
   fetchFromGitHub,
@@ -171,7 +180,7 @@ describe('fetch-data', () => {
         } catch {}
       }
       // Clean up external-data dir if test created it
-      const externalDataDir = path.join(process.cwd(), 'external-data');
+      const externalDataDir = TEST_EXTERNAL_DATA_DIR;
       if (fs.existsSync(externalDataDir)) {
         try {
           fs.rmSync(externalDataDir, { recursive: true, force: true });
@@ -192,8 +201,8 @@ describe('fetch-data', () => {
     });
 
     it('falls back to external-data dir when dest does not exist and external-data has CSVs', () => {
-      // useCachedData checks process.cwd() + '/external-data'
-      const externalDataDir = path.join(process.cwd(), 'external-data');
+      // useCachedData checks EXTERNAL_DATA_DIR (isolated temp dir in tests)
+      const externalDataDir = TEST_EXTERNAL_DATA_DIR;
       fs.mkdirSync(externalDataDir, { recursive: true });
       fs.writeFileSync(path.join(externalDataDir, 'cached.csv'), 'col1\nval1');
 
@@ -206,7 +215,7 @@ describe('fetch-data', () => {
     });
 
     it('returns false when external-data dir exists but has no CSV files', () => {
-      const externalDataDir = path.join(process.cwd(), 'external-data');
+      const externalDataDir = TEST_EXTERNAL_DATA_DIR;
       fs.mkdirSync(externalDataDir, { recursive: true });
 
       const destPath = path.join(tempDir, 'raw.csv');
@@ -446,7 +455,7 @@ describe('fetch-data', () => {
 
     it('uses cached data when fetch fails and cache exists', async () => {
       // Set up: create cache file
-      const cacheDir = path.join(process.cwd(), 'external-data');
+      const cacheDir = TEST_EXTERNAL_DATA_DIR;
       fs.mkdirSync(cacheDir, { recursive: true });
       fs.writeFileSync(path.join(cacheDir, 'cached.csv'), 'col1,col2\nval1,val2');
 
@@ -500,7 +509,7 @@ describe('fetch-data', () => {
       const cachedPath = path.join(testDir, 'cached-raw.csv');
       fs.writeFileSync(cachedPath, 'col1,col2\nval1,val2');
 
-      const externalDataDir = path.join(process.cwd(), 'external-data');
+      const externalDataDir = TEST_EXTERNAL_DATA_DIR;
       fs.mkdirSync(externalDataDir, { recursive: true });
       fs.writeFileSync(path.join(externalDataDir, 'sekolah.csv'), 'col1\nval1');
 
@@ -629,4 +638,8 @@ describe('fetch-data', () => {
       });
     });
   });
+});
+
+after(() => {
+  fs.rmSync(TEST_EXTERNAL_DATA_DIR, { recursive: true, force: true });
 });
