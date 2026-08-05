@@ -31,7 +31,12 @@ const {
 // Default external data configuration
 const DEFAULT_SOURCE_REPO = 'https://github.com/suryavip/daftar-sekolah-indonesia.git';
 const DEFAULT_BRANCH = 'main';
-const EXTERNAL_DATA_DIR = path.join(process.cwd(), 'external-data');
+
+// External-data cache dir. Defaults to <cwd>/external-data for backward
+// compatibility; redirectable via EXTERNAL_DATA_DIR so tests can isolate the
+// clone/cache into a temp dir instead of the repo cwd (prevents residue races).
+const EXTERNAL_DATA_DIR =
+  process.env.EXTERNAL_DATA_DIR || path.join(process.cwd(), 'external-data');
 
 // Shell-active characters that must never appear in a URL interpolated into
 // execSync. The WHATWG URL parser leaves these intact in hostname/pathname.
