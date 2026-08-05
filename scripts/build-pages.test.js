@@ -4,6 +4,19 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
 
+// F052 fix: node --test runs test files in parallel child processes;
+// this file previously removed/wrote the REAL CONFIG.DIST_DIR (dist/) and
+// CONFIG.ROOT_DIR/.build-manifest.json, racing with other test files (and
+// concurrent suite runs) that share those paths — observed as FILE_READ_ERROR,
+// ENOTEMPTY rmdir and missing-page failures under load. Redirect both to a
+// per-process temp dir BEFORE requiring build-pages: BuildOrchestrator,
+// ExportService and SearchDataService all capture CONFIG.DIST_DIR at module
+// load (const distDir = CONFIG.DIST_DIR), and manifest.js resolves the
+// manifest path from CONFIG.ROOT_DIR at call time.
+const CONFIG = require('./config');
+CONFIG.ROOT_DIR = path.join(os.tmpdir(), `build-pages-test-root-${process.pid}`);
+CONFIG.DIST_DIR = path.join(CONFIG.ROOT_DIR, 'dist');
+
 const {
   writeSchoolPage,
   writeSchoolPagesConcurrently,
@@ -21,7 +34,6 @@ const {
 } = require('./build-pages');
 const { resetCircuitBreakers } = require('./fs-safe');
 const { MANIFEST_VERSION } = require('./manifest');
-const CONFIG = require('./config');
 const slugify = require('./slugify');
 
 // Retry file existence checks with backoff to handle transient
