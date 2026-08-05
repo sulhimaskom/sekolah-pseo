@@ -1,10 +1,21 @@
 const { describe, it, beforeEach, afterEach, before, after } = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
+const os = require('os');
 const fs = require('fs');
 const { Readable } = require('stream');
 
 const https = require('https');
+
+// F052 fix: node --test runs test files in parallel child processes; this file
+// previously wrote/unlinked the REAL data/enrichment.json (via the module-level
+// ENRICHMENT_DATA_PATH, resolved at require time) plus hardcoded data/*.json
+// paths, racing with other test files and concurrent suite runs. Redirect
+// CONFIG.DATA_DIR to a per-process temp dir BEFORE requiring ./enrichment, and
+// point the hardcoded paths at it too.
+const CONFIG = require('./config');
+CONFIG.DATA_DIR = path.join(os.tmpdir(), `enrichment-test-data-${process.pid}`);
+fs.mkdirSync(CONFIG.DATA_DIR, { recursive: true });
 
 /**
  * Creates a mock https.get that returns canned JSON data instead of making real HTTP calls.
@@ -232,7 +243,7 @@ describe('enrichSchools', () => {
 });
 
 describe('saveEnrichmentData and loadEnrichmentData', () => {
-  const testDataPath = path.join(__dirname, '..', 'data', 'test-enrichment.json');
+  const testDataPath = path.join(CONFIG.DATA_DIR, 'test-enrichment.json');
 
   beforeEach(() => {
     // Store original path
@@ -277,7 +288,7 @@ describe('saveEnrichmentData and loadEnrichmentData', () => {
     };
 
     // Use a temporary path for testing
-    const tempDir = path.join(__dirname, '..', 'data');
+    const tempDir = CONFIG.DATA_DIR;
     const tempPath = path.join(tempDir, 'test-enrichment-save.json');
 
     try {
