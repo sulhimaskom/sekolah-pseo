@@ -247,20 +247,30 @@ function prepareSchoolDataForSearch(schools) {
     return [];
   }
 
-  return schools.map(school => {
-    const relPath = getSchoolRelativePath(school);
-    return [
-      school.npsn || '', // [0] n (npsn)
-      school.nama || '', // [1] a (nama)
-      school.bentuk_pendidikan || '', // [2] b (bentuk_pendidikan)
-      school.status || '', // [3] s (status)
-      school.alamat || '', // [4] al (alamat)
-      school.kecamatan || '', // [5] kc (kecamatan)
-      school.kab_kota || '', // [6] kk (kab_kota)
-      school.provinsi || '', // [7] p (provinsi)
-      '/' + relPath, // [8] u (schoolUrl)
-    ];
-  });
+  const logger = require('../../scripts/logger');
+
+  // F046: isolate per-school failures — a single malformed row must not abort
+  // the whole build via the search-data path (page pipeline already guards per-school).
+  const result = [];
+  for (const school of schools) {
+    try {
+      const relPath = getSchoolRelativePath(school);
+      result.push([
+        school.npsn || '', // [0] n (npsn)
+        school.nama || '', // [1] a (nama)
+        school.bentuk_pendidikan || '', // [2] b (bentuk_pendidikan)
+        school.status || '', // [3] s (status)
+        school.alamat || '', // [4] al (alamat)
+        school.kecamatan || '', // [5] kc (kecamatan)
+        school.kab_kota || '', // [6] kk (kab_kota)
+        school.provinsi || '', // [7] p (provinsi)
+        '/' + relPath, // [8] u (schoolUrl)
+      ]);
+    } catch (err) {
+      logger.warn(`Skipping invalid school row in search data: ${err.message}`);
+    }
+  }
+  return result;
 }
 
 module.exports = {

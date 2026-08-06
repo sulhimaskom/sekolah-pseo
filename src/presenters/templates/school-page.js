@@ -86,6 +86,28 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   const metaDescription = generateMetaDescription(school);
   const canonicalUrl = generateCanonicalUrl(relativePath);
 
+  // F047: JSON-LD is a raw-text script context — HTML entities are NOT decoded
+  // there, so escapeHtml() corrupted values (e.g. "SDN & B" -> "SDN &amp; B").
+  // Emit via JSON.stringify and escape "<" as \u003c for script-context safety.
+  const jsonLd = JSON.stringify(
+    {
+      '@context': 'https://schema.org',
+      '@type': 'School',
+      name: school.nama,
+      identifier: school.npsn,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: school.alamat || '',
+        addressLocality: school.kecamatan || '',
+        addressRegion: school.kab_kota || '',
+        addressCountry: 'ID',
+      },
+      educationalLevel: school.bentuk_pendidikan || '',
+    },
+    null,
+    2
+  ).replace(/</g, '\\u003c');
+
   return `${HTML_HEAD_PREFIX}
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <title>${escapeHtml(school.nama)}</title>
@@ -100,20 +122,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
   
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "School",
-    "name": "${escapeHtml(school.nama)}",
-    "identifier": "${escapeHtml(school.npsn)}",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "${escapeHtml(school.alamat)}",
-      "addressLocality": "${escapeHtml(school.kecamatan)}",
-      "addressRegion": "${escapeHtml(school.kab_kota)}",
-      "addressCountry": "ID"
-    },
-    "educationalLevel": "${escapeHtml(school.bentuk_pendidikan)}"
-  }
+  ${jsonLd}
   </script>
 </head>
 <body>
