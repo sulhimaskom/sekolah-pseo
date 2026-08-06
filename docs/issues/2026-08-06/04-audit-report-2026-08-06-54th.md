@@ -183,7 +183,7 @@ branch. Recorded as P1, no guess-fix attempted (fail-safe rule).
 | F037      | issue_comment write-token agent (public)            | security     | P1    | UNFIXED **16th run** (F050)   |
 | F038      | custom_prompt heredoc shell RCE                     | security     | P1    | UNFIXED **16th run** (F050)   |
 | F039-F044 | workflow secret/supply-chain cluster                | security     | P1/P2 | ALL UNFIXED (F050 blocked)    |
-| F045-F049 | code defects cluster                                | bug/refactor | P2/P3 | ALL HELD                      |
+| F045-F049 | code defects cluster                                | bug/refactor | P2/P3 | **RESOLVED post-audit** via #582/#583/#584 |
 | F050      | Loop token lacks `workflows:write`                  | ci           | P1    | HELD — blocks F037/F038       |
 | F052      | parallel-load repo-path race (tests)                | test         | P2    | maintained RESOLVED           |
 
@@ -210,3 +210,12 @@ via PR. All items carry category + priority and are ready to bulk-create the mom
 4. F002 confirmed 51st consecutive run — GitHub-issue output remains API-blocked.
 5. Project `.opencode/skill/*` holds only general agent-skills; nothing audit-specific
    to apply this run.
+
+## Phase 2 addendum (post-audit, same day)
+
+Scores above are the 54th-run **audit** snapshot. Immediately after, the F045–F049
+code-defect cluster was resolved in three squash-merged PRs (**#582** F046/F047,
+**#583** F048/F049, **#584** F045) — see `03-run-report-2026-08-06-54th.md`
+"Phase 2 Fix Log" for details and gate results. F037/F038/F013 remain push-blocked
+by F050 (17th consecutive); their fixes stay on unpushed branch
+`fix/phase2-workflow-security-F037-F038`.
