@@ -219,11 +219,13 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
 
       var copyButtons = document.querySelectorAll('.btn-copy');
       copyButtons.forEach(function(btn) {
+        var feedback = btn.querySelector('.copy-feedback');
+        // F049: capture the default message once at setup — reading it at click
+        // time returns '' because the previous timeout empties the region
+        var defaultText = feedback ? feedback.textContent : 'Tersalin!';
         btn.addEventListener('click', function() {
           var targetId = btn.getAttribute('data-copy-target');
           var textToCopy = document.getElementById(targetId).textContent;
-          var feedback = btn.querySelector('.copy-feedback');
-          var defaultText = feedback ? feedback.textContent : 'Tersalin!';
 
           copyTextToClipboard(textToCopy).then(function() {
             if (feedback) {
