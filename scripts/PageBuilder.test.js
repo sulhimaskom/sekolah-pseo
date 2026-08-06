@@ -848,6 +848,32 @@ describe('prepareSchoolDataForSearch', () => {
     const result = prepareSchoolDataForSearch(schools);
     assert.ok(result[0][8].startsWith('/'), 'URL should start with /');
   });
+
+  it('F046: skips invalid school rows instead of aborting the whole build', () => {
+    const schools = [
+      {
+        npsn: '12345678',
+        nama: 'Valid School',
+        provinsi: 'DKI Jakarta',
+        kab_kota: 'Jakarta Pusat',
+        kecamatan: 'Menteng',
+      },
+      { npsn: '99999' }, // missing required fields -> getSchoolRelativePath throws
+      {
+        npsn: '87654321',
+        nama: 'Another Valid School',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+    ];
+
+    const result = prepareSchoolDataForSearch(schools);
+
+    assert.strictEqual(result.length, 2, 'invalid row is skipped, valid rows kept');
+    assert.strictEqual(result[0][0], '12345678');
+    assert.strictEqual(result[1][0], '87654321');
+  });
 });
 
 describe('buildHomepageData', () => {

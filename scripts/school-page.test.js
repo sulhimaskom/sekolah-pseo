@@ -229,6 +229,23 @@ describe('generateSchoolPageHtml', () => {
     assert.ok(html.includes('"addressCountry": "ID"'));
   });
 
+  it('F047: does not HTML-escape values inside JSON-LD structured data', () => {
+    const schoolWithAmp = {
+      ...validSchool,
+      nama: 'SDN 01 & 02 Karya',
+      alamat: 'Jl. Ahmad Yani & Soekarno No. 5',
+    };
+
+    const html = generateSchoolPageHtml(schoolWithAmp);
+    const jsonLdBlock = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
+
+    // JSON-LD is a raw-text script context: entities must NOT be escaped there
+    // (the old escapeHtml() corrupted data into "&amp;")
+    assert.ok(jsonLdBlock.includes('"name": "SDN 01 & 02 Karya"'));
+    assert.ok(!jsonLdBlock.includes('&amp; 02 Karya'));
+    assert.ok(jsonLdBlock.includes('"streetAddress": "Jl. Ahmad Yani & Soekarno No. 5"'));
+  });
+
   it('escapes HTML in school name to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
