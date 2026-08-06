@@ -41,6 +41,7 @@ module.exports = {
   computeSchoolHash,
   getChangedSchools,
   getUnchangedSchools,
+  getOrphanedSchoolPaths,
   clearManifest,
   MANIFEST_FILE,
   MANIFEST_VERSION,
@@ -184,6 +185,34 @@ function getChangedSchools(schools, manifest) {
 function getUnchangedSchools(schools, manifest) {
   const { unchanged } = getChangedSchools(schools, manifest);
   return unchanged;
+}
+
+/**
+ * Get school page paths recorded in the manifest that no current school produces.
+ * F045: getChangedSchools() iterates only CURRENT schools, so pages for schools
+ * removed from the CSV or whose path changed (provinsi/kab_kota/kecamatan/nama)
+ * would otherwise stay in dist/ forever after incremental builds.
+ *
+ * @param {Object} manifest - Previous build manifest
+ * @param {Set<string>} currentPaths - Set of relative paths for current schools
+ * @returns {string[]} Orphaned relative paths to delete
+ */
+function getOrphanedSchoolPaths(manifest, currentPaths) {
+  if (!manifest || !manifest.schools) {
+    return [];
+  }
+
+  const current = currentPaths instanceof Set ? currentPaths : new Set(currentPaths);
+  const orphaned = [];
+
+  for (const npsn of Object.keys(manifest.schools)) {
+    const { path: relPath } = manifest.schools[npsn];
+    if (relPath && !current.has(relPath)) {
+      orphaned.push(relPath);
+    }
+  }
+
+  return orphaned;
 }
 
 /**

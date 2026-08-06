@@ -18,6 +18,7 @@ const {
   preCreateDirectories,
   finalizeBuild,
   prepareBuildEnvironment,
+  removeOrphanedSchoolPages,
 } = require('../src/services/BuildOrchestrator');
 const { resetCircuitBreakers } = require('./fs-safe');
 
@@ -202,5 +203,135 @@ describe('prepareBuildEnvironment', () => {
       .then(() => true)
       .catch(() => false);
     assert.ok(jsonExists, 'schools.json should exist after sharedPagesPromise resolves');
+  });
+});
+
+// ── removeOrphanedSchoolPages ─────────────────────────────────────────────────
+
+describe('removeOrphanedSchoolPages', () => {
+  const orphanedPath =
+    'provinsi/jawa-barat/kabupaten/bandung/kecamatan/coblong/99999999-sekolah-lama.html';
+
+  it('deletes pages for schools removed from the CSV', async () => {
+    const orphanedFile = path.join(CONFIG.DIST_DIR, orphanedPath);
+    await fs.mkdir(path.dirname(orphanedFile), { recursive: true });
+    await fs.writeFile(orphanedFile, '<html>stale</html>');
+
+    const currentSchool = {
+      npsn: '10001',
+      nama: 'SD Negeri 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    };
+
+    const manifest = {
+      version: 1,
+      schools: {
+        99999999: { hash: 'stale', builtAt: '2024-01-01T00:00:00.000Z', path: orphanedPath },
+      },
+    };
+
+    const deleted = await removeOrphanedSchoolPages([currentSchool], manifest);
+
+    assert.strictEqual(deleted, 1);
+    const existsAfter = await fs
+      .access(orphanedFile)
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(existsAfter, false, 'orphaned page should be deleted');
+  });
+
+  it('deletes old pages when a school path changes', async () => {
+    const oldPath =
+      'provinsi/jawa-barat/kabupaten/bandung/kecamatan/coblong/10001-sd-negeri-1.html';
+    const oldFile = path.join(CONFIG.DIST_DIR, oldPath);
+    await fs.mkdir(path.dirname(oldFile), { recursive: true });
+    await fs.writeFile(oldFile, '<html>old location</html>');
+
+    // Same NPSN but provinsi changed -> new path no longer matches old page.
+    const movedSchool = {
+      npsn: '10001',
+      nama: 'SD Negeri 1',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Tegalsari',
+    };
+
+    const manifest = {
+      version: 1,
+      schools: {
+        10001: { hash: 'x', builtAt: '2024-01-01T00:00:00.000Z', path: oldPath },
+      },
+    };
+
+    const deleted = await removeOrphanedSchoolPages([movedSchool], manifest);
+
+    assert.strictEqual(deleted, 1);
+    const existsAfter = await fs
+      .access(oldFile)
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(existsAfter, false, 'old-location page should be deleted');
+  });
+
+  it('leaves current pages untouched', async () => {
+    const currentPath =
+      'provinsi/jawa-barat/kabupaten/bandung/kecamatan/coblong/10001-sd-negeri-1.html';
+    const currentFile = path.join(CONFIG.DIST_DIR, currentPath);
+    await fs.mkdir(path.dirname(currentFile), { recursive: true });
+    await fs.writeFile(currentFile, '<html>current</html>');
+
+    const currentSchool = {
+      npsn: '10001',
+      nama: 'SD Negeri 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    };
+
+    const manifest = {
+      version: 1,
+      schools: {
+        10001: { hash: 'x', builtAt: '2024-01-01T00:00:00.000Z', path: currentPath },
+      },
+    };
+
+    const deleted = await removeOrphanedSchoolPages([currentSchool], manifest);
+
+    assert.strictEqual(deleted, 0);
+    const existsAfter = await fs
+      .access(currentFile)
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(existsAfter, true, 'current page should remain');
+  });
+
+  it('returns 0 for a missing manifest', async () => {
+    const deleted = await removeOrphanedSchoolPages([], null);
+    assert.strictEqual(deleted, 0);
+  });
+
+  it('returns 0 when no orphaned pages exist', async () => {
+    const currentPath =
+      'provinsi/jawa-barat/kabupaten/bandung/kecamatan/coblong/10001-sd-negeri-1.html';
+    const currentSchool = {
+      npsn: '10001',
+      nama: 'SD Negeri 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    };
+
+    const manifest = {
+      version: 1,
+      schools: {
+        10001: { hash: 'x', builtAt: '2024-01-01T00:00:00.000Z', path: currentPath },
+      },
+    };
+
+    const deleted = await removeOrphanedSchoolPages([currentSchool], manifest);
+
+    assert.strictEqual(deleted, 0);
   });
 });

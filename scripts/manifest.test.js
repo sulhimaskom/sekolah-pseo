@@ -392,6 +392,148 @@ test('getUnchangedSchools returns only unchanged schools', () => {
   assert.strictEqual(result[0].npsn, '12345678');
 });
 
+test('getOrphanedSchoolPaths returns empty array when manifest is missing', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const result = getOrphanedSchoolPaths(null, new Set(['/path.html']));
+
+  assert.deepStrictEqual(result, []);
+});
+
+test('getOrphanedSchoolPaths returns empty array when manifest has no schools', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const result = getOrphanedSchoolPaths({ version: 1, schools: {} }, new Set(['/path.html']));
+
+  assert.deepStrictEqual(result, []);
+});
+
+test('getOrphanedSchoolPaths returns no orphans when all manifest paths are current', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const manifest = {
+    version: 1,
+    schools: {
+      12345678: {
+        hash: 'a',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+      },
+      87654321: {
+        hash: 'b',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/x/kabupaten/y/kecamatan/z/87654321-smk.html',
+      },
+    },
+  };
+
+  const currentPaths = new Set([
+    'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+    'provinsi/x/kabupaten/y/kecamatan/z/87654321-smk.html',
+  ]);
+
+  const result = getOrphanedSchoolPaths(manifest, currentPaths);
+
+  assert.deepStrictEqual(result, []);
+});
+
+test('getOrphanedSchoolPaths flags pages for schools removed from the CSV', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const manifest = {
+    version: 1,
+    schools: {
+      12345678: {
+        hash: 'a',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+      },
+      87654321: {
+        hash: 'b',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/x/kabupaten/y/kecamatan/z/87654321-smk.html',
+      },
+    },
+  };
+
+  // School 87654321 no longer exists in the current CSV.
+  const currentPaths = new Set(['provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html']);
+
+  const result = getOrphanedSchoolPaths(manifest, currentPaths);
+
+  assert.deepStrictEqual(result, ['provinsi/x/kabupaten/y/kecamatan/z/87654321-smk.html']);
+});
+
+test('getOrphanedSchoolPaths flags old pages when a school path changes', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const manifest = {
+    version: 1,
+    schools: {
+      12345678: {
+        hash: 'a',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+      },
+    },
+  };
+
+  // Same school, but provinsi/nama changed -> different relative path.
+  const currentPaths = new Set(['provinsi/d/kabupaten/b/kecamatan/c/12345678-sma-baru.html']);
+
+  const result = getOrphanedSchoolPaths(manifest, currentPaths);
+
+  assert.deepStrictEqual(result, ['provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html']);
+});
+
+test('getOrphanedSchoolPaths skips manifest entries without a path', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const manifest = {
+    version: 1,
+    schools: {
+      12345678: {
+        hash: 'a',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+      },
+      87654321: { hash: 'b', builtAt: '2024-01-01T00:00:00.000Z' }, // no path recorded
+    },
+  };
+
+  const currentPaths = new Set(['provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html']);
+
+  const result = getOrphanedSchoolPaths(manifest, currentPaths);
+
+  assert.deepStrictEqual(result, []);
+});
+
+test('getOrphanedSchoolPaths accepts an array as current paths', () => {
+  const { getOrphanedSchoolPaths } = require('./manifest');
+
+  const manifest = {
+    version: 1,
+    schools: {
+      12345678: {
+        hash: 'a',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+      },
+      87654321: {
+        hash: 'b',
+        builtAt: '2024-01-01T00:00:00.000Z',
+        path: 'provinsi/x/kabupaten/y/kecamatan/z/87654321-smk.html',
+      },
+    },
+  };
+
+  const result = getOrphanedSchoolPaths(manifest, [
+    'provinsi/a/kabupaten/b/kecamatan/c/12345678-sma.html',
+  ]);
+
+  assert.deepStrictEqual(result, ['provinsi/x/kabupaten/y/kecamatan/z/87654321-smk.html']);
+});
+
 test('MANIFEST_FILE constant is defined', () => {
   const { MANIFEST_FILE } = require('./manifest');
 
