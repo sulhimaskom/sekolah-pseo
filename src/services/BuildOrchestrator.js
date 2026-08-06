@@ -19,7 +19,13 @@ const { parseCsv, processInBatches } = require('../../scripts/utils');
 const logger = require('../../scripts/logger');
 const CONFIG = require('../../scripts/config');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
-const { safeReadFile, safeWriteFile, fastWriteFile, fastMkdir } = require('../../scripts/fs-safe');
+const {
+  safeReadFile,
+  safeWriteFile,
+  fastWriteFile,
+  fastMkdir,
+  safeUnlink,
+} = require('../../scripts/fs-safe');
 const {
   buildSchoolPageData,
   buildHomepageData,
@@ -35,6 +41,7 @@ const {
   loadManifest,
   saveManifest,
   getChangedSchools,
+  getOrphanedSchoolPaths,
   computeSchoolHash,
   MANIFEST_VERSION,
 } = require('../../scripts/manifest');
@@ -173,6 +180,45 @@ async function preCreateProvinceDirectories(schools, provinces) {
   });
 
   await Promise.all(dirPromises);
+}
+
+/**
+ * F045: delete dist/ pages whose relative path no longer matches any current
+ * school. Schools removed from the CSV or whose path changed (provinsi /
+ * kab_kota / kecamatan / nama) would otherwise leave stale, linkable pages in
+ * dist/ forever — getChangedSchools() only iterates current schools, so the
+ * orphaned pages are never touched by the normal incremental diff.
+ *
+ * Only files recorded in the previous manifest are candidates, and each is
+ * verified against the current path set — nothing outside the manifest's own
+ * school entries can be deleted.
+ *
+ * @param {Array<Object>} schools - Current school records
+ * @param {Object} manifest - Previous build manifest
+ * @returns {Promise<number>} Number of orphaned pages deleted
+ */
+async function removeOrphanedSchoolPages(schools, manifest) {
+  if (!manifest || !manifest.schools) {
+    return 0;
+  }
+
+  const currentPaths = new Set();
+  for (const school of schools) {
+    try {
+      currentPaths.add(getSchoolRelativePath(school));
+    } catch {
+      // Invalid row cannot produce a page; its stale entry is a delete candidate too
+    }
+  }
+
+  const orphaned = getOrphanedSchoolPaths(manifest, currentPaths);
+  if (orphaned.length === 0) {
+    return 0;
+  }
+
+  logger.info(`Removing ${orphaned.length} orphaned page(s) from previous build`);
+  await Promise.all(orphaned.map(relPath => safeUnlink(path.join(distDir, relPath))));
+  return orphaned.length;
 }
 
 /**
@@ -411,6 +457,7 @@ async function build(options = {}) {
         const { changed, unchanged } = getChangedSchools(schools, manifest);
         logger.info(`Incremental build: ${unchanged.length} unchanged, ${changed.length} changed`);
         schoolsToBuild = changed;
+        await removeOrphanedSchoolPages(schools, manifest);
       } else {
         logger.info('No manifest found, performing full build');
       }
@@ -483,6 +530,7 @@ module.exports = {
   writeSearchDataFile,
   exportSchoolsCsv,
   createManifestFromSchools,
+  removeOrphanedSchoolPages,
 
   // Re-exported for convenience
   computeSchoolHash,
