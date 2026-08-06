@@ -15,68 +15,6 @@ const BACK_TO_TOP_SCRIPT_BODY = generateBackToTopScript()
   .trim();
 
 /**
- * Extract unique values for filter dropdowns
- * @param {Array<Object>} schools - Array of school data objects
- * @returns {Object} - Object with unique provinces and types
- */
-function extractFilterOptions(schools) {
-  if (!Array.isArray(schools)) {
-    return { provinces: [], types: [], statuses: [] };
-  }
-
-  const provinceSet = new Set();
-  const typeSet = new Set();
-  const statusSet = new Set();
-
-  for (const school of schools) {
-    if (school.provinsi) provinceSet.add(school.provinsi);
-    if (school.bentuk_pendidikan) typeSet.add(school.bentuk_pendidikan);
-    if (school.status) statusSet.add(school.status);
-  }
-
-  return {
-    provinces: Array.from(provinceSet).sort((a, b) => a.localeCompare(b, 'id')),
-    types: Array.from(typeSet).sort((a, b) => a.localeCompare(b, 'id')),
-    statuses: Array.from(statusSet).sort(),
-  };
-}
-
-/**
- * Aggregate school data by province
- * @param {Array<Object>} schools - Array of school data objects
- * @returns {Array<Object>} - Array of province objects with school count
- */
-function aggregateByProvince(schools) {
-  if (!Array.isArray(schools)) {
-    return [];
-  }
-
-  const provinceMap = new Map();
-
-  for (const school of schools) {
-    if (!school.provinsi) continue;
-
-    const provinsiName = school.provinsi;
-    if (!provinceMap.has(provinsiName)) {
-      provinceMap.set(provinsiName, {
-        name: provinsiName,
-        slug: slugify(provinsiName),
-        count: 0,
-      });
-    }
-
-    const province = provinceMap.get(provinsiName);
-    province.count++;
-  }
-
-  // Sort by province name
-  const provinces = Array.from(provinceMap.values());
-  provinces.sort((a, b) => a.name.localeCompare(b.name, 'id'));
-
-  return provinces;
-}
-
-/**
  * Generate filter options HTML for dropdowns
  * @param {Object} options - Filter options object
  * @returns {string} - HTML string for province options
@@ -112,9 +50,8 @@ function generateStatusOptionsHtml(statuses) {
  * @returns {string} - Homepage HTML
  */
 /**
- * Aggregate province data and filter options in a single pass.
- * Combines aggregateByProvince() and extractFilterOptions() to
- * eliminate one full-school iteration during homepage generation.
+ * Aggregate province data and filter options in a single pass
+ * (replaces the removed aggregateByProvince/extractFilterOptions pair).
  */
 function aggregateProvinceAndFilters(schools) {
   if (!Array.isArray(schools)) {
@@ -312,7 +249,6 @@ function generateHomepageHtml(schools) {
       
       // ===== School Search Functionality =====
       var schools = null;
-      var searchLoaded = false;
       
       // Lazy-load school search data from external JSON file
       // Reduces initial HTML payload from 1.3MB to ~14KB
@@ -348,7 +284,6 @@ function generateHomepageHtml(schools) {
             return s;
           });
         }
-        searchLoaded = true;
         if (searchInput) searchInput.setAttribute('aria-busy', 'false');
         // Re-run search if input already has value
         if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value || statusFilter.value)) {
@@ -731,7 +666,5 @@ function generateHomepageHtml(schools) {
 
 module.exports = {
   generateHomepageHtml,
-  aggregateByProvince,
   aggregateProvinceAndFilters,
-  extractFilterOptions,
 };

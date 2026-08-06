@@ -246,6 +246,26 @@ describe('generateSchoolPageHtml', () => {
     assert.ok(jsonLdBlock.includes('"streetAddress": "Jl. Ahmad Yani & Soekarno No. 5"'));
   });
 
+  it('F049: captures copy-feedback defaultText once at setup, not at click time', () => {
+    const html = generateSchoolPageHtml(validSchool);
+    const scriptBlock = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+
+    const defaultTextIdx = scriptBlock.indexOf(
+      'var defaultText = feedback ? feedback.textContent :'
+    );
+    const clickListenerIdx = scriptBlock.indexOf("btn.addEventListener('click'");
+
+    // The default message must be read from the (still populated) status region
+    // before any click handler runs — reading it at click time returns '' because
+    // the previous copy timeout empties the region (blank bubble on 2nd copy).
+    assert.ok(defaultTextIdx !== -1, 'defaultText should be captured');
+    assert.ok(clickListenerIdx !== -1, 'click listener should exist');
+    assert.ok(
+      defaultTextIdx < clickListenerIdx,
+      'defaultText must be captured before the click listener'
+    );
+  });
+
   it('escapes HTML in school name to prevent XSS', () => {
     const maliciousSchool = {
       ...validSchool,
