@@ -10,15 +10,15 @@ ledger.
 
 **Objective**: strengthen/integrate existing features; trace every action to a documented gap.
 
-| Candidate | State | Verdict |
-| --------- | ----- | ------- |
-| **F066 sitemap.test.js deletes real dist artifacts** | FIXED (84th) | **maintained — verified 2/2 this run** (build → test:js → sitemap survives). No further action. |
-| Workflow security cluster (F037/F038, F056–F059) | HELD (P0/P1) | needs `workflows: write` — blocked (F050 token perimeter) |
-| F063 orchestrator fictitious GH_TOKEN | HELD (P1) | needs secret/workflow write — blocked; re-confirmed 10/10 this run (40/40 at 85th) |
-| F065 continue-on-error | HELD (P2) | workflow edit — blocked by F050 |
-| F018 data refresh | HELD (P1) | upstream JSON-only — ETL change consumes a real fix cycle without a JSON-source contract; deferred |
-| F064 lint-staged engine | HELD (P2) | `.nvmrc`=22 vs runtime v20 — CI-environment config, not a source defect |
-| F005 Prettier drift (ledger docs) | HELD (P3) | formatting-only — explicitly out of Phase-2 scope ("NO cosmetic cleanup"); tracked |
+| Candidate                                            | State        | Verdict                                                                                            |
+| ---------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| **F066 sitemap.test.js deletes real dist artifacts** | FIXED (84th) | **maintained — verified 2/2 this run** (build → test:js → sitemap survives). No further action.    |
+| Workflow security cluster (F037/F038, F056–F059)     | HELD (P0/P1) | needs `workflows: write` — blocked (F050 token perimeter)                                          |
+| F063 orchestrator fictitious GH_TOKEN                | HELD (P1)    | needs secret/workflow write — blocked; re-confirmed 10/10 this run (40/40 at 85th)                 |
+| F065 continue-on-error                               | HELD (P2)    | workflow edit — blocked by F050                                                                    |
+| F018 data refresh                                    | HELD (P1)    | upstream JSON-only — ETL change consumes a real fix cycle without a JSON-source contract; deferred |
+| F064 lint-staged engine                              | HELD (P2)    | `.nvmrc`=22 vs runtime v20 — CI-environment config, not a source defect                            |
+| F005 Prettier drift (ledger docs)                    | HELD (P3)    | formatting-only — explicitly out of Phase-2 scope ("NO cosmetic cleanup"); tracked                 |
 
 **Decision**: No NEW hardening item eligible this run — F066 (the 84th's item) is
 maintained, and every other candidate is blocked by token perimeter (F002/F050), an
@@ -41,11 +41,11 @@ new defect.
 
 ## Action log (UTC)
 
-| Time | Action | Target | Result |
-| ---- | ------ | ------ | ------ |
-| 14:32 | Phase-2 scan | F066 + held cluster | F066 maintained 2/2; rest blocked/held |
-| 14:32 | Phase-3 scan | roadmap FEAT-005 | already recorded — no duplicate |
-| 14:33 | docs write | 30–32 records under docs/issues/2026-08-08/ | audit + records + decision |
+| Time  | Action       | Target                                      | Result                                 |
+| ----- | ------------ | ------------------------------------------- | -------------------------------------- |
+| 14:32 | Phase-2 scan | F066 + held cluster                         | F066 maintained 2/2; rest blocked/held |
+| 14:32 | Phase-3 scan | roadmap FEAT-005                            | already recorded — no duplicate        |
+| 14:33 | docs write   | 30–32 records under docs/issues/2026-08-08/ | audit + records + decision             |
 
 ## Final state
 
