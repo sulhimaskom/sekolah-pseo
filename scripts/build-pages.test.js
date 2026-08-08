@@ -341,6 +341,11 @@ test('build creates dist directory and generates files', async () => {
   const manifestPath = path.join(CONFIG.ROOT_DIR, '.build-manifest.json');
   const manifestExists = await waitForFile(manifestPath);
   assert.ok(manifestExists, 'manifest should be created');
+
+  // F024: robots.txt advertises sitemap-index.xml, so the build must produce it
+  const sitemapIndexPath = path.join(CONFIG.DIST_DIR, 'sitemap-index.xml');
+  const sitemapIndexExists = await waitForFile(sitemapIndexPath);
+  assert.ok(sitemapIndexExists, 'sitemap-index.xml should be created by build');
 });
 
 test('buildIncremental runs without error when manifest exists', async () => {

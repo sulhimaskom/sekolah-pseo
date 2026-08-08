@@ -47,6 +47,7 @@ const {
 } = require('../../scripts/manifest');
 const { BuildPerformanceTracker } = require('../../scripts/build-performance');
 const { loadEnrichmentData } = require('../../scripts/enrichment');
+const { generateSitemaps } = require('../../scripts/sitemap');
 
 // Ensure dist directory exists
 const distDir = CONFIG.DIST_DIR;
@@ -485,13 +486,18 @@ async function build(options = {}) {
     // These are independent I/O operations — manifest writes to dist/.build-manifest.json,
     // CSV export copies to dist/data/schools.csv. Running them concurrently
     // reduces critical-path wall time.
+    // F024: generate sitemaps so robots.txt's advertised sitemap-index.xml
+    // actually exists after every build. Data-driven (schools already loaded),
+    // so it runs for both full and incremental builds. Independent of the
+    // manifest/CSV writes — fused into the same parallel batch.
     const manifestPromise = saveManifest(createManifestFromSchools(schools));
+    const sitemapPromise = generateSitemaps(schools);
 
     if (!incremental) {
-      await Promise.all([manifestPromise, exportSchoolsCsv()]);
+      await Promise.all([manifestPromise, exportSchoolsCsv(), sitemapPromise]);
       logger.info('Build manifest saved');
     } else {
-      await manifestPromise;
+      await Promise.all([manifestPromise, sitemapPromise]);
       logger.info('Build manifest saved');
     }
   } finally {
