@@ -551,32 +551,6 @@ clearEscapeHtmlCache();
 
 ---
 
-#### `addNumbers(a, b)`
-
-Adds two finite numbers with validation.
-
-**Parameters:**
-
-- `a` (number): First number
-- `b` (number): Second number
-
-**Returns:** `number` - Sum of the two numbers
-
-**Throws:** `Error` if either parameter is not a finite number
-
-**Error Handling:**
-
-- Throws `Error` for `NaN`, `Infinity`, or non-numeric input
-
-**Usage:**
-
-```javascript
-const sum = addNumbers(5, 3); // Returns: 8
-addNumbers('a', 2); // Throws: Error('Both parameters must be finite numbers')
-```
-
----
-
 #### `walkDirectory(dir, callback)`
 
 Recursively walks a directory tree and processes each HTML file with a callback.
