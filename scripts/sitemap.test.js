@@ -4,7 +4,13 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 
+// F066 fix: node --test runs test files in parallel child processes;
+// this file previously wrote to and then deleted the REAL CONFIG.DIST_DIR
+// (dist/) sitemap artifacts — the only test file still mutating real build
+// output after the F052/F014 temp-dir redirects. Redirect DIST_DIR per-process
+// BEFORE requiring sitemap, mirroring build-pages.test.js / build-orchestrator.test.js.
 const CONFIG = require('./config');
+CONFIG.DIST_DIR = path.join(os.tmpdir(), `sitemap-test-dist-${process.pid}`);
 
 test.before(async () => {
   process.env.TEST_TEMP_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'sitemap-test-'));
