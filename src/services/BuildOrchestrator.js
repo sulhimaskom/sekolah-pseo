@@ -480,6 +480,19 @@ async function build(options = {}) {
       const { successful, failed } = writeResult;
       logger.info(`Generated ${successful} school pages (${failed} failed)`);
       tracker.recordPageCounts(successful + failed, failed);
+
+      // F069: enforce MAX_FAILED_PAGES budget (default 0) — failed pages
+      // previously shipped silently with exit 0; abort so CI catches them.
+      const failedPagesViolation = tracker
+        .checkBudgets()
+        .find(v => v.budget === 'MAX_FAILED_PAGES');
+      if (failedPagesViolation) {
+        throw new IntegrationError(
+          failedPagesViolation.message,
+          ERROR_CODES.PERFORMANCE_BUDGET_VIOLATION,
+          { failedPages: failed, maxFailedPages: tracker.budgets.MAX_FAILED_PAGES }
+        );
+      }
     }
 
     // Save manifest and (for full builds) export CSV in parallel.

@@ -4,6 +4,10 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
 
+// F069: pin the failed-pages budget to the default (0) so the enforcement
+// test is deterministic regardless of the runner environment.
+process.env.PERF_MAX_FAILED_PAGES = '0';
+
 // F052 fix: node --test runs test files in parallel child processes;
 // this file previously removed/wrote the REAL CONFIG.DIST_DIR (dist/) and
 // CONFIG.ROOT_DIR/.build-manifest.json, racing with other test files (and
@@ -188,6 +192,34 @@ test('writeSchoolPagesConcurrently handles all failures', async () => {
   const result = await writeSchoolPagesConcurrently(schools, 2);
   assert.strictEqual(result.successful, 0);
   assert.strictEqual(result.failed, 2);
+});
+
+test('build rejects with PERFORMANCE_BUDGET_VIOLATION when school pages fail (F069)', async () => {
+  // F069: build() must fail loudly when pages fail instead of exiting 0.
+  // Use a CSV with one valid school and one school missing required fields
+  // (writeSchoolPage rejects for it), so writeSchoolPagesConcurrently
+  // reports failed=1 while shared page generation tolerates the row.
+  const originalCsvPath = CONFIG.SCHOOLS_CSV_PATH;
+  const tempCsvPath = path.join(CONFIG.ROOT_DIR, 'schools-f069.csv');
+  const csvContent = [
+    'npsn,nama,bentuk_pendidikan,status,alamat,kelurahan,kecamatan,kab_kota,provinsi,lat,lon,updated_at',
+    '99001,SMA Negeri F069,SMA,N,Jl. Test No. 1,Gambir,Gambir,Jakarta Pusat,DKI Jakarta,-6.2,106.8,2026-08-10',
+    '99002,SD Incomplete',
+  ].join('\n');
+
+  try {
+    await fs.writeFile(tempCsvPath, csvContent);
+    CONFIG.SCHOOLS_CSV_PATH = tempCsvPath;
+
+    await assert.rejects(build(), error => {
+      assert.strictEqual(error.code, 'PERFORMANCE_BUDGET_VIOLATION');
+      assert.match(error.message, /Failed pages 1 exceeds budget of 0/);
+      return true;
+    });
+  } finally {
+    CONFIG.SCHOOLS_CSV_PATH = originalCsvPath;
+    await fs.unlink(tempCsvPath).catch(() => {});
+  }
 });
 
 test('loadSchools throws error when file not found', async () => {
