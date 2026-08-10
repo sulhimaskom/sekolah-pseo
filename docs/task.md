@@ -36,13 +36,13 @@ Audited `docs/api.md` and `docs/feature.md` against the current homepage source 
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| Homepage exports vs docs | `module.exports` = `{ generateHomepageHtml, aggregateProvinceAndFilters }` — matches updated docs |
-| Residual stale references | Only the intentional "replaces the removed pair" note remains in api.md |
-| JS Tests | 1091 total, 1087 pass, 0 fail, 4 skipped (unaffected — docs only) |
-| Prettier | All changed files formatted cleanly |
-| Zero regressions | Docs-only change; no code touched |
+| Check                     | Result                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| Homepage exports vs docs  | `module.exports` = `{ generateHomepageHtml, aggregateProvinceAndFilters }` — matches updated docs |
+| Residual stale references | Only the intentional "replaces the removed pair" note remains in api.md                           |
+| JS Tests                  | 1091 total, 1087 pass, 0 fail, 4 skipped (unaffected — docs only)                                 |
+| Prettier                  | All changed files formatted cleanly                                                               |
+| Zero regressions          | Docs-only change; no code touched                                                                 |
 
 ### Files Modified
 
@@ -96,18 +96,18 @@ Accessibility and interaction pass over the homepage search — the site's prima
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| Homepage tests | 31/31 pass (+5 new interaction-state tests) |
-| Styles tests | 28/28 pass (+2 new forced-colors/focus tests) |
-| JS Tests (full suite) | 1091/1091 pass (1084 baseline + 7 new), 0 fail, 4 skipped |
-| ESLint | 0 errors (all 4 changed files) |
-| Prettier | All changed files formatted cleanly |
-| Build | 2 pages, 0 failed, all performance budgets met |
-| Generated HTML | `disabled` on all 3 filters; `aria-live` on `#result-count` only; no filter-reset in inline script |
-| Generated script | `node --check` on extracted `<script>` — clean |
-| Generated CSS | `forced-colors` block + `download-csv-btn:focus-visible` present |
-| Zero regressions | Confirmed |
+| Check                 | Result                                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| Homepage tests        | 31/31 pass (+5 new interaction-state tests)                                                        |
+| Styles tests          | 28/28 pass (+2 new forced-colors/focus tests)                                                      |
+| JS Tests (full suite) | 1091/1091 pass (1084 baseline + 7 new), 0 fail, 4 skipped                                          |
+| ESLint                | 0 errors (all 4 changed files)                                                                     |
+| Prettier              | All changed files formatted cleanly                                                                |
+| Build                 | 2 pages, 0 failed, all performance budgets met                                                     |
+| Generated HTML        | `disabled` on all 3 filters; `aria-live` on `#result-count` only; no filter-reset in inline script |
+| Generated script      | `node --check` on extracted `<script>` — clean                                                     |
+| Generated CSS         | `forced-colors` block + `download-csv-btn:focus-visible` present                                   |
+| Zero regressions      | Confirmed                                                                                          |
 
 ### Files Modified
 
@@ -161,17 +161,17 @@ While auditing the retry policy, discovered a latent bug: the old `shouldRetry` 
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| Timeout retried | 3 attempts (old predicate: 0) — `RETRY_EXHAUSTED`, `lastErrorCode: 'TIMEOUT'` |
-| Parse failure not retried | 1 attempt — `HTTP_ERROR` |
-| Breaker opens | After 3 consecutive failures → `OPEN` |
-| Fail-fast when open | 4th request rejects `CIRCUIT_BREAKER_OPEN`, zero network calls |
-| Reset on success | `reset()` → `CLOSED`; successful request keeps `CLOSED` |
-| Graceful degradation | `enrichSchoolViaWikipedia` → `{}` when circuit OPEN |
-| JS Tests | 1084 total, 1080 pass, 0 fail, 4 skipped (baseline 1078/1074 + 6 new) |
-| ESLint | 0 errors |
-| Prettier | Clean on changed files (89 pre-existing repo warnings, unchanged) |
+| Check                     | Result                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| Timeout retried           | 3 attempts (old predicate: 0) — `RETRY_EXHAUSTED`, `lastErrorCode: 'TIMEOUT'` |
+| Parse failure not retried | 1 attempt — `HTTP_ERROR`                                                      |
+| Breaker opens             | After 3 consecutive failures → `OPEN`                                         |
+| Fail-fast when open       | 4th request rejects `CIRCUIT_BREAKER_OPEN`, zero network calls                |
+| Reset on success          | `reset()` → `CLOSED`; successful request keeps `CLOSED`                       |
+| Graceful degradation      | `enrichSchoolViaWikipedia` → `{}` when circuit OPEN                           |
+| JS Tests                  | 1084 total, 1080 pass, 0 fail, 4 skipped (baseline 1078/1074 + 6 new)         |
+| ESLint                    | 0 errors                                                                      |
+| Prettier                  | Clean on changed files (89 pre-existing repo warnings, unchanged)             |
 
 ### Files Modified
 
