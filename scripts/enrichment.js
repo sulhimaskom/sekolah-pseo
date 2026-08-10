@@ -158,22 +158,23 @@ function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
     );
   };
 
-  return wikipediaCircuitBreaker.execute(() =>
-    retry(doFetch, {
-      maxAttempts: 3,
-      initialDelayMs: 1000,
-      shouldRetry: err => {
-        // Timeouts are transient — retry them. withTimeout rejects with an
-        // IntegrationError whose code is TIMEOUT; rejecting all IntegrationErrors
-        // here (the old predicate) silently disabled timeout retries. Parse
-        // failures (IntegrationError HTTP_ERROR) remain non-retryable.
-        if (err instanceof IntegrationError) {
-          return err.code === ERROR_CODES.TIMEOUT;
-        }
-        if (err.statusCode === 429 || (err.statusCode && err.statusCode >= 500)) return true;
-        return isTransientError(err);
-      },
-    }),
+  return wikipediaCircuitBreaker.execute(
+    () =>
+      retry(doFetch, {
+        maxAttempts: 3,
+        initialDelayMs: 1000,
+        shouldRetry: err => {
+          // Timeouts are transient — retry them. withTimeout rejects with an
+          // IntegrationError whose code is TIMEOUT; rejecting all IntegrationErrors
+          // here (the old predicate) silently disabled timeout retries. Parse
+          // failures (IntegrationError HTTP_ERROR) remain non-retryable.
+          if (err instanceof IntegrationError) {
+            return err.code === ERROR_CODES.TIMEOUT;
+          }
+          if (err.statusCode === 429 || (err.statusCode && err.statusCode >= 500)) return true;
+          return isTransientError(err);
+        },
+      }),
     'Wikipedia API request'
   );
 }
