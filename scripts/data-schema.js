@@ -155,6 +155,15 @@ const CSV_FIELD_ORDER = [
  */
 const REQUIRED_FIELDS = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
 
+/**
+ * Fields required for school page rendering / path building.
+ * Subset of REQUIRED_FIELDS that must be present when generating a school page
+ * (bentuk_pendidikan is not required at render time). Single source of truth
+ * shared by the service layer (PageBuilder) and the template layer (school-page).
+ * @type {string[]}
+ */
+const REQUIRED_SCHOOL_FIELDS = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
+
 // ── Validation Helpers ─────────────────────────────────────────────────────
 
 /**
@@ -380,6 +389,7 @@ module.exports = {
   FIELDS,
   CSV_FIELD_ORDER,
   REQUIRED_FIELDS,
+  REQUIRED_SCHOOL_FIELDS,
   isNonEmpty,
   isValidCoordinate,
   isValidCategoricalValue,

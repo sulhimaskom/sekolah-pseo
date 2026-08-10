@@ -1,5 +1,6 @@
 const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../scripts/utils');
 const { IntegrationError, ERROR_CODES } = require('../../../scripts/resilience');
+const { REQUIRED_SCHOOL_FIELDS } = require('../../../scripts/data-schema');
 const CONFIG = require('../../../scripts/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
@@ -72,8 +73,7 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
     });
   }
 
-  const requiredFields = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
-  const missingFields = requiredFields.filter(field => !school[field]);
+  const missingFields = REQUIRED_SCHOOL_FIELDS.filter(field => !school[field]);
 
   if (missingFields.length > 0) {
     throw new IntegrationError(

@@ -3,11 +3,10 @@
 const path = require('path');
 const slugify = require('../../scripts/slugify');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
+const { REQUIRED_SCHOOL_FIELDS } = require('../../scripts/data-schema');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 const { generateHomepageHtml } = require('../presenters/templates/homepage');
-
-const REQUIRED_SCHOOL_FIELDS = ['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama'];
 
 // WeakMap cache for getSchoolRelativePath - caches computed path by school object reference.
 // This eliminates redundant slugify+path.join calls when the same school object is

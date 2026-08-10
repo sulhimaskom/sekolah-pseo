@@ -123,6 +123,7 @@ module.exports = {
   FIELDS, // All field definitions
   CSV_FIELD_ORDER, // Canonical CSV column order
   REQUIRED_FIELDS, // Required field names
+  REQUIRED_SCHOOL_FIELDS, // Fields required for school page rendering
   isNonEmpty, // Value emptiness check
   isValidCoordinate, // Coordinate bounds check
   isValidCategoricalValue, // Categorical value check
@@ -201,6 +202,12 @@ module.exports = {
 - **Type:** `string[]`
 - **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan']`
 - **Description:** Fields that must be non-empty for a valid school record.
+
+#### `REQUIRED_SCHOOL_FIELDS`
+
+- **Type:** `string[]`
+- **Value:** `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']`
+- **Description:** Fields required for school page rendering / path building (subset of `REQUIRED_FIELDS`, excludes `bentuk_pendidikan`). Single source of truth shared by `PageBuilder.js` (service layer) and `school-page.js` (template layer).
 
 ### Functions
 

@@ -2,6 +2,59 @@
 
 ## Completed Tasks
 
+### [TASK-079] Code Sanitization — Backlog Cleanup (REFACTOR-003, REFACTOR-004, REFACTOR-006)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Full health check (build, lint, JS+Python tests — all green) followed by targeted resolution of three open backlog items, plus backlog triage of the remaining items.
+
+### Changes Made
+
+**1. REFACTOR-003 — hoisted inline `require('fs')`** (`src/services/BuildOrchestrator.js`):
+
+- `const fs = require('fs')` added to module-level requires; `finalizeBuild()` now uses the shared import (`fs.appendFileSync`) instead of the inline require.
+
+**2. REFACTOR-004 — province-directory failure visibility** (`src/services/BuildOrchestrator.js` `preCreateProvinceDirectories()`):
+
+- Aligned with the `preCreateDirectories()` contract: per-directory failures are collected, a warning with failure count is logged when any occur, and the failures array is returned. Failures are no longer invisible beyond the per-error log line.
+
+**3. REFACTOR-006 — `REQUIRED_SCHOOL_FIELDS` consolidation** (`scripts/data-schema.js`, `src/services/PageBuilder.js`, `src/presenters/templates/school-page.js`):
+
+- `REQUIRED_SCHOOL_FIELDS` moved to `data-schema.js` (neutral single source of truth, alongside the ETL-level `REQUIRED_FIELDS`), imported by both `PageBuilder.js` and `school-page.js`; the inline `requiredFields` duplicate in `school-page.js` removed. Placed in `data-schema.js` rather than re-exported from `PageBuilder.js` because `PageBuilder.js` already imports `school-page.js` — re-exporting from PageBuilder would create a circular require.
+
+**4. Backlog triage (docs/task.md)** — marked REFACTOR-001 (direct tests exist in `scripts/build-orchestrator.test.js`), REFACTOR-003, REFACTOR-004, REFACTOR-006, and the lazy-require code-review item as resolved; REFACTOR-005 as superseded (`aggregateByProvince` removed in TASK-072); REFACTOR-008 and the fetch-data raw-`fs` item as intentional/closed with justification.
+
+### Verification
+
+| Check                | Result                                                                      |
+| -------------------- | --------------------------------------------------------------------------- |
+| ESLint               | 0 errors (all changed files)                                                |
+| JS Tests             | 1057/1057 pass (0 fail, 4 skipped); affected suites 140/140 (PageBuilder, build-orchestrator, build-pages) |
+| Build                | 2 pages, 0 failed, Status: PASS                                             |
+| Zero regressions     | Confirmed                                                                   |
+
+### Files Modified
+
+- `src/services/BuildOrchestrator.js` — hoisted `require('fs')`; `preCreateProvinceDirectories()` failure collection + return
+- `scripts/data-schema.js` — added `REQUIRED_SCHOOL_FIELDS` (exported)
+- `src/services/PageBuilder.js` — imports `REQUIRED_SCHOOL_FIELDS` from data-schema; removed local duplicate
+- `src/presenters/templates/school-page.js` — imports `REQUIRED_SCHOOL_FIELDS`; removed inline `requiredFields`
+- `docs/task.md` — This entry; REFACTOR-001/003/004/006 + lazy-require marked Resolved; REFACTOR-005 Superseded; REFACTOR-008 + fetch-data raw fs Closed/intentional
+
+### Acceptance Criteria
+
+- [x] Build passes, lint 0 errors, full test suite green
+- [x] No inline `require()` inside function bodies in BuildOrchestrator
+- [x] Province directory creation failures logged with count and returned to callers
+- [x] `REQUIRED_SCHOOL_FIELDS` defined exactly once (data-schema.js), no circular require
+- [x] Open backlog items triaged: resolved / superseded / intentional with rationale
+- [x] Zero regressions
+
+---
+
 ### [TASK-075] UI/UX Accessibility — Search Loading States, Copy-Feedback Announcement, Dark-Mode Autocomplete
 
 **Status**: Complete
@@ -9518,6 +9571,8 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-001] Add BuildOrchestrator Service Tests
 
+**Status**: Resolved — `scripts/build-orchestrator.test.js` provides direct coverage of `preCreateDirectories`, `finalizeBuild`, `prepareBuildEnvironment`, and `removeOrphanedSchoolPages` (with per-process CONFIG.DIST_DIR isolation). Remaining unexercised paths (`loadSchools` error paths, incremental manifest merge, `exportSchoolsCsv` fallback) are covered indirectly via `build-pages.test.js` integration tests.
+
 - **Location**: `src/services/BuildOrchestrator.js`
 - **Issue**: The core pipeline orchestrator (621 lines, 26 exported functions) has **zero direct unit tests**. Key functions — `loadSchools()`, `writeSchoolPagesConcurrently()`, `createManifestFromSchools()`, `exportSchoolsCsv()`, `writeSearchDataFile()`, `finalizeBuild()`, and the main `build()` pipeline — have no dedicated test file. They are only tested indirectly through `build-pages.test.js`, which exercises the thin re-export wrapper, not the service module directly. This means manifest merging logic, incremental/full build branching, and error paths are untested.
 - **Suggestion**: Create `src/services/BuildOrchestrator.test.js` with focused unit tests. Mock dependencies (`fs`, `manifest`, `PageBuilder`, `enrichment`, `config`) using `node:test` mocks. Cover: successful build flow, incremental build with/without manifest, incremental merge with existing manifest, zero-page edge case, `prepareBuildEnvironment` error paths, `exportSchoolsCsv` fallback, `finalizeBuild` GITHUB_STEP_SUMMARY path, `loadSchools` file-not-found and empty-CSV paths.
@@ -9534,21 +9589,27 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-003] Inline `require('fs')` in finalizeBuild
 
-- **Location**: `src/services/BuildOrchestrator.js:481`
+**Status**: Resolved (2026-08-10, Code Sanitizer pass)
+
+- **Location**: `src/services/BuildOrchestrator.js:418`
 - **Issue**: `finalizeBuild()` uses an inline `require('fs')` for `GITHUB_STEP_SUMMARY` — the only place in the file where `fs` is not imported at module level. Line 17 already imports `const fs = require('fs')` and line 32 creates `const fsp = fs.promises`. The inline require is inconsistent with the module's top-level import pattern. Moreover, `fs.appendFileSync` could be called via the already-imported `fs` object.
-- **Suggestion**: Remove the inline `require('fs')` and use the existing `fs` module-level import (`fs.appendFileSync`) instead.
+- **Resolution**: `const fs = require('fs')` hoisted to module-level requires (line 16); `finalizeBuild()` now uses the shared import (`fs.appendFileSync`). Inline require removed.
 - **Priority**: Low
 - **Effort**: Small
 
 ### [REFACTOR-004] Inconsistent Error Handling in `preCreateProvinceDirectories`
 
-- **Location**: `src/services/BuildOrchestrator.js:228-241`
-- **Issue**: `preCreateProvinceDirectories()` silently swallows all directory creation errors via `.catch(err => { logger.error(...) })` and returns `void`. By contrast, `preCreateDirectories()` (line 122) tracks failures in an array, returns it to the caller, and logs a warning with failure count. This inconsistency means province directory failures are invisible to callers — a failed province directory won't surface except in logs, potentially causing downstream failures (province page writes) with confusing error messages.
-- **Suggestion**: Align `preCreateProvinceDirectories()` with the `preCreateDirectories()` pattern: collect failures in an array, return them, log a warning with failure count. Update the single call site if needed.
+**Status**: Resolved (2026-08-10, Code Sanitizer pass)
+
+- **Location**: `src/services/BuildOrchestrator.js:171-204`
+- **Issue**: `preCreateProvinceDirectories()` silently swallows all directory creation errors via `.catch(err => { logger.error(...) })` and returns `void`. By contrast, `preCreateDirectories()` (line 110) tracks failures in an array, returns it to the caller, and logs a warning with failure count. This inconsistency means province directory failures are invisible to callers — a failed province directory won't surface except in logs, potentially causing downstream failures (province page writes) with confusing error messages.
+- **Resolution**: Aligned with the `preCreateDirectories()` contract — per-directory failures are collected, a warning with failure count is logged when any occur, and the failures array is returned (caller at `generateProvincePages()` is unchanged; it already reports per-page failures).
 - **Priority**: Low
 - **Effort**: Small
 
 ### [REFACTOR-005] Consolidate `getUniqueProvinces()` and `aggregateByProvince()` — Duplicate Province Aggregation
+
+**Status**: Superseded — `aggregateByProvince()` was removed (TASK-072); homepage.js now uses the single-pass `aggregateProvinceAndFilters()` which extracts province + type + status filters together. `getUniqueProvinces()` (PageBuilder) remains for sitemap/orchestrator path-building. Remaining shape overlap is intentional: the homepage pass is a fused O(n) single-pass optimization, and extracting a shared aggregator would force a second pass or complicate the fused version.
 
 - **Location**: `src/services/PageBuilder.js:126-153` and `src/presenters/templates/homepage.js:41-69`
 - **Issue**: Both functions iterate all schools, filter by `provinsi`, build a `Map<string, {name, slug, count}>`, and return `Array.from(Map.values())`. `getUniqueProvinces()` is used by `BuildOrchestrator.preCreateProvinceDirectories()`; `aggregateByProvince()` is exported for tests and public API. The only behavioral difference is sorting: `aggregateByProvince()` sorts by Indonesian locale, `getUniqueProvinces()` does not. Any change to province aggregation logic (field selection, data shape, slug generation) must be applied in two places.
@@ -9558,9 +9619,11 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-006] Consolidate `REQUIRED_SCHOOL_FIELDS` Constant — Duplicated Across Layers
 
+**Status**: Resolved (2026-08-10, Code Sanitizer pass)
+
 - **Location**: `src/services/PageBuilder.js:10` and `src/presenters/templates/school-page.js:67`
 - **Issue**: The array `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']` is defined as `REQUIRED_SCHOOL_FIELDS` in `PageBuilder.js` and duplicated inline as `requiredFields` in `school-page.js:generateSchoolPageHtml()`. If the required fields evolve (e.g., adding `alamat` as required), both definitions must be updated in lockstep — a maintenance trap that has already been documented as a `REQUIRED_SCHOOL_FIELDS` constant export for this purpose.
-- **Suggestion**: Export `REQUIRED_SCHOOL_FIELDS` from `PageBuilder.js` and import it in `school-page.js`. Remove the inline `requiredFields` definition. This ensures the template layer always validates against the same field set as the service layer.
+- **Resolution**: `REQUIRED_SCHOOL_FIELDS` moved to `scripts/data-schema.js` (neutral single source of truth, alongside the ETL-level `REQUIRED_FIELDS`), imported by both `PageBuilder.js` and `school-page.js`; inline `requiredFields` removed. Note: placed in `data-schema.js` rather than re-exported from `PageBuilder.js` because `PageBuilder.js` already imports `school-page.js` — re-exporting from PageBuilder would create a circular require.
 - **Priority**: Low
 - **Effort**: Trivial
 
@@ -9575,6 +9638,8 @@ Optimized three hotspots in the static site generation pipeline that survived th
 - **Effort**: Small
 
 ### [REFACTOR-008] Extract Common Error Wrapping Pattern in `fs-safe.js`
+
+**Status**: Closed — not applied (2026-08-10, Code Sanitizer pass). The repetition is intentional: `fastWriteFile`/`fastMkdir` deliberately skip the retry/timeout/circuit-breaker wrappers for bulk local writes; `safeMkdir`/`safeUnlink` special-case `EEXIST`/`ENOENT`; `safeReadFile`/`safeWriteFile` carry per-op circuit-breaker state. Extracting `wrapFsOp()` would force per-op exception flags through a generic helper, obscuring exactly the divergences it claims to unify. Deferred; revisit only if a 8th wrapper is added.
 
 - **Location**: `scripts/fs-safe.js:51-212`
 - **Issue**: Every `safeXxx` function follows the identical pattern: `retry(withTimeout(fs.Xxx(...), timeout, label))` + `.catch(error => { throw new IntegrationError(...) })`. This pattern is repeated for `safeReadFile`, `safeWriteFile`, `safeMkdir`, `safeAccess`, `safeReaddir`, `safeStat`, `safeUnlink` — 7 times. Each repetition varies only in: the underlying `fs` call, timeout value, error code, and error message template. The structural duplication makes it harder to add new safe wrappers and risks inconsistency (e.g., some have `retry(maxAttempts: 3)`, `safeMkdir` uses `maxAttempts: 2`).
@@ -10302,6 +10367,8 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 
 ### [REFACTOR] Resilience Pattern Inconsistency — Raw Synchronous `fs` Operations in 3 Scripts
 
+**Status**: Partially resolved — `data-quality.js` and `check-freshness.js` raw `fs` calls were eliminated in TASK-074 (now use `fileExists()`/`safeReadFile()`). Remaining raw `fs` in `fetch-data.js` (lines 218, 292-346) is **deliberate local file-cache management** (copy/mkdir/exists decisions for the external-data cache) where sync ops are the correct tool — retry/timeout wrappers would add latency without protection value on local cache dirs. Kept as-is.
+
 - **Location**: `scripts/data-quality.js` (lines 352, 356), `scripts/check-freshness.js` (lines 31, 41, 105, 109), `scripts/fetch-data.js` (lines 175, 249, 253, 278, 298, 303)
 - **Issue**: Three production scripts use raw `fs.existsSync()` and `fs.readFileSync()`/`fs.readdirSync()` instead of the resilient async wrappers (`safeReadFile`, `safeAccess`, `safeReaddir`) from `scripts/fs-safe.js`. This bypasses the codebase's deliberate timeout protection (30s default), retry logic (3 attempts with exponential backoff), and circuit breaker pattern (5-failure threshold, 60s reset) that every other script follows. The synchronous calls also block the event loop.
 - **Suggestion**: Replace each sync `fs` call with the corresponding async resilient wrapper:
@@ -10315,6 +10382,8 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 ---
 
 ### [REFACTOR] Lazy `require()` Hoisting — Dynamic Module Imports Inside Function Bodies in BuildOrchestrator.js
+
+**Status**: Resolved (2026-08-10, Code Sanitizer pass) — the inline `require('fs')` in `finalizeBuild()` was hoisted to module level (REFACTOR-003). The styles lazy require was already eliminated when `writeExternalStylesFile()` was extracted to `ExportService.js` in TASK-069.
 
 - **Location**: `src/services/BuildOrchestrator.js` (lines 162, 438)
 - **Issue**: Two `require()` calls are placed inside function bodies instead of at the module top level:
