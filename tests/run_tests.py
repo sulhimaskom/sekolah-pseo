@@ -227,36 +227,20 @@ def run_data_validation_tests(suite: TestSuite, root: str) -> None:
     )
     
     def test_dist_directory_creation():
-        dist_dir = os.path.join(root, 'dist')
-        
-        # Clean up if exists, with retry for transient ENOTEMPTY errors
+        # Use an isolated temp root so this test never touches the real
+        # build-output directory (dist/) — mirrors the F052/F014 isolation
+        # pattern already applied to build-pages.test.js and sitemap.test.js.
         import shutil
-        import time
-        if os.path.exists(dist_dir):
-            for attempt in range(3):
-                try:
-                    shutil.rmtree(dist_dir)
-                    break
-                except OSError:
-                    if attempt < 2:
-                        time.sleep(0.1)
-                        continue
-                    # Last resort: just log and skip teardown failure
-                    pass
-        
-        # Try to create
-        os.makedirs(dist_dir, exist_ok=True)
-        suite.assert_true(os.path.exists(dist_dir), "dist/ directory should be creatable")
-        
-        # Clean up, with retry for transient ENOTEMPTY errors
-        if os.path.exists(dist_dir):
-            for attempt in range(3):
-                try:
-                    shutil.rmtree(dist_dir)
-                    break
-                except OSError:
-                    if attempt < 2:
-                        time.sleep(0.1)
+        import tempfile
+        temp_root = tempfile.mkdtemp(prefix='run-tests-dist-')
+        try:
+            dist_dir = os.path.join(temp_root, 'dist')
+
+            # Try to create
+            os.makedirs(dist_dir, exist_ok=True)
+            suite.assert_true(os.path.exists(dist_dir), "dist/ directory should be creatable")
+        finally:
+            shutil.rmtree(temp_root, ignore_errors=True)
     
     suite.run_test("dist/ directory can be created", test_dist_directory_creation)
     

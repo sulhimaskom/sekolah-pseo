@@ -68,23 +68,16 @@ class TestDataIntegrity:
         assert os.path.exists(external_dir), "external/ directory should exist"
     
     def test_dist_directory_can_be_created(self):
-        """Verify dist/ directory can be created."""
-        root = os.path.dirname(os.path.dirname(__file__))
-        dist_dir = os.path.join(root, 'dist')
-        
-        # Clean up if exists
-        if os.path.exists(dist_dir):
-            import shutil
-            shutil.rmtree(dist_dir, ignore_errors=True)
-        
-        # Try to create
-        os.makedirs(dist_dir, exist_ok=True)
-        assert os.path.exists(dist_dir), "dist/ directory should be creatable"
-        
-        # Clean up
-        if os.path.exists(dist_dir):
-            import shutil
-            shutil.rmtree(dist_dir, ignore_errors=True)
+        """Verify build-output directory can be created, using an isolated temp root so the real dist/ is never touched (F066)."""
+        import shutil
+        import tempfile
+        temp_root = tempfile.mkdtemp(prefix='test-dist-')
+        try:
+            dist_dir = os.path.join(temp_root, 'dist')
+            os.makedirs(dist_dir, exist_ok=True)
+            assert os.path.exists(dist_dir), "dist output directory should be creatable"
+        finally:
+            shutil.rmtree(temp_root, ignore_errors=True)
 
 
 if __name__ == '__main__':
