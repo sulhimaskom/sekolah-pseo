@@ -91,7 +91,7 @@ As a user, I want to filter schools by multiple criteria simultaneously, so that
 
 ### Technical Notes
 
-- Filter options extracted server-side via `extractFilterOptions()` in homepage.js
+- Filter options extracted server-side via `aggregateProvinceAndFilters()` in homepage.js
 - Province navigation serves as a geographic filter
 - Education type and status filters are derived from school data fields
 - Implemented across commits `037b2b7` and `46e2b0b` (2026-06-08)

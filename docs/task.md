@@ -2,6 +2,64 @@
 
 ## Completed Tasks
 
+### [TASK-084] Technical Writing — Doc-Code Alignment for Homepage Module (api.md, feature.md, REFACTOR-007 follow-up)
+
+**Status**: Complete
+**Agent**: Senior Technical Writer (Sisyphus)
+
+### Description
+
+Audited `docs/api.md` and `docs/feature.md` against the current homepage source (`src/presenters/templates/homepage.js`) and removed documentation for two functions deleted in the 54th verification run (commit `f361320`, F048/F049): `aggregateByProvince` and `extractFilterOptions`. Both were removed from `module.exports` (only `generateHomepageHtml` and `aggregateProvinceAndFilters` remain), but the docs still presented them as live API with usage examples that would throw `TypeError: ... is not a function` if copied.
+
+### Findings & Changes
+
+**1. `docs/api.md` — Homepage Template Module (critical, actively misleading)**:
+
+- **Exports block**: removed `aggregateByProvince: function` and `extractFilterOptions: function` — the block now matches the actual `module.exports` (verified `homepage.js:701-704`).
+- **Removed `aggregateByProvince(schools)` section**: documented a deleted function (with sorting note, return-shape example, and a usage example importing a non-existent export).
+- **Removed `extractFilterOptions(schools)` section**: documented a deleted function (with return-shape example and a usage example importing a non-existent export).
+- **`aggregateProvinceAndFilters()` description**: now states it replaces the removed `aggregateByProvince`/`extractFilterOptions` pair instead of claiming it "combines the functionality" of live functions.
+- **`generateHomepageHtml()` Features list**: corrected to match current behavior (TASK-081/083 changes were absent):
+  - "Embedded school data in JSON format" → **"Search data lazy-loaded from `/schools.json`"** (data has never been embedded since the 2026-05-31 lazy-load decision; the old wording was actively misleading)
+  - "Province and education type filtering" → added **status filtering** (3 filters, per `homepage.js` `statusFilter`)
+  - "Escape to clear" → **"Escape clears the query only when the search input is focused — filters are never reset"** (TASK-083 scoping)
+  - Added: 150ms debounce, autocomplete (max 10) with keyboard navigation, 200-row render cap (`MAX_RENDERED_RESULTS`), CSV download of filtered results, `aria-live` result count, disabled-until-load filter selects with failure message
+
+**2. `docs/feature.md` — stale function reference**:
+
+- "Filter options extracted server-side via `extractFilterOptions()` in homepage.js" → `aggregateProvinceAndFilters()` (verified the function no longer exists in `homepage.js`).
+
+**3. Historical records left untouched**:
+
+- `docs/task.md` REFACTOR-007 (line ~9948) and TASK-072-era entries describing `extractFilterOptions` as "retained for backward compatibility" are **historical snapshots** predating the 54th-run removal — left as-is to preserve the decision history (this entry supersedes them).
+- `docs/ai-agent-engineer.md` / `docs/user-story-engineer.md` references are dated agent-memory log entries — not living documentation.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| Homepage exports vs docs | `module.exports` = `{ generateHomepageHtml, aggregateProvinceAndFilters }` — matches updated docs |
+| Residual stale references | Only the intentional "replaces the removed pair" note remains in api.md |
+| JS Tests | 1091 total, 1087 pass, 0 fail, 4 skipped (unaffected — docs only) |
+| Prettier | All changed files formatted cleanly |
+| Zero regressions | Docs-only change; no code touched |
+
+### Files Modified
+
+- `docs/api.md` — Homepage Template Module exports/features/sections corrected
+- `docs/feature.md` — stale `extractFilterOptions()` reference corrected
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] No documentation presents `aggregateByProvince`/`extractFilterOptions` as live homepage exports
+- [x] `generateHomepageHtml` feature list matches current code (lazy-loaded search data, 3 filters, 200-cap, Escape scoping)
+- [x] Usage examples only import exports that exist (`generateHomepageHtml`, `aggregateProvinceAndFilters`)
+- [x] Historical task records preserved (no rewriting of decision history)
+- [x] Prettier-clean, zero regressions
+
+---
+
 ### [TASK-083] UI/UX — Homepage Search Accessibility & Interaction Polish (homepage.js, styles.js)
 
 **Status**: Complete

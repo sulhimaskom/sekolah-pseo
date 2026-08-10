@@ -2772,9 +2772,7 @@ Presentation layer for homepage HTML generation with search, filtering, and prov
 ```javascript
 module.exports = {
   generateHomepageHtml: function,
-  aggregateByProvince: function,
   aggregateProvinceAndFilters: function,
-  extractFilterOptions: function,
 };
 ```
 
@@ -2792,13 +2790,16 @@ Generates complete HTML homepage with search, filtering, and province navigation
 
 **Features:**
 
-- Client-side search with debouncing
-- Province and education type filtering
+- Client-side search with 150ms debounce
+- Province, education type, and status filtering
+- Autocomplete suggestions (max 10) with keyboard navigation (arrow keys, Enter)
+- Result rendering capped at 200 rows; count label reports the true match total
+- CSV download of filtered results
 - Responsive design with mobile support
-- Keyboard navigation (/ to focus search, Escape to clear)
+- Keyboard shortcuts (`/` to focus search; Escape clears the query only when the search input is focused — filters are never reset)
 - Back-to-top button
-- Embedded school data in JSON format for search (compact key structure)
-- Accessibility: skip links, ARIA labels, screen reader support
+- Search data lazy-loaded from `/schools.json` (compact flat-array format) instead of embedded in the HTML
+- Accessibility: skip links, ARIA labels/roles (combobox/listbox), `aria-live` result count, filter selects disabled until search data loads (with a failure message on load error)
 
 **Usage:**
 
@@ -2810,38 +2811,9 @@ const html = generateHomepageHtml(schools);
 
 ---
 
-#### `aggregateByProvince(schools)`
-
-Aggregates school data by province for navigation.
-
-**Parameters:**
-
-- `schools` (Array<Object>): Array of school data objects
-
-**Returns:** `Array<Object>` - Array of province objects with school count
-
-```javascript
-[
-  { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
-  { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 },
-];
-```
-
-**Sorting:** Provinces are sorted alphabetically by Indonesian locale.
-
-**Usage:**
-
-```javascript
-const { aggregateByProvince } = require('./templates/homepage');
-const provinces = aggregateByProvince(schools);
-provinces.forEach(p => console.log(`${p.name}: ${p.count}`));
-```
-
----
-
 #### `aggregateProvinceAndFilters(schools)`
 
-Aggregates school data by province and extracts filter options in a single pass. Combines the functionality of `aggregateByProvince` and filter extraction to eliminate duplicate iteration.
+Aggregates school data by province and extracts filter options in a single pass. Combines province aggregation and filter extraction to eliminate duplicate iteration (replaces the removed `aggregateByProvince`/`extractFilterOptions` pair).
 
 **Parameters:**
 
@@ -2870,27 +2842,6 @@ Aggregates school data by province and extracts filter options in a single pass.
 const { aggregateProvinceAndFilters } = require('./templates/homepage');
 const { provinces, filterOptions } = aggregateProvinceAndFilters(schools);
 const { types } = filterOptions;
-```
-
-#### `extractFilterOptions(schools)`
-
-Extracts unique filter options (provinces, education types, statuses) from school data.
-
-**Parameters:**
-
-- `schools` (Array<Object>): Array of school data objects
-
-**Returns:** `Object` - `{ provinces: string[], types: string[], statuses: string[] }` — sorted arrays of unique values. Returns empty arrays for non-array input.
-
-```javascript
-// Returns: { provinces: [...], types: ['SD', 'SMA', 'SMK', 'SMP'], statuses: ['N', 'S'] }
-```
-
-**Usage:**
-
-```javascript
-const { extractFilterOptions } = require('./templates/homepage');
-const { provinces, types, statuses } = extractFilterOptions(schools);
 ```
 
 ---
