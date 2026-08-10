@@ -76,6 +76,8 @@ const {
   logEnrichmentSummary,
   buildWikipediaSearchUrl,
   buildWikipediaExtractUrl,
+  fetchJson,
+  wikipediaCircuitBreaker,
   ENRICHMENT_DATA_PATH,
   WIKIPEDIA_API_URL,
 } = require('./enrichment');
@@ -520,5 +522,192 @@ describe('enrichSchools edge cases', () => {
     // Should not throw even without onProgress
     const result = await enrichSchools(schools);
     assert.ok(typeof result === 'object');
+  });
+});
+
+describe('fetchJson resilience (timeout retry + circuit breaker)', () => {
+  let callCount;
+
+  beforeEach(() => {
+    callCount = 0;
+    wikipediaCircuitBreaker.reset();
+  });
+
+  afterEach(() => {
+    teardownMockWikipedia();
+    wikipediaCircuitBreaker.reset();
+  });
+
+  /**
+   * Mock https.get that never invokes the response callback, so the request
+   * hangs until the withTimeout deadline rejects it with a TIMEOUT error.
+   */
+  function mockHttpsGetHanging() {
+    const mockReq = {
+      on() {
+        return mockReq;
+      },
+    };
+    https.get = function (...args) {
+      callCount++;
+      const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+      // Never call cb — the request hangs
+      void cb;
+      return mockReq;
+    };
+  }
+
+  /**
+   * Mock https.get that immediately calls the response callback with a statusCode.
+   */
+  function mockHttpsGetStatus(statusCode) {
+    const mockReq = {
+      on() {
+        return mockReq;
+      },
+    };
+    https.get = function (...args) {
+      callCount++;
+      const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+      const mockRes = new Readable({
+        read() {
+          this.push('{}');
+          this.push(null);
+        },
+      });
+      mockRes.statusCode = statusCode;
+      mockRes.headers = { 'content-type': 'application/json' };
+      if (typeof cb === 'function') {
+        cb(mockRes);
+      }
+      return mockReq;
+    };
+  }
+
+  it('retries TIMEOUT IntegrationErrors (3 attempts) then throws RETRY_EXHAUSTED', async () => {
+    mockHttpsGetHanging();
+
+    await assert.rejects(
+      () => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50),
+      err => {
+        assert.strictEqual(err.name, 'IntegrationError');
+        assert.strictEqual(err.code, 'RETRY_EXHAUSTED');
+        assert.strictEqual(err.details.attempts, 3);
+        assert.strictEqual(err.details.lastErrorCode, 'TIMEOUT');
+        return true;
+      }
+    );
+
+    // 3 attempts because timeouts are transient — the old predicate retried 0 times
+    assert.strictEqual(callCount, 3);
+  });
+
+  it('does NOT retry non-transient IntegrationErrors (parse failure — 1 attempt)', async () => {
+    // Response is '{}' from mockHttpsGetStatus but we simulate a parse failure
+    // by returning invalid JSON via the status mock's Readable override.
+    const mockReq = {
+      on() {
+        return mockReq;
+      },
+    };
+    https.get = function (...args) {
+      callCount++;
+      const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+      const mockRes = new Readable({
+        read() {
+          this.push('not-valid-json{{{');
+          this.push(null);
+        },
+      });
+      mockRes.statusCode = 200;
+      mockRes.headers = { 'content-type': 'application/json' };
+      if (typeof cb === 'function') {
+        cb(mockRes);
+      }
+      return mockReq;
+    };
+
+    await assert.rejects(
+      () => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50),
+      err => {
+        assert.strictEqual(err.name, 'IntegrationError');
+        assert.strictEqual(err.code, 'RETRY_EXHAUSTED');
+        assert.strictEqual(err.details.attempts, 1);
+        assert.strictEqual(err.details.lastErrorCode, 'HTTP_ERROR');
+        return true;
+      }
+    );
+
+    // Parse failures are non-transient — exactly 1 attempt, no retry
+    assert.strictEqual(callCount, 1);
+  });
+
+  it('opens the circuit breaker after 3 consecutive HTTP failures', async () => {
+    // 400 is non-transient, so each fetchJson fails fast (no internal retry)
+    mockHttpsGetStatus(400);
+
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(
+        () => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50),
+        err => err.name === 'IntegrationError' && err.code === 'RETRY_EXHAUSTED'
+      );
+    }
+
+    assert.strictEqual(wikipediaCircuitBreaker.getState().state, 'OPEN');
+  });
+
+  it('rejects with CIRCUIT_BREAKER_OPEN without hitting the network when open', async () => {
+    mockHttpsGetStatus(400);
+
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(() => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50));
+    }
+
+    const callsBeforeOpen = callCount;
+    await assert.rejects(
+      () => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50),
+      err => {
+        assert.strictEqual(err.name, 'IntegrationError');
+        assert.strictEqual(err.code, 'CIRCUIT_BREAKER_OPEN');
+        return true;
+      }
+    );
+
+    // No new network calls were made — the breaker blocked the request
+    assert.strictEqual(callCount, callsBeforeOpen);
+  });
+
+  it('recovers to CLOSED after a successful request (reset on success)', async () => {
+    mockHttpsGetStatus(400);
+
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(() => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50));
+    }
+    assert.strictEqual(wikipediaCircuitBreaker.getState().state, 'OPEN');
+
+    // Simulate the reset window passing, then a successful request closes the circuit
+    wikipediaCircuitBreaker.reset();
+    assert.strictEqual(wikipediaCircuitBreaker.getState().state, 'CLOSED');
+
+    // Re-point the mock at a success response (200 with valid JSON)
+    mockHttpsGetStatus(200);
+    const result = await fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50);
+    assert.ok(result);
+    assert.strictEqual(wikipediaCircuitBreaker.getState().state, 'CLOSED');
+  });
+
+  it('enrichSchoolViaWikipedia degrades gracefully to {} when the circuit is open', async () => {
+    mockHttpsGetStatus(400);
+
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(() => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50));
+    }
+    assert.strictEqual(wikipediaCircuitBreaker.getState().state, 'OPEN');
+
+    const school = { npsn: '12345', nama: 'SDN Test', provinsi: 'Jawa Barat' };
+    const result = await enrichSchoolViaWikipedia(school);
+
+    // Graceful degradation — enrichment failure must never propagate
+    assert.deepStrictEqual(result, {});
   });
 });

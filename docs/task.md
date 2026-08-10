@@ -2,6 +2,68 @@
 
 ## Completed Tasks
 
+### [TASK-082] Integration Hardening — Wikipedia Enrichment Circuit Breaker + Timeout-Retry Fix (enrichment.js)
+
+**Status**: Complete
+**Agent**: Integration Engineer (Sisyphus)
+
+### Description
+
+`scripts/enrichment.js` was the **only external-service integration without a circuit breaker**. The fs breakers in `fs-safe.js` only guard file I/O, so a Wikipedia API outage made every enrichment request hang for the full 10s timeout and retry 3× per school, with no fail-fast protection.
+
+While auditing the retry policy, discovered a latent bug: the old `shouldRetry` predicate returned `false` for **all** `IntegrationError`s — but `withTimeout()` rejects with an `IntegrationError` whose code is `TIMEOUT` when the request deadline is exceeded. So **timeout retries were silently disabled** for every request, contradicting `isTransientError()` which classifies timeouts as transient.
+
+### Changes Made
+
+**1. Dedicated Wikipedia circuit breaker** (`scripts/enrichment.js`):
+
+- `WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD = 3` — consecutive failures before OPEN
+- `WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS = 120000` — reset timeout (2 min, matches `fetch-data.js`)
+- `wikipediaCircuitBreaker` instance — isolated from fs breakers so a Wikipedia outage cannot cascade into unrelated file operations, and vice versa (mirrors `fetch-data.js` `fetchCircuitBreaker`)
+
+**2. Retry-policy fix** — `fetchJson` now wraps the retry chain in `wikipediaCircuitBreaker.execute(...)` and the `shouldRetry` predicate distinguishes:
+
+- **Retryable**: `IntegrationError` with `code === TIMEOUT` (previously never retried), HTTP 429, HTTP 5xx, and `isTransientError` network errors
+- **Non-retryable**: parse failures (`HTTP_ERROR` — invalid JSON / unrecoverable status) — retrying would produce the same result
+
+**3. Additive exports** — `fetchJson` and `wikipediaCircuitBreaker` added to `module.exports` (zero breaking changes; mirrors `fetch-data.js` which exports `fetchCircuitBreaker`).
+
+**4. Graceful degradation preserved** — `enrichSchoolViaWikipedia` still returns `{}` when the circuit is open (enrichment failures never propagate to the ETL pipeline).
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| Timeout retried | 3 attempts (old predicate: 0) — `RETRY_EXHAUSTED`, `lastErrorCode: 'TIMEOUT'` |
+| Parse failure not retried | 1 attempt — `HTTP_ERROR` |
+| Breaker opens | After 3 consecutive failures → `OPEN` |
+| Fail-fast when open | 4th request rejects `CIRCUIT_BREAKER_OPEN`, zero network calls |
+| Reset on success | `reset()` → `CLOSED`; successful request keeps `CLOSED` |
+| Graceful degradation | `enrichSchoolViaWikipedia` → `{}` when circuit OPEN |
+| JS Tests | 1084 total, 1080 pass, 0 fail, 4 skipped (baseline 1078/1074 + 6 new) |
+| ESLint | 0 errors |
+| Prettier | Clean on changed files (89 pre-existing repo warnings, unchanged) |
+
+### Files Modified
+
+- `scripts/enrichment.js` — circuit breaker, retry-policy fix, additive exports
+- `scripts/enrichment.test.js` — 6 new tests in `fetchJson resilience` suite
+- `docs/api.md` — Enrichment Module exports/constants/`fetchJson`/`wikipediaCircuitBreaker`
+- `docs/blueprint.md` — Decisions Log row
+- `docs/task.md` — This entry; backlog status fixes (REFACTOR-004/010/012 → Complete per TASK-074, TASK-061 → Partial)
+
+### Acceptance Criteria
+
+- [x] Dedicated `wikipediaCircuitBreaker` (3 failures → OPEN, 120s reset) isolated from fs breakers
+- [x] Timeout `IntegrationError`s retried (3 attempts); parse failures not retried (1 attempt)
+- [x] Fail-fast `CIRCUIT_BREAKER_OPEN` with no network calls when circuit open
+- [x] Graceful degradation to `{}` preserved
+- [x] Additive exports only — zero breaking changes
+- [x] 1084 JS tests pass (0 fail), ESLint clean
+- [x] Zero regressions
+
+---
+
 ### [TASK-081] Client-Side Search Rendering Optimization + Fix for Broken Homepage Script (homepage.js)
 
 **Status**: Complete
@@ -6114,7 +6176,7 @@ Alternatively, for minimal change surface: add `distDir` parameter as optional t
 
 ### [REFACTOR-004] Extract `fileExists()` helper for manifest.js existence checks
 
-**Status**: Backlog
+**Status**: Complete (TASK-074)
 **Priority**: Low
 **Effort**: Small
 
@@ -6211,7 +6273,7 @@ Defined `SEARCH_DATA_FIELDS` as the single source of truth for the flat-array fi
 
 ### [REFACTOR-010] `check-freshness.js` uses raw sync `fs.*` instead of resilient wrappers
 
-**Status**: Backlog
+**Status**: Complete (TASK-074)
 **Priority**: Medium
 **Effort**: Medium
 
@@ -6312,7 +6374,7 @@ This eliminates the nested try/catch entirely while preserving the same behavior
 
 ### [REFACTOR-012] Extract shared `fileExists()` utility for project-wide use
 
-**Status**: Backlog
+**Status**: Complete (TASK-074)
 **Priority**: Medium
 **Effort**: Small
 
@@ -6365,7 +6427,7 @@ Replace the three call sites:
 
 ### [TASK-061] Add test coverage for `interactive.js` exported functions
 
-**Status**: Backlog
+**Status**: Partial (interactive.test.js exists — 19 tests; `pickFromList` and `runCommand` remain untested)
 **Priority**: Medium
 **Effort**: Medium
 

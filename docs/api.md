@@ -4872,7 +4872,7 @@ console.log('Manifest cleared - next build will be full');
 
 ### Purpose
 
-Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (timeouts, retries for API calls).
+Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (dedicated circuit breaker, timeouts, retries for API calls).
 
 ### Exports
 
@@ -4887,6 +4887,8 @@ module.exports = {
   logEnrichmentSummary: function,
   buildWikipediaSearchUrl: function,
   buildWikipediaExtractUrl: function,
+  fetchJson: function,
+  wikipediaCircuitBreaker: CircuitBreaker,
   ENRICHMENT_DATA_PATH: string,
   WIKIPEDIA_API_URL: string,
 };
@@ -4905,6 +4907,18 @@ module.exports = {
 - **Type:** `string`
 - **Value:** `https://id.wikipedia.org/w/api.php`
 - **Description:** Indonesian Wikipedia API endpoint.
+
+#### `WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD`
+
+- **Type:** `number`
+- **Value:** `3`
+- **Description:** Consecutive failure count that trips the Wikipedia circuit breaker.
+
+#### `WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS`
+
+- **Type:** `number`
+- **Value:** `120000` (2 minutes)
+- **Description:** Reset timeout for the Wikipedia circuit breaker — after this window elapses, a single probe request is allowed (half-open state).
 
 ### Functions
 
@@ -5137,6 +5151,43 @@ Builds a Wikipedia API URL to fetch page extracts for a set of page titles.
 ```javascript
 const url = buildWikipediaExtractUrl(['SMA Negeri 1 Jakarta', 'SMAN 1 Jakarta']);
 ```
+
+---
+
+#### `fetchJson(url, timeoutMs)`
+
+Fetches a URL and parses the response as JSON, protected by timeout, retry, and the Wikipedia circuit breaker.
+
+**Parameters:**
+
+- `url` (string): URL to fetch
+- `timeoutMs` (number, optional): Timeout in milliseconds (default `10000`)
+
+**Returns:** `Promise<Object>` — Parsed JSON response
+
+**Retry Policy:**
+
+- Max 3 attempts with exponential backoff (1s initial delay)
+- **Retryable**: `IntegrationError` with code `TIMEOUT` (request deadline exceeded), HTTP `429`, HTTP `5xx`, and other transient network errors (`isTransientError`)
+- **Non-retryable**: parse failures (`HTTP_ERROR` — invalid JSON or non-2xx with unrecoverable status), since retrying would produce the same result
+
+**Circuit Breaker:** 3 consecutive failures → `OPEN` for 120s. When open, requests reject immediately with `CIRCUIT_BREAKER_OPEN` without hitting the network, giving the Wikipedia API time to recover.
+
+**Usage:**
+
+```javascript
+const data = await fetchJson('https://id.wikipedia.org/w/api.php?action=query');
+```
+
+---
+
+#### `wikipediaCircuitBreaker`
+
+A dedicated `CircuitBreaker` instance for the Wikipedia API. Isolated from file system circuit breakers (`fs-safe.js`) so a Wikipedia outage cannot cascade into unrelated file operations, and vice versa.
+
+- **Failure threshold**: 3
+- **Reset timeout**: 120 seconds
+- **State**: `CLOSED` (normal), `OPEN` (blocking), `HALF_OPEN` (testing recovery)
 
 ---
 
