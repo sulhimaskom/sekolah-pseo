@@ -263,4 +263,34 @@ describe('generateSchoolPageStyles', () => {
     assert.ok(result.includes('article[aria-labelledby="school-name"]'));
     assert.ok(result.includes('box-shadow: var(--shadow-md)'));
   });
+
+  it('download CSV button has a visible focus-visible outline (not opacity-only)', () => {
+    const result = generateSchoolPageStyles();
+    assert.ok(
+      result.includes('.download-csv-btn:focus-visible'),
+      'download button should style the :focus-visible state'
+    );
+    assert.ok(result.includes('outline: 2px solid var(--color-focus)'));
+  });
+
+  it('search controls fall back to outlines in forced-colors mode', () => {
+    const result = generateSchoolPageStyles();
+    assert.ok(
+      result.includes('@media (forced-colors: active)'),
+      'should include a forced-colors media query block'
+    );
+    assert.ok(
+      result.includes('.search-input:focus,') && result.includes('.filter-select:focus'),
+      'search and filter inputs should get forced-colors focus outlines'
+    );
+    assert.ok(
+      result.includes('.download-csv-btn:focus-visible'),
+      'download button should keep its focus outline in forced-colors mode'
+    );
+    assert.ok(
+      result.includes('.autocomplete-item-active') &&
+        result.includes('outline: 2px solid Highlight'),
+      'active autocomplete option should get an outline (inset shadow is suppressed in forced colors)'
+    );
+  });
 });

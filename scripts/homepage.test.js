@@ -486,3 +486,89 @@ describe('generateHomepageHtml search-data contract', () => {
     assert.strictEqual(converted.u, '/provinsi/prov/kabupaten/kab/kecamatan/kec/10001-sma-1.html');
   });
 });
+
+describe('generateHomepageHtml search interaction state', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+
+  function extractSearchScript(html) {
+    const match = html.match(/<script>([\s\S]*?)<\/script>/g);
+    assert.ok(match, 'homepage should contain a script block');
+    return match[match.length - 1].replace(/<\/?script>/g, '');
+  }
+
+  const schools = [{ npsn: '1', nama: 'A', provinsi: 'JB', bentuk_pendidikan: 'SMA', status: 'N' }];
+
+  it('renders filter selects disabled until search data loads', () => {
+    const html = generateHomepageHtml(schools);
+
+    assert.ok(
+      html.includes('<select id="province-filter" class="filter-select" disabled>'),
+      'province filter should render disabled (loading state)'
+    );
+    assert.ok(
+      html.includes('<select id="type-filter" class="filter-select" disabled>'),
+      'type filter should render disabled (loading state)'
+    );
+    assert.ok(
+      html.includes('<select id="status-filter" class="filter-select" disabled>'),
+      'status filter should render disabled (loading state)'
+    );
+  });
+
+  it('scopes aria-live to the result count, keeping the CSV button out of the live region', () => {
+    const html = generateHomepageHtml(schools);
+
+    assert.ok(
+      html.includes('<span id="result-count" aria-live="polite">'),
+      'result count should carry the polite live region'
+    );
+    assert.ok(
+      !html.includes('search-results-info" aria-live'),
+      'the wrapper div should not be a live region (it contains an interactive button)'
+    );
+  });
+
+  it('client script enables filters on load success and re-runs an existing search', () => {
+    const html = generateHomepageHtml(schools);
+    const script = extractSearchScript(html);
+
+    assert.ok(
+      script.includes('provinceFilter.disabled = false'),
+      'script should re-enable the province filter once data loads'
+    );
+    assert.ok(
+      script.includes('typeFilter.disabled = false') &&
+        script.includes('statusFilter.disabled = false'),
+      'script should re-enable the type and status filters once data loads'
+    );
+  });
+
+  it('client script announces a load failure instead of staying silent', () => {
+    const html = generateHomepageHtml(schools);
+    const script = extractSearchScript(html);
+
+    assert.ok(script.includes('searchFailed'), 'script should track a search-failure flag');
+    assert.ok(
+      script.includes('Data pencarian gagal dimuat.'),
+      'script should surface a clear message when schools.json fails to load'
+    );
+  });
+
+  it('Escape handling is scoped to the search input and never resets the filters', () => {
+    const html = generateHomepageHtml(schools);
+    const script = extractSearchScript(html);
+
+    assert.ok(
+      script.includes("e.key === 'Escape' && document.activeElement === searchInput"),
+      'Escape should only act when the search input is focused'
+    );
+    assert.ok(
+      !script.includes('provinceFilter.value = '),
+      'Escape should not clear the province filter'
+    );
+    assert.ok(
+      !script.includes('typeFilter.value = ') && !script.includes('statusFilter.value = '),
+      'Escape should not clear the type or status filters'
+    );
+  });
+});

@@ -182,7 +182,8 @@ function generateHomepageHtml(schools) {
         <div class="filter-group">
           <div class="filter-item">
             <label for="province-filter" class="sr-only">Filter berdasarkan provinsi</label>
-            <select id="province-filter" class="filter-select">
+            <!-- Disabled until schools.json finishes loading — filters are inert before search data exists -->
+            <select id="province-filter" class="filter-select" disabled>
               <option value="">Semua Provinsi</option>
               ${provinceOptionsHtml}
             </select>
@@ -190,7 +191,7 @@ function generateHomepageHtml(schools) {
           
           <div class="filter-item">
             <label for="type-filter" class="sr-only">Filter berdasarkan jenjang</label>
-            <select id="type-filter" class="filter-select">
+            <select id="type-filter" class="filter-select" disabled>
               <option value="">Semua Jenjang</option>
               ${typeOptionsHtml}
             </select>
@@ -198,15 +199,15 @@ function generateHomepageHtml(schools) {
 
           <div class="filter-item">
             <label for="status-filter" class="sr-only">Filter berdasarkan status</label>
-            <select id="status-filter" class="filter-select">
+            <select id="status-filter" class="filter-select" disabled>
               <option value="">Semua Status</option>
               ${statusOptionsHtml}
             </select>
           </div>
         </div>
         
-        <div class="search-results-info" aria-live="polite">
-          <span id="result-count">Menampilkan ${totalSchools.toLocaleString('id-ID')} sekolah</span>
+        <div class="search-results-info">
+          <span id="result-count" aria-live="polite">Menampilkan ${totalSchools.toLocaleString('id-ID')} sekolah</span>
           <button id="download-csv" class="download-csv-btn" hidden aria-label="Unduh hasil pencarian sebagai CSV">Unduh CSV</button>
         </div>
       </div>
@@ -298,13 +299,19 @@ function generateHomepageHtml(schools) {
           });
         }
         if (searchInput) searchInput.setAttribute('aria-busy', 'false');
+        provinceFilter.disabled = false;
+        typeFilter.disabled = false;
+        statusFilter.disabled = false;
         // Re-run search if input already has value
         if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value || statusFilter.value)) {
           handleSearch();
         }
       }).catch(function() {
-        // Search will remain disabled
+        // Failure path: keep filters disabled and announce the failure (the
+        // controls would otherwise remain silently inert with no data).
+        searchFailed = true;
         if (searchInput) searchInput.setAttribute('aria-busy', 'false');
+        if (resultCountEl) resultCountEl.textContent = 'Data pencarian gagal dimuat.';
       });
       
       // DOM Elements
@@ -323,6 +330,7 @@ function generateHomepageHtml(schools) {
       
       // State
       var isSearching = false;
+      var searchFailed = false;
       var selectedIndex = -1;
       var suggestions = [];
       
@@ -474,9 +482,9 @@ function generateHomepageHtml(schools) {
       
       // Handle search input
       function handleSearch() {
-        // Guard: data not loaded yet
+        // Guard: data not loaded yet (or failed to load)
         if (!schools) {
-          resultCountEl.textContent = 'Memuat data...';
+          resultCountEl.textContent = searchFailed ? 'Data pencarian gagal dimuat.' : 'Memuat data...';
           return;
         }
         var query = searchInput.value;
@@ -671,18 +679,17 @@ function generateHomepageHtml(schools) {
           return;
         }
         
-        // "Escape" to clear search and close
-        if (e.key === 'Escape') {
+        // "Escape" clears the search query (combobox semantics) only when the
+        // search input is focused — never reset the filters from elsewhere.
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+          e.preventDefault();
+          var hadQuery = searchInput.value !== '';
           clearAutocomplete();
-          if (document.activeElement === searchInput) {
-            searchInput.blur();
+          if (hadQuery) {
+            searchInput.value = '';
+            handleSearch();
           }
-          searchInput.value = '';
-          provinceFilter.value = '';
-          typeFilter.value = '';
-          statusFilter.value = '';
-          isSearching = false;
-          handleSearch();
+          searchInput.blur();
         }
       });
     })();

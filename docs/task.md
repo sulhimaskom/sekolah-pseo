@@ -2,6 +2,77 @@
 
 ## Completed Tasks
 
+### [TASK-083] UI/UX — Homepage Search Accessibility & Interaction Polish (homepage.js, styles.js)
+
+**Status**: Complete
+**Agent**: UI/UX Engineer (Sisyphus)
+
+### Description
+
+Accessibility and interaction pass over the homepage search — the site's primary interactive surface. Fixed one UX bug (global Escape-key reset), one a11y defect (interactive element inside an `aria-live` region), one focus-visibility gap (opacity-only focus on the CSV button), one forced-colors accessibility gap (box-shadow focus suppressed in Windows High Contrast), and two interaction-state gaps (enabled-but-inert filter controls during load; silent failure when `schools.json` cannot be fetched).
+
+### Changes Made
+
+**1. Escape-key handler scoped to the search input (UX bug fix)** (`homepage.js`):
+
+- The old handler ran on **any** Escape press anywhere on the page and wiped the search query **plus all three filters** — so closing a native filter dropdown (Escape is the browser's standard select-close key) destroyed the user's entire search state.
+- Now `e.key === 'Escape' && document.activeElement === searchInput`: closes the autocomplete, clears the query (combobox semantics), re-runs the search, and blurs. Escape elsewhere on the page does nothing; filters are never touched by Escape.
+
+**2. `aria-live` scoped to the result count** (`homepage.js`):
+
+- `aria-live="polite"` moved from the `.search-results-info` wrapper onto the `#result-count` span itself. The wrapper previously announced an interactive element (the CSV download button) as it toggled `hidden` — a live region must not contain interactive content.
+
+**3. Filter loading + failure state communication** (`homepage.js`):
+
+- The three filter `<select>`s now render with `disabled` (server HTML) — they were previously enabled but inert while `schools.json` was still loading.
+- On load success the script re-enables them; on fetch failure they stay disabled and the count region announces `Data pencarian gagal dimuat.` (previously the UI stayed silently broken, showing the stale `Memuat data...` message forever).
+- New `searchFailed` flag keeps the failure message stable across subsequent keystrokes instead of reverting to `Memuat data...`.
+
+**4. CSV button focus-visible outline** (`styles.js`):
+
+- `.download-csv-btn:focus` previously only changed `opacity` (0.85) — a color-only focus indicator. Added `.download-csv-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }`.
+
+**5. Forced-colors (Windows High Contrast) focus visibility** (`styles.js`):
+
+- The search/filter inputs indicate focus via `border-color` + `box-shadow` with `outline: none` — all suppressed in forced-colors mode, leaving no visible focus indicator. Added `@media (forced-colors: active)` fallbacks giving `.search-input:focus`, `.filter-select:focus`, `.download-csv-btn:focus-visible`, and `.autocomplete-item-active` explicit `Highlight` outlines.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| Homepage tests | 31/31 pass (+5 new interaction-state tests) |
+| Styles tests | 28/28 pass (+2 new forced-colors/focus tests) |
+| JS Tests (full suite) | 1091/1091 pass (1084 baseline + 7 new), 0 fail, 4 skipped |
+| ESLint | 0 errors (all 4 changed files) |
+| Prettier | All changed files formatted cleanly |
+| Build | 2 pages, 0 failed, all performance budgets met |
+| Generated HTML | `disabled` on all 3 filters; `aria-live` on `#result-count` only; no filter-reset in inline script |
+| Generated script | `node --check` on extracted `<script>` — clean |
+| Generated CSS | `forced-colors` block + `download-csv-btn:focus-visible` present |
+| Zero regressions | Confirmed |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` — Escape scoping, `aria-live` move, filter `disabled` + enable-on-load + `searchFailed` failure messaging
+- `src/presenters/styles.js` — `.download-csv-btn:focus-visible`, `forced-colors` focus fallbacks
+- `scripts/homepage.test.js` — +5 tests (disabled selects, aria-live scoping, enable-on-load, failure message, Escape scoping)
+- `scripts/styles.test.js` — +2 tests (button focus-visible, forced-colors fallbacks)
+- `docs/task.md` — This entry
+- `docs/blueprint.md` — Decisions Log row
+- `docs/ui-ux-engineer.md` — Completed improvements
+
+### Acceptance Criteria
+
+- [x] Escape clears the search query only when the search input is focused; filters are never reset by Escape
+- [x] Interactive CSV button is outside the `aria-live` region (live region on `#result-count` only)
+- [x] Filter selects disabled until `schools.json` loads; re-enabled on success; stay disabled with a clear failure message on error
+- [x] CSV button has a real `:focus-visible` outline (not opacity-only)
+- [x] Search/filter/autocomplete focus indicators survive forced-colors mode
+- [x] 1091 JS tests pass (0 fail), ESLint + Prettier clean, build 0 failed
+- [x] Zero regressions
+
+---
+
 ### [TASK-082] Integration Hardening — Wikipedia Enrichment Circuit Breaker + Timeout-Retry Fix (enrichment.js)
 
 **Status**: Complete

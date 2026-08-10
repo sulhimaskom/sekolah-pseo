@@ -157,6 +157,14 @@ Static site generator for Indonesian school pages.
 - Created 16 new tests (footer.test.js + navigation.test.js) following the same pattern as back-to-top.test.js
 - All 963 JS tests pass, build clean (3474 pages)
 
+### 16. Homepage Search Accessibility & Interaction Polish ✅ (TASK-083, 2026-08-10)
+
+- **Escape-key scoping (UX bug fix)**: Escape now only clears the search query when the search input is focused. Previously any Escape press anywhere on the page (e.g. closing a filter dropdown) reset the query AND all three filters.
+- **aria-live scoping**: `aria-live="polite"` moved from the `.search-results-info` wrapper onto `#result-count` — an interactive element (CSV button) no longer sits inside a live region.
+- **Filter loading state**: the three filter `<select>`s render `disabled` and are re-enabled when `schools.json` finishes loading; on fetch failure they stay disabled and the count region announces "Data pencarian gagal dimuat." (stable via a `searchFailed` flag).
+- **CSV button focus**: added `.download-csv-btn:focus-visible` outline (was opacity-only).
+- **Forced-colors support**: `@media (forced-colors: active)` gives search/filter inputs, the CSV button, and the active autocomplete option explicit `Highlight` outlines (box-shadow focus indicators are suppressed in Windows High Contrast).
+
 ## Testing
 
 - `npm run test:js` runs comprehensive tests for styles and design-system
