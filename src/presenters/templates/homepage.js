@@ -410,6 +410,13 @@ function generateHomepageHtml(schools) {
         return li;
       }
       
+      // Cap rendered result rows: a broad query at 3474-school scale previously
+      // built ~35K DOM nodes synchronously per keystroke (~10 nodes per match,
+      // one appendChild each). Rendering the first MAX_RENDERED_RESULTS rows via
+      // a DocumentFragment keeps keystroke handling bounded (~2K nodes, single
+      // reflow) while the count label still reports the true total.
+      var MAX_RENDERED_RESULTS = 200;
+      
       // Update search results display
       function updateSearchResults(results) {
         var count = results.length;
@@ -418,14 +425,21 @@ function generateHomepageHtml(schools) {
         var csvBtn = document.getElementById('download-csv');
         
         if (isSearching) {
-          resultCountEl.textContent = 'Menampilkan ' + count.toLocaleString('id-ID') + ' dari ' + total.toLocaleString('id-ID') + ' sekolah';
+          var isTruncated = count > MAX_RENDERED_RESULTS;
+          var rendered = isTruncated ? results.slice(0, MAX_RENDERED_RESULTS) : results;
+          resultCountEl.textContent = isTruncated
+            ? 'Menampilkan ' + MAX_RENDERED_RESULTS.toLocaleString('id-ID') + ' dari ' + count.toLocaleString('id-ID') + ' sekolah (maksimal ' + MAX_RENDERED_RESULTS + ' ditampilkan)'
+            : 'Menampilkan ' + count.toLocaleString('id-ID') + ' dari ' + total.toLocaleString('id-ID') + ' sekolah';
           
           if (count > 0) {
             // Use DOM API instead of innerHTML for safer rendering
             searchResultsListEl.innerHTML = '';
-            results.forEach(function(school) {
-              searchResultsListEl.appendChild(createSchoolResultElement(school));
+            // Batch rows into a DocumentFragment — single reflow instead of one per row
+            var fragment = document.createDocumentFragment();
+            rendered.forEach(function(school) {
+              fragment.appendChild(createSchoolResultElement(school));
             });
+            searchResultsListEl.appendChild(fragment);
             searchResultsEl.hidden = false;
             noResultsEl.hidden = true;
             provinceListEl.hidden = true;
@@ -487,7 +501,7 @@ function generateHomepageHtml(schools) {
         
         if (results.length === 0) return;
         
-        var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\n';
+        var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\\n';
         
         results.forEach(function(s) {
           var npsn = '"' + (s.n || '') + '"';
@@ -498,7 +512,7 @@ function generateHomepageHtml(schools) {
           var kabkota = '"' + (s.kk || '').replace(/"/g, '""') + '"';
           var kecamatan = '"' + (s.kc || '').replace(/"/g, '""') + '"';
           var alamat = '"' + (s.al || '').replace(/"/g, '""') + '"';
-          csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\n';
+          csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\\n';
         });
         
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

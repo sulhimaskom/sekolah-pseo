@@ -2,6 +2,68 @@
 
 ## Completed Tasks
 
+### [TASK-081] Client-Side Search Rendering Optimization + Fix for Broken Homepage Script (homepage.js)
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized the client-side search result rendering on the homepage and fixed a pre-existing, page-breaking defect in the embedded search script. At 3474-school scale, every keystroke synchronously rebuilt **all** matching result rows (~10 DOM nodes per match, one `appendChild` each) — a broad query (`query="sekolah"` matches all 3474) created **34,741 DOM nodes via 34,740 individual `appendChild` calls per keystroke** (14.21ms render loop). Capping rendered rows at 200 + batching via `DocumentFragment` cuts that to **~2,000 DOM nodes and a single `appendChild`** (~1ms render loop) while the count label still reports the true match total.
+
+While verifying the generated `dist/index.html`, discovered the embedded script **never parsed in any browser** — two compounding pre-existing defects (both since commit `5058388`, 2026-06-02, FEAT-015):
+
+1. **Template-literal `\n` escaping**: the CSV builder strings (`'...Alamat\n'` and `+ '\n'`) sit inside the outer template literal in `homepage.js`, so `\n` was evaluated to a **literal newline** in the generated HTML — `var csv = 'NPSN,...Alamat<LF>';` — a `SyntaxError: Invalid or unexpected token` in the browser.
+2. **Brace imbalance in `updateSearchResults`**: the `else` branches (searching-but-zero-results vs not-searching) had been merged during a prior optimization, dropping the function's closing brace.
+
+Because the inline `<script>` is one unit, this SyntaxError killed **the entire homepage search feature** (search box, filters, autocomplete, result rendering, CSV export) — invisible to the existing static-HTML tests, which never parse the embedded script.
+
+### Changes Made
+
+**1. Rendering cap + `DocumentFragment` batching** (`src/presenters/templates/homepage.js`):
+
+- `var MAX_RENDERED_RESULTS = 200;` — renders at most the first 200 matching rows.
+- `updateSearchResults`: `var rendered = isTruncated ? results.slice(0, MAX_RENDERED_RESULTS) : results;` — only the capped slice is built.
+- Batch append: build rows into a `var fragment = document.createDocumentFragment();`, then a single `searchResultsListEl.appendChild(fragment)` (one reflow instead of one per row).
+- Truncation-aware count label: `'Menampilkan ' + MAX_RENDERED_RESULTS.toLocaleString('id-ID') + ' dari ' + count.toLocaleString('id-ID') + ' sekolah (maksimal ' + MAX_RENDERED_RESULTS + ' ditampilkan)'` — the user still sees the true match count.
+- The `filterSchools` hot path is untouched (already optimized in TASK-072).
+
+**2. Fix `\n` escaping** (lines 498, 509): `'...Alamat\n'` → `'...Alamat\\n'` and `+ '\n'` → `+ '\\n'` in the source template literal, so the generated HTML contains the literal two-character escape `\n` (valid JS string escape producing a newline at runtime).
+
+**3. Fix `updateSearchResults` brace structure**: restored the correct two-branch layout — inner `else` (searching but 0 results → show `noResultsEl`) and outer `else` (not searching → show total count + province list), with the function's closing brace. Generated script now passes `node --check`.
+
+### Verification
+
+| Check                  | Result                                                       |
+| ---------------------- | ------------------------------------------------------------ |
+| Render loop (3474-scale) | 14.21ms → 1.26ms per keystroke (~11x)                        |
+| DOM nodes / appends    | 34,741 / 34,740 → 2,002 / 1 (fragment batch)                 |
+| Generated script syntax | `node --check` on extracted `<script>` — clean (was SyntaxError) |
+| JS Tests               | 1066/1066 pass, 0 fail, 4 skipped (matches HEAD baseline)    |
+| Homepage tests         | 31/31 pass                                                   |
+| ESLint / Prettier      | 0 errors / clean                                             |
+| Truncation label       | Present in generated HTML (`maksimal 200 ditampilkan`)       |
+| Zero regressions       | Confirmed                                                    |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` — rendering cap, `DocumentFragment` batching, `\n` escaping fix, `updateSearchResults` brace-structure fix
+- `docs/task.md` — This entry
+- `docs/blueprint.md` — Performance log row
+
+### Acceptance Criteria
+
+- [x] Rendering capped at `MAX_RENDERED_RESULTS` (200) with truncation-aware label
+- [x] Rows appended via a single `DocumentFragment` batch (1 reflow)
+- [x] Generated homepage `<script>` parses cleanly (`node --check`)
+- [x] CSV header + row separator survive template rendering as literal `\n` escapes
+- [x] `updateSearchResults` else-branches restored (0-results vs not-searching)
+- [x] 1066 JS tests pass (0 fail), homepage 31/31, ESLint + Prettier clean
+- [x] Measurable improvement at 3474-scale: 34,741→2,002 nodes, 34,740→1 append, ~14ms→~1ms render loop
+- [x] Zero regressions
+
+---
+
 ### [TASK-080] Test Infrastructure — Shared `withConfig()` CONFIG-Mutation Helper (REFACTOR-002)
 
 **Status**: Complete
