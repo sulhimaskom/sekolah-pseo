@@ -122,6 +122,7 @@ module.exports = {
   ALLOWED_VALUES, // Categorical field allowed values
   FIELDS, // All field definitions
   CSV_FIELD_ORDER, // Canonical CSV column order
+  SEARCH_DATA_FIELDS, // Field order for client-side search payload (schools.json)
   REQUIRED_FIELDS, // Required field names
   REQUIRED_SCHOOL_FIELDS, // Fields required for school page rendering
   isNonEmpty, // Value emptiness check
@@ -208,6 +209,12 @@ module.exports = {
 - **Type:** `string[]`
 - **Value:** `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']`
 - **Description:** Fields required for school page rendering / path building (subset of `REQUIRED_FIELDS`, excludes `bentuk_pendidikan`). Single source of truth shared by `PageBuilder.js` (service layer) and `school-page.js` (template layer).
+
+#### `SEARCH_DATA_FIELDS`
+
+- **Type:** `string[]`
+- **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat', 'kecamatan', 'kab_kota', 'provinsi', 'url']`
+- **Description:** Field order for the compact flat-array client-side search payload (`dist/schools.json`). Single source of truth shared by the server-side serializer (`PageBuilder.prepareSchoolDataForSearch`) and the client-side converter (embedded as a literal in the homepage's generated search script by `homepage.js`). `url` is the derived last field (built at render time from `getSchoolRelativePath()`); the other 8 fields are a subset of `FIELDS` ordered for payload size. Changing this order only requires updating the constant — server and client stay in sync.
 
 ### Functions
 
@@ -2117,16 +2124,16 @@ const jakartaSchools = grouped.get('DKI Jakarta'); // Array of schools in Jakart
 
 #### `prepareSchoolDataForSearch(schools)`
 
-Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size.
+Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size. The field order is defined by `SEARCH_DATA_FIELDS` (single source of truth in `scripts/data-schema.js`) — the same constant is embedded into the homepage's generated client script, so server and client stay in sync automatically.
 
 **Parameters:**
 
 - `schools` (Array<Object>): Array of school data objects
 
-**Returns:** `Array<Array>` - Array of school records as flat arrays
+**Returns:** `Array<Array>` - Array of school records as flat arrays, ordered per `SEARCH_DATA_FIELDS`
 
 ```javascript
-// Each record: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
+// Each record follows SEARCH_DATA_FIELDS: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
 [
   [
     '12345678',
@@ -2142,7 +2149,7 @@ Prepares school data into a compact format for client-side search. Converts scho
 ];
 ```
 
-**Array Indexes:** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url`
+**Field Order (from `SEARCH_DATA_FIELDS`):** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url` (derived)
 
 **Usage:**
 

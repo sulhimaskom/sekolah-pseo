@@ -3,7 +3,7 @@
 const path = require('path');
 const slugify = require('../../scripts/slugify');
 const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
-const { REQUIRED_SCHOOL_FIELDS } = require('../../scripts/data-schema');
+const { REQUIRED_SCHOOL_FIELDS, SEARCH_DATA_FIELDS } = require('../../scripts/data-schema');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 const { generateHomepageHtml } = require('../presenters/templates/homepage');
@@ -238,8 +238,11 @@ function buildHomepageData(schools) {
  * 2. Transforms data shape for serialization (data transformation, not presentation)
  * 3. Returns a flat array format that saves ~13% payload over object format
  *
+ * Field order is defined by `SEARCH_DATA_FIELDS` (scripts/data-schema.js) — the
+ * single source of truth shared with the client-side converter in homepage.js.
+ *
  * @param {Array<Object>} schools - Array of school data objects
- * @returns {Array<Array<string>>} - Array of flat arrays [npsn, nama, bentuk, status, alamat, kecamatan, kab_kota, provinsi, url]
+ * @returns {Array<Array<string>>} - Array of flat arrays ordered by SEARCH_DATA_FIELDS
  */
 function prepareSchoolDataForSearch(schools) {
   if (!Array.isArray(schools)) {
@@ -254,17 +257,14 @@ function prepareSchoolDataForSearch(schools) {
   for (const school of schools) {
     try {
       const relPath = getSchoolRelativePath(school);
-      result.push([
-        school.npsn || '', // [0] n (npsn)
-        school.nama || '', // [1] a (nama)
-        school.bentuk_pendidikan || '', // [2] b (bentuk_pendidikan)
-        school.status || '', // [3] s (status)
-        school.alamat || '', // [4] al (alamat)
-        school.kecamatan || '', // [5] kc (kecamatan)
-        school.kab_kota || '', // [6] kk (kab_kota)
-        school.provinsi || '', // [7] p (provinsi)
-        '/' + relPath, // [8] u (schoolUrl)
-      ]);
+      result.push(
+        SEARCH_DATA_FIELDS.map(field => {
+          if (field === 'url') {
+            return '/' + relPath;
+          }
+          return school[field] || '';
+        })
+      );
     } catch (err) {
       logger.warn(`Skipping invalid school row in search data: ${err.message}`);
     }

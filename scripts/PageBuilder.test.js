@@ -874,6 +874,32 @@ describe('prepareSchoolDataForSearch', () => {
     assert.strictEqual(result[0][0], '12345678');
     assert.strictEqual(result[1][0], '87654321');
   });
+
+  it('output field order follows SEARCH_DATA_FIELDS (single source of truth)', () => {
+    const { SEARCH_DATA_FIELDS } = require('./data-schema');
+    const school = {
+      npsn: '12345678',
+      nama: 'SD Negeri 1 Jakarta',
+      bentuk_pendidikan: 'SD',
+      status: 'N',
+      alamat: 'Jl. Sudirman No. 1',
+      kecamatan: 'Menteng',
+      kab_kota: 'Jakarta Pusat',
+      provinsi: 'DKI Jakarta',
+    };
+
+    const result = prepareSchoolDataForSearch([school])[0];
+
+    assert.strictEqual(result.length, SEARCH_DATA_FIELDS.length);
+    SEARCH_DATA_FIELDS.forEach((field, index) => {
+      if (field === 'url') {
+        assert.ok(result[index].startsWith('/'), 'url field should be a relative path');
+        assert.ok(result[index].includes(school.npsn));
+      } else {
+        assert.strictEqual(result[index], school[field], `position ${index} should hold ${field}`);
+      }
+    });
+  });
 });
 
 describe('buildHomepageData', () => {

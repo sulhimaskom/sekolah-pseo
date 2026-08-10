@@ -398,3 +398,91 @@ describe('aggregateProvinceAndFilters edge cases', () => {
     assert.strictEqual(result.filterOptions.statuses.length, 2);
   });
 });
+
+describe('generateHomepageHtml search-data contract', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+  const { SEARCH_DATA_FIELDS } = require('./data-schema');
+
+  function extractSearchScript(html) {
+    const match = html.match(/<script>([\s\S]*?)<\/script>/g);
+    assert.ok(match, 'homepage should contain a script block');
+    return match[match.length - 1].replace(/<\/?script>/g, '');
+  }
+
+  it('embeds SEARCH_DATA_FIELDS literal in the generated client script', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const script = extractSearchScript(html);
+
+    assert.ok(
+      script.includes(`var SEARCH_DATA_FIELDS = ${JSON.stringify(SEARCH_DATA_FIELDS)}`),
+      'generated script should embed the shared field-order constant'
+    );
+  });
+
+  it('uses named field lookups instead of positional index literals', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const script = extractSearchScript(html);
+
+    assert.ok(script.includes('SEARCH_FIELD_INDEX'), 'conversion should use named lookups');
+    assert.doesNotMatch(script, /s\[[0-9]\]/, 'no positional index literals should remain');
+    SEARCH_DATA_FIELDS.forEach(field => {
+      assert.ok(
+        script.includes(`SEARCH_FIELD_INDEX.${field}`),
+        `conversion should reference SEARCH_FIELD_INDEX.${field}`
+      );
+    });
+  });
+
+  it('generated search script parses as valid JavaScript', () => {
+    const vm = require('node:vm');
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const script = extractSearchScript(html);
+
+    // Compiling without running validates syntax; runtime DOM deps are not touched.
+    assert.doesNotThrow(() => new vm.Script(script), 'generated script should be valid JS');
+  });
+
+  it('client conversion of flat payload is stable under SEARCH_DATA_FIELDS reorder', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const script = extractSearchScript(html);
+
+    // Extract the field-order literal and index map emitted into the script.
+    const fieldsMatch = script.match(/var SEARCH_DATA_FIELDS = (\[[^\n]+\]);/);
+    assert.ok(fieldsMatch, 'field-order literal should be present');
+    const fields = JSON.parse(fieldsMatch[1]);
+    assert.deepStrictEqual(fields, SEARCH_DATA_FIELDS);
+
+    // Simulate the client-side conversion with a flat payload row.
+    const fieldIndex = {};
+    fields.forEach((f, i) => {
+      fieldIndex[f] = i;
+    });
+    const row = [
+      '10001',
+      'SMA 1',
+      'SMA',
+      'N',
+      'Jl. A',
+      'Kec',
+      'Kab',
+      'Prov',
+      '/provinsi/prov/kabupaten/kab/kecamatan/kec/10001-sma-1.html',
+    ];
+    const converted = {
+      n: row[fieldIndex.npsn],
+      a: row[fieldIndex.nama],
+      b: row[fieldIndex.bentuk_pendidikan],
+      s: row[fieldIndex.status],
+      al: row[fieldIndex.alamat],
+      kc: row[fieldIndex.kecamatan],
+      kk: row[fieldIndex.kab_kota],
+      p: row[fieldIndex.provinsi],
+      u: row[fieldIndex.url],
+    };
+
+    assert.strictEqual(converted.n, '10001');
+    assert.strictEqual(converted.a, 'SMA 1');
+    assert.strictEqual(converted.p, 'Prov');
+    assert.strictEqual(converted.u, '/provinsi/prov/kabupaten/kab/kecamatan/kec/10001-sma-1.html');
+  });
+});

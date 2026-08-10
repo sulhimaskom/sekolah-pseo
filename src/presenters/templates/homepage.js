@@ -1,6 +1,7 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const CONFIG = require('../../../scripts/config');
 const slugify = require('../../../scripts/slugify');
+const { SEARCH_DATA_FIELDS } = require('../../../scripts/data-schema');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
@@ -250,6 +251,14 @@ function generateHomepageHtml(schools) {
       // ===== School Search Functionality =====
       var schools = null;
       
+      // Field order for the compact flat-array payload. Generated from
+      // SEARCH_DATA_FIELDS (scripts/data-schema.js) at build time so the
+      // conversion below never hardcodes positional indices — the order is
+      // defined once and shared with the server-side serializer.
+      var SEARCH_DATA_FIELDS = ${JSON.stringify(SEARCH_DATA_FIELDS)};
+      var SEARCH_FIELD_INDEX = {};
+      for (var i = 0; i < SEARCH_DATA_FIELDS.length; i++) SEARCH_FIELD_INDEX[SEARCH_DATA_FIELDS[i]] = i;
+      
       // Lazy-load school search data from external JSON file
       // Reduces initial HTML payload from 1.3MB to ~14KB
       // The data is stored as flat arrays for compactness (~13% smaller payload)
@@ -258,10 +267,6 @@ function generateHomepageHtml(schools) {
         if (!r.ok) throw new Error('Failed to load search data');
         return r.json();
       }).then(function(d) {
-        // Convert from compact flat array format to named properties
-        // Array index map: [0]=npsn, [1]=nama, [2]=bentuk, [3]=status,
-        //                  [4]=alamat, [5]=kecamatan, [6]=kab_kota,
-        //                  [7]=provinsi, [8]=url
         if (d.length > 0 && Array.isArray(d[0])) {
           // Precompute the lowercase searchable text ('t') once at load time
           // instead of rebuilding the concatenated+lowercased string on every
@@ -271,8 +276,16 @@ function generateHomepageHtml(schools) {
           // 7-keystroke query burst).
           schools = d.map(function(s) {
             return {
-              n: s[0], a: s[1], b: s[2], s: s[3], al: s[4], kc: s[5], kk: s[6], p: s[7], u: s[8],
-              t: (s[1] + ' ' + s[0] + ' ' + s[4] + ' ' + s[6] + ' ' + s[5]).toLowerCase(),
+              n: s[SEARCH_FIELD_INDEX.npsn],
+              a: s[SEARCH_FIELD_INDEX.nama],
+              b: s[SEARCH_FIELD_INDEX.bentuk_pendidikan],
+              s: s[SEARCH_FIELD_INDEX.status],
+              al: s[SEARCH_FIELD_INDEX.alamat],
+              kc: s[SEARCH_FIELD_INDEX.kecamatan],
+              kk: s[SEARCH_FIELD_INDEX.kab_kota],
+              p: s[SEARCH_FIELD_INDEX.provinsi],
+              u: s[SEARCH_FIELD_INDEX.url],
+              t: (s[SEARCH_FIELD_INDEX.nama] + ' ' + s[SEARCH_FIELD_INDEX.npsn] + ' ' + s[SEARCH_FIELD_INDEX.alamat] + ' ' + s[SEARCH_FIELD_INDEX.kab_kota] + ' ' + s[SEARCH_FIELD_INDEX.kecamatan]).toLowerCase(),
             };
           });
         } else {

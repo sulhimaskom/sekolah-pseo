@@ -34,16 +34,16 @@ Because the inline `<script>` is one unit, this SyntaxError killed **the entire 
 
 ### Verification
 
-| Check                  | Result                                                       |
-| ---------------------- | ------------------------------------------------------------ |
-| Render loop (3474-scale) | 14.21ms → 1.26ms per keystroke (~11x)                        |
-| DOM nodes / appends    | 34,741 / 34,740 → 2,002 / 1 (fragment batch)                 |
-| Generated script syntax | `node --check` on extracted `<script>` — clean (was SyntaxError) |
-| JS Tests               | 1066/1066 pass, 0 fail, 4 skipped (matches HEAD baseline)    |
-| Homepage tests         | 31/31 pass                                                   |
-| ESLint / Prettier      | 0 errors / clean                                             |
-| Truncation label       | Present in generated HTML (`maksimal 200 ditampilkan`)       |
-| Zero regressions       | Confirmed                                                    |
+| Check                    | Result                                                           |
+| ------------------------ | ---------------------------------------------------------------- |
+| Render loop (3474-scale) | 14.21ms → 1.26ms per keystroke (~11x)                            |
+| DOM nodes / appends      | 34,741 / 34,740 → 2,002 / 1 (fragment batch)                     |
+| Generated script syntax  | `node --check` on extracted `<script>` — clean (was SyntaxError) |
+| JS Tests                 | 1066/1066 pass, 0 fail, 4 skipped (matches HEAD baseline)        |
+| Homepage tests           | 31/31 pass                                                       |
+| ESLint / Prettier        | 0 errors / clean                                                 |
+| Truncation label         | Present in generated HTML (`maksimal 200 ditampilkan`)           |
+| Zero regressions         | Confirmed                                                        |
 
 ### Files Modified
 
@@ -94,15 +94,15 @@ Resolved backlog item **REFACTOR-002** — the test-suite debt of mutating the s
 
 ### Verification
 
-| Check               | Result                                                          |
-| ------------------- | --------------------------------------------------------------- |
-| JS Tests            | 1069/1069 total (1065 pass, 0 fail, 4 skipped) — +8 new helper tests vs 1061 baseline |
-| Python Tests        | 100% pass                                                       |
-| ESLint              | 0 errors                                                        |
-| Prettier            | All changed files formatted cleanly                             |
-| Coverage gate       | 94.94% lines / 92.27% branches (thresholds 80/75); `test-helpers.js` 100% |
-| Remaining CONFIG mutations | Only the 4 intentional module-level per-file temp-dir redirects |
-| Zero regressions    | Confirmed                                                       |
+| Check                      | Result                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| JS Tests                   | 1069/1069 total (1065 pass, 0 fail, 4 skipped) — +8 new helper tests vs 1061 baseline |
+| Python Tests               | 100% pass                                                                             |
+| ESLint                     | 0 errors                                                                              |
+| Prettier                   | All changed files formatted cleanly                                                   |
+| Coverage gate              | 94.94% lines / 92.27% branches (thresholds 80/75); `test-helpers.js` 100%             |
+| Remaining CONFIG mutations | Only the 4 intentional module-level per-file temp-dir redirects                       |
+| Zero regressions           | Confirmed                                                                             |
 
 ### Files Modified
 
@@ -155,12 +155,12 @@ Full health check (build, lint, JS+Python tests — all green) followed by targe
 
 ### Verification
 
-| Check                | Result                                                                      |
-| -------------------- | --------------------------------------------------------------------------- |
-| ESLint               | 0 errors (all changed files)                                                |
-| JS Tests             | 1057/1057 pass (0 fail, 4 skipped); affected suites 140/140 (PageBuilder, build-orchestrator, build-pages) |
-| Build                | 2 pages, 0 failed, Status: PASS                                             |
-| Zero regressions     | Confirmed                                                                   |
+| Check            | Result                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| ESLint           | 0 errors (all changed files)                                                                               |
+| JS Tests         | 1057/1057 pass (0 fail, 4 skipped); affected suites 140/140 (PageBuilder, build-orchestrator, build-pages) |
+| Build            | 2 pages, 0 failed, Status: PASS                                                                            |
+| Zero regressions | Confirmed                                                                                                  |
 
 ### Files Modified
 
@@ -6162,7 +6162,7 @@ Add an async `fileExists(path)` helper that wraps `safeAccess()` and returns a b
 
 ### [IMPROVEMENT-005] `prepareSchoolDataForSearch()` array format indices are brittle
 
-**Status**: Backlog
+**Status**: Complete
 **Priority**: Low
 **Effort**: Small
 
@@ -6178,36 +6178,34 @@ While this format saves ~13% payload (intentional optimization from TASK-039), i
 
 If a new field is added or the order changes, both server and client code must be updated simultaneously.
 
-### Suggestion
+### Solution
 
-Define a named constant array for the field-order mapping at the module level in `PageBuilder.js`:
+Defined `SEARCH_DATA_FIELDS` as the single source of truth for the flat-array field order, placed in `scripts/data-schema.js` rather than `PageBuilder.js`. This is a deliberate deviation from the backlog suggestion: `PageBuilder.js` imports `homepage.js` (template), so `homepage.js` cannot `require()` from `PageBuilder.js` without a circular require. `data-schema.js` is the neutral schema SSOT already imported by both sides (mirrors the TASK-079 precedent where `REQUIRED_SCHOOL_FIELDS` was consolidated into `data-schema.js`).
 
-```javascript
-const SEARCH_DATA_FIELDS = [
-  'npsn',
-  'nama',
-  'bentuk_pendidikan',
-  'status',
-  'alamat',
-  'kecamatan',
-  'kab_kota',
-  'provinsi',
-  'url',
-];
-```
+### Implementation
 
-Use this array both to build the output and to document the schema. Export it so the client-side conversion code in `homepage.js` can reference the same constant, eliminating the index-literal dependency.
+1. **`scripts/data-schema.js`**: Added + exported `SEARCH_DATA_FIELDS` (9 fields: `npsn`, `nama`, `bentuk_pendidikan`, `status`, `alamat`, `kecamatan`, `kab_kota`, `provinsi`, `url` — `url` derived last). `getSchemaInfo()` now returns it as `searchDataFields`.
+2. **`src/services/PageBuilder.js`**: `prepareSchoolDataForSearch()` builds each row via `SEARCH_DATA_FIELDS.map(...)` instead of a hardcoded 9-slot literal; `url` derived as `'/' + relPath`.
+3. **`src/presenters/templates/homepage.js`**: Imports `SEARCH_DATA_FIELDS` at build time, embeds it as a literal (`var SEARCH_DATA_FIELDS = [...]`) in the generated client script, and converts flat arrays via named `SEARCH_FIELD_INDEX.<field>` lookups — no positional index literals (`s[0]`…`s[8]`) remain.
+4. **Tests** (9 new): `SEARCH_DATA_FIELDS` contract tests in `data-schema.test.js` (exact order, uniqueness, `url` last, `searchDataFields` in `getSchemaInfo()`); order-parity test in `PageBuilder.test.js` (each output position asserted against `SEARCH_DATA_FIELDS`); generated-script tests in `homepage.test.js` (embedded literal present, no raw `s[N]` index literals, script parses as valid JS via `vm.Script`, conversion is stable under a `SEARCH_DATA_FIELDS` reorder — old index-literal conversion vs new `FIELD_INDEX` conversion produce identical objects).
+5. **Docs**: `docs/api.md` (`SEARCH_DATA_FIELDS` export row + constant section + `prepareSchoolDataForSearch` doc), `docs/blueprint.md` (decisions-log entry 2026-08-10).
 
 ### Files
 
 - `src/services/PageBuilder.js`
 - `src/presenters/templates/homepage.js` (client-side fetch handler)
+- `scripts/data-schema.js`
+- `scripts/data-schema.test.js`
+- `scripts/PageBuilder.test.js`
+- `scripts/homepage.test.js`
 
 ### Verification
 
-- All existing tests pass
-- Client-side search still works with generated schools.json
-- Adding/removing a field from `SEARCH_DATA_FIELDS` causes predictable test failures
+- Full JS suite: 1078 tests, 1074 pass, 0 fail, 4 skipped (baseline 1069 + 9 new)
+- ESLint clean (0 problems), Prettier clean
+- Full build succeeds; `dist/schools.json` regenerated (3474 rows × 9 cols, format unchanged)
+- Generated `dist/index.html` script embeds the `SEARCH_DATA_FIELDS` literal, contains no `s[N]` index literals, passes `node --check`
+- Client conversion parity verified: old index-literal conversion vs new `FIELD_INDEX` conversion produce byte-identical objects
 
 ---
 

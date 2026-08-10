@@ -150,6 +150,29 @@ const CSV_FIELD_ORDER = [
 ];
 
 /**
+ * Field order for the compact flat-array client-side search payload (schools.json).
+ * This is the single source of truth for the positional contract between the
+ * server-side serializer (`PageBuilder.prepareSchoolDataForSearch`) and the
+ * client-side converter (`homepage.js`) — both derive the field order from this
+ * constant instead of hardcoding index literals, so adding/removing/reordering a
+ * field can only break predictably (via tests) on both sides at once.
+ *
+ * `url` is a derived field (school page path), not a raw school attribute.
+ * @type {string[]}
+ */
+const SEARCH_DATA_FIELDS = [
+  'npsn',
+  'nama',
+  'bentuk_pendidikan',
+  'status',
+  'alamat',
+  'kecamatan',
+  'kab_kota',
+  'provinsi',
+  'url',
+];
+
+/**
  * Required fields for a valid school record (must be non-empty).
  * @type {string[]}
  */
@@ -375,6 +398,7 @@ function getSchemaInfo() {
       },
     })),
     csvFieldOrder: CSV_FIELD_ORDER,
+    searchDataFields: SEARCH_DATA_FIELDS,
     requiredFields: REQUIRED_FIELDS,
     indonesiaBounds: { ...INDONESIA_BOUNDS },
   };
@@ -388,6 +412,7 @@ module.exports = {
   ALLOWED_VALUES,
   FIELDS,
   CSV_FIELD_ORDER,
+  SEARCH_DATA_FIELDS,
   REQUIRED_FIELDS,
   REQUIRED_SCHOOL_FIELDS,
   isNonEmpty,
