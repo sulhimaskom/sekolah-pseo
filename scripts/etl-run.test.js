@@ -24,6 +24,7 @@ const os = require('os');
 
 const CONFIG = require('./config');
 const { resetCircuitBreakers } = require('./fs-safe');
+const { withConfig } = require('./test-helpers');
 
 // ── Process exit mock ───────────────────────────────────────────
 // The run() function calls terminate() which calls process.exit().
@@ -72,26 +73,6 @@ async function createTempCsv(csvContent) {
 }
 
 /**
- * Temporarily override CONFIG paths, run a function, then restore.
- * @param {string} rawPath - Temp RAW_DATA_PATH
- * @param {string} schoolsPath - Temp SCHOOLS_CSV_PATH
- * @param {Function} fn - Async function to execute
- * @returns {Promise<*>} Result of fn
- */
-async function withConfig(rawPath, schoolsPath, fn) {
-  const origRaw = CONFIG.RAW_DATA_PATH;
-  const origSchools = CONFIG.SCHOOLS_CSV_PATH;
-  CONFIG.RAW_DATA_PATH = rawPath;
-  CONFIG.SCHOOLS_CSV_PATH = schoolsPath;
-  try {
-    return await fn();
-  } finally {
-    CONFIG.RAW_DATA_PATH = origRaw;
-    CONFIG.SCHOOLS_CSV_PATH = origSchools;
-  }
-}
-
-/**
  * Parse CSV string into array of objects (simple implementation for assertions).
  */
 function parseCsvSimple(csv) {
@@ -129,7 +110,7 @@ test('run() processes valid CSV with multiple records', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -175,7 +156,7 @@ test('run() handles single valid record', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -196,7 +177,7 @@ test('run() preserves optional fields when present', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -221,7 +202,7 @@ test('run() normalizes status values (negeri→N, swasta→S)', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -241,7 +222,7 @@ test('run() terminates when raw CSV file does not exist', async () => {
   // Remove the raw file so safeAccess fails
   await fs.rm(rawPath);
   try {
-    await withConfig(rawPath, outPath, async () => {
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, async () => {
       await assert.rejects(
         () => etl.run(),
         /PROCESS_EXIT:1/,
@@ -258,7 +239,7 @@ test('run() terminates when CSV has headers only (no data rows)', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, async () => {
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, async () => {
       await assert.rejects(
         () => etl.run(),
         /PROCESS_EXIT:1/,
@@ -286,7 +267,7 @@ test('run() terminates when all records fail schema validation', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, async () => {
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, async () => {
       await assert.rejects(
         () => etl.run(),
         /PROCESS_EXIT:1/,
@@ -306,7 +287,7 @@ test('run() terminates when processed array is empty after filtering', async () 
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, async () => {
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, async () => {
       await assert.rejects(
         () => etl.run(),
         /PROCESS_EXIT:1/,
@@ -331,7 +312,7 @@ test('run() filters out invalid records and only writes valid ones', async () =>
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -356,7 +337,7 @@ test('run() rejects records with invalid categorical values but processes valid 
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -377,7 +358,7 @@ test('run() rejects records with invalid status categorical values', async () =>
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -400,7 +381,7 @@ test('run() handles duplicate NPSN values (warns but processes both)', async () 
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -422,7 +403,7 @@ test('run() handles records with all optional fields missing', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
@@ -444,7 +425,7 @@ test('run() handles coordinate edge cases (zero, out-of-bounds)', async () => {
 
   const { tmpDir, rawPath, outPath } = await createTempCsv(csv);
   try {
-    await withConfig(rawPath, outPath, () => etl.run());
+    await withConfig({ RAW_DATA_PATH: rawPath, SCHOOLS_CSV_PATH: outPath }, () => etl.run());
 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);

@@ -72,6 +72,25 @@ Located in `scripts/*.test.js`:
 - `build-orchestrator.test.js` - Build pipeline orchestration tests
 - `etl-run.test.js` - ETL end-to-end run tests
 
+### Shared Test Helpers
+
+`test-helpers.js` provides shared utilities for the JavaScript test suite:
+
+- **`withConfig(overrides, fn)`** — temporarily overrides `CONFIG` values for the duration of `fn`, restoring the originals even when `fn` throws or rejects. Accepts partial overrides (e.g. `{ DIST_DIR: '/tmp/x' }`), so callers only touch the keys they need. Always `await` the returned promise:
+
+  ```javascript
+  const { withConfig } = require('./test-helpers');
+
+  await withConfig({ SCHOOLS_CSV_PATH: '/tmp/schools.csv' }, async () => {
+    const result = await getDataFreshness();
+    assert.strictEqual(result.exists, true);
+  });
+  ```
+
+  Use this instead of mutating `CONFIG` directly in test bodies — a test that fails before restoring a direct mutation causes cascading, order-dependent failures in sibling tests.
+
+Covered by its own suite in `test-helpers.test.js`.
+
 ### Python Tests
 
 Located in `tests/`:

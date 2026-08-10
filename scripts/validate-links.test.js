@@ -6,6 +6,7 @@ const {
   validateLinks,
   isRelativeLink,
 } = require('./validate-links');
+const { withConfig } = require('./test-helpers');
 
 test('extractLinks extracts relative links from HTML', () => {
   const html = '<a href="page.html">Link</a>';
@@ -206,35 +207,25 @@ test('validateLinksInFile handles broken links correctly', async () => {
 });
 
 test('validateLinks returns true when dist directory does not exist', async () => {
-  const CONFIG = require('./config');
-
-  const originalDistDir = CONFIG.DIST_DIR;
-  CONFIG.DIST_DIR = '/nonexistent-dist-dir-' + Date.now();
-
-  try {
+  await withConfig({ DIST_DIR: '/nonexistent-dist-dir-' + Date.now() }, async () => {
     const result = await validateLinks();
     assert.strictEqual(result, true, 'Should return true when dist does not exist');
-  } finally {
-    CONFIG.DIST_DIR = originalDistDir;
-  }
+  });
 });
 
 test('validateLinks returns true when no HTML files found', async () => {
-  const CONFIG = require('./config');
   const os = require('os');
   const fs = require('fs');
   const path = require('path');
 
   const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'empty-validate-' + Date.now()));
 
-  const originalDistDir = CONFIG.DIST_DIR;
-  CONFIG.DIST_DIR = emptyDir;
-
   try {
-    const result = await validateLinks();
-    assert.strictEqual(result, true, 'Should return true when no HTML files found');
+    await withConfig({ DIST_DIR: emptyDir }, async () => {
+      const result = await validateLinks();
+      assert.strictEqual(result, true, 'Should return true when no HTML files found');
+    });
   } finally {
-    CONFIG.DIST_DIR = originalDistDir;
     fs.rmSync(emptyDir, { recursive: true, force: true });
   }
 });
@@ -283,7 +274,6 @@ test('validateLinksInFile does not report directory targets as broken', async ()
 });
 
 test('validateLinks processes HTML files with links and returns false on broken links', async () => {
-  const CONFIG = require('./config');
   const os = require('os');
   const fs = require('fs');
   const path = require('path');
@@ -295,21 +285,18 @@ test('validateLinks processes HTML files with links and returns false on broken 
   const htmlFile = path.join(tempDir, 'index.html');
   fs.writeFileSync(htmlFile, '<a href="nonexistent.html">Broken</a>');
 
-  const originalDistDir = CONFIG.DIST_DIR;
-  CONFIG.DIST_DIR = tempDir;
-
   try {
-    const result = await validateLinks();
-    // Should return false because broken link exists
-    assert.strictEqual(result, false);
+    await withConfig({ DIST_DIR: tempDir }, async () => {
+      const result = await validateLinks();
+      // Should return false because broken link exists
+      assert.strictEqual(result, false);
+    });
   } finally {
-    CONFIG.DIST_DIR = originalDistDir;
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
 test('validateLinks processes HTML files with valid links and returns true', async () => {
-  const CONFIG = require('./config');
   const os = require('os');
   const fs = require('fs');
   const path = require('path');
@@ -324,15 +311,13 @@ test('validateLinks processes HTML files with valid links and returns true', asy
   // Create the target file that the link points to
   fs.writeFileSync(path.join(tempDir, 'about.html'), '<html><body>About</body></html>');
 
-  const originalDistDir = CONFIG.DIST_DIR;
-  CONFIG.DIST_DIR = tempDir;
-
   try {
-    const result = await validateLinks();
-    // Should return true because all links are valid
-    assert.strictEqual(result, true);
+    await withConfig({ DIST_DIR: tempDir }, async () => {
+      const result = await validateLinks();
+      // Should return true because all links are valid
+      assert.strictEqual(result, true);
+    });
   } finally {
-    CONFIG.DIST_DIR = originalDistDir;
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });

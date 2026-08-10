@@ -10,6 +10,7 @@ const os = require('os');
 // output after the F052/F014 temp-dir redirects. Redirect DIST_DIR per-process
 // BEFORE requiring sitemap, mirroring build-pages.test.js / build-orchestrator.test.js.
 const CONFIG = require('./config');
+const { withConfig } = require('./test-helpers');
 CONFIG.DIST_DIR = path.join(os.tmpdir(), `sitemap-test-dist-${process.pid}`);
 
 test.before(async () => {
@@ -174,13 +175,10 @@ test('writeSitemapFiles handles empty URL list', async () => {
 test('writeSitemapFiles respects MAX_URLS_PER_SITEMAP configuration', async () => {
   const { writeSitemapFiles } = require('./sitemap');
 
-  const originalMax = CONFIG.MAX_URLS_PER_SITEMAP;
-  CONFIG.MAX_URLS_PER_SITEMAP = 3;
-
   const testDir = path.join(process.env.TEST_TEMP_DIR, 'write-test4');
   await fs.mkdir(testDir, { recursive: true });
 
-  try {
+  await withConfig({ MAX_URLS_PER_SITEMAP: 3 }, async () => {
     const urls = [
       { url: 'url1', lastmod: '2024-01-15' },
       { url: 'url2', lastmod: '2024-01-15' },
@@ -194,9 +192,7 @@ test('writeSitemapFiles respects MAX_URLS_PER_SITEMAP configuration', async () =
     assert.strictEqual(files.length, 2);
     assert.strictEqual(files[0], 'sitemap-001.xml');
     assert.strictEqual(files[1], 'sitemap-002.xml');
-  } finally {
-    CONFIG.MAX_URLS_PER_SITEMAP = originalMax;
-  }
+  });
 });
 
 test('writeSitemapIndex creates sitemap index with correct XML structure', async () => {
@@ -662,7 +658,6 @@ test('generateSitemaps with single school produces consistent structure', async 
 
 test('generateSitemaps without schools falls back to filesystem walk', async () => {
   const { generateSitemaps } = require('./sitemap');
-  const CONFIG = require('./config');
 
   const testDir = path.join(process.env.TEST_TEMP_DIR, 'generate-no-schools');
   await fs.mkdir(testDir, { recursive: true });
@@ -670,38 +665,36 @@ test('generateSitemaps without schools falls back to filesystem walk', async () 
   await fs.writeFile(path.join(testDir, 'sma-negeri-1-bandung.html'), '<html></html>', 'utf8');
   await fs.writeFile(path.join(testDir, 'sma-negeri-2-bandung.html'), '<html></html>', 'utf8');
 
-  const originalDist = CONFIG.DIST_DIR;
-  CONFIG.DIST_DIR = testDir;
-
   try {
-    const result = await generateSitemaps();
-    const { urls, files } = result;
+    await withConfig({ DIST_DIR: testDir }, async () => {
+      const result = await generateSitemaps();
+      const { urls, files } = result;
 
-    assert.strictEqual(urls.length, 3);
-    assert.ok(urls.some(u => u.url.includes('index.html')));
-    assert.ok(urls.some(u => u.url.includes('sma-negeri-1-bandung.html')));
-    assert.ok(urls.some(u => u.url.includes('sma-negeri-2-bandung.html')));
+      assert.strictEqual(urls.length, 3);
+      assert.ok(urls.some(u => u.url.includes('index.html')));
+      assert.ok(urls.some(u => u.url.includes('sma-negeri-1-bandung.html')));
+      assert.ok(urls.some(u => u.url.includes('sma-negeri-2-bandung.html')));
 
-    assert.ok(files.length > 0);
-    assert.ok(files.every(f => f.startsWith('sitemap-') && f.endsWith('.xml')));
+      assert.ok(files.length > 0);
+      assert.ok(files.every(f => f.startsWith('sitemap-') && f.endsWith('.xml')));
 
-    for (const file of files) {
-      const filePath = path.join(testDir, file);
-      const exists = await fs
-        .access(filePath)
+      for (const file of files) {
+        const filePath = path.join(testDir, file);
+        const exists = await fs
+          .access(filePath)
+          .then(() => true)
+          .catch(() => false);
+        assert.ok(exists, `sitemap file ${file} should exist in test directory`);
+      }
+
+      const indexPath = path.join(testDir, 'sitemap-index.xml');
+      const indexExists = await fs
+        .access(indexPath)
         .then(() => true)
         .catch(() => false);
-      assert.ok(exists, `sitemap file ${file} should exist in test directory`);
-    }
-
-    const indexPath = path.join(testDir, 'sitemap-index.xml');
-    const indexExists = await fs
-      .access(indexPath)
-      .then(() => true)
-      .catch(() => false);
-    assert.ok(indexExists, 'sitemap-index.xml should exist');
+      assert.ok(indexExists, 'sitemap-index.xml should exist');
+    });
   } finally {
-    CONFIG.DIST_DIR = originalDist;
     await fs.rm(testDir, { recursive: true, force: true });
   }
 });

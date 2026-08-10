@@ -2,6 +2,70 @@
 
 ## Completed Tasks
 
+### [TASK-080] Test Infrastructure — Shared `withConfig()` CONFIG-Mutation Helper (REFACTOR-002)
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Resolved backlog item **REFACTOR-002** — the test-suite debt of mutating the shared `CONFIG` singleton directly in test bodies (53 mutation sites across 8 files), where a test that fails before restoring the original value causes cascading, order-dependent failures in sibling tests. Introduced a single shared exception-safe helper and migrated every in-test CONFIG mutation to it; only the intentional module-level per-file temp-dir redirects remain (safe — `node --test` runs each file in its own child process, so they cannot leak across files).
+
+### Changes Made
+
+**1. New shared helper `scripts/test-helpers.js`**:
+
+- `withConfig(overrides, fn)` — applies partial `CONFIG` overrides, runs `fn` (sync or async), and restores the originals in a `finally` block even when `fn` throws/rejects. Callers always `await` it, so restoration is guaranteed on both success and failure paths. Only the overridden keys are touched; all other `CONFIG` keys are left as-is.
+
+**2. New `scripts/test-helpers.test.js`** (8 tests, 100% coverage of the helper): override applied & restored; restored on sync throw; restored on async rejection; result passthrough; sync callbacks; multi-key overrides; non-overridden keys untouched; per-key restore when a later override is exceptional.
+
+**3. Migrated all in-test CONFIG mutations (40 sites across 6 files)**:
+
+- `scripts/etl-run.test.js` — deleted the local `withConfig(rawPath, schoolsPath, fn)` duplicate; all 9 call sites converted to the shared `{ RAW_DATA_PATH, SCHOOLS_CSV_PATH }` overrides-object signature (one canonical implementation instead of two).
+- `scripts/manifest.test.js` — 7 `CONFIG.ROOT_DIR` try/finally tests → `withConfig`; removed the now-unused `CONFIG` import.
+- `scripts/validate-links.test.js` — 4 `CONFIG.DIST_DIR` try/finally tests → `withConfig`.
+- `scripts/check-freshness.test.js` — 2 describe blocks (12 mutations) converted from `before`/`after` original-save/restore to per-test `withConfig`; removed the now-unused `CONFIG`/`before` imports.
+- `scripts/sitemap.test.js` — `MAX_URLS_PER_SITEMAP` mutation and the `generateSitemaps` `DIST_DIR` mutation → `withConfig`.
+- `scripts/build-pages.test.js` — 2 `CONFIG.SCHOOLS_CSV_PATH` try/finally tests → `withConfig`; the "loadSchools throws error when CSV is empty" test no longer performs its no-op self-assignment CONFIG dance.
+
+**4. Intentionally left as-is**: module-level per-file temp-dir redirects in `build-orchestrator.test.js` (`DIST_DIR`), `enrichment.test.js` (`DATA_DIR`), `sitemap.test.js` (`DIST_DIR`), `build-pages.test.js` (`ROOT_DIR`/`DIST_DIR`). These are file-scoped fixtures set once at require time with unique per-process temp paths — not restore-on-demand mutations — and are safe under `node --test`'s per-file process isolation.
+
+### Verification
+
+| Check               | Result                                                          |
+| ------------------- | --------------------------------------------------------------- |
+| JS Tests            | 1069/1069 total (1065 pass, 0 fail, 4 skipped) — +8 new helper tests vs 1061 baseline |
+| Python Tests        | 100% pass                                                       |
+| ESLint              | 0 errors                                                        |
+| Prettier            | All changed files formatted cleanly                             |
+| Coverage gate       | 94.94% lines / 92.27% branches (thresholds 80/75); `test-helpers.js` 100% |
+| Remaining CONFIG mutations | Only the 4 intentional module-level per-file temp-dir redirects |
+| Zero regressions    | Confirmed                                                       |
+
+### Files Modified
+
+- `scripts/test-helpers.js` — NEW shared `withConfig()` helper (exported)
+- `scripts/test-helpers.test.js` — NEW 8-test suite for the helper
+- `scripts/etl-run.test.js` — local `withConfig` replaced with shared helper; 9 call sites converted
+- `scripts/manifest.test.js` — 7 tests → `withConfig`; unused `CONFIG` import removed
+- `scripts/validate-links.test.js` — 4 tests → `withConfig`
+- `scripts/check-freshness.test.js` — 2 describe blocks → per-test `withConfig`; unused imports removed
+- `scripts/sitemap.test.js` — 2 tests → `withConfig`
+- `scripts/build-pages.test.js` — 2 tests → `withConfig`; no-op CONFIG dance removed
+- `docs/testing.md` — test-helpers module documented
+- `docs/task.md` — This entry; REFACTOR-002 marked Complete
+
+### Acceptance Criteria
+
+- [x] Shared `withConfig(overrides, fn)` helper in a shared test utility file (try/finally auto-restore, partial overrides, restores even on exception)
+- [x] Helper covered by its own unit tests (including throw/reject restore paths)
+- [x] All in-test CONFIG mutations in the 5 backlog-named files + etl-run migrated to the helper (40 sites)
+- [x] No raw `CONFIG.KEY = value` mutations remain inside test bodies (only module-level per-file temp-dir setup)
+- [x] All tests pass (1069 JS + Python), lint 0 errors, Prettier clean, coverage gate green
+- [x] Backlog REFACTOR-002 marked Complete
+
+---
+
 ### [TASK-079] Code Sanitization — Backlog Cleanup (REFACTOR-003, REFACTOR-004, REFACTOR-006)
 
 **Status**: Complete
@@ -9581,9 +9645,12 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-002] Test CONFIG Mutation Safety Helper
 
+**Status**: Resolved (2026-08-10, QA Engineer pass — TASK-080)
+
 - **Location**: Multiple test files (`validate-links.test.js`, `manifest.test.js`, `check-freshness.test.js`, `build-pages.test.js`, `sitemap.test.js`)
 - **Issue**: Tests mutate the `CONFIG` singleton directly (43+ mutations across 5 files) by assigning to `CONFIG.DIST_DIR`, `CONFIG.ROOT_DIR`, etc. directly — e.g., `CONFIG.DIST_DIR = tempDir`. Since `CONFIG` is a shared singleton, tests that forget to restore the original value (or whose `finally` block is skipped) cause cascading failures in sibling tests. This is a test isolation debt that creates brittle, order-dependent tests.
 - **Suggestion**: Create a shared test helper `withConfig(overrides, fn)` or `useConfig({...overrides})` that wraps CONFIG mutation in try/finally auto-restore. Place in a shared test utility file or a `test-setup.js`. Apply it to the 5 affected test files. The helper should accept partial overrides and restore originals even on exception.
+- **Resolution**: Created `scripts/test-helpers.js` with `withConfig(overrides, fn)` (try/finally auto-restore, partial overrides, exception-safe) + an 8-test suite proving the contract. Migrated all 40 in-test CONFIG mutation sites across 6 files (etl-run, manifest, validate-links, check-freshness, sitemap, build-pages) to the helper. Only intentional module-level per-file temp-dir redirects remain (build-orchestrator, enrichment, sitemap, build-pages) — safe under `node --test` per-file process isolation. Full suite green (1069 tests), lint/prettier clean, coverage gate green.
 - **Priority**: Medium
 - **Effort**: Medium
 
