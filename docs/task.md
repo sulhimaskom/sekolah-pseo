@@ -2,6 +2,376 @@
 
 ## Completed Tasks
 
+### [TASK-084] Technical Writing — Doc-Code Alignment for Homepage Module (api.md, feature.md, REFACTOR-007 follow-up)
+
+**Status**: Complete
+**Agent**: Senior Technical Writer (Sisyphus)
+
+### Description
+
+Audited `docs/api.md` and `docs/feature.md` against the current homepage source (`src/presenters/templates/homepage.js`) and removed documentation for two functions deleted in the 54th verification run (commit `f361320`, F048/F049): `aggregateByProvince` and `extractFilterOptions`. Both were removed from `module.exports` (only `generateHomepageHtml` and `aggregateProvinceAndFilters` remain), but the docs still presented them as live API with usage examples that would throw `TypeError: ... is not a function` if copied.
+
+### Findings & Changes
+
+**1. `docs/api.md` — Homepage Template Module (critical, actively misleading)**:
+
+- **Exports block**: removed `aggregateByProvince: function` and `extractFilterOptions: function` — the block now matches the actual `module.exports` (verified `homepage.js:701-704`).
+- **Removed `aggregateByProvince(schools)` section**: documented a deleted function (with sorting note, return-shape example, and a usage example importing a non-existent export).
+- **Removed `extractFilterOptions(schools)` section**: documented a deleted function (with return-shape example and a usage example importing a non-existent export).
+- **`aggregateProvinceAndFilters()` description**: now states it replaces the removed `aggregateByProvince`/`extractFilterOptions` pair instead of claiming it "combines the functionality" of live functions.
+- **`generateHomepageHtml()` Features list**: corrected to match current behavior (TASK-081/083 changes were absent):
+  - "Embedded school data in JSON format" → **"Search data lazy-loaded from `/schools.json`"** (data has never been embedded since the 2026-05-31 lazy-load decision; the old wording was actively misleading)
+  - "Province and education type filtering" → added **status filtering** (3 filters, per `homepage.js` `statusFilter`)
+  - "Escape to clear" → **"Escape clears the query only when the search input is focused — filters are never reset"** (TASK-083 scoping)
+  - Added: 150ms debounce, autocomplete (max 10) with keyboard navigation, 200-row render cap (`MAX_RENDERED_RESULTS`), CSV download of filtered results, `aria-live` result count, disabled-until-load filter selects with failure message
+
+**2. `docs/feature.md` — stale function reference**:
+
+- "Filter options extracted server-side via `extractFilterOptions()` in homepage.js" → `aggregateProvinceAndFilters()` (verified the function no longer exists in `homepage.js`).
+
+**3. Historical records left untouched**:
+
+- `docs/task.md` REFACTOR-007 (line ~9948) and TASK-072-era entries describing `extractFilterOptions` as "retained for backward compatibility" are **historical snapshots** predating the 54th-run removal — left as-is to preserve the decision history (this entry supersedes them).
+- `docs/ai-agent-engineer.md` / `docs/user-story-engineer.md` references are dated agent-memory log entries — not living documentation.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| Homepage exports vs docs | `module.exports` = `{ generateHomepageHtml, aggregateProvinceAndFilters }` — matches updated docs |
+| Residual stale references | Only the intentional "replaces the removed pair" note remains in api.md |
+| JS Tests | 1091 total, 1087 pass, 0 fail, 4 skipped (unaffected — docs only) |
+| Prettier | All changed files formatted cleanly |
+| Zero regressions | Docs-only change; no code touched |
+
+### Files Modified
+
+- `docs/api.md` — Homepage Template Module exports/features/sections corrected
+- `docs/feature.md` — stale `extractFilterOptions()` reference corrected
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] No documentation presents `aggregateByProvince`/`extractFilterOptions` as live homepage exports
+- [x] `generateHomepageHtml` feature list matches current code (lazy-loaded search data, 3 filters, 200-cap, Escape scoping)
+- [x] Usage examples only import exports that exist (`generateHomepageHtml`, `aggregateProvinceAndFilters`)
+- [x] Historical task records preserved (no rewriting of decision history)
+- [x] Prettier-clean, zero regressions
+
+---
+
+### [TASK-083] UI/UX — Homepage Search Accessibility & Interaction Polish (homepage.js, styles.js)
+
+**Status**: Complete
+**Agent**: UI/UX Engineer (Sisyphus)
+
+### Description
+
+Accessibility and interaction pass over the homepage search — the site's primary interactive surface. Fixed one UX bug (global Escape-key reset), one a11y defect (interactive element inside an `aria-live` region), one focus-visibility gap (opacity-only focus on the CSV button), one forced-colors accessibility gap (box-shadow focus suppressed in Windows High Contrast), and two interaction-state gaps (enabled-but-inert filter controls during load; silent failure when `schools.json` cannot be fetched).
+
+### Changes Made
+
+**1. Escape-key handler scoped to the search input (UX bug fix)** (`homepage.js`):
+
+- The old handler ran on **any** Escape press anywhere on the page and wiped the search query **plus all three filters** — so closing a native filter dropdown (Escape is the browser's standard select-close key) destroyed the user's entire search state.
+- Now `e.key === 'Escape' && document.activeElement === searchInput`: closes the autocomplete, clears the query (combobox semantics), re-runs the search, and blurs. Escape elsewhere on the page does nothing; filters are never touched by Escape.
+
+**2. `aria-live` scoped to the result count** (`homepage.js`):
+
+- `aria-live="polite"` moved from the `.search-results-info` wrapper onto the `#result-count` span itself. The wrapper previously announced an interactive element (the CSV download button) as it toggled `hidden` — a live region must not contain interactive content.
+
+**3. Filter loading + failure state communication** (`homepage.js`):
+
+- The three filter `<select>`s now render with `disabled` (server HTML) — they were previously enabled but inert while `schools.json` was still loading.
+- On load success the script re-enables them; on fetch failure they stay disabled and the count region announces `Data pencarian gagal dimuat.` (previously the UI stayed silently broken, showing the stale `Memuat data...` message forever).
+- New `searchFailed` flag keeps the failure message stable across subsequent keystrokes instead of reverting to `Memuat data...`.
+
+**4. CSV button focus-visible outline** (`styles.js`):
+
+- `.download-csv-btn:focus` previously only changed `opacity` (0.85) — a color-only focus indicator. Added `.download-csv-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }`.
+
+**5. Forced-colors (Windows High Contrast) focus visibility** (`styles.js`):
+
+- The search/filter inputs indicate focus via `border-color` + `box-shadow` with `outline: none` — all suppressed in forced-colors mode, leaving no visible focus indicator. Added `@media (forced-colors: active)` fallbacks giving `.search-input:focus`, `.filter-select:focus`, `.download-csv-btn:focus-visible`, and `.autocomplete-item-active` explicit `Highlight` outlines.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| Homepage tests | 31/31 pass (+5 new interaction-state tests) |
+| Styles tests | 28/28 pass (+2 new forced-colors/focus tests) |
+| JS Tests (full suite) | 1091/1091 pass (1084 baseline + 7 new), 0 fail, 4 skipped |
+| ESLint | 0 errors (all 4 changed files) |
+| Prettier | All changed files formatted cleanly |
+| Build | 2 pages, 0 failed, all performance budgets met |
+| Generated HTML | `disabled` on all 3 filters; `aria-live` on `#result-count` only; no filter-reset in inline script |
+| Generated script | `node --check` on extracted `<script>` — clean |
+| Generated CSS | `forced-colors` block + `download-csv-btn:focus-visible` present |
+| Zero regressions | Confirmed |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` — Escape scoping, `aria-live` move, filter `disabled` + enable-on-load + `searchFailed` failure messaging
+- `src/presenters/styles.js` — `.download-csv-btn:focus-visible`, `forced-colors` focus fallbacks
+- `scripts/homepage.test.js` — +5 tests (disabled selects, aria-live scoping, enable-on-load, failure message, Escape scoping)
+- `scripts/styles.test.js` — +2 tests (button focus-visible, forced-colors fallbacks)
+- `docs/task.md` — This entry
+- `docs/blueprint.md` — Decisions Log row
+- `docs/ui-ux-engineer.md` — Completed improvements
+
+### Acceptance Criteria
+
+- [x] Escape clears the search query only when the search input is focused; filters are never reset by Escape
+- [x] Interactive CSV button is outside the `aria-live` region (live region on `#result-count` only)
+- [x] Filter selects disabled until `schools.json` loads; re-enabled on success; stay disabled with a clear failure message on error
+- [x] CSV button has a real `:focus-visible` outline (not opacity-only)
+- [x] Search/filter/autocomplete focus indicators survive forced-colors mode
+- [x] 1091 JS tests pass (0 fail), ESLint + Prettier clean, build 0 failed
+- [x] Zero regressions
+
+---
+
+### [TASK-082] Integration Hardening — Wikipedia Enrichment Circuit Breaker + Timeout-Retry Fix (enrichment.js)
+
+**Status**: Complete
+**Agent**: Integration Engineer (Sisyphus)
+
+### Description
+
+`scripts/enrichment.js` was the **only external-service integration without a circuit breaker**. The fs breakers in `fs-safe.js` only guard file I/O, so a Wikipedia API outage made every enrichment request hang for the full 10s timeout and retry 3× per school, with no fail-fast protection.
+
+While auditing the retry policy, discovered a latent bug: the old `shouldRetry` predicate returned `false` for **all** `IntegrationError`s — but `withTimeout()` rejects with an `IntegrationError` whose code is `TIMEOUT` when the request deadline is exceeded. So **timeout retries were silently disabled** for every request, contradicting `isTransientError()` which classifies timeouts as transient.
+
+### Changes Made
+
+**1. Dedicated Wikipedia circuit breaker** (`scripts/enrichment.js`):
+
+- `WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD = 3` — consecutive failures before OPEN
+- `WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS = 120000` — reset timeout (2 min, matches `fetch-data.js`)
+- `wikipediaCircuitBreaker` instance — isolated from fs breakers so a Wikipedia outage cannot cascade into unrelated file operations, and vice versa (mirrors `fetch-data.js` `fetchCircuitBreaker`)
+
+**2. Retry-policy fix** — `fetchJson` now wraps the retry chain in `wikipediaCircuitBreaker.execute(...)` and the `shouldRetry` predicate distinguishes:
+
+- **Retryable**: `IntegrationError` with `code === TIMEOUT` (previously never retried), HTTP 429, HTTP 5xx, and `isTransientError` network errors
+- **Non-retryable**: parse failures (`HTTP_ERROR` — invalid JSON / unrecoverable status) — retrying would produce the same result
+
+**3. Additive exports** — `fetchJson` and `wikipediaCircuitBreaker` added to `module.exports` (zero breaking changes; mirrors `fetch-data.js` which exports `fetchCircuitBreaker`).
+
+**4. Graceful degradation preserved** — `enrichSchoolViaWikipedia` still returns `{}` when the circuit is open (enrichment failures never propagate to the ETL pipeline).
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| Timeout retried | 3 attempts (old predicate: 0) — `RETRY_EXHAUSTED`, `lastErrorCode: 'TIMEOUT'` |
+| Parse failure not retried | 1 attempt — `HTTP_ERROR` |
+| Breaker opens | After 3 consecutive failures → `OPEN` |
+| Fail-fast when open | 4th request rejects `CIRCUIT_BREAKER_OPEN`, zero network calls |
+| Reset on success | `reset()` → `CLOSED`; successful request keeps `CLOSED` |
+| Graceful degradation | `enrichSchoolViaWikipedia` → `{}` when circuit OPEN |
+| JS Tests | 1084 total, 1080 pass, 0 fail, 4 skipped (baseline 1078/1074 + 6 new) |
+| ESLint | 0 errors |
+| Prettier | Clean on changed files (89 pre-existing repo warnings, unchanged) |
+
+### Files Modified
+
+- `scripts/enrichment.js` — circuit breaker, retry-policy fix, additive exports
+- `scripts/enrichment.test.js` — 6 new tests in `fetchJson resilience` suite
+- `docs/api.md` — Enrichment Module exports/constants/`fetchJson`/`wikipediaCircuitBreaker`
+- `docs/blueprint.md` — Decisions Log row
+- `docs/task.md` — This entry; backlog status fixes (REFACTOR-004/010/012 → Complete per TASK-074, TASK-061 → Partial)
+
+### Acceptance Criteria
+
+- [x] Dedicated `wikipediaCircuitBreaker` (3 failures → OPEN, 120s reset) isolated from fs breakers
+- [x] Timeout `IntegrationError`s retried (3 attempts); parse failures not retried (1 attempt)
+- [x] Fail-fast `CIRCUIT_BREAKER_OPEN` with no network calls when circuit open
+- [x] Graceful degradation to `{}` preserved
+- [x] Additive exports only — zero breaking changes
+- [x] 1084 JS tests pass (0 fail), ESLint clean
+- [x] Zero regressions
+
+---
+
+### [TASK-081] Client-Side Search Rendering Optimization + Fix for Broken Homepage Script (homepage.js)
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Optimized the client-side search result rendering on the homepage and fixed a pre-existing, page-breaking defect in the embedded search script. At 3474-school scale, every keystroke synchronously rebuilt **all** matching result rows (~10 DOM nodes per match, one `appendChild` each) — a broad query (`query="sekolah"` matches all 3474) created **34,741 DOM nodes via 34,740 individual `appendChild` calls per keystroke** (14.21ms render loop). Capping rendered rows at 200 + batching via `DocumentFragment` cuts that to **~2,000 DOM nodes and a single `appendChild`** (~1ms render loop) while the count label still reports the true match total.
+
+While verifying the generated `dist/index.html`, discovered the embedded script **never parsed in any browser** — two compounding pre-existing defects (both since commit `5058388`, 2026-06-02, FEAT-015):
+
+1. **Template-literal `\n` escaping**: the CSV builder strings (`'...Alamat\n'` and `+ '\n'`) sit inside the outer template literal in `homepage.js`, so `\n` was evaluated to a **literal newline** in the generated HTML — `var csv = 'NPSN,...Alamat<LF>';` — a `SyntaxError: Invalid or unexpected token` in the browser.
+2. **Brace imbalance in `updateSearchResults`**: the `else` branches (searching-but-zero-results vs not-searching) had been merged during a prior optimization, dropping the function's closing brace.
+
+Because the inline `<script>` is one unit, this SyntaxError killed **the entire homepage search feature** (search box, filters, autocomplete, result rendering, CSV export) — invisible to the existing static-HTML tests, which never parse the embedded script.
+
+### Changes Made
+
+**1. Rendering cap + `DocumentFragment` batching** (`src/presenters/templates/homepage.js`):
+
+- `var MAX_RENDERED_RESULTS = 200;` — renders at most the first 200 matching rows.
+- `updateSearchResults`: `var rendered = isTruncated ? results.slice(0, MAX_RENDERED_RESULTS) : results;` — only the capped slice is built.
+- Batch append: build rows into a `var fragment = document.createDocumentFragment();`, then a single `searchResultsListEl.appendChild(fragment)` (one reflow instead of one per row).
+- Truncation-aware count label: `'Menampilkan ' + MAX_RENDERED_RESULTS.toLocaleString('id-ID') + ' dari ' + count.toLocaleString('id-ID') + ' sekolah (maksimal ' + MAX_RENDERED_RESULTS + ' ditampilkan)'` — the user still sees the true match count.
+- The `filterSchools` hot path is untouched (already optimized in TASK-072).
+
+**2. Fix `\n` escaping** (lines 498, 509): `'...Alamat\n'` → `'...Alamat\\n'` and `+ '\n'` → `+ '\\n'` in the source template literal, so the generated HTML contains the literal two-character escape `\n` (valid JS string escape producing a newline at runtime).
+
+**3. Fix `updateSearchResults` brace structure**: restored the correct two-branch layout — inner `else` (searching but 0 results → show `noResultsEl`) and outer `else` (not searching → show total count + province list), with the function's closing brace. Generated script now passes `node --check`.
+
+### Verification
+
+| Check                    | Result                                                           |
+| ------------------------ | ---------------------------------------------------------------- |
+| Render loop (3474-scale) | 14.21ms → 1.26ms per keystroke (~11x)                            |
+| DOM nodes / appends      | 34,741 / 34,740 → 2,002 / 1 (fragment batch)                     |
+| Generated script syntax  | `node --check` on extracted `<script>` — clean (was SyntaxError) |
+| JS Tests                 | 1066/1066 pass, 0 fail, 4 skipped (matches HEAD baseline)        |
+| Homepage tests           | 31/31 pass                                                       |
+| ESLint / Prettier        | 0 errors / clean                                                 |
+| Truncation label         | Present in generated HTML (`maksimal 200 ditampilkan`)           |
+| Zero regressions         | Confirmed                                                        |
+
+### Files Modified
+
+- `src/presenters/templates/homepage.js` — rendering cap, `DocumentFragment` batching, `\n` escaping fix, `updateSearchResults` brace-structure fix
+- `docs/task.md` — This entry
+- `docs/blueprint.md` — Performance log row
+
+### Acceptance Criteria
+
+- [x] Rendering capped at `MAX_RENDERED_RESULTS` (200) with truncation-aware label
+- [x] Rows appended via a single `DocumentFragment` batch (1 reflow)
+- [x] Generated homepage `<script>` parses cleanly (`node --check`)
+- [x] CSV header + row separator survive template rendering as literal `\n` escapes
+- [x] `updateSearchResults` else-branches restored (0-results vs not-searching)
+- [x] 1066 JS tests pass (0 fail), homepage 31/31, ESLint + Prettier clean
+- [x] Measurable improvement at 3474-scale: 34,741→2,002 nodes, 34,740→1 append, ~14ms→~1ms render loop
+- [x] Zero regressions
+
+---
+
+### [TASK-080] Test Infrastructure — Shared `withConfig()` CONFIG-Mutation Helper (REFACTOR-002)
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Resolved backlog item **REFACTOR-002** — the test-suite debt of mutating the shared `CONFIG` singleton directly in test bodies (53 mutation sites across 8 files), where a test that fails before restoring the original value causes cascading, order-dependent failures in sibling tests. Introduced a single shared exception-safe helper and migrated every in-test CONFIG mutation to it; only the intentional module-level per-file temp-dir redirects remain (safe — `node --test` runs each file in its own child process, so they cannot leak across files).
+
+### Changes Made
+
+**1. New shared helper `scripts/test-helpers.js`**:
+
+- `withConfig(overrides, fn)` — applies partial `CONFIG` overrides, runs `fn` (sync or async), and restores the originals in a `finally` block even when `fn` throws/rejects. Callers always `await` it, so restoration is guaranteed on both success and failure paths. Only the overridden keys are touched; all other `CONFIG` keys are left as-is.
+
+**2. New `scripts/test-helpers.test.js`** (8 tests, 100% coverage of the helper): override applied & restored; restored on sync throw; restored on async rejection; result passthrough; sync callbacks; multi-key overrides; non-overridden keys untouched; per-key restore when a later override is exceptional.
+
+**3. Migrated all in-test CONFIG mutations (40 sites across 6 files)**:
+
+- `scripts/etl-run.test.js` — deleted the local `withConfig(rawPath, schoolsPath, fn)` duplicate; all 9 call sites converted to the shared `{ RAW_DATA_PATH, SCHOOLS_CSV_PATH }` overrides-object signature (one canonical implementation instead of two).
+- `scripts/manifest.test.js` — 7 `CONFIG.ROOT_DIR` try/finally tests → `withConfig`; removed the now-unused `CONFIG` import.
+- `scripts/validate-links.test.js` — 4 `CONFIG.DIST_DIR` try/finally tests → `withConfig`.
+- `scripts/check-freshness.test.js` — 2 describe blocks (12 mutations) converted from `before`/`after` original-save/restore to per-test `withConfig`; removed the now-unused `CONFIG`/`before` imports.
+- `scripts/sitemap.test.js` — `MAX_URLS_PER_SITEMAP` mutation and the `generateSitemaps` `DIST_DIR` mutation → `withConfig`.
+- `scripts/build-pages.test.js` — 2 `CONFIG.SCHOOLS_CSV_PATH` try/finally tests → `withConfig`; the "loadSchools throws error when CSV is empty" test no longer performs its no-op self-assignment CONFIG dance.
+
+**4. Intentionally left as-is**: module-level per-file temp-dir redirects in `build-orchestrator.test.js` (`DIST_DIR`), `enrichment.test.js` (`DATA_DIR`), `sitemap.test.js` (`DIST_DIR`), `build-pages.test.js` (`ROOT_DIR`/`DIST_DIR`). These are file-scoped fixtures set once at require time with unique per-process temp paths — not restore-on-demand mutations — and are safe under `node --test`'s per-file process isolation.
+
+### Verification
+
+| Check                      | Result                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| JS Tests                   | 1069/1069 total (1065 pass, 0 fail, 4 skipped) — +8 new helper tests vs 1061 baseline |
+| Python Tests               | 100% pass                                                                             |
+| ESLint                     | 0 errors                                                                              |
+| Prettier                   | All changed files formatted cleanly                                                   |
+| Coverage gate              | 94.94% lines / 92.27% branches (thresholds 80/75); `test-helpers.js` 100%             |
+| Remaining CONFIG mutations | Only the 4 intentional module-level per-file temp-dir redirects                       |
+| Zero regressions           | Confirmed                                                                             |
+
+### Files Modified
+
+- `scripts/test-helpers.js` — NEW shared `withConfig()` helper (exported)
+- `scripts/test-helpers.test.js` — NEW 8-test suite for the helper
+- `scripts/etl-run.test.js` — local `withConfig` replaced with shared helper; 9 call sites converted
+- `scripts/manifest.test.js` — 7 tests → `withConfig`; unused `CONFIG` import removed
+- `scripts/validate-links.test.js` — 4 tests → `withConfig`
+- `scripts/check-freshness.test.js` — 2 describe blocks → per-test `withConfig`; unused imports removed
+- `scripts/sitemap.test.js` — 2 tests → `withConfig`
+- `scripts/build-pages.test.js` — 2 tests → `withConfig`; no-op CONFIG dance removed
+- `docs/testing.md` — test-helpers module documented
+- `docs/task.md` — This entry; REFACTOR-002 marked Complete
+
+### Acceptance Criteria
+
+- [x] Shared `withConfig(overrides, fn)` helper in a shared test utility file (try/finally auto-restore, partial overrides, restores even on exception)
+- [x] Helper covered by its own unit tests (including throw/reject restore paths)
+- [x] All in-test CONFIG mutations in the 5 backlog-named files + etl-run migrated to the helper (40 sites)
+- [x] No raw `CONFIG.KEY = value` mutations remain inside test bodies (only module-level per-file temp-dir setup)
+- [x] All tests pass (1069 JS + Python), lint 0 errors, Prettier clean, coverage gate green
+- [x] Backlog REFACTOR-002 marked Complete
+
+---
+
+### [TASK-079] Code Sanitization — Backlog Cleanup (REFACTOR-003, REFACTOR-004, REFACTOR-006)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Full health check (build, lint, JS+Python tests — all green) followed by targeted resolution of three open backlog items, plus backlog triage of the remaining items.
+
+### Changes Made
+
+**1. REFACTOR-003 — hoisted inline `require('fs')`** (`src/services/BuildOrchestrator.js`):
+
+- `const fs = require('fs')` added to module-level requires; `finalizeBuild()` now uses the shared import (`fs.appendFileSync`) instead of the inline require.
+
+**2. REFACTOR-004 — province-directory failure visibility** (`src/services/BuildOrchestrator.js` `preCreateProvinceDirectories()`):
+
+- Aligned with the `preCreateDirectories()` contract: per-directory failures are collected, a warning with failure count is logged when any occur, and the failures array is returned. Failures are no longer invisible beyond the per-error log line.
+
+**3. REFACTOR-006 — `REQUIRED_SCHOOL_FIELDS` consolidation** (`scripts/data-schema.js`, `src/services/PageBuilder.js`, `src/presenters/templates/school-page.js`):
+
+- `REQUIRED_SCHOOL_FIELDS` moved to `data-schema.js` (neutral single source of truth, alongside the ETL-level `REQUIRED_FIELDS`), imported by both `PageBuilder.js` and `school-page.js`; the inline `requiredFields` duplicate in `school-page.js` removed. Placed in `data-schema.js` rather than re-exported from `PageBuilder.js` because `PageBuilder.js` already imports `school-page.js` — re-exporting from PageBuilder would create a circular require.
+
+**4. Backlog triage (docs/task.md)** — marked REFACTOR-001 (direct tests exist in `scripts/build-orchestrator.test.js`), REFACTOR-003, REFACTOR-004, REFACTOR-006, and the lazy-require code-review item as resolved; REFACTOR-005 as superseded (`aggregateByProvince` removed in TASK-072); REFACTOR-008 and the fetch-data raw-`fs` item as intentional/closed with justification.
+
+### Verification
+
+| Check            | Result                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| ESLint           | 0 errors (all changed files)                                                                               |
+| JS Tests         | 1057/1057 pass (0 fail, 4 skipped); affected suites 140/140 (PageBuilder, build-orchestrator, build-pages) |
+| Build            | 2 pages, 0 failed, Status: PASS                                                                            |
+| Zero regressions | Confirmed                                                                                                  |
+
+### Files Modified
+
+- `src/services/BuildOrchestrator.js` — hoisted `require('fs')`; `preCreateProvinceDirectories()` failure collection + return
+- `scripts/data-schema.js` — added `REQUIRED_SCHOOL_FIELDS` (exported)
+- `src/services/PageBuilder.js` — imports `REQUIRED_SCHOOL_FIELDS` from data-schema; removed local duplicate
+- `src/presenters/templates/school-page.js` — imports `REQUIRED_SCHOOL_FIELDS`; removed inline `requiredFields`
+- `docs/task.md` — This entry; REFACTOR-001/003/004/006 + lazy-require marked Resolved; REFACTOR-005 Superseded; REFACTOR-008 + fetch-data raw fs Closed/intentional
+
+### Acceptance Criteria
+
+- [x] Build passes, lint 0 errors, full test suite green
+- [x] No inline `require()` inside function bodies in BuildOrchestrator
+- [x] Province directory creation failures logged with count and returned to callers
+- [x] `REQUIRED_SCHOOL_FIELDS` defined exactly once (data-schema.js), no circular require
+- [x] Open backlog items triaged: resolved / superseded / intentional with rationale
+- [x] Zero regressions
+
+---
+
 ### [TASK-075] UI/UX Accessibility — Search Loading States, Copy-Feedback Announcement, Dark-Mode Autocomplete
 
 **Status**: Complete
@@ -5935,7 +6305,7 @@ Alternatively, for minimal change surface: add `distDir` parameter as optional t
 
 ### [REFACTOR-004] Extract `fileExists()` helper for manifest.js existence checks
 
-**Status**: Backlog
+**Status**: Complete (TASK-074)
 **Priority**: Low
 **Effort**: Small
 
@@ -5983,7 +6353,7 @@ Add an async `fileExists(path)` helper that wraps `safeAccess()` and returns a b
 
 ### [IMPROVEMENT-005] `prepareSchoolDataForSearch()` array format indices are brittle
 
-**Status**: Backlog
+**Status**: Complete
 **Priority**: Low
 **Effort**: Small
 
@@ -5999,42 +6369,40 @@ While this format saves ~13% payload (intentional optimization from TASK-039), i
 
 If a new field is added or the order changes, both server and client code must be updated simultaneously.
 
-### Suggestion
+### Solution
 
-Define a named constant array for the field-order mapping at the module level in `PageBuilder.js`:
+Defined `SEARCH_DATA_FIELDS` as the single source of truth for the flat-array field order, placed in `scripts/data-schema.js` rather than `PageBuilder.js`. This is a deliberate deviation from the backlog suggestion: `PageBuilder.js` imports `homepage.js` (template), so `homepage.js` cannot `require()` from `PageBuilder.js` without a circular require. `data-schema.js` is the neutral schema SSOT already imported by both sides (mirrors the TASK-079 precedent where `REQUIRED_SCHOOL_FIELDS` was consolidated into `data-schema.js`).
 
-```javascript
-const SEARCH_DATA_FIELDS = [
-  'npsn',
-  'nama',
-  'bentuk_pendidikan',
-  'status',
-  'alamat',
-  'kecamatan',
-  'kab_kota',
-  'provinsi',
-  'url',
-];
-```
+### Implementation
 
-Use this array both to build the output and to document the schema. Export it so the client-side conversion code in `homepage.js` can reference the same constant, eliminating the index-literal dependency.
+1. **`scripts/data-schema.js`**: Added + exported `SEARCH_DATA_FIELDS` (9 fields: `npsn`, `nama`, `bentuk_pendidikan`, `status`, `alamat`, `kecamatan`, `kab_kota`, `provinsi`, `url` — `url` derived last). `getSchemaInfo()` now returns it as `searchDataFields`.
+2. **`src/services/PageBuilder.js`**: `prepareSchoolDataForSearch()` builds each row via `SEARCH_DATA_FIELDS.map(...)` instead of a hardcoded 9-slot literal; `url` derived as `'/' + relPath`.
+3. **`src/presenters/templates/homepage.js`**: Imports `SEARCH_DATA_FIELDS` at build time, embeds it as a literal (`var SEARCH_DATA_FIELDS = [...]`) in the generated client script, and converts flat arrays via named `SEARCH_FIELD_INDEX.<field>` lookups — no positional index literals (`s[0]`…`s[8]`) remain.
+4. **Tests** (9 new): `SEARCH_DATA_FIELDS` contract tests in `data-schema.test.js` (exact order, uniqueness, `url` last, `searchDataFields` in `getSchemaInfo()`); order-parity test in `PageBuilder.test.js` (each output position asserted against `SEARCH_DATA_FIELDS`); generated-script tests in `homepage.test.js` (embedded literal present, no raw `s[N]` index literals, script parses as valid JS via `vm.Script`, conversion is stable under a `SEARCH_DATA_FIELDS` reorder — old index-literal conversion vs new `FIELD_INDEX` conversion produce identical objects).
+5. **Docs**: `docs/api.md` (`SEARCH_DATA_FIELDS` export row + constant section + `prepareSchoolDataForSearch` doc), `docs/blueprint.md` (decisions-log entry 2026-08-10).
 
 ### Files
 
 - `src/services/PageBuilder.js`
 - `src/presenters/templates/homepage.js` (client-side fetch handler)
+- `scripts/data-schema.js`
+- `scripts/data-schema.test.js`
+- `scripts/PageBuilder.test.js`
+- `scripts/homepage.test.js`
 
 ### Verification
 
-- All existing tests pass
-- Client-side search still works with generated schools.json
-- Adding/removing a field from `SEARCH_DATA_FIELDS` causes predictable test failures
+- Full JS suite: 1078 tests, 1074 pass, 0 fail, 4 skipped (baseline 1069 + 9 new)
+- ESLint clean (0 problems), Prettier clean
+- Full build succeeds; `dist/schools.json` regenerated (3474 rows × 9 cols, format unchanged)
+- Generated `dist/index.html` script embeds the `SEARCH_DATA_FIELDS` literal, contains no `s[N]` index literals, passes `node --check`
+- Client conversion parity verified: old index-literal conversion vs new `FIELD_INDEX` conversion produce byte-identical objects
 
 ---
 
 ### [REFACTOR-010] `check-freshness.js` uses raw sync `fs.*` instead of resilient wrappers
 
-**Status**: Backlog
+**Status**: Complete (TASK-074)
 **Priority**: Medium
 **Effort**: Medium
 
@@ -6135,7 +6503,7 @@ This eliminates the nested try/catch entirely while preserving the same behavior
 
 ### [REFACTOR-012] Extract shared `fileExists()` utility for project-wide use
 
-**Status**: Backlog
+**Status**: Complete (TASK-074)
 **Priority**: Medium
 **Effort**: Small
 
@@ -6188,7 +6556,7 @@ Replace the three call sites:
 
 ### [TASK-061] Add test coverage for `interactive.js` exported functions
 
-**Status**: Backlog
+**Status**: Partial (interactive.test.js exists — 19 tests; `pickFromList` and `runCommand` remain untested)
 **Priority**: Medium
 **Effort**: Medium
 
@@ -9518,6 +9886,8 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-001] Add BuildOrchestrator Service Tests
 
+**Status**: Resolved — `scripts/build-orchestrator.test.js` provides direct coverage of `preCreateDirectories`, `finalizeBuild`, `prepareBuildEnvironment`, and `removeOrphanedSchoolPages` (with per-process CONFIG.DIST_DIR isolation). Remaining unexercised paths (`loadSchools` error paths, incremental manifest merge, `exportSchoolsCsv` fallback) are covered indirectly via `build-pages.test.js` integration tests.
+
 - **Location**: `src/services/BuildOrchestrator.js`
 - **Issue**: The core pipeline orchestrator (621 lines, 26 exported functions) has **zero direct unit tests**. Key functions — `loadSchools()`, `writeSchoolPagesConcurrently()`, `createManifestFromSchools()`, `exportSchoolsCsv()`, `writeSearchDataFile()`, `finalizeBuild()`, and the main `build()` pipeline — have no dedicated test file. They are only tested indirectly through `build-pages.test.js`, which exercises the thin re-export wrapper, not the service module directly. This means manifest merging logic, incremental/full build branching, and error paths are untested.
 - **Suggestion**: Create `src/services/BuildOrchestrator.test.js` with focused unit tests. Mock dependencies (`fs`, `manifest`, `PageBuilder`, `enrichment`, `config`) using `node:test` mocks. Cover: successful build flow, incremental build with/without manifest, incremental merge with existing manifest, zero-page edge case, `prepareBuildEnvironment` error paths, `exportSchoolsCsv` fallback, `finalizeBuild` GITHUB_STEP_SUMMARY path, `loadSchools` file-not-found and empty-CSV paths.
@@ -9526,29 +9896,38 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-002] Test CONFIG Mutation Safety Helper
 
+**Status**: Resolved (2026-08-10, QA Engineer pass — TASK-080)
+
 - **Location**: Multiple test files (`validate-links.test.js`, `manifest.test.js`, `check-freshness.test.js`, `build-pages.test.js`, `sitemap.test.js`)
 - **Issue**: Tests mutate the `CONFIG` singleton directly (43+ mutations across 5 files) by assigning to `CONFIG.DIST_DIR`, `CONFIG.ROOT_DIR`, etc. directly — e.g., `CONFIG.DIST_DIR = tempDir`. Since `CONFIG` is a shared singleton, tests that forget to restore the original value (or whose `finally` block is skipped) cause cascading failures in sibling tests. This is a test isolation debt that creates brittle, order-dependent tests.
 - **Suggestion**: Create a shared test helper `withConfig(overrides, fn)` or `useConfig({...overrides})` that wraps CONFIG mutation in try/finally auto-restore. Place in a shared test utility file or a `test-setup.js`. Apply it to the 5 affected test files. The helper should accept partial overrides and restore originals even on exception.
+- **Resolution**: Created `scripts/test-helpers.js` with `withConfig(overrides, fn)` (try/finally auto-restore, partial overrides, exception-safe) + an 8-test suite proving the contract. Migrated all 40 in-test CONFIG mutation sites across 6 files (etl-run, manifest, validate-links, check-freshness, sitemap, build-pages) to the helper. Only intentional module-level per-file temp-dir redirects remain (build-orchestrator, enrichment, sitemap, build-pages) — safe under `node --test` per-file process isolation. Full suite green (1069 tests), lint/prettier clean, coverage gate green.
 - **Priority**: Medium
 - **Effort**: Medium
 
 ### [REFACTOR-003] Inline `require('fs')` in finalizeBuild
 
-- **Location**: `src/services/BuildOrchestrator.js:481`
+**Status**: Resolved (2026-08-10, Code Sanitizer pass)
+
+- **Location**: `src/services/BuildOrchestrator.js:418`
 - **Issue**: `finalizeBuild()` uses an inline `require('fs')` for `GITHUB_STEP_SUMMARY` — the only place in the file where `fs` is not imported at module level. Line 17 already imports `const fs = require('fs')` and line 32 creates `const fsp = fs.promises`. The inline require is inconsistent with the module's top-level import pattern. Moreover, `fs.appendFileSync` could be called via the already-imported `fs` object.
-- **Suggestion**: Remove the inline `require('fs')` and use the existing `fs` module-level import (`fs.appendFileSync`) instead.
+- **Resolution**: `const fs = require('fs')` hoisted to module-level requires (line 16); `finalizeBuild()` now uses the shared import (`fs.appendFileSync`). Inline require removed.
 - **Priority**: Low
 - **Effort**: Small
 
 ### [REFACTOR-004] Inconsistent Error Handling in `preCreateProvinceDirectories`
 
-- **Location**: `src/services/BuildOrchestrator.js:228-241`
-- **Issue**: `preCreateProvinceDirectories()` silently swallows all directory creation errors via `.catch(err => { logger.error(...) })` and returns `void`. By contrast, `preCreateDirectories()` (line 122) tracks failures in an array, returns it to the caller, and logs a warning with failure count. This inconsistency means province directory failures are invisible to callers — a failed province directory won't surface except in logs, potentially causing downstream failures (province page writes) with confusing error messages.
-- **Suggestion**: Align `preCreateProvinceDirectories()` with the `preCreateDirectories()` pattern: collect failures in an array, return them, log a warning with failure count. Update the single call site if needed.
+**Status**: Resolved (2026-08-10, Code Sanitizer pass)
+
+- **Location**: `src/services/BuildOrchestrator.js:171-204`
+- **Issue**: `preCreateProvinceDirectories()` silently swallows all directory creation errors via `.catch(err => { logger.error(...) })` and returns `void`. By contrast, `preCreateDirectories()` (line 110) tracks failures in an array, returns it to the caller, and logs a warning with failure count. This inconsistency means province directory failures are invisible to callers — a failed province directory won't surface except in logs, potentially causing downstream failures (province page writes) with confusing error messages.
+- **Resolution**: Aligned with the `preCreateDirectories()` contract — per-directory failures are collected, a warning with failure count is logged when any occur, and the failures array is returned (caller at `generateProvincePages()` is unchanged; it already reports per-page failures).
 - **Priority**: Low
 - **Effort**: Small
 
 ### [REFACTOR-005] Consolidate `getUniqueProvinces()` and `aggregateByProvince()` — Duplicate Province Aggregation
+
+**Status**: Superseded — `aggregateByProvince()` was removed (TASK-072); homepage.js now uses the single-pass `aggregateProvinceAndFilters()` which extracts province + type + status filters together. `getUniqueProvinces()` (PageBuilder) remains for sitemap/orchestrator path-building. Remaining shape overlap is intentional: the homepage pass is a fused O(n) single-pass optimization, and extracting a shared aggregator would force a second pass or complicate the fused version.
 
 - **Location**: `src/services/PageBuilder.js:126-153` and `src/presenters/templates/homepage.js:41-69`
 - **Issue**: Both functions iterate all schools, filter by `provinsi`, build a `Map<string, {name, slug, count}>`, and return `Array.from(Map.values())`. `getUniqueProvinces()` is used by `BuildOrchestrator.preCreateProvinceDirectories()`; `aggregateByProvince()` is exported for tests and public API. The only behavioral difference is sorting: `aggregateByProvince()` sorts by Indonesian locale, `getUniqueProvinces()` does not. Any change to province aggregation logic (field selection, data shape, slug generation) must be applied in two places.
@@ -9558,9 +9937,11 @@ Optimized three hotspots in the static site generation pipeline that survived th
 
 ### [REFACTOR-006] Consolidate `REQUIRED_SCHOOL_FIELDS` Constant — Duplicated Across Layers
 
+**Status**: Resolved (2026-08-10, Code Sanitizer pass)
+
 - **Location**: `src/services/PageBuilder.js:10` and `src/presenters/templates/school-page.js:67`
 - **Issue**: The array `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']` is defined as `REQUIRED_SCHOOL_FIELDS` in `PageBuilder.js` and duplicated inline as `requiredFields` in `school-page.js:generateSchoolPageHtml()`. If the required fields evolve (e.g., adding `alamat` as required), both definitions must be updated in lockstep — a maintenance trap that has already been documented as a `REQUIRED_SCHOOL_FIELDS` constant export for this purpose.
-- **Suggestion**: Export `REQUIRED_SCHOOL_FIELDS` from `PageBuilder.js` and import it in `school-page.js`. Remove the inline `requiredFields` definition. This ensures the template layer always validates against the same field set as the service layer.
+- **Resolution**: `REQUIRED_SCHOOL_FIELDS` moved to `scripts/data-schema.js` (neutral single source of truth, alongside the ETL-level `REQUIRED_FIELDS`), imported by both `PageBuilder.js` and `school-page.js`; inline `requiredFields` removed. Note: placed in `data-schema.js` rather than re-exported from `PageBuilder.js` because `PageBuilder.js` already imports `school-page.js` — re-exporting from PageBuilder would create a circular require.
 - **Priority**: Low
 - **Effort**: Trivial
 
@@ -9575,6 +9956,8 @@ Optimized three hotspots in the static site generation pipeline that survived th
 - **Effort**: Small
 
 ### [REFACTOR-008] Extract Common Error Wrapping Pattern in `fs-safe.js`
+
+**Status**: Closed — not applied (2026-08-10, Code Sanitizer pass). The repetition is intentional: `fastWriteFile`/`fastMkdir` deliberately skip the retry/timeout/circuit-breaker wrappers for bulk local writes; `safeMkdir`/`safeUnlink` special-case `EEXIST`/`ENOENT`; `safeReadFile`/`safeWriteFile` carry per-op circuit-breaker state. Extracting `wrapFsOp()` would force per-op exception flags through a generic helper, obscuring exactly the divergences it claims to unify. Deferred; revisit only if a 8th wrapper is added.
 
 - **Location**: `scripts/fs-safe.js:51-212`
 - **Issue**: Every `safeXxx` function follows the identical pattern: `retry(withTimeout(fs.Xxx(...), timeout, label))` + `.catch(error => { throw new IntegrationError(...) })`. This pattern is repeated for `safeReadFile`, `safeWriteFile`, `safeMkdir`, `safeAccess`, `safeReaddir`, `safeStat`, `safeUnlink` — 7 times. Each repetition varies only in: the underlying `fs` call, timeout value, error code, and error message template. The structural duplication makes it harder to add new safe wrappers and risks inconsistency (e.g., some have `retry(maxAttempts: 3)`, `safeMkdir` uses `maxAttempts: 2`).
@@ -10302,6 +10685,8 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 
 ### [REFACTOR] Resilience Pattern Inconsistency — Raw Synchronous `fs` Operations in 3 Scripts
 
+**Status**: Partially resolved — `data-quality.js` and `check-freshness.js` raw `fs` calls were eliminated in TASK-074 (now use `fileExists()`/`safeReadFile()`). Remaining raw `fs` in `fetch-data.js` (lines 218, 292-346) is **deliberate local file-cache management** (copy/mkdir/exists decisions for the external-data cache) where sync ops are the correct tool — retry/timeout wrappers would add latency without protection value on local cache dirs. Kept as-is.
+
 - **Location**: `scripts/data-quality.js` (lines 352, 356), `scripts/check-freshness.js` (lines 31, 41, 105, 109), `scripts/fetch-data.js` (lines 175, 249, 253, 278, 298, 303)
 - **Issue**: Three production scripts use raw `fs.existsSync()` and `fs.readFileSync()`/`fs.readdirSync()` instead of the resilient async wrappers (`safeReadFile`, `safeAccess`, `safeReaddir`) from `scripts/fs-safe.js`. This bypasses the codebase's deliberate timeout protection (30s default), retry logic (3 attempts with exponential backoff), and circuit breaker pattern (5-failure threshold, 60s reset) that every other script follows. The synchronous calls also block the event loop.
 - **Suggestion**: Replace each sync `fs` call with the corresponding async resilient wrapper:
@@ -10315,6 +10700,8 @@ Same root cause as all 8 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, T
 ---
 
 ### [REFACTOR] Lazy `require()` Hoisting — Dynamic Module Imports Inside Function Bodies in BuildOrchestrator.js
+
+**Status**: Resolved (2026-08-10, Code Sanitizer pass) — the inline `require('fs')` in `finalizeBuild()` was hoisted to module level (REFACTOR-003). The styles lazy require was already eliminated when `writeExternalStylesFile()` was extracted to `ExportService.js` in TASK-069.
 
 - **Location**: `src/services/BuildOrchestrator.js` (lines 162, 438)
 - **Issue**: Two `require()` calls are placed inside function bodies instead of at the module top level:

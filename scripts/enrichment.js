@@ -25,6 +25,7 @@ const {
   isTransientError,
   IntegrationError,
   ERROR_CODES,
+  CircuitBreaker,
 } = require('./resilience');
 const CONFIG = require('./config');
 const path = require('path');
@@ -35,6 +36,18 @@ const ENRICHMENT_DATA_PATH = path.join(CONFIG.DATA_DIR, 'enrichment.json');
 // Wikipedia API configuration
 const WIKIPEDIA_API_URL = 'https://id.wikipedia.org/w/api.php';
 const WIKIPEDIA_API_TIMEOUT_MS = 10000;
+
+// Integration hardening — resilience thresholds for the Wikipedia API.
+// Mirrors the external-service pattern in fetch-data.js (dedicated circuit
+// breaker isolated from file-system breakers, so a source outage cannot
+// cascade into unrelated operations).
+const WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD = 3;
+const WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS = 120000; // 2 min reset for external service
+
+const wikipediaCircuitBreaker = new CircuitBreaker({
+  failureThreshold: WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD,
+  resetTimeoutMs: WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS,
+});
 
 // Maximum results per enrichment source
 const MAX_WIKIPEDIA_RESULTS = 3;
@@ -95,7 +108,7 @@ function buildWikipediaExtractUrl(pageTitles) {
 }
 
 /**
- * Fetch a URL with a timeout.
+ * Fetch a URL with a timeout, retry, and circuit breaker.
  * Uses native https/http module to avoid external dependencies.
  *
  * @param {string} url - URL to fetch
@@ -145,15 +158,25 @@ function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
     );
   };
 
-  return retry(doFetch, {
-    maxAttempts: 3,
-    initialDelayMs: 1000,
-    shouldRetry: err => {
-      if (err instanceof IntegrationError) return false;
-      if (err.statusCode === 429 || (err.statusCode && err.statusCode >= 500)) return true;
-      return isTransientError(err);
-    },
-  });
+  return wikipediaCircuitBreaker.execute(
+    () =>
+      retry(doFetch, {
+        maxAttempts: 3,
+        initialDelayMs: 1000,
+        shouldRetry: err => {
+          // Timeouts are transient — retry them. withTimeout rejects with an
+          // IntegrationError whose code is TIMEOUT; rejecting all IntegrationErrors
+          // here (the old predicate) silently disabled timeout retries. Parse
+          // failures (IntegrationError HTTP_ERROR) remain non-retryable.
+          if (err instanceof IntegrationError) {
+            return err.code === ERROR_CODES.TIMEOUT;
+          }
+          if (err.statusCode === 429 || (err.statusCode && err.statusCode >= 500)) return true;
+          return isTransientError(err);
+        },
+      }),
+    'Wikipedia API request'
+  );
 }
 
 /**
@@ -361,6 +384,8 @@ module.exports = {
   logEnrichmentSummary,
   buildWikipediaSearchUrl,
   buildWikipediaExtractUrl,
+  fetchJson,
+  wikipediaCircuitBreaker,
   ENRICHMENT_DATA_PATH,
   WIKIPEDIA_API_URL,
 };

@@ -13,6 +13,7 @@
 
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const slugify = require('../../scripts/slugify');
 const { parseCsv, processInBatches } = require('../../scripts/utils');
@@ -164,23 +165,36 @@ async function generateExternalStyles() {
  * Pre-create all unique province directories.
  * Accepts an optional pre-computed provinces array to avoid
  * redundant getUniqueProvinces() calls.
+ * Collects per-directory failures and returns them (never silent).
  *
  * @param {Array<Object>} schools - School records (used if provinces not provided)
  * @param {Array<Object>} [provinces] - Pre-computed province objects with slug/name/count
+ * @returns {Promise<string[]>} - Array of paths that failed to create (empty if all succeeded)
  */
 async function preCreateProvinceDirectories(schools, provinces) {
   const provinceList = provinces || getUniqueProvinces(schools);
 
   logger.info(`Creating ${provinceList.length} province directories...`);
 
+  const failures = [];
+
   const dirPromises = provinceList.map(province => {
     const fullPath = path.join(distDir, 'provinsi', province.slug);
     return fastMkdir(fullPath).catch(err => {
       logger.error({ err, path: fullPath }, 'Failed to create province directory');
+      failures.push(fullPath);
     });
   });
 
   await Promise.all(dirPromises);
+
+  if (failures.length > 0) {
+    logger.warn(
+      `${failures.length} of ${provinceList.length} province directories failed to create`
+    );
+  }
+
+  return failures;
 }
 
 /**
@@ -415,7 +429,6 @@ function finalizeBuild(tracker) {
 
   if (process.env.GITHUB_STEP_SUMMARY) {
     try {
-      const fs = require('fs');
       fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, tracker.getGitHubSummary() + '\n');
     } catch (summaryError) {
       logger.debug(`Could not write to GITHUB_STEP_SUMMARY: ${summaryError.message}`);

@@ -1,6 +1,7 @@
 const { escapeHtml } = require('../../../scripts/utils');
 const CONFIG = require('../../../scripts/config');
 const slugify = require('../../../scripts/slugify');
+const { SEARCH_DATA_FIELDS } = require('../../../scripts/data-schema');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
@@ -181,7 +182,8 @@ function generateHomepageHtml(schools) {
         <div class="filter-group">
           <div class="filter-item">
             <label for="province-filter" class="sr-only">Filter berdasarkan provinsi</label>
-            <select id="province-filter" class="filter-select">
+            <!-- Disabled until schools.json finishes loading — filters are inert before search data exists -->
+            <select id="province-filter" class="filter-select" disabled>
               <option value="">Semua Provinsi</option>
               ${provinceOptionsHtml}
             </select>
@@ -189,7 +191,7 @@ function generateHomepageHtml(schools) {
           
           <div class="filter-item">
             <label for="type-filter" class="sr-only">Filter berdasarkan jenjang</label>
-            <select id="type-filter" class="filter-select">
+            <select id="type-filter" class="filter-select" disabled>
               <option value="">Semua Jenjang</option>
               ${typeOptionsHtml}
             </select>
@@ -197,15 +199,15 @@ function generateHomepageHtml(schools) {
 
           <div class="filter-item">
             <label for="status-filter" class="sr-only">Filter berdasarkan status</label>
-            <select id="status-filter" class="filter-select">
+            <select id="status-filter" class="filter-select" disabled>
               <option value="">Semua Status</option>
               ${statusOptionsHtml}
             </select>
           </div>
         </div>
         
-        <div class="search-results-info" aria-live="polite">
-          <span id="result-count">Menampilkan ${totalSchools.toLocaleString('id-ID')} sekolah</span>
+        <div class="search-results-info">
+          <span id="result-count" aria-live="polite">Menampilkan ${totalSchools.toLocaleString('id-ID')} sekolah</span>
           <button id="download-csv" class="download-csv-btn" hidden aria-label="Unduh hasil pencarian sebagai CSV">Unduh CSV</button>
         </div>
       </div>
@@ -250,6 +252,14 @@ function generateHomepageHtml(schools) {
       // ===== School Search Functionality =====
       var schools = null;
       
+      // Field order for the compact flat-array payload. Generated from
+      // SEARCH_DATA_FIELDS (scripts/data-schema.js) at build time so the
+      // conversion below never hardcodes positional indices — the order is
+      // defined once and shared with the server-side serializer.
+      var SEARCH_DATA_FIELDS = ${JSON.stringify(SEARCH_DATA_FIELDS)};
+      var SEARCH_FIELD_INDEX = {};
+      for (var i = 0; i < SEARCH_DATA_FIELDS.length; i++) SEARCH_FIELD_INDEX[SEARCH_DATA_FIELDS[i]] = i;
+      
       // Lazy-load school search data from external JSON file
       // Reduces initial HTML payload from 1.3MB to ~14KB
       // The data is stored as flat arrays for compactness (~13% smaller payload)
@@ -258,10 +268,6 @@ function generateHomepageHtml(schools) {
         if (!r.ok) throw new Error('Failed to load search data');
         return r.json();
       }).then(function(d) {
-        // Convert from compact flat array format to named properties
-        // Array index map: [0]=npsn, [1]=nama, [2]=bentuk, [3]=status,
-        //                  [4]=alamat, [5]=kecamatan, [6]=kab_kota,
-        //                  [7]=provinsi, [8]=url
         if (d.length > 0 && Array.isArray(d[0])) {
           // Precompute the lowercase searchable text ('t') once at load time
           // instead of rebuilding the concatenated+lowercased string on every
@@ -271,8 +277,16 @@ function generateHomepageHtml(schools) {
           // 7-keystroke query burst).
           schools = d.map(function(s) {
             return {
-              n: s[0], a: s[1], b: s[2], s: s[3], al: s[4], kc: s[5], kk: s[6], p: s[7], u: s[8],
-              t: (s[1] + ' ' + s[0] + ' ' + s[4] + ' ' + s[6] + ' ' + s[5]).toLowerCase(),
+              n: s[SEARCH_FIELD_INDEX.npsn],
+              a: s[SEARCH_FIELD_INDEX.nama],
+              b: s[SEARCH_FIELD_INDEX.bentuk_pendidikan],
+              s: s[SEARCH_FIELD_INDEX.status],
+              al: s[SEARCH_FIELD_INDEX.alamat],
+              kc: s[SEARCH_FIELD_INDEX.kecamatan],
+              kk: s[SEARCH_FIELD_INDEX.kab_kota],
+              p: s[SEARCH_FIELD_INDEX.provinsi],
+              u: s[SEARCH_FIELD_INDEX.url],
+              t: (s[SEARCH_FIELD_INDEX.nama] + ' ' + s[SEARCH_FIELD_INDEX.npsn] + ' ' + s[SEARCH_FIELD_INDEX.alamat] + ' ' + s[SEARCH_FIELD_INDEX.kab_kota] + ' ' + s[SEARCH_FIELD_INDEX.kecamatan]).toLowerCase(),
             };
           });
         } else {
@@ -285,13 +299,19 @@ function generateHomepageHtml(schools) {
           });
         }
         if (searchInput) searchInput.setAttribute('aria-busy', 'false');
+        provinceFilter.disabled = false;
+        typeFilter.disabled = false;
+        statusFilter.disabled = false;
         // Re-run search if input already has value
         if (searchInput && (searchInput.value || provinceFilter.value || typeFilter.value || statusFilter.value)) {
           handleSearch();
         }
       }).catch(function() {
-        // Search will remain disabled
+        // Failure path: keep filters disabled and announce the failure (the
+        // controls would otherwise remain silently inert with no data).
+        searchFailed = true;
         if (searchInput) searchInput.setAttribute('aria-busy', 'false');
+        if (resultCountEl) resultCountEl.textContent = 'Data pencarian gagal dimuat.';
       });
       
       // DOM Elements
@@ -310,6 +330,7 @@ function generateHomepageHtml(schools) {
       
       // State
       var isSearching = false;
+      var searchFailed = false;
       var selectedIndex = -1;
       var suggestions = [];
       
@@ -410,6 +431,13 @@ function generateHomepageHtml(schools) {
         return li;
       }
       
+      // Cap rendered result rows: a broad query at 3474-school scale previously
+      // built ~35K DOM nodes synchronously per keystroke (~10 nodes per match,
+      // one appendChild each). Rendering the first MAX_RENDERED_RESULTS rows via
+      // a DocumentFragment keeps keystroke handling bounded (~2K nodes, single
+      // reflow) while the count label still reports the true total.
+      var MAX_RENDERED_RESULTS = 200;
+      
       // Update search results display
       function updateSearchResults(results) {
         var count = results.length;
@@ -418,14 +446,21 @@ function generateHomepageHtml(schools) {
         var csvBtn = document.getElementById('download-csv');
         
         if (isSearching) {
-          resultCountEl.textContent = 'Menampilkan ' + count.toLocaleString('id-ID') + ' dari ' + total.toLocaleString('id-ID') + ' sekolah';
+          var isTruncated = count > MAX_RENDERED_RESULTS;
+          var rendered = isTruncated ? results.slice(0, MAX_RENDERED_RESULTS) : results;
+          resultCountEl.textContent = isTruncated
+            ? 'Menampilkan ' + MAX_RENDERED_RESULTS.toLocaleString('id-ID') + ' dari ' + count.toLocaleString('id-ID') + ' sekolah (maksimal ' + MAX_RENDERED_RESULTS + ' ditampilkan)'
+            : 'Menampilkan ' + count.toLocaleString('id-ID') + ' dari ' + total.toLocaleString('id-ID') + ' sekolah';
           
           if (count > 0) {
             // Use DOM API instead of innerHTML for safer rendering
             searchResultsListEl.innerHTML = '';
-            results.forEach(function(school) {
-              searchResultsListEl.appendChild(createSchoolResultElement(school));
+            // Batch rows into a DocumentFragment — single reflow instead of one per row
+            var fragment = document.createDocumentFragment();
+            rendered.forEach(function(school) {
+              fragment.appendChild(createSchoolResultElement(school));
             });
+            searchResultsListEl.appendChild(fragment);
             searchResultsEl.hidden = false;
             noResultsEl.hidden = true;
             provinceListEl.hidden = true;
@@ -447,9 +482,9 @@ function generateHomepageHtml(schools) {
       
       // Handle search input
       function handleSearch() {
-        // Guard: data not loaded yet
+        // Guard: data not loaded yet (or failed to load)
         if (!schools) {
-          resultCountEl.textContent = 'Memuat data...';
+          resultCountEl.textContent = searchFailed ? 'Data pencarian gagal dimuat.' : 'Memuat data...';
           return;
         }
         var query = searchInput.value;
@@ -487,7 +522,7 @@ function generateHomepageHtml(schools) {
         
         if (results.length === 0) return;
         
-        var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\n';
+        var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\\n';
         
         results.forEach(function(s) {
           var npsn = '"' + (s.n || '') + '"';
@@ -498,7 +533,7 @@ function generateHomepageHtml(schools) {
           var kabkota = '"' + (s.kk || '').replace(/"/g, '""') + '"';
           var kecamatan = '"' + (s.kc || '').replace(/"/g, '""') + '"';
           var alamat = '"' + (s.al || '').replace(/"/g, '""') + '"';
-          csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\n';
+          csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\\n';
         });
         
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -644,18 +679,17 @@ function generateHomepageHtml(schools) {
           return;
         }
         
-        // "Escape" to clear search and close
-        if (e.key === 'Escape') {
+        // "Escape" clears the search query (combobox semantics) only when the
+        // search input is focused — never reset the filters from elsewhere.
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+          e.preventDefault();
+          var hadQuery = searchInput.value !== '';
           clearAutocomplete();
-          if (document.activeElement === searchInput) {
-            searchInput.blur();
+          if (hadQuery) {
+            searchInput.value = '';
+            handleSearch();
           }
-          searchInput.value = '';
-          provinceFilter.value = '';
-          typeFilter.value = '';
-          statusFilter.value = '';
-          isSearching = false;
-          handleSearch();
+          searchInput.blur();
         }
       });
     })();

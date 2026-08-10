@@ -1007,6 +1007,11 @@ footer[role="contentinfo"] {
   opacity: 0.85;
 }
 
+.download-csv-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 /* Search Results */
 .search-results {
   margin-top: var(--spacing-lg);
@@ -1202,6 +1207,23 @@ footer[role="contentinfo"] {
 
   .back-to-top:hover {
     transform: none;
+  }
+}
+
+/* Forced-colors (Windows High Contrast) focus visibility.
+   box-shadow / border-color focus indicators are suppressed in forced-colors
+   mode, so the search controls fall back to outlines here. */
+@media (forced-colors: active) {
+  .search-input:focus,
+  .filter-select:focus,
+  .download-csv-btn:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .autocomplete-item-active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
   }
 }
 

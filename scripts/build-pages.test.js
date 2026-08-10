@@ -18,6 +18,7 @@ process.env.PERF_MAX_FAILED_PAGES = '0';
 // load (const distDir = CONFIG.DIST_DIR), and manifest.js resolves the
 // manifest path from CONFIG.ROOT_DIR at call time.
 const CONFIG = require('./config');
+const { withConfig } = require('./test-helpers');
 CONFIG.ROOT_DIR = path.join(os.tmpdir(), `build-pages-test-root-${process.pid}`);
 CONFIG.DIST_DIR = path.join(CONFIG.ROOT_DIR, 'dist');
 
@@ -199,7 +200,6 @@ test('build rejects with PERFORMANCE_BUDGET_VIOLATION when school pages fail (F0
   // Use a CSV with one valid school and one school missing required fields
   // (writeSchoolPage rejects for it), so writeSchoolPagesConcurrently
   // reports failed=1 while shared page generation tolerates the row.
-  const originalCsvPath = CONFIG.SCHOOLS_CSV_PATH;
   const tempCsvPath = path.join(CONFIG.ROOT_DIR, 'schools-f069.csv');
   const csvContent = [
     'npsn,nama,bentuk_pendidikan,status,alamat,kelurahan,kecamatan,kab_kota,provinsi,lat,lon,updated_at',
@@ -209,43 +209,28 @@ test('build rejects with PERFORMANCE_BUDGET_VIOLATION when school pages fail (F0
 
   try {
     await fs.writeFile(tempCsvPath, csvContent);
-    CONFIG.SCHOOLS_CSV_PATH = tempCsvPath;
-
-    await assert.rejects(build(), error => {
-      assert.strictEqual(error.code, 'PERFORMANCE_BUDGET_VIOLATION');
-      assert.match(error.message, /Failed pages 1 exceeds budget of 0/);
-      return true;
+    await withConfig({ SCHOOLS_CSV_PATH: tempCsvPath }, async () => {
+      await assert.rejects(build(), error => {
+        assert.strictEqual(error.code, 'PERFORMANCE_BUDGET_VIOLATION');
+        assert.match(error.message, /Failed pages 1 exceeds budget of 0/);
+        return true;
+      });
     });
   } finally {
-    CONFIG.SCHOOLS_CSV_PATH = originalCsvPath;
     await fs.unlink(tempCsvPath).catch(() => {});
   }
 });
 
 test('loadSchools throws error when file not found', async () => {
-  const originalPath = CONFIG.SCHOOLS_CSV_PATH;
-  CONFIG.SCHOOLS_CSV_PATH = '/nonexistent/path/schools.csv';
-
-  try {
+  await withConfig({ SCHOOLS_CSV_PATH: '/nonexistent/path/schools.csv' }, async () => {
     await assert.rejects(loadSchools(), /Failed to read file/);
-  } finally {
-    CONFIG.SCHOOLS_CSV_PATH = originalPath;
-  }
+  });
 });
 
 test('loadSchools throws error when CSV is empty', async () => {
-  const originalPath = CONFIG.SCHOOLS_CSV_PATH;
   // Use the actual schools.csv but it should have data
-  // This tests the "empty CSV" case
-  CONFIG.SCHOOLS_CSV_PATH = originalPath;
-
-  try {
-    const schools = await loadSchools();
-    // If file exists and has data, should return non-empty
-    assert.ok(schools.length > 0, 'Should load schools from valid CSV');
-  } finally {
-    CONFIG.SCHOOLS_CSV_PATH = originalPath;
-  }
+  const schools = await loadSchools();
+  assert.ok(schools.length > 0, 'Should load schools from valid CSV');
 });
 
 test('slugify integration: creates correct slugs for Indonesian place names', () => {

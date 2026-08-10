@@ -63,6 +63,40 @@ test('REQUIRED_FIELDS is non-empty array', () => {
   assert.ok(SCHEMA.REQUIRED_FIELDS.includes('provinsi'));
 });
 
+test('SEARCH_DATA_FIELDS defines the exact flat-array field order', () => {
+  assert.deepStrictEqual(SCHEMA.SEARCH_DATA_FIELDS, [
+    'npsn',
+    'nama',
+    'bentuk_pendidikan',
+    'status',
+    'alamat',
+    'kecamatan',
+    'kab_kota',
+    'provinsi',
+    'url',
+  ]);
+});
+
+test('SEARCH_DATA_FIELDS fields are unique', () => {
+  const set = new Set(SCHEMA.SEARCH_DATA_FIELDS);
+  assert.strictEqual(set.size, SCHEMA.SEARCH_DATA_FIELDS.length);
+});
+
+test('SEARCH_DATA_FIELDS url is the derived last field', () => {
+  assert.strictEqual(SCHEMA.SEARCH_DATA_FIELDS[SCHEMA.SEARCH_DATA_FIELDS.length - 1], 'url');
+  // Every non-url field must have a definition in FIELDS
+  for (const field of SCHEMA.SEARCH_DATA_FIELDS) {
+    if (field !== 'url') {
+      assert.ok(SCHEMA.FIELDS[field], `Missing field definition for: ${field}`);
+    }
+  }
+});
+
+test('getSchemaInfo includes searchDataFields', () => {
+  const info = SCHEMA.getSchemaInfo();
+  assert.deepStrictEqual(info.searchDataFields, SCHEMA.SEARCH_DATA_FIELDS);
+});
+
 // ── isNonEmpty ──────────────────────────────────────────────────────────────
 
 test('isNonEmpty returns false for null/undefined/empty', () => {

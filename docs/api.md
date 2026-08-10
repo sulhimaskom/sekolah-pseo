@@ -122,7 +122,9 @@ module.exports = {
   ALLOWED_VALUES, // Categorical field allowed values
   FIELDS, // All field definitions
   CSV_FIELD_ORDER, // Canonical CSV column order
+  SEARCH_DATA_FIELDS, // Field order for client-side search payload (schools.json)
   REQUIRED_FIELDS, // Required field names
+  REQUIRED_SCHOOL_FIELDS, // Fields required for school page rendering
   isNonEmpty, // Value emptiness check
   isValidCoordinate, // Coordinate bounds check
   isValidCategoricalValue, // Categorical value check
@@ -201,6 +203,18 @@ module.exports = {
 - **Type:** `string[]`
 - **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan']`
 - **Description:** Fields that must be non-empty for a valid school record.
+
+#### `REQUIRED_SCHOOL_FIELDS`
+
+- **Type:** `string[]`
+- **Value:** `['provinsi', 'kab_kota', 'kecamatan', 'npsn', 'nama']`
+- **Description:** Fields required for school page rendering / path building (subset of `REQUIRED_FIELDS`, excludes `bentuk_pendidikan`). Single source of truth shared by `PageBuilder.js` (service layer) and `school-page.js` (template layer).
+
+#### `SEARCH_DATA_FIELDS`
+
+- **Type:** `string[]`
+- **Value:** `['npsn', 'nama', 'bentuk_pendidikan', 'status', 'alamat', 'kecamatan', 'kab_kota', 'provinsi', 'url']`
+- **Description:** Field order for the compact flat-array client-side search payload (`dist/schools.json`). Single source of truth shared by the server-side serializer (`PageBuilder.prepareSchoolDataForSearch`) and the client-side converter (embedded as a literal in the homepage's generated search script by `homepage.js`). `url` is the derived last field (built at render time from `getSchoolRelativePath()`); the other 8 fields are a subset of `FIELDS` ordered for payload size. Changing this order only requires updating the constant — server and client stay in sync.
 
 ### Functions
 
@@ -2110,16 +2124,16 @@ const jakartaSchools = grouped.get('DKI Jakarta'); // Array of schools in Jakart
 
 #### `prepareSchoolDataForSearch(schools)`
 
-Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size.
+Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size. The field order is defined by `SEARCH_DATA_FIELDS` (single source of truth in `scripts/data-schema.js`) — the same constant is embedded into the homepage's generated client script, so server and client stay in sync automatically.
 
 **Parameters:**
 
 - `schools` (Array<Object>): Array of school data objects
 
-**Returns:** `Array<Array>` - Array of school records as flat arrays
+**Returns:** `Array<Array>` - Array of school records as flat arrays, ordered per `SEARCH_DATA_FIELDS`
 
 ```javascript
-// Each record: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
+// Each record follows SEARCH_DATA_FIELDS: [npsn, nama, bentuk, status, alamat, kecamatan, kota, provinsi, url]
 [
   [
     '12345678',
@@ -2135,7 +2149,7 @@ Prepares school data into a compact format for client-side search. Converts scho
 ];
 ```
 
-**Array Indexes:** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url`
+**Field Order (from `SEARCH_DATA_FIELDS`):** `0: npsn`, `1: nama`, `2: bentuk_pendidikan`, `3: status`, `4: alamat`, `5: kecamatan`, `6: kab_kota`, `7: provinsi`, `8: url` (derived)
 
 **Usage:**
 
@@ -2758,9 +2772,7 @@ Presentation layer for homepage HTML generation with search, filtering, and prov
 ```javascript
 module.exports = {
   generateHomepageHtml: function,
-  aggregateByProvince: function,
   aggregateProvinceAndFilters: function,
-  extractFilterOptions: function,
 };
 ```
 
@@ -2778,13 +2790,16 @@ Generates complete HTML homepage with search, filtering, and province navigation
 
 **Features:**
 
-- Client-side search with debouncing
-- Province and education type filtering
+- Client-side search with 150ms debounce
+- Province, education type, and status filtering
+- Autocomplete suggestions (max 10) with keyboard navigation (arrow keys, Enter)
+- Result rendering capped at 200 rows; count label reports the true match total
+- CSV download of filtered results
 - Responsive design with mobile support
-- Keyboard navigation (/ to focus search, Escape to clear)
+- Keyboard shortcuts (`/` to focus search; Escape clears the query only when the search input is focused — filters are never reset)
 - Back-to-top button
-- Embedded school data in JSON format for search (compact key structure)
-- Accessibility: skip links, ARIA labels, screen reader support
+- Search data lazy-loaded from `/schools.json` (compact flat-array format) instead of embedded in the HTML
+- Accessibility: skip links, ARIA labels/roles (combobox/listbox), `aria-live` result count, filter selects disabled until search data loads (with a failure message on load error)
 
 **Usage:**
 
@@ -2796,38 +2811,9 @@ const html = generateHomepageHtml(schools);
 
 ---
 
-#### `aggregateByProvince(schools)`
-
-Aggregates school data by province for navigation.
-
-**Parameters:**
-
-- `schools` (Array<Object>): Array of school data objects
-
-**Returns:** `Array<Object>` - Array of province objects with school count
-
-```javascript
-[
-  { name: 'DKI Jakarta', slug: 'dki-jakarta', count: 1500 },
-  { name: 'Jawa Barat', slug: 'jawa-barat', count: 2200 },
-];
-```
-
-**Sorting:** Provinces are sorted alphabetically by Indonesian locale.
-
-**Usage:**
-
-```javascript
-const { aggregateByProvince } = require('./templates/homepage');
-const provinces = aggregateByProvince(schools);
-provinces.forEach(p => console.log(`${p.name}: ${p.count}`));
-```
-
----
-
 #### `aggregateProvinceAndFilters(schools)`
 
-Aggregates school data by province and extracts filter options in a single pass. Combines the functionality of `aggregateByProvince` and filter extraction to eliminate duplicate iteration.
+Aggregates school data by province and extracts filter options in a single pass. Combines province aggregation and filter extraction to eliminate duplicate iteration (replaces the removed `aggregateByProvince`/`extractFilterOptions` pair).
 
 **Parameters:**
 
@@ -2856,27 +2842,6 @@ Aggregates school data by province and extracts filter options in a single pass.
 const { aggregateProvinceAndFilters } = require('./templates/homepage');
 const { provinces, filterOptions } = aggregateProvinceAndFilters(schools);
 const { types } = filterOptions;
-```
-
-#### `extractFilterOptions(schools)`
-
-Extracts unique filter options (provinces, education types, statuses) from school data.
-
-**Parameters:**
-
-- `schools` (Array<Object>): Array of school data objects
-
-**Returns:** `Object` - `{ provinces: string[], types: string[], statuses: string[] }` — sorted arrays of unique values. Returns empty arrays for non-array input.
-
-```javascript
-// Returns: { provinces: [...], types: ['SD', 'SMA', 'SMK', 'SMP'], statuses: ['N', 'S'] }
-```
-
-**Usage:**
-
-```javascript
-const { extractFilterOptions } = require('./templates/homepage');
-const { provinces, types, statuses } = extractFilterOptions(schools);
 ```
 
 ---
@@ -4858,7 +4823,7 @@ console.log('Manifest cleared - next build will be full');
 
 ### Purpose
 
-Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (timeouts, retries for API calls).
+Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (dedicated circuit breaker, timeouts, retries for API calls).
 
 ### Exports
 
@@ -4873,6 +4838,8 @@ module.exports = {
   logEnrichmentSummary: function,
   buildWikipediaSearchUrl: function,
   buildWikipediaExtractUrl: function,
+  fetchJson: function,
+  wikipediaCircuitBreaker: CircuitBreaker,
   ENRICHMENT_DATA_PATH: string,
   WIKIPEDIA_API_URL: string,
 };
@@ -4891,6 +4858,18 @@ module.exports = {
 - **Type:** `string`
 - **Value:** `https://id.wikipedia.org/w/api.php`
 - **Description:** Indonesian Wikipedia API endpoint.
+
+#### `WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD`
+
+- **Type:** `number`
+- **Value:** `3`
+- **Description:** Consecutive failure count that trips the Wikipedia circuit breaker.
+
+#### `WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS`
+
+- **Type:** `number`
+- **Value:** `120000` (2 minutes)
+- **Description:** Reset timeout for the Wikipedia circuit breaker — after this window elapses, a single probe request is allowed (half-open state).
 
 ### Functions
 
@@ -5123,6 +5102,43 @@ Builds a Wikipedia API URL to fetch page extracts for a set of page titles.
 ```javascript
 const url = buildWikipediaExtractUrl(['SMA Negeri 1 Jakarta', 'SMAN 1 Jakarta']);
 ```
+
+---
+
+#### `fetchJson(url, timeoutMs)`
+
+Fetches a URL and parses the response as JSON, protected by timeout, retry, and the Wikipedia circuit breaker.
+
+**Parameters:**
+
+- `url` (string): URL to fetch
+- `timeoutMs` (number, optional): Timeout in milliseconds (default `10000`)
+
+**Returns:** `Promise<Object>` — Parsed JSON response
+
+**Retry Policy:**
+
+- Max 3 attempts with exponential backoff (1s initial delay)
+- **Retryable**: `IntegrationError` with code `TIMEOUT` (request deadline exceeded), HTTP `429`, HTTP `5xx`, and other transient network errors (`isTransientError`)
+- **Non-retryable**: parse failures (`HTTP_ERROR` — invalid JSON or non-2xx with unrecoverable status), since retrying would produce the same result
+
+**Circuit Breaker:** 3 consecutive failures → `OPEN` for 120s. When open, requests reject immediately with `CIRCUIT_BREAKER_OPEN` without hitting the network, giving the Wikipedia API time to recover.
+
+**Usage:**
+
+```javascript
+const data = await fetchJson('https://id.wikipedia.org/w/api.php?action=query');
+```
+
+---
+
+#### `wikipediaCircuitBreaker`
+
+A dedicated `CircuitBreaker` instance for the Wikipedia API. Isolated from file system circuit breakers (`fs-safe.js`) so a Wikipedia outage cannot cascade into unrelated file operations, and vice versa.
+
+- **Failure threshold**: 3
+- **Reset timeout**: 120 seconds
+- **State**: `CLOSED` (normal), `OPEN` (blocking), `HALF_OPEN` (testing recovery)
 
 ---
 
