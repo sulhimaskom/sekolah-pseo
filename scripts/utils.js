@@ -250,10 +250,16 @@ function escapeCsvField(value) {
 
   const str = String(value);
 
+  // Numeric literals (e.g. negative coordinates -6.2088) are numbers, not
+  // formulas: prefixing them corrupts data (parseFloat("'-6.2088") === NaN).
+  const firstChar = str.charAt(0);
+  if (firstChar === '-' && /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(str)) {
+    return str;
+  }
+
   // Formula injection protection: prefix dangerous characters with single quote
   // This prevents spreadsheet applications from interpreting cells as formulas
   // Dangerous characters: =, +, -, @, tab (\t)
-  const firstChar = str.charAt(0);
   if (
     firstChar === '=' ||
     firstChar === '+' ||
