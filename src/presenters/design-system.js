@@ -171,6 +171,7 @@ function getCssVariables() {
     '--radius-sm': DESIGN_TOKENS.borderRadius.sm,
     '--radius-md': DESIGN_TOKENS.borderRadius.md,
     '--radius-lg': DESIGN_TOKENS.borderRadius.lg,
+    '--radius-full': DESIGN_TOKENS.borderRadius.full,
     // Shadows
     '--shadow-sm': DESIGN_TOKENS.shadows.sm,
     '--shadow-md': DESIGN_TOKENS.shadows.md,

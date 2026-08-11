@@ -171,6 +171,7 @@ describe('getCssVariables', () => {
     assert.ok(result.includes('--radius-sm:'));
     assert.ok(result.includes('--radius-md:'));
     assert.ok(result.includes('--radius-lg:'));
+    assert.ok(result.includes('--radius-full:'));
   });
 
   it('includes shadow variables', () => {
