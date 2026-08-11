@@ -572,3 +572,75 @@ describe('generateHomepageHtml search interaction state', () => {
     );
   });
 });
+
+describe('downloadCsv formula-injection guard (client-side)', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+  const vm = require('node:vm');
+
+  function extractSearchScript(html) {
+    const match = html.match(/<script>([\s\S]*?)<\/script>/g);
+    assert.ok(match, 'homepage should contain a script block');
+    return match[match.length - 1].replace(/<\/?script>/g, '');
+  }
+
+  // Pull sanitizeCsvField out of the generated client script and evaluate it in
+  // an isolated vm context so its behavior can be asserted without a DOM.
+  function extractSanitizeCsvField(script) {
+    const start = script.indexOf('function sanitizeCsvField(');
+    assert.ok(start !== -1, 'generated script should define sanitizeCsvField');
+    const bodyStart = script.indexOf('{', start);
+    let depth = 0;
+    for (let i = bodyStart; i < script.length; i += 1) {
+      if (script[i] === '{') {
+        depth += 1;
+      } else if (script[i] === '}') {
+        depth -= 1;
+        if (depth === 0) {
+          const sandbox = {};
+          vm.createContext(sandbox);
+          vm.runInContext(script.slice(start, i + 1), sandbox);
+          return sandbox.sanitizeCsvField;
+        }
+      }
+    }
+    assert.fail('sanitizeCsvField function body not terminated');
+  }
+
+  it('prefixes formula-injection characters with a single quote', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const sanitize = extractSanitizeCsvField(extractSearchScript(html));
+    assert.strictEqual(sanitize('=SUM(1,2)'), "'=SUM(1,2)");
+    assert.strictEqual(sanitize("+cmd|' /C calc"), "'+cmd|' /C calc");
+    assert.strictEqual(sanitize('@import'), "'@import");
+    assert.strictEqual(sanitize('\tTab-lead'), "'\tTab-lead");
+    assert.strictEqual(sanitize('-name'), "'-name");
+  });
+
+  it('exempts negative numeric literals like the server-side guard', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const sanitize = extractSanitizeCsvField(extractSearchScript(html));
+    assert.strictEqual(sanitize('-6.2088'), '-6.2088');
+    assert.strictEqual(sanitize('-123'), '-123');
+  });
+
+  it('passes plain values through untouched', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const sanitize = extractSanitizeCsvField(extractSearchScript(html));
+    assert.strictEqual(sanitize('SMA Negeri 1 Jakarta'), 'SMA Negeri 1 Jakarta');
+    assert.strictEqual(sanitize('123'), '123');
+    assert.strictEqual(sanitize(''), '');
+    assert.strictEqual(sanitize(null), '');
+    assert.strictEqual(sanitize(undefined), '');
+  });
+
+  it('downloadCsv applies the sanitizer to every exported field', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const script = extractSearchScript(html);
+    ['s.n', 's.a', 's.s', 's.b', 's.p', 's.kk', 's.kc', 's.al'].forEach(field => {
+      assert.ok(
+        script.includes(`sanitizeCsvField(${field}`),
+        `downloadCsv should sanitize the ${field} field before export`
+      );
+    });
+  });
+});
