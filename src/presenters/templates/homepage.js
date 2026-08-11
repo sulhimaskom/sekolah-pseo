@@ -511,31 +511,57 @@ function generateHomepageHtml(schools) {
         };
       }
       
+      // CSV formula-injection guard — mirrors scripts/utils.js escapeCsvField.
+      // Cells beginning with =, +, -, @ or tab are prefixed with a single quote
+      // so spreadsheet apps do not execute them as formulas (OWASP CSV Injection).
+      // Negative numeric literals are exempt (numbers, not formulas).
+      function sanitizeCsvField(value) {
+        if (value === null || value === undefined) return '';
+        var str = String(value);
+        var firstChar = str.charAt(0);
+        if (
+          firstChar === '-' &&
+          /^-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?$/.test(str)
+        ) {
+          return str;
+        }
+        if (
+          firstChar === '=' ||
+          firstChar === '+' ||
+          firstChar === '-' ||
+          firstChar === '@' ||
+          firstChar === '\t'
+        ) {
+          return "'" + str;
+        }
+        return str;
+      }
+
       function downloadCsv() {
         if (!schools || !isSearching) return;
-          var query = searchInput.value;
-          var province = provinceFilter.value;
-          var type = typeFilter.value;
-          var status = statusFilter.value;
+        var query = searchInput.value;
+        var province = provinceFilter.value;
+        var type = typeFilter.value;
+        var status = statusFilter.value;
 
-          var results = filterSchools(query, province, type, status);
-        
+        var results = filterSchools(query, province, type, status);
+
         if (results.length === 0) return;
-        
+
         var csv = 'NPSN,Nama,Status,Jenjang,Provinsi,Kabupaten/Kota,Kecamatan,Alamat\\n';
-        
+
         results.forEach(function(s) {
-          var npsn = '"' + (s.n || '') + '"';
-          var nama = '"' + (s.a || '').replace(/"/g, '""') + '"';
-          var status = '"' + (s.s === 'S' ? 'Swasta' : 'Negeri') + '"';
-          var bentuk = '"' + (s.b || '') + '"';
-          var provinsi = '"' + (s.p || '').replace(/"/g, '""') + '"';
-          var kabkota = '"' + (s.kk || '').replace(/"/g, '""') + '"';
-          var kecamatan = '"' + (s.kc || '').replace(/"/g, '""') + '"';
-          var alamat = '"' + (s.al || '').replace(/"/g, '""') + '"';
+          var npsn = '"' + sanitizeCsvField(s.n || '') + '"';
+          var nama = '"' + sanitizeCsvField(s.a || '').replace(/"/g, '""') + '"';
+          var status = '"' + sanitizeCsvField(s.s === 'S' ? 'Swasta' : 'Negeri') + '"';
+          var bentuk = '"' + sanitizeCsvField(s.b || '') + '"';
+          var provinsi = '"' + sanitizeCsvField(s.p || '').replace(/"/g, '""') + '"';
+          var kabkota = '"' + sanitizeCsvField(s.kk || '').replace(/"/g, '""') + '"';
+          var kecamatan = '"' + sanitizeCsvField(s.kc || '').replace(/"/g, '""') + '"';
+          var alamat = '"' + sanitizeCsvField(s.al || '').replace(/"/g, '""') + '"';
           csv += [npsn, nama, status, bentuk, provinsi, kabkota, kecamatan, alamat].join(',') + '\\n';
         });
-        
+
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         var url = URL.createObjectURL(blob);
         var link = document.createElement('a');
