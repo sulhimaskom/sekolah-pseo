@@ -185,8 +185,9 @@ test('run() preserves optional fields when present', async () => {
     assert.strictEqual(records.length, 1);
     assert.strictEqual(records[0].alamat, 'Jl. Contoh No.1');
     assert.strictEqual(records[0].kelurahan, 'Menteng');
-    // escapeCsvField prefixes '-' with "'" for formula injection protection
-    assert.strictEqual(records[0].lat, "'-6.2000");
+    // escapeCsvField preserves numeric literals: negative coordinates are
+    // numbers, not formulas, so no "'" prefix (parseFloat keeps them valid)
+    assert.strictEqual(records[0].lat, '-6.2000');
     assert.strictEqual(records[0].lon, '106.8000');
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true });

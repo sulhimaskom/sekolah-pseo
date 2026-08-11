@@ -159,6 +159,25 @@ test('escapeCsvField prefixes formula injection characters', () => {
   assert.strictEqual(escapeCsvField('\tdata'), "'\tdata");
 });
 
+test('escapeCsvField does not prefix numeric literals (coordinates)', () => {
+  // Negative coordinates are numeric data, not formulas. Prefixing corrupts them:
+  // parseFloat("'-6.2088") === NaN.
+  assert.strictEqual(escapeCsvField('-6.2088'), '-6.2088');
+  assert.strictEqual(escapeCsvField('-106.8456'), '-106.8456');
+  assert.strictEqual(escapeCsvField('-123'), '-123');
+  assert.strictEqual(escapeCsvField('-0.5'), '-0.5');
+  assert.strictEqual(escapeCsvField('-1e5'), '-1e5');
+  assert.strictEqual(escapeCsvField('106.8456'), '106.8456');
+  assert.strictEqual(escapeCsvField('0'), '0');
+});
+
+test('escapeCsvField still prefixes formula-like strings starting with -', () => {
+  assert.strictEqual(escapeCsvField('-1-1'), "'-1-1");
+  assert.strictEqual(escapeCsvField('-2*3'), "'-2*3");
+  assert.strictEqual(escapeCsvField('-SUM(A1:B1)'), "'-SUM(A1:B1)");
+  assert.strictEqual(escapeCsvField('- 5'), "'- 5");
+});
+
 test('escapeCsvField handles formula injection combined with quoting needs', () => {
   // Formula char + comma needs both protections
   assert.strictEqual(escapeCsvField('=SUM(1,2),3'), "'=SUM(1,2),3");
