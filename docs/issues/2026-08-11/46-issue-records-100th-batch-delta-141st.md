@@ -80,14 +80,14 @@ F025 (live-site egress gap) holds with refined evidence.
 
 ### R-141-3: Follow-up queue (re-confirmed at source, below the mint bar)
 
-| Area                              | Pri | Evidence                                                                    |
-| --------------------------------- | --- | --------------------------------------------------------------------------- |
-| `writeCsv` non-atomic write       | P2  | `safeWriteFile` direct `fs.writeFile`, no tmp+rename (fs-safe.js:78)        |
-| `fastWriteFile` unlink window     | P2  | unlink-then-write gap documented (fs-safe.js:114–128)                       |
-| client-side downloadCsv           | P2  | homepage.js:514 client export unguarded for formula injection               |
-| empty catches                     | —   | acceptable — documented skip-intent (PageBuilder.js:111, BuildOrchestrator) |
-| footer CURRENT_YEAR               | P3  | module-capture staleness (footer.js:13)                                     |
-| sitemap lastmod                   | P3  | generation date, not data date (sitemap.js:93/100)                          |
+| Area                          | Pri | Evidence                                                                    |
+| ----------------------------- | --- | --------------------------------------------------------------------------- |
+| `writeCsv` non-atomic write   | P2  | `safeWriteFile` direct `fs.writeFile`, no tmp+rename (fs-safe.js:78)        |
+| `fastWriteFile` unlink window | P2  | unlink-then-write gap documented (fs-safe.js:114–128)                       |
+| client-side downloadCsv       | P2  | homepage.js:514 client export unguarded for formula injection               |
+| empty catches                 | —   | acceptable — documented skip-intent (PageBuilder.js:111, BuildOrchestrator) |
+| footer CURRENT_YEAR           | P3  | module-capture staleness (footer.js:13)                                     |
+| sitemap lastmod               | P3  | generation date, not data date (sitemap.js:93/100)                          |
 
 ## Cumulative finding-state note
 

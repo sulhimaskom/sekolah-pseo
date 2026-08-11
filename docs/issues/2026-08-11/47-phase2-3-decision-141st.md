@@ -8,15 +8,15 @@
 
 ## Phase 2 — Feature Hardening (non-cosmetic, invariant-strengthening)
 
-| Candidate                | State                     | Verdict                                                                |
-| ------------------------ | ------------------------- | ---------------------------------------------------------------------- |
+| Candidate                | State                     | Verdict                                                                     |
+| ------------------------ | ------------------------- | --------------------------------------------------------------------------- |
 | **F116 radius-full**     | **NEW → RESOLVED**        | **implemented + regression-tested + merged via PR #678** (commit `2ae75d7`) |
-| F115/F066/F069/F074/F026 | RESOLVED set (maintained) | re-verified clean this run — no action                                 |
-| F005 Prettier drift      | HELD stable at 88         | this run's records written clean — ledger holds                        |
-| F037/F038 workflow sec   | HELD (P0, 42nd obs)       | requires `.github/workflows/*` write — outside token grant (F050)      |
-| F063/F068/F021/F076      | HELD (P1/P2)              | workflow/pre-commit write boundaries; F063 10/10, root cause solid     |
-| F002 issue creation      | HELD (P1, 129th)          | token grant boundary — outside agent permissions                       |
-| F018/F025                | HELD (P1)                 | genuine feature cycles, deferred by contract                           |
+| F115/F066/F069/F074/F026 | RESOLVED set (maintained) | re-verified clean this run — no action                                      |
+| F005 Prettier drift      | HELD stable at 88         | this run's records written clean — ledger holds                             |
+| F037/F038 workflow sec   | HELD (P0, 42nd obs)       | requires `.github/workflows/*` write — outside token grant (F050)           |
+| F063/F068/F021/F076      | HELD (P1/P2)              | workflow/pre-commit write boundaries; F063 10/10, root cause solid          |
+| F002 issue creation      | HELD (P1, 129th)          | token grant boundary — outside agent permissions                            |
+| F018/F025                | HELD (P1)                 | genuine feature cycles, deferred by contract                                |
 
 **Executed (F116)**: `getCssVariables()` in `design-system.js` emitted
 `--radius-sm/md/lg` but not `--radius-full`, while `styles.js` consumed
@@ -47,18 +47,18 @@ token-granted window.
 
 ## Log
 
-| Timestamp         | Action                  | Target                                                              | Result                                                                                                       |
-| ----------------- | ----------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 2026-08-11 22:34Z | Phase 0 probe           | `gh pr list` / `gh issue list`                                      | 0 open PRs / 0 issues → PHASE 1 (AUDIT MODE)                                                                 |
-| 2026-08-11 22:35Z | full audit matrix       | lint/build/test/coverage/prettier/sec/freshness                     | lint 0/0 · build PASS · JS 1093/1089/4 skip · pytest 27/27 · cov 95.2/92.93 · prettier 88 ledger files       |
-| 2026-08-11 22:35Z | security + probes       | `check-workflow-security.js` / `gh issue create` / `gh run list`    | 12 violations (42nd) · createIssue denied (129th, F002) · orchestrator 10/10 failure (F063)                  |
-| 2026-08-11 22:36Z | source queue audit      | R-140-2 items (writeCsv/fs-safe/downloadCsv/footer/sitemap)         | all re-confirmed at source; **F116 confirmed** in live `dist/styles.css` (4 refs, 0 defs)                    |
-| 2026-08-11 22:37Z | F116 fix + test         | src/presenters/design-system.js + scripts/design-system.test.js     | emit `--radius-full` after `--radius-lg`; regression assertion added                                       |
-| 2026-08-11 22:38Z | post-fix verification   | full suite + build + lint + prettier                                | 1093 tests / 0 fail · coverage 95.2/92.93 · build PASS (`--radius-full: 9999px`) · eslint 0/0 · prettier clean |
-| 2026-08-11 22:38Z | fix committed           | feature branch `fix/design-system-radius-full-token`                | commit `0fbe56d` — atomic fix + test                                                                        |
-| 2026-08-11 22:38Z | PR #678 + merge         | fix branch → main                                                   | per PR-handler conditions: build PASS, tests PASS, lint 0/0, prettier clean → merged (commit `2ae75d7`)     |
-| 2026-08-11 22:39Z | sync + branch cleanup   | main pull; local feature branch                                     | main @ `2ae75d7`; feature branch deleted post-merge                                                          |
-| 2026-08-11 22:40Z | records written         | docs/issues/2026-08-11/ (45/46/47)                                  | delta audit + 100th-batch issue records (F116 NEW→RESOLVED) + this decision                                 |
+| Timestamp         | Action                | Target                                                           | Result                                                                                                         |
+| ----------------- | --------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 2026-08-11 22:34Z | Phase 0 probe         | `gh pr list` / `gh issue list`                                   | 0 open PRs / 0 issues → PHASE 1 (AUDIT MODE)                                                                   |
+| 2026-08-11 22:35Z | full audit matrix     | lint/build/test/coverage/prettier/sec/freshness                  | lint 0/0 · build PASS · JS 1093/1089/4 skip · pytest 27/27 · cov 95.2/92.93 · prettier 88 ledger files         |
+| 2026-08-11 22:35Z | security + probes     | `check-workflow-security.js` / `gh issue create` / `gh run list` | 12 violations (42nd) · createIssue denied (129th, F002) · orchestrator 10/10 failure (F063)                    |
+| 2026-08-11 22:36Z | source queue audit    | R-140-2 items (writeCsv/fs-safe/downloadCsv/footer/sitemap)      | all re-confirmed at source; **F116 confirmed** in live `dist/styles.css` (4 refs, 0 defs)                      |
+| 2026-08-11 22:37Z | F116 fix + test       | src/presenters/design-system.js + scripts/design-system.test.js  | emit `--radius-full` after `--radius-lg`; regression assertion added                                           |
+| 2026-08-11 22:38Z | post-fix verification | full suite + build + lint + prettier                             | 1093 tests / 0 fail · coverage 95.2/92.93 · build PASS (`--radius-full: 9999px`) · eslint 0/0 · prettier clean |
+| 2026-08-11 22:38Z | fix committed         | feature branch `fix/design-system-radius-full-token`             | commit `0fbe56d` — atomic fix + test                                                                           |
+| 2026-08-11 22:38Z | PR #678 + merge       | fix branch → main                                                | per PR-handler conditions: build PASS, tests PASS, lint 0/0, prettier clean → merged (commit `2ae75d7`)        |
+| 2026-08-11 22:39Z | sync + branch cleanup | main pull; local feature branch                                  | main @ `2ae75d7`; feature branch deleted post-merge                                                            |
+| 2026-08-11 22:40Z | records written       | docs/issues/2026-08-11/ (45/46/47)                               | delta audit + 100th-batch issue records (F116 NEW→RESOLVED) + this decision                                    |
 
 ## Final state
 
