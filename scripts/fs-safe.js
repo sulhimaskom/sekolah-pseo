@@ -28,6 +28,9 @@ function createFsSafe(options = {}) {
   const resetTimeoutMs = options.resetTimeoutMs || RESET_TIMEOUT_MS;
   const fileTimeoutMs = options.fileTimeoutMs || DEFAULT_FILE_TIMEOUT_MS;
 
+  // Monotonic sequence for unique temp-file names within this instance.
+  let writeSequence = 0;
+
   // Create isolated circuit breakers for this instance
   const fileReadCircuitBreaker = new CircuitBreaker({
     failureThreshold,
@@ -82,7 +85,16 @@ function createFsSafe(options = {}) {
       retry(
         () =>
           withTimeout(
-            fs.writeFile(filePath, data, fileOptions.encoding || 'utf8'),
+            (async () => {
+              const tmpPath = `${filePath}.tmp-${process.pid}-${++writeSequence}`;
+              try {
+                await fs.writeFile(tmpPath, data, fileOptions.encoding || 'utf8');
+                await fs.rename(tmpPath, filePath);
+              } catch (error) {
+                await fs.unlink(tmpPath).catch(() => {});
+                throw error;
+              }
+            })(),
             fileOptions.timeoutMs || fileTimeoutMs,
             `writeFile: ${filePath}`
           ),
@@ -111,32 +123,29 @@ function createFsSafe(options = {}) {
    * - withTimeout wrapper (no racing setTimeout)
    * - Circuit breaker (no failure-tracking state machine)
    *
-   * Uses unlink+write instead of direct overwrite because creating a new inode
+   * Uses tmp+rename instead of direct overwrite because creating a new inode
    * is measurably faster on Linux than truncating+overwriting an existing one
    * for bulk writes (3474+ pages). Benchmark: unlink+write 562ms vs overwrite
-   * 876ms — a 36% improvement.
+   * 876ms — a 36% improvement. rename(2) on the same filesystem is atomic, so
+   * there is no unlink-then-write window where the file is missing or torn.
    *
    * Suitable for bulk school page writes (3474+ concurrent writes) where
    * transient failures on local dist/ writes are virtually non-existent.
    */
-  function fastWriteFile(filePath, data, fileOptions = {}) {
+  async function fastWriteFile(filePath, data, fileOptions = {}) {
     const encoding = fileOptions.encoding || 'utf8';
-    // Unlink first: creating a new inode avoids the filesystem overwrite
-    // penalty. Benchmark: unlink+write 562ms vs direct overwrite 876ms
-    // for 3474 pages — a 36% improvement.
-    const writePromise = fs
-      .unlink(filePath)
-      .catch(err => {
-        if (err.code !== 'ENOENT') throw err;
-      })
-      .then(() => fs.writeFile(filePath, data, encoding));
+    const tmpPath = `${filePath}.tmp-${process.pid}-${++writeSequence}`;
 
-    return writePromise.catch(error => {
+    try {
+      await fs.writeFile(tmpPath, data, encoding);
+      await fs.rename(tmpPath, filePath);
+    } catch (error) {
+      await fs.unlink(tmpPath).catch(() => {});
       throw new IntegrationError(`Failed to write file ${filePath}`, ERROR_CODES.FILE_WRITE_ERROR, {
         filePath,
         originalError: error.message,
       });
-    });
+    }
   }
 
   function safeMkdir(dirPath, fileOptions = {}) {

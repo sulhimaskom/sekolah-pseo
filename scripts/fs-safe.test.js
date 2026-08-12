@@ -112,6 +112,33 @@ describe('fs-safe', () => {
       const result = await fs.readFile(testFile, 'utf8');
       assert.strictEqual(result, testContent);
     });
+
+    it('leaves no temp files after successful write', async () => {
+      const atomicFile = path.join(testDir, 'atomic-safe.txt');
+
+      await safeWriteFile(atomicFile, 'Atomic content');
+
+      const entries = await fs.readdir(testDir);
+      assert.deepStrictEqual(
+        entries.filter(e => e.includes('.tmp-')),
+        []
+      );
+    });
+
+    it('cleans up temp file when rename fails', async () => {
+      const dirTarget = path.join(testDir, 'dir-target-safe');
+      await fs.mkdir(dirTarget);
+
+      await assert.rejects(safeWriteFile(dirTarget, 'cannot replace a directory'), error =>
+        error.message.includes('Failed to write file')
+      );
+
+      const entries = await fs.readdir(testDir);
+      assert.deepStrictEqual(
+        entries.filter(e => e.includes('.tmp-')),
+        []
+      );
+    });
   });
 
   describe('safeMkdir', () => {
@@ -293,6 +320,33 @@ describe('fs-safe', () => {
 
       const result = await fs.readFile(nestedFile, 'utf8');
       assert.strictEqual(result, 'Nested content');
+    });
+
+    it('leaves no temp files after successful write', async () => {
+      const atomicFile = path.join(testDir, 'atomic-fast.txt');
+
+      await fastWriteFile(atomicFile, 'Atomic content');
+
+      const entries = await fs.readdir(testDir);
+      assert.deepStrictEqual(
+        entries.filter(e => e.includes('.tmp-')),
+        []
+      );
+    });
+
+    it('cleans up temp file when rename fails', async () => {
+      const dirTarget = path.join(testDir, 'dir-target-fast');
+      await fs.mkdir(dirTarget);
+
+      await assert.rejects(fastWriteFile(dirTarget, 'cannot replace a directory'), error =>
+        error.message.includes('Failed to write file')
+      );
+
+      const entries = await fs.readdir(testDir);
+      assert.deepStrictEqual(
+        entries.filter(e => e.includes('.tmp-')),
+        []
+      );
     });
   });
 
