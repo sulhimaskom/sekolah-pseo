@@ -486,6 +486,90 @@ test('collectUrlsFromSchools generates all URLs for large school set', () => {
   assert.strictEqual(schoolUrls.length, 5);
 });
 
+test('collectUrlsFromSchools uses newest updated_at for homepage and province pages', () => {
+  const { collectUrlsFromSchools } = require('./sitemap');
+
+  const schools = [
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      updated_at: '2026-07-20',
+    },
+    {
+      npsn: '22222222',
+      nama: 'SDN 2',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Cicendo',
+      updated_at: '2026-07-18',
+    },
+  ];
+
+  const result = collectUrlsFromSchools(schools, 'https://example.com');
+
+  // Homepage + 1 province + 2 schools = 4
+  assert.strictEqual(result.length, 4);
+  // Aggregate pages (homepage, province) carry the newest data date
+  assert.strictEqual(result[0].lastmod, '2026-07-20');
+  const provinceUrl = result.find(u => u.url.match(/\/provinsi\/[^/]+\/$/));
+  assert.strictEqual(provinceUrl.lastmod, '2026-07-20');
+});
+
+test('collectUrlsFromSchools uses per-school updated_at for school pages', () => {
+  const { collectUrlsFromSchools } = require('./sitemap');
+
+  const schools = [
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      updated_at: '2026-07-20',
+    },
+    {
+      npsn: '22222222',
+      nama: 'SDN 2',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Cicendo',
+      updated_at: '2026-07-18',
+    },
+  ];
+
+  const result = collectUrlsFromSchools(schools, 'https://example.com');
+
+  const schoolUrls = result.filter(u => u.url.includes('.html'));
+  assert.strictEqual(schoolUrls.length, 2);
+  const byNpsn = new Map(
+    schoolUrls.map(u => [u.url.includes('11111111') ? '11111111' : '22222222', u])
+  );
+  assert.strictEqual(byNpsn.get('11111111').lastmod, '2026-07-20');
+  assert.strictEqual(byNpsn.get('22222222').lastmod, '2026-07-18');
+});
+
+test('collectUrlsFromSchools falls back to generation date when no updated_at', () => {
+  const { collectUrlsFromSchools } = require('./sitemap');
+
+  const schools = [
+    {
+      npsn: '11111111',
+      nama: 'SDN 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+    },
+  ];
+
+  const result = collectUrlsFromSchools(schools, 'https://example.com');
+
+  assert.ok(result.length > 0);
+  assert.ok(result.every(u => u.lastmod && u.lastmod.match(/^\d{4}-\d{2}-\d{2}$/)));
+});
+
 test('writeSitemapFiles handles URLs without lastmod field', async () => {
   const { writeSitemapFiles } = require('./sitemap');
 

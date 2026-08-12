@@ -17,6 +17,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const logger = require('./logger');
 const { safeWriteFile, safeMkdir } = require('./fs-safe');
+const { IntegrationError, ERROR_CODES } = require('./resilience');
 const { walkDirectory, terminate } = require('./utils');
 const { getSchoolRelativePath, getUniqueProvinces } = require('../src/services/PageBuilder');
 
@@ -85,28 +86,45 @@ async function collectUrls(dir, baseUrl) {
  * @returns {Array<{url: string, lastmod: string}>} Array of URL entries
  */
 function collectUrlsFromSchools(schools, baseUrl) {
-  const now = new Date().toISOString().split('T')[0];
+  if (!Array.isArray(schools)) {
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
+  }
   const urls = [];
   const normalizedBase = baseUrl.replace(/\/$/, '');
 
+  // F032: lastmod from data updated_at — deterministic output, truthful dates
+  // (falls back to generation date only when no record carries updated_at).
+  const dataDates = schools
+    .map(s => (typeof s.updated_at === 'string' ? s.updated_at : ''))
+    .filter(d => /^\d{4}-\d{2}-\d{2}/.test(d));
+  const newestDataDate = dataDates.length ? dataDates.sort().reverse()[0] : '';
+  const fallbackDate = newestDataDate || new Date().toISOString().split('T')[0];
+
   // Homepage
-  urls.push({ url: `${normalizedBase}/`, lastmod: now });
+  urls.push({ url: `${normalizedBase}/`, lastmod: fallbackDate });
 
   // Province pages
   const provinces = getUniqueProvinces(schools);
   for (const province of provinces) {
     urls.push({
       url: `${normalizedBase}/provinsi/${province.slug}/`,
-      lastmod: now,
+      lastmod: fallbackDate,
     });
   }
 
   // Individual school pages
   for (const school of schools) {
     const relPath = getSchoolRelativePath(school);
+    const schoolDate =
+      typeof school.updated_at === 'string' && /^\d{4}-\d{2}-\d{2}/.test(school.updated_at)
+        ? school.updated_at
+        : fallbackDate;
     urls.push({
       url: `${normalizedBase}/${relPath}`,
-      lastmod: now,
+      lastmod: schoolDate,
     });
   }
 
