@@ -31,32 +31,32 @@ guessed.
 
 ### HELD (re-observed unchanged this run)
 
-| ID   | Category/Priority | Status | Evidence this run                                                       |
-| ---- | ----------------- | ------ | ----------------------------------------------------------------------- |
-| F005 | docs/P2           | **GROWTH** | prettier: **96 files** (93→96, +3 — 5th consecutive growth run; all `docs/issues/`, 0 source) |
-| F037 | security/P0       | HELD   | duplicate `GEMINI_API_KEY` API_KEY refs — CRITICAL (54th obs)           |
-| F038 | security/P0       | HELD   | workflow `id-token`/`actions` write on non-merge, GH_TOKEN refs (54th); **live checkout failure 6/6** |
-| F063 | ci/P1             | HELD   | pull schedule 1 fail + 1 cancelled / 11 completed (exit 124, improved from 2+2); orchestrator checkout fails 6/6 |
-| F002 | ci/P1             | HELD   | `gh issue create` denied (141st)                                        |
-| F018 | feature/P1        | HELD   | data STALE 24 days (threshold 7) — flat vs 152nd                        |
-| F025 | feature/P1        | HELD   | SITE_URL placeholder `https://example.com` re-observed live             |
-| F064 | chore/P2          | HELD   | .nvmrc 22 vs runtime v20.20.2 vs CI node 20; eslint EBADENGINE (needs node ≥22.22.1) |
-| F004 | security/P2       | HELD   | **57 `secrets.*` refs / 10 unique names** (stable; incl. 3× GH_TOKEN absent from Actions env) |
-| F007 | refactor/P2       | HELD   | 2045 lines across workflow YAMLs                                        |
-| F008 | refactor/P2       | HELD   | src/presenters/styles.js 1318 lines                                     |
-| F011 | chore/P3          | HELD   | 0 tags — no releases                                                    |
-| F019 | refactor/P3       | HELD   | tests/run_tests.py dup imports + dead block after return                |
-| F014 | test/P1           | NOT OBSERVED | 10th consecutive clean run — 1104/1100/0/4-skip                  |
+| ID   | Category/Priority | Status       | Evidence this run                                                                                                |
+| ---- | ----------------- | ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| F005 | docs/P2           | **GROWTH**   | prettier: **96 files** (93→96, +3 — 5th consecutive growth run; all `docs/issues/`, 0 source)                    |
+| F037 | security/P0       | HELD         | duplicate `GEMINI_API_KEY` API_KEY refs — CRITICAL (54th obs)                                                    |
+| F038 | security/P0       | HELD         | workflow `id-token`/`actions` write on non-merge, GH_TOKEN refs (54th); **live checkout failure 6/6**            |
+| F063 | ci/P1             | HELD         | pull schedule 1 fail + 1 cancelled / 11 completed (exit 124, improved from 2+2); orchestrator checkout fails 6/6 |
+| F002 | ci/P1             | HELD         | `gh issue create` denied (141st)                                                                                 |
+| F018 | feature/P1        | HELD         | data STALE 24 days (threshold 7) — flat vs 152nd                                                                 |
+| F025 | feature/P1        | HELD         | SITE_URL placeholder `https://example.com` re-observed live                                                      |
+| F064 | chore/P2          | HELD         | .nvmrc 22 vs runtime v20.20.2 vs CI node 20; eslint EBADENGINE (needs node ≥22.22.1)                             |
+| F004 | security/P2       | HELD         | **57 `secrets.*` refs / 10 unique names** (stable; incl. 3× GH_TOKEN absent from Actions env)                    |
+| F007 | refactor/P2       | HELD         | 2045 lines across workflow YAMLs                                                                                 |
+| F008 | refactor/P2       | HELD         | src/presenters/styles.js 1318 lines                                                                              |
+| F011 | chore/P3          | HELD         | 0 tags — no releases                                                                                             |
+| F019 | refactor/P3       | HELD         | tests/run_tests.py dup imports + dead block after return                                                         |
+| F014 | test/P1           | NOT OBSERVED | 10th consecutive clean run — 1104/1100/0/4-skip                                                                  |
 
 ### Maintained RESOLVED (re-verified clean this run)
 
-| ID   | Category/Priority | Verification this run                                                                      |
-| ---- | ----------------- | ------------------------------------------------------------------------------------------ |
-| F027 | security/P2       | `--json` exit 1 with violations payload — gate contract re-confirmed                        |
+| ID   | Category/Priority | Verification this run                                                                          |
+| ---- | ----------------- | ---------------------------------------------------------------------------------------------- |
+| F027 | security/P2       | `--json` exit 1 with violations payload — gate contract re-confirmed                           |
 | F026 | bug/P2            | `formatBytes` guard `!Number.isFinite(bytes)` verified at source: build-performance.js:186–204 |
-| F017 | docs/P3           | `addNumbers` absent from docs/api.md (0 occurrences)                                        |
-| F028 | security/P2       | `npm audit` 0 vulnerabilities                                                               |
-| F032 | feature/P2       | sitemap lastmod derived from data `updated_at` (source re-verified)                          |
+| F017 | docs/P3           | `addNumbers` absent from docs/api.md (0 occurrences)                                           |
+| F028 | security/P2       | `npm audit` 0 vulnerabilities                                                                  |
+| F032 | feature/P2        | sitemap lastmod derived from data `updated_at` (source re-verified)                            |
 
 ## Operational confirmation — orchestrator checkout failure held at 6/6 (F038 live)
 
