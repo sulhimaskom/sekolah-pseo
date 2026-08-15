@@ -42,3 +42,13 @@ test('generateFooterHtml preserves accessibility landmarks', () => {
   const html = generateFooterHtml();
   assert.ok(html.includes('role="contentinfo"'));
 });
+
+test('generateFooterHtml injects the comparison tray after the footer', () => {
+  const html = generateFooterHtml();
+  assert.ok(html.includes('id="comparison-tray"'));
+  assert.ok(html.includes('id="comparison-toggle"'));
+  assert.ok(html.includes('id="school-data"') === false); // payload only on school pages
+  const footerEnd = html.indexOf('</footer>');
+  const trayStart = html.indexOf('id="comparison-tray"');
+  assert.ok(footerEnd !== -1 && trayStart > footerEnd, 'tray must follow the footer');
+});

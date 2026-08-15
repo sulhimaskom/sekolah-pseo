@@ -6,7 +6,6 @@ const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/bac
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
-
 // Pre-escape static CONFIG.TEXT values to avoid ~38K redundant escapeHtml calls
 // during full build (each escapeHtml does 5 regex replacements)
 const T = Object.fromEntries(
@@ -108,6 +107,22 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
     2
   ).replace(/</g, '\\u003c');
 
+  // FEAT-005: comparison payload for the shared tray — compact projection of
+  // schema fields as raw JSON in a script context. Same F047 escaping rule as
+  // jsonLd above; `url` lets the tray link back to the school page.
+  const comparisonData = JSON.stringify({
+    npsn: school.npsn,
+    nama: school.nama,
+    bentuk_pendidikan: school.bentuk_pendidikan,
+    status: school.status,
+    kecamatan: school.kecamatan,
+    kab_kota: school.kab_kota,
+    provinsi: school.provinsi,
+    lat: school.lat || '',
+    lon: school.lon || '',
+    url: relativePath,
+  }).replace(/</g, '\\u003c');
+
   return `${HTML_HEAD_PREFIX}
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <title>${escapeHtml(school.nama)}</title>
@@ -135,6 +150,8 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   <main id="main-content" role="main">
     <article aria-labelledby="school-name">
       <h1 id="school-name">${escapeHtml(school.nama)}</h1>
+
+      <button type="button" class="btn-compare" aria-pressed="false">Bandingkan</button>
       
       <section aria-labelledby="school-details">
         <h2 id="school-details" class="sr-only">Detail Sekolah</h2>
@@ -182,6 +199,8 @@ function generateSchoolPageHtml(school, relativePath, enrichment) {
   ${generateFooterHtml({ siteName: T.SITE_NAME })}
   
   ${generateBackToTopHtml()}
+
+  <script type="application/json" id="school-data">${comparisonData}</script>
   
   <script>
     (function() {

@@ -248,7 +248,14 @@ describe('generateSchoolPageHtml', () => {
 
   it('F049: captures copy-feedback defaultText once at setup, not at click time', () => {
     const html = generateSchoolPageHtml(validSchool);
-    const scriptBlock = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+
+    // The page now contains multiple <script> blocks (comparison tray from the
+    // shared footer + the school-page script) — target the one with the copy logic.
+    const scriptBlocks = html.match(/<script>([\s\S]*?)<\/script>/g) || [];
+    const scriptBlock = scriptBlocks
+      .map(block => block.replace(/^<script>/, '').replace(/<\/script>$/, ''))
+      .find(block => block.includes('copyTextToClipboard'));
+    assert.ok(scriptBlock, 'copy script block should exist');
 
     const defaultTextIdx = scriptBlock.indexOf(
       'var defaultText = feedback ? feedback.textContent :'
@@ -496,6 +503,39 @@ describe('generateSchoolPageHtml', () => {
     const html = generateSchoolPageHtml(validSchool);
 
     assert.ok(html.includes('<span aria-hidden="true"> / </span>'));
+  });
+
+  it('includes a compare button for the comparison tray (FEAT-005)', () => {
+    const html = generateSchoolPageHtml(validSchool, 'path/12345678-sd-negeri-1-jakarta');
+
+    assert.ok(html.includes('class="btn-compare"'));
+    assert.ok(html.includes('aria-pressed="false"'));
+    assert.ok(html.includes('Bandingkan'));
+  });
+
+  it('embeds comparison-ready school data as #school-data JSON (FEAT-005)', () => {
+    const html = generateSchoolPageHtml(validSchool, 'path/12345678-sd-negeri-1-jakarta');
+
+    assert.ok(html.includes('<script type="application/json" id="school-data">'));
+    assert.ok(html.includes('"npsn":"12345678"'));
+    assert.ok(html.includes('"nama":"SD Negeri 1 Jakarta"'));
+    assert.ok(html.includes('"bentuk_pendidikan":"SD"'));
+    assert.ok(html.includes('"kecamatan":"Menteng"'));
+    assert.ok(html.includes('"kab_kota":"Jakarta Pusat"'));
+    assert.ok(html.includes('"provinsi":"DKI Jakarta"'));
+    assert.ok(html.includes('"url":"path/12345678-sd-negeri-1-jakarta"'));
+  });
+
+  it('escapes < as \\u003c inside the #school-data payload to stay script-safe (F047)', () => {
+    const maliciousSchool = {
+      ...validSchool,
+      nama: 'SD <script>alert(1)</script>',
+    };
+
+    const html = generateSchoolPageHtml(maliciousSchool, 'path/1');
+
+    assert.ok(!html.includes('<script>alert(1)</script>'));
+    assert.ok(html.includes('SD \\u003cscript>alert(1)\\u003c/script>'));
   });
 });
 
