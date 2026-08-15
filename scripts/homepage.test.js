@@ -16,6 +16,17 @@ test('generateHomepageHtml generates valid HTML', () => {
   assert.ok(html.includes('</body>'));
 });
 
+test('generateHomepageHtml renders empty homepage for undefined input', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+
+  const html = generateHomepageHtml(undefined);
+
+  assert.ok(html.includes('<!DOCTYPE html>'));
+  assert.ok(html.includes('</html>'));
+  assert.ok(html.includes('0'));
+  assert.ok(html.includes('Total Sekolah'));
+});
+
 test('generateHomepageHtml includes school count', () => {
   const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
 

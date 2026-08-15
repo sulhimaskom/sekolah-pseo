@@ -97,12 +97,16 @@ function aggregateProvinceAndFilters(schools) {
 }
 
 function generateHomepageHtml(schools) {
-  const { provinces, filterOptions } = aggregateProvinceAndFilters(schools);
+  // Contract boundary: helper tolerates non-array input, but schools.length
+  // below would throw on undefined/null/string. Normalize to render an empty
+  // homepage deterministically (F065).
+  const schoolList = Array.isArray(schools) ? schools : [];
+  const { provinces, filterOptions } = aggregateProvinceAndFilters(schoolList);
   const provinceOptionsHtml = generateProvinceOptionsHtml(filterOptions.provinces);
   const typeOptionsHtml = generateTypeOptionsHtml(filterOptions.types);
   const statusOptionsHtml = generateStatusOptionsHtml(filterOptions.statuses);
 
-  const totalSchools = schools.length;
+  const totalSchools = schoolList.length;
 
   const provinceLinks = provinces
     .map(
