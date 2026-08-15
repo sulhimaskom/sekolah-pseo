@@ -33,6 +33,21 @@ describe('config', () => {
       const result = CONFIG.validatePath('/project/src/components', '/project/src');
       assert.strictEqual(result, true);
     });
+
+    it('returns false for sibling-prefix escape (/project2 for base /project)', () => {
+      const result = CONFIG.validatePath('/project2', '/project');
+      assert.strictEqual(result, false);
+    });
+
+    it('returns false for nested sibling-prefix escape (/project2/src for base /project)', () => {
+      const result = CONFIG.validatePath('/project2/src', '/project');
+      assert.strictEqual(result, false);
+    });
+
+    it('returns false for sibling-prefix with suffix (/project-extra for base /project)', () => {
+      const result = CONFIG.validatePath('/project-extra', '/project');
+      assert.strictEqual(result, false);
+    });
   });
 
   describe('ROOT_DIR', () => {

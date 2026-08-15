@@ -19,7 +19,13 @@ function validatePath(targetPath, basePath) {
   const resolved = path.resolve(targetPath);
   const normalized = path.normalize(resolved);
   const baseNormalized = path.normalize(path.resolve(basePath));
-  return normalized.startsWith(baseNormalized);
+  if (normalized === baseNormalized) return true;
+  // Require a path-separator boundary so sibling-prefix paths (e.g. /project2
+  // for base /project) are rejected, not just the raw string prefix (F065).
+  const baseWithSep = baseNormalized.endsWith(path.sep)
+    ? baseNormalized
+    : `${baseNormalized}${path.sep}`;
+  return normalized.startsWith(baseWithSep);
 }
 
 // Define base directories
