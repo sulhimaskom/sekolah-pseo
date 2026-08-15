@@ -1,0 +1,188 @@
+'use strict';
+
+// Global reset, base element styles, skip link, header/nav, main/article/footer, school details list and responsive breakpoints.
+module.exports = `* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  /* Native form controls (select dropdowns, scrollbars, autofill) follow the OS scheme */
+  color-scheme: light dark;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+.skip-link {
+  position: absolute;
+  top: -3rem;
+  left: var(--spacing-sm);
+  background-color: var(--color-skip-link-background, #000);
+  color: var(--color-skip-link-text, #fff);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  z-index: var(--z-index-fixed);
+  transition: top var(--transition-fast) ease-in-out;
+  font-weight: var(--font-weight-medium);
+}
+
+.skip-link:focus {
+  top: var(--spacing-sm);
+  outline: var(--shadow-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+header[role="banner"] {
+  background-color: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-md) var(--spacing-lg);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-sticky);
+  box-shadow: var(--shadow-sm);
+}
+
+nav[aria-label="Navigasi utama"] {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  flex-wrap: wrap;
+}
+
+nav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast) ease;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+}
+
+nav a:hover {
+  color: var(--color-primary);
+  background-color: var(--color-bg-accent);
+}
+
+nav a:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+nav a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+nav a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+nav span[aria-current="page"] {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+main[role="main"] {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-lg);
+}
+
+article[aria-labelledby="school-name"] {
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+article h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  margin: 0;
+}
+
+section[aria-labelledby="school-details"] {
+  padding: var(--spacing-lg);
+}
+
+.school-details-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-md) var(--spacing-lg);
+  margin: 0;
+}
+
+.school-details-list dt {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.school-details-list dd {
+  margin: 0;
+  padding: var(--spacing-xs) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  word-break: break-word;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+.badge-status {
+  background-color: var(--color-badge-status-bg);
+  color: var(--color-badge-status-text);
+}
+
+.badge-n {
+  background-color: var(--color-badge-n-bg);
+  color: var(--color-badge-n-text);
+}
+
+.badge-s {
+  background-color: var(--color-badge-s-bg);
+  color: var(--color-badge-s-text);
+}
+
+.badge-education {
+  background-color: var(--color-badge-education-bg);
+  color: var(--color-badge-education-text);
+}
+
+`;
