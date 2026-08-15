@@ -5,15 +5,21 @@
  * Usage:
  *   generateFooterHtml({ siteName: 'Sekolah PSEO' })
  *   generateFooterHtml({ siteName: T.SITE_NAME, extraContent: '<p class="footer-links">...</p>' })
+ *
+ * The comparison tray (FEAT-005) is injected after the footer so it is present
+ * on every page type and survives navigation between static pages.
  */
 
 'use strict';
+
+const { generateComparisonTrayHtml, generateComparisonScript } = require('./comparison');
 
 // Hoisted constant - computed once at module load
 const CURRENT_YEAR = new Date().getFullYear();
 
 /**
- * Generate a consistent footer HTML block.
+ * Generate a consistent footer HTML block, followed by the shared comparison
+ * tray widget and its client script.
  *
  * @param {Object} [options] - Footer configuration
  * @param {string} [options.siteName='Sekolah PSEO'] - Site name displayed in copyright
@@ -27,7 +33,9 @@ function generateFooterHtml(options = {}) {
   return `
   <footer role="contentinfo">
     <p>&copy; ${CURRENT_YEAR} ${siteName}. Data sekolah berasal dari Dapodik.</p>${extraContent}
-  </footer>`;
+  </footer>
+  ${generateComparisonTrayHtml()}
+  ${generateComparisonScript()}`;
 }
 
 module.exports = { generateFooterHtml };
