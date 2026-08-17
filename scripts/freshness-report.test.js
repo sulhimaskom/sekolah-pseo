@@ -181,3 +181,89 @@ test('getReportData contains generatedAt timestamp', async () => {
   assert.ok(ts instanceof Date);
   assert.ok(!isNaN(ts.getTime()));
 });
+
+// ── main() CLI entry point ───────────────────────────────────────────────────
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { execSync } = require('child_process');
+const { withConfig } = require('./test-helpers');
+const { main } = require('./freshness-report');
+
+const TEST_CSV = [
+  'npsn,nama,bentuk_pendidikan,status,alamat,kelurahan,kecamatan,kab_kota,provinsi,lat,lon,updated_at',
+  '11111111,SMA Negeri 1 Jakarta,SMA,N,Jl. A,,Gambir,Jakarta Pusat,DKI Jakarta,-6.2,106.8,2026-07-20',
+  '22222222,SMP Negeri 2 Bandung,SMP,N,Jl. B,,Coblong,Bandung,Jawa Barat,-6.9,107.6,2026-07-20',
+].join('\n');
+
+function makeTempCsv() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freshness-report-'));
+  const csvPath = path.join(dir, 'schools.csv');
+  fs.writeFileSync(csvPath, TEST_CSV);
+  return { dir, csvPath };
+}
+
+test('main() with --json prints report data as JSON to stdout', () => {
+  const result = execSync('node scripts/freshness-report.js --json', {
+    encoding: 'utf-8',
+    timeout: 10000,
+  });
+  // pino warnings (e.g. SITE_URL) precede the report; the report starts at the
+  // first pretty-printed JSON line
+  const jsonStart = result.indexOf('{\n');
+  assert.ok(jsonStart >= 0, 'should find the JSON report in stdout');
+  const parsed = JSON.parse(result.slice(jsonStart));
+  assert.ok(parsed.hasOwnProperty('exists'));
+  assert.ok(parsed.hasOwnProperty('quality'));
+  assert.ok(parsed.hasOwnProperty('generatedAt'));
+});
+
+test('main() terminates when schools.csv is missing', async () => {
+  const originalExit = process.exit;
+  const originalArgv = process.argv;
+  process.exit = code => {
+    throw new Error(`PROCESS_EXIT:${code}`);
+  };
+  process.argv = ['node', 'freshness-report.js'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: '/nonexistent/schools.csv' }, () =>
+      assert.rejects(main(), /PROCESS_EXIT:1/)
+    );
+  } finally {
+    process.exit = originalExit;
+    process.argv = originalArgv;
+  }
+});
+
+test('main() with --stdout prints the generated HTML', () => {
+  const result = execSync('node scripts/freshness-report.js --stdout', {
+    encoding: 'utf-8',
+    timeout: 10000,
+  });
+  assert.ok(result.includes('<!DOCTYPE html>'));
+  assert.ok(result.includes('Data Freshness Report'));
+});
+
+test('main() writes the report file to the dist freshness-report dir by default', async () => {
+  const { dir, csvPath } = makeTempCsv();
+  const distDir = path.join(dir, 'dist');
+  const reportFile = path.join(distDir, 'freshness-report', 'index.html');
+  const originalArgv = process.argv;
+  process.argv = ['node', 'freshness-report.js'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: csvPath, DIST_DIR: distDir }, async () => {
+      delete require.cache[require.resolve('./freshness-report')];
+      const fresh = require('./freshness-report');
+      await fresh.main();
+    });
+    assert.ok(fs.existsSync(reportFile), 'report file should be written');
+    const html = fs.readFileSync(reportFile, 'utf-8');
+    assert.ok(html.startsWith('<!DOCTYPE html>'));
+  } finally {
+    process.argv = originalArgv;
+    delete require.cache[require.resolve('./freshness-report')];
+    require('./freshness-report');
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

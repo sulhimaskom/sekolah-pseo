@@ -839,3 +839,178 @@ test('DEFAULT_THRESHOLDS has all expected keys', () => {
   assert.strictEqual(DEFAULT_THRESHOLDS.MAX_DUPLICATE_NPSN, 0);
   assert.strictEqual(DEFAULT_THRESHOLDS.MIN_COORDINATE_PCT, 50);
 });
+
+// ── main() CLI entry point ───────────────────────────────────────────────────
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const logger = require('./logger');
+const { withConfig } = require('./test-helpers');
+const { main } = require('./data-quality');
+
+const VALID_CSV = [
+  'npsn,nama,bentuk_pendidikan,status,alamat,kelurahan,kecamatan,kab_kota,provinsi,lat,lon,updated_at',
+  '11111111,SMA Negeri 1 Jakarta,SMA,N,Jl. A,,Gambir,Jakarta Pusat,DKI Jakarta,-6.2,106.8,2026-07-20',
+  '22222222,SMP Negeri 2 Bandung,SMP,N,Jl. B,,Coblong,Bandung,Jawa Barat,-6.9,107.6,2026-07-20',
+].join('\n');
+
+// Only 1 of 4 records has a nama → completeness 25% < 90% threshold
+const INCOMPLETE_CSV = [
+  'npsn,nama,bentuk_pendidikan,status,alamat,kelurahan,kecamatan,kab_kota,provinsi,lat,lon,updated_at',
+  '11111111,SMA Negeri 1 Jakarta,SMA,N,Jl. A,,Gambir,Jakarta Pusat,DKI Jakarta,-6.2,106.8,2026-07-20',
+  '22222222,,SMP,N,Jl. B,,Coblong,Bandung,Jawa Barat,-6.9,107.6,2026-07-20',
+  '33333333,,SD,N,Jl. C,,Sukajadi,Bandung,Jawa Barat,-6.9,107.6,2026-07-20',
+  '44444444,,SD,N,Jl. D,,Sukajadi,Bandung,Jawa Barat,-6.9,107.6,2026-07-20',
+].join('\n');
+
+function makeTempCsv(content) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'data-quality-'));
+  const csvPath = path.join(dir, 'schools.csv');
+  fs.writeFileSync(csvPath, content);
+  return { dir, csvPath };
+}
+
+function mockProcessExit() {
+  const originalExit = process.exit;
+  process.exit = code => {
+    throw new Error(`PROCESS_EXIT:${code}`);
+  };
+  return () => {
+    process.exit = originalExit;
+  };
+}
+
+test('main() terminates when schools CSV is missing', async () => {
+  const restoreExit = mockProcessExit();
+  const originalArgv = process.argv;
+  process.argv = ['node', 'data-quality.js'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: '/nonexistent/data-quality.csv' }, () =>
+      assert.rejects(main(), /PROCESS_EXIT:1/)
+    );
+  } finally {
+    restoreExit();
+    process.argv = originalArgv;
+  }
+});
+
+test('main() with --json prints a JSON report to stdout', async () => {
+  const { dir, csvPath } = makeTempCsv(VALID_CSV);
+  const captured = [];
+  const originalLog = console.log;
+  const originalArgv = process.argv;
+  console.log = (...chunks) => {
+    captured.push(chunks.join(' '));
+  };
+  process.argv = ['node', 'data-quality.js', '--json'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => main());
+    const parsed = JSON.parse(captured.join('\n'));
+    assert.strictEqual(parsed.summary.totalSchools, 2);
+    assert.ok(parsed.fieldCompleteness.npsn);
+    assert.ok(parsed.coordinates.valid);
+  } finally {
+    console.log = originalLog;
+    process.argv = originalArgv;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('main() prints a human-readable report by default', async () => {
+  const { dir, csvPath } = makeTempCsv(VALID_CSV);
+  const captured = [];
+  const originalLog = console.log;
+  const originalArgv = process.argv;
+  console.log = (...chunks) => {
+    captured.push(chunks.join(' '));
+  };
+  process.argv = ['node', 'data-quality.js'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => main());
+    const text = captured.join('\n');
+    assert.ok(text.includes('DATA QUALITY REPORT'));
+    assert.ok(text.includes('Total schools: 2'));
+  } finally {
+    console.log = originalLog;
+    process.argv = originalArgv;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('main() with --verbose adds verbose stats logging', async () => {
+  const { dir, csvPath } = makeTempCsv(VALID_CSV);
+  const infoCalls = [];
+  const originalInfo = logger.info;
+  const originalArgv = process.argv;
+  logger.info = (...args) => {
+    infoCalls.push(args);
+  };
+  process.argv = ['node', 'data-quality.js', '--verbose'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => main());
+    assert.ok(
+      infoCalls.some(args => args.some(a => typeof a === 'string' && a.includes('Verbose stats'))),
+      'verbose mode should log "Verbose stats"'
+    );
+    assert.ok(
+      infoCalls.some(args =>
+        args.some(a => typeof a === 'string' && a.includes('Coordinate bounds'))
+      ),
+      'verbose mode should log coordinate bounds'
+    );
+  } finally {
+    logger.info = originalInfo;
+    process.argv = originalArgv;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('main() with --threshold passes when quality is good', async () => {
+  const { dir, csvPath } = makeTempCsv(VALID_CSV);
+  const infoCalls = [];
+  const originalInfo = logger.info;
+  const originalArgv = process.argv;
+  logger.info = (...args) => {
+    infoCalls.push(args);
+  };
+  process.argv = ['node', 'data-quality.js', '--threshold'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => main());
+    assert.ok(
+      infoCalls.some(args =>
+        args.some(a => typeof a === 'string' && a.includes('All quality thresholds met'))
+      )
+    );
+  } finally {
+    logger.info = originalInfo;
+    process.argv = originalArgv;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('main() with --threshold terminates when quality is below threshold', async () => {
+  const { dir, csvPath } = makeTempCsv(INCOMPLETE_CSV);
+  const warnCalls = [];
+  const originalWarn = logger.warn;
+  const originalArgv = process.argv;
+  const restoreExit = mockProcessExit();
+  logger.warn = (...args) => {
+    warnCalls.push(args);
+  };
+  process.argv = ['node', 'data-quality.js', '--threshold'];
+  try {
+    await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => assert.rejects(main(), /PROCESS_EXIT:1/));
+    assert.ok(
+      warnCalls.some(args =>
+        args.some(a => typeof a === 'string' && a.includes('Quality thresholds not met'))
+      ),
+      'should warn about unmet thresholds'
+    );
+  } finally {
+    logger.warn = originalWarn;
+    restoreExit();
+    process.argv = originalArgv;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

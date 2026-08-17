@@ -5608,10 +5608,15 @@ Generates a static HTML report page showing data freshness and quality metrics, 
 module.exports = {
   generateHtml: function,
   getReportData: function,
+  main: function,
 };
 ```
 
 ### Functions
+
+#### `main()`
+
+CLI entry point. Parses `process.argv` for the `--json` (print report data as JSON to stdout), `--stdout` (print generated HTML to stdout), or default (write report to `dist/freshness-report/index.html`) modes. Terminates with exit code 1 when `schools.csv` is missing.
 
 #### `generateHtml(freshness, quality)`
 
@@ -5702,6 +5707,7 @@ module.exports = {
   printListAsJson: function,
   printFlatList: function,
   printHelp: function,
+  main: function,
 };
 ```
 
@@ -5756,6 +5762,12 @@ Displays a numbered list and prompts for selection.
 - `rl` (readline.Interface): Readline interface
 
 **Returns:** `Promise<number>` — 0-based index, `-1` for back, `-2` for invalid input
+
+---
+
+#### `main()`
+
+CLI entry point. Parses `process.argv` for `--help`, `--list`, `--list=flat`, falls back to the non-TTY scripts listing when stdin is not a TTY, and otherwise drives the interactive category/item menu loop (via `mainMenu()` and `pressEnter()`) with a `readline.Interface`.
 
 ---
 

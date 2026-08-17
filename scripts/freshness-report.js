@@ -308,7 +308,7 @@ async function main() {
   );
 }
 
-module.exports = { generateHtml, getReportData };
+module.exports = { generateHtml, getReportData, main };
 
 if (require.main === module) {
   main().catch(error => {

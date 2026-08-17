@@ -1,7 +1,9 @@
 'use strict';
 
-const { describe, it, before, after, beforeEach } = require('node:test');
+const { describe, it, before, after, beforeEach, mock } = require('node:test');
 const assert = require('node:assert');
+const childProcess = require('child_process');
+const readline = require('readline');
 
 function mockReadline(answers = []) {
   let callCount = 0;
@@ -13,6 +15,46 @@ function mockReadline(answers = []) {
     },
   };
 }
+
+/** Scripted fake rl: drives menu answers, counts question/close, can throw. */
+function createScriptedRl(answers, { throwOnQuestion = false } = {}) {
+  const calls = { question: 0, close: 0 };
+  return {
+    async question() {
+      calls.question += 1;
+      if (throwOnQuestion) {
+        throw new Error('simulated readline failure');
+      }
+      if (calls.question > answers.length) {
+        throw new Error('Unexpected extra question: menu did not terminate');
+      }
+      return answers[calls.question - 1];
+    },
+    close() {
+      calls.close += 1;
+    },
+    calls,
+  };
+}
+
+// Mock execSync so menu tests that actually select a command never run a real
+// npm script. Must be installed BEFORE the interactive module is first required
+// (the module destructures `execSync` at load time).
+// Preserves the failure semantics used by the existing runCommand tests.
+before(() => {
+  mock.method(childProcess, 'execSync', cmd => {
+    if (cmd === 'nonexistent-command-xyz-12345') {
+      const err = new Error(`Command failed: ${cmd}`);
+      err.status = 1;
+      throw err;
+    }
+    return Buffer.from('mocked output');
+  });
+});
+
+after(() => {
+  mock.restoreAll();
+});
 
 // Save originals
 const originalIsTTY = process.stdin.isTTY;
@@ -326,6 +368,121 @@ describe('interactive CLI', () => {
       assert.ok(text.includes('npm run'));
       assert.ok(text.includes('test'));
       assert.ok(text.includes('build'));
+    });
+  });
+
+  describe('main() interactive menu (TTY mode)', () => {
+    async function driveMenu(answers, { throwOnQuestion = false } = {}) {
+      const rl = createScriptedRl(answers, { throwOnQuestion });
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const logCalls = [];
+      const errorCalls = [];
+      const originals = {
+        log: console.log,
+        error: console.error,
+        clear: console.clear,
+        createInterface: readline.createInterface,
+        isTTY: process.stdin.isTTY,
+        argv: process.argv,
+        exit: process.exit,
+      };
+
+      console.log = (...chunks) => {
+        logCalls.push(chunks.join(' '));
+      };
+      console.error = (...chunks) => {
+        errorCalls.push(chunks.join(' '));
+      };
+      console.clear = () => {};
+      readline.createInterface = () => rl;
+      process.stdin.isTTY = true;
+      process.argv = ['node', 'interactive.js'];
+      process.exit = code => {
+        throw new Error(`PROCESS_EXIT:${code}`);
+      };
+
+      try {
+        await mod.main();
+      } finally {
+        console.log = originals.log;
+        console.error = originals.error;
+        console.clear = originals.clear;
+        readline.createInterface = originals.createInterface;
+        process.stdin.isTTY = originals.isTTY;
+        process.argv = originals.argv;
+        process.exit = originals.exit;
+      }
+      return { rl, logCalls, errorCalls, exitOption };
+    }
+
+    it('exits immediately when the exit option is selected', async () => {
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const { rl, logCalls } = await driveMenu([exitOption]);
+      assert.strictEqual(rl.calls.close, 1);
+      assert.ok(logCalls.some(l => l.includes('Goodbye!')));
+      assert.ok(logCalls.some(l => l.includes('Development')));
+      assert.ok(logCalls.some(l => l.includes('Utilities')));
+    });
+
+    it('shows an invalid-option message and keeps looping for non-numeric input', async () => {
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const { rl, logCalls } = await driveMenu(['abc', '', exitOption]);
+      assert.strictEqual(rl.calls.close, 1);
+      assert.ok(
+        logCalls.some(l => l.includes('Invalid option. Please try again.')),
+        'should print invalid-option message'
+      );
+    });
+
+    it('rejects out-of-range options and keeps looping', async () => {
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const { rl, logCalls } = await driveMenu(['99', '', exitOption]);
+      assert.strictEqual(rl.calls.close, 1);
+      assert.ok(logCalls.some(l => l.includes('Invalid option. Please try again.')));
+    });
+
+    it('returns to the main menu when Back is selected inside a category', async () => {
+      const firstCategoryItems = mod.SCRIPTS[Object.keys(mod.SCRIPTS)[0]];
+      const backOption = String(firstCategoryItems.length + 1);
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const { rl, logCalls } = await driveMenu(['1', backOption, exitOption]);
+      assert.strictEqual(rl.calls.close, 1);
+      assert.ok(logCalls.some(l => l.includes(firstCategoryItems[0].label)));
+      assert.ok(logCalls.some(l => l.includes('Back to main menu')));
+    });
+
+    it('retries the item picker on an invalid item choice', async () => {
+      const firstCategoryItems = mod.SCRIPTS[Object.keys(mod.SCRIPTS)[0]];
+      const backOption = String(firstCategoryItems.length + 1);
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const { rl, logCalls } = await driveMenu(['1', 'xyz', '', backOption, exitOption]);
+      assert.strictEqual(rl.calls.close, 1);
+      assert.ok(
+        logCalls.some(l => l.includes('Invalid option. Please try again.')),
+        'item picker should report invalid input'
+      );
+    });
+
+    it('runs the selected command then returns to the category menu', async () => {
+      const firstCategoryItems = mod.SCRIPTS[Object.keys(mod.SCRIPTS)[0]];
+      const backOption = String(firstCategoryItems.length + 1);
+      const exitOption = String(Object.keys(mod.SCRIPTS).length + 1);
+      const { rl, logCalls } = await driveMenu(['1', '1', '', backOption, exitOption]);
+      assert.strictEqual(rl.calls.close, 1);
+      const label = firstCategoryItems[0].label;
+      assert.ok(logCalls.some(l => l.includes(`Running: ${label}`)));
+      assert.ok(logCalls.some(l => l.includes(`✓ ${label} completed successfully.`)));
+    });
+
+    it('logs the error and terminates when the menu loop throws', async () => {
+      let threw = false;
+      try {
+        await driveMenu([], { throwOnQuestion: true });
+      } catch (err) {
+        threw = true;
+        assert.match(String(err.message), /PROCESS_EXIT:1/);
+      }
+      assert.ok(threw, 'expected main() to terminate with PROCESS_EXIT:1');
     });
   });
 
