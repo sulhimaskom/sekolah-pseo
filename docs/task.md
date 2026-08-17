@@ -2,6 +2,51 @@
 
 ## Completed Tasks
 
+### [TASK-086] Code Sanitization — Test Coverage for `interactive.js` `pickFromList` (TASK-061)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Resolved the last open backlog item (TASK-061, previously Partial): `pickFromList()` — the interactive list picker in `scripts/interactive.js` (lines 138-164, the largest untested block) — had zero test coverage. Health check confirmed build PASS, ESLint 0 errors, and the full JS suite green (1131 tests, 0 fail) before starting.
+
+### Changes Made
+
+**1. `scripts/interactive.test.js` — `mockReadline()` helper + 7 new tests:**
+
+- `mockReadline(answers)` — minimal mock `readline.Interface` whose `question()` resolves answers sequentially per call, enabling multi-turn retry-flow tests without a real TTY.
+- `pickFromList` suite (6 tests): valid numeric choice → 0-based index; back option (`items.length + 1`) → `-1`; non-numeric → `-2`; out-of-range → `-2`; below-range (`'0'`) → `-2`; prints title/numbered items/descriptions/back option; retry flow consumes one answer per call.
+- `pressEnter` suite — considered and rejected during implementation: `pressEnter` is an internal helper not in `module.exports`; untestable via the public API without a PTY harness.
+
+**2. Remaining uncovered lines (intentional):** `pressEnter` (191-193), `mainMenu` (199-253), TTY branch of `main()` (330-342) — internal interactive TTY loop, requires a real `readline` session over stdin; not unit-testable without a PTY harness. Out of scope.
+
+### Verification
+
+| Check                     | Result                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `interactive.js` coverage | Lines 71.76% → **79.54%**; branches 90% → **92.86%**; functions 66.67% → **77.78%** |
+| `pickFromList`            | 100% covered (lines 138-164)                                                        |
+| JS Tests (full suite)     | 1138 total, 1134 pass, **0 fail**, 4 skipped (+7 new)                               |
+| ESLint / Prettier         | 0 errors / clean                                                                    |
+| Zero regressions          | Confirmed                                                                           |
+
+### Files Modified
+
+- `scripts/interactive.test.js` — `mockReadline()` helper + `pickFromList` suite (7 new tests)
+- `docs/task.md` — This entry; backlog TASK-061 marked Complete
+
+### Acceptance Criteria
+
+- [x] Build passes, lint 0 errors, full test suite green (checked before and after)
+- [x] All six exported `interactive.js` functions exercised by tests
+- [x] `pickFromList` valid/invalid/back/below-range/print/retry paths covered (100%)
+- [x] No test noise from real subprocess spawns added (existing `runCommand` tests untouched)
+- [x] Backlog TASK-061 marked Complete
+- [x] Zero regressions
+
+---
+
 ### [TASK-085] Architecture — Shared Pre-Escaped Translations Module (shared/translations.js, REFACTOR-009)
 
 **Status**: Complete
@@ -6625,13 +6670,13 @@ Replace the three call sites:
 
 ### [TASK-061] Add test coverage for `interactive.js` exported functions
 
-**Status**: Partial (interactive.test.js exists — 19 tests; `pickFromList` and `runCommand` remain untested)
+**Status**: Complete (TASK-086)
 **Priority**: Medium
 **Effort**: Medium
 
 ### Description
 
-`scripts/interactive.js` (347 lines, 6 exported functions) has **zero test coverage**. The module exports:
+`scripts/interactive.js` (347 lines, 6 exported functions) had **incomplete test coverage**. The module exports:
 
 - `SCRIPTS` — static command registry
 - `runCommand(cmd, label)` — shell command executor
@@ -6640,29 +6685,47 @@ Replace the three call sites:
 - `printFlatList()` — flat JSON output
 - `printHelp()` — help text printer
 
-These are pure/deterministic functions (except `runCommand` and `pickFromList`) that are straightforward to test.
+`interactive.test.js` covered `SCRIPTS`, `printListAsJson`, `printFlatList`, `printHelp`, and `runCommand` (real-subprocess success/failure), but `pickFromList` — the interactive list picker — was **completely untested** (interactive.js lines 138-164, the largest untested block).
 
-### Suggestion
+### Changes Made
 
-Add test file `scripts/interactive.test.js` with coverage for:
+**1. `scripts/interactive.test.js` — added a `mockReadline()` helper + 7 new tests:**
 
-1. **SCRIPTS structure**: Verify data shape (5 categories, correct item structure)
-2. **printListAsJson()**: Verify outputs valid JSON matching SCRIPTS structure
-3. **printFlatList()**: Verify flat array with category+label+desc+cmd for each entry
-4. **printHelp()**: Verify outputs help text with key sections
-5. **pickFromList()**: Verify input parsing (valid choice → index, invalid → -2, back → -1)
-6. **runCommand()**: Command execution and error handling
+- `mockReadline(answers)` — minimal mock `readline.Interface` whose `question()` resolves answers sequentially per call (supports multi-turn retry flows); self-documenting, no comments needed.
+- `pickFromList` suite (6 tests):
+  - returns 0-based index for a valid numeric choice (`'2'` → `1`)
+  - returns `-1` when the back option (`items.length + 1`) is selected
+  - returns `-2` for non-numeric input (`'abc'`)
+  - returns `-2` for out-of-range input (`items.length + 2`)
+  - returns `-2` for input below the valid range (`'0'`)
+  - prints the title, numbered items with descriptions, and back option (captures `console.log`)
+  - consumes one answer per call for the retry flow (`'bad'` → `-2`, then `'3'` → `2`)
+- `pressEnter` suite (1 test): resolves after the user presses enter — **removed** during implementation because `pressEnter` is not part of `module.exports` (internal helper); the `pickFromList`/`mainMenu` coverage gap it would have addressed is not reachable via the public API.
 
-### Files
-
-- `scripts/interactive.test.js` (new)
-- `scripts/interactive.js` (export/import adjustments if needed)
+**2. Uncovered lines remaining (intentional):** `pressEnter` (191-193), `mainMenu` (199-253), and the TTY branch of `main()` (330-342) require a real interactive TTY session (`readline.createInterface` over stdin) — they are internal, not exported, and not unit-testable without a PTY harness. Out of scope for this task.
 
 ### Verification
 
-- All new tests pass
-- Existing tests unaffected
-- Zero regressions
+| Check                     | Result                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `interactive.js` coverage | Lines 71.76% → **79.54%**; branches 90% → **92.86%**; functions 66.67% → **77.78%** |
+| `pickFromList`            | 100% covered (lines 138-164)                                                        |
+| JS Tests (full suite)     | 1138 total, 1134 pass, **0 fail**, 4 skipped (+7 new)                               |
+| ESLint                    | 0 errors (all changed files)                                                        |
+| Prettier                  | Clean on all changed files                                                          |
+| Zero regressions          | Confirmed                                                                           |
+
+### Files Modified
+
+- `scripts/interactive.test.js` — `mockReadline()` helper; `pickFromList` suite (7 tests)
+- `docs/task.md` — This entry; TASK-061 marked Complete
+
+### Acceptance Criteria
+
+- [x] All six exported functions exercised by tests (`pickFromList` now included)
+- [x] `pickFromList` valid/invalid/back/below-range/print/retry paths covered
+- [x] 1134 JS tests pass (0 fail), ESLint + Prettier clean
+- [x] Zero regressions
 
 ---
 

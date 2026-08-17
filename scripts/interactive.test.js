@@ -3,6 +3,17 @@
 const { describe, it, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
+function mockReadline(answers = []) {
+  let callCount = 0;
+  return {
+    async question() {
+      const answer = answers[callCount] ?? '';
+      callCount += 1;
+      return answer;
+    },
+  };
+}
+
 // Save originals
 const originalIsTTY = process.stdin.isTTY;
 const originalArgv = process.argv;
@@ -181,6 +192,73 @@ describe('interactive CLI', () => {
     it('returns false on failure', () => {
       const result = mod.runCommand('nonexistent-command-xyz-12345', 'bad command');
       assert.strictEqual(result, false);
+    });
+  });
+
+  describe('pickFromList', () => {
+    const items = [
+      { label: 'First', desc: 'first description' },
+      { label: 'Second' },
+      { label: 'Third', desc: 'third description' },
+    ];
+
+    it('returns 0-based index for a valid numeric choice', async () => {
+      const rl = mockReadline(['2']);
+      const result = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(result, 1);
+    });
+
+    it('returns -1 when the back option is selected', async () => {
+      const rl = mockReadline([String(items.length + 1)]);
+      const result = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(result, -1);
+    });
+
+    it('returns -2 for non-numeric input', async () => {
+      const rl = mockReadline(['abc']);
+      const result = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(result, -2);
+    });
+
+    it('returns -2 for out-of-range input', async () => {
+      const rl = mockReadline([String(items.length + 2)]);
+      const result = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(result, -2);
+    });
+
+    it('returns -2 for input below the valid range', async () => {
+      const rl = mockReadline(['0']);
+      const result = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(result, -2);
+    });
+
+    it('prints the title, numbered items with descriptions, and back option', async () => {
+      let captured = '';
+      const originalLog = console.log;
+      console.log = (...chunks) => {
+        captured += chunks.join(' ') + '\n';
+      };
+      try {
+        const rl = mockReadline(['1']);
+        await mod.pickFromList('Test Menu', items, rl);
+      } finally {
+        console.log = originalLog;
+      }
+      assert.ok(captured.includes('Test Menu'));
+      assert.ok(captured.includes(' 1. First'));
+      assert.ok(captured.includes('     first description'));
+      assert.ok(captured.includes(' 2. Second'));
+      assert.ok(captured.includes(' 3. Third'));
+      assert.ok(captured.includes('     third description'));
+      assert.ok(captured.includes('Back to main menu'));
+    });
+
+    it('consumes one answer per call for retry flow', async () => {
+      const rl = mockReadline(['bad', '3']);
+      const first = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(first, -2);
+      const second = await mod.pickFromList('Test Menu', items, rl);
+      assert.strictEqual(second, 2);
     });
   });
 
