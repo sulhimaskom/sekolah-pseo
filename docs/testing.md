@@ -75,6 +75,7 @@ Located in `scripts/*.test.js`:
 - `back-to-top.test.js` - Back-to-top button component tests
 - `build-orchestrator.test.js` - Build pipeline orchestration tests
 - `etl-run.test.js` - ETL end-to-end run tests
+- `check-workflow-security.test.js` - Workflow security regression gate tests
 
 ### Shared Test Helpers
 
@@ -229,9 +230,9 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 36 test files, 1238 test cases (1234 pass, 0 fail, 4 skipped)
+- JavaScript: 37 test files, 1270 test cases (1266 pass, 0 fail, 4 skipped)
 - Python: 27 test cases (standalone runner) / 13 test cases (pytest)
-- Total: 1265 test cases, 1261 passed, 0 failed, 4 skipped
+- Total: 1297 test cases, 1293 passed, 0 failed, 4 skipped
 
 ## Test Output Examples
 

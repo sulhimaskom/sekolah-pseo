@@ -2,6 +2,62 @@
 
 ## Completed Tasks
 
+### [TASK-095] Critical Path Testing — Workflow Security Gate Coverage (check-workflow-security.js)
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+`scripts/check-workflow-security.js` — the CI/pre-commit security regression gate behind the 12 documented audit cycles (F037/F067, SECURITY_AUDIT_NOTE.md) — had **zero test coverage**. Root cause of the gap: unlike every other script in `scripts/`, it invoked `run()` at module load and called `process.exit()` internally, so `require()`-ing it in a test would terminate the test process. The script was untestable by construction.
+
+### Changes Made
+
+1. **`scripts/check-workflow-security.js`** — testability refactor (CLI behavior byte-identical, verified by diffing `--json` output + exit codes before/after):
+   - `findWorkflowFiles(dir = WORKFLOW_DIR)` — directory parametrized for temp-fixture testing.
+   - `run(options = {})` — accepts `{ dir, json }` test seam (defaults preserve `--json` argv detection) and **returns** the exit code instead of calling `process.exit()` internally.
+   - Added `module.exports` (`RULES`, `ALLOWED_OVERRIDES`, `WORKFLOW_DIR`, `findWorkflowFiles`, `checkFile`, `run`) and `if (require.main === module) { process.exit(run()); }` — the standard pattern used by `check-freshness.js`, `data-quality.js`, `sitemap.js`.
+2. **`scripts/check-workflow-security.test.js`** (new, 32 tests) — covers:
+   - All 5 rules happy + sad paths: `DUPLICATE_API_KEY` (same-secret violation, distinct-secret pass, word-boundary safety vs `GEMINI_API_KEY`), `ID_TOKEN_WRITE` (violation + line number, `on-pull.yml` override pass), `ACTIONS_WRITE_NON_MERGE` (violation + line, override pass), `GH_TOKEN_INSTEAD_OF_GITHUB_TOKEN` (occurrence count), `CHECKOUT_TOKEN_DISCREPANCY` (documented no-op).
+   - `checkFile`: clean file → 0 violations; single/multi-rule violation collection with metadata; **throwing rule → ERROR-severity violation instead of crash** (exception-safety contract).
+   - `findWorkflowFiles`: temp-dir fixtures (.yml/.yaml picked, other extensions ignored), empty dir → `[]`, missing dir → exit 1 via child process, default dir contract.
+   - `run`: JSON report shape (passed/totalFiles/totalViolations/violations/checkedAt), exit codes 0/1 for clean/dirty, human-output banner + violation listing.
+   - CLI contract: `--json` smoke test asserting `exitCode === (passed ? 0 : 1)` against the real workflows (which carry the documented 12 baseline violations).
+3. **`docs/testing.md`** — added the new test-file entry; coverage block updated to 37 files / 1270 cases (1266 pass, 0 fail, 4 skipped) + Python 27 standalone / 13 pytest.
+4. **`docs/task.md`** — this entry.
+
+### Verification
+
+| Check                      | Result                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| New test file              | 32 tests, 0 fail (node --test)                                                       |
+| Full JS suite (actual run) | 1270 tests, 1266 pass, 0 fail, 4 skipped (37 files)                                  |
+| Python suite (actual run)  | 27 pass standalone; 13 pass pytest                                                   |
+| Coverage gate              | PASS (97.40% lines / 93.71% branches vs 80/75 thresholds)                            |
+| ESLint                     | 0 errors on both changed files                                                       |
+| Prettier                   | clean on both changed files                                                          |
+| CLI parity                 | `--json` output + exit codes identical before/after refactor (diff = timestamp only) |
+| Mutation check             | Breaking the `ID_TOKEN_WRITE` regex → 5 tests fail; restore → 32 pass                |
+| Zero regressions           | No production logic changed; refactor is export/guard + parametrization only         |
+
+### Files Modified
+
+- `scripts/check-workflow-security.js` — testability refactor (guard, exports, parametrized `run`/`findWorkflowFiles`)
+- `scripts/check-workflow-security.test.js` — new: 32 tests covering all rules, checkFile, discovery, run, CLI contract
+- `docs/testing.md` — test-file list + coverage counts
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] Security gate critical path covered (every rule, both paths, overrides, exception path)
+- [x] All tests pass consistently (JS 1266 pass / Python 40 pass)
+- [x] Edge cases tested (missing dir, empty dir, line numbers, occurrence counts, word boundaries)
+- [x] Tests readable and maintainable (AAA, descriptive names, temp-fixture isolation, console mock)
+- [x] Breaking code causes test failure (mutation-verified: 5 tests fail on a broken regex)
+- [x] CLI contract unchanged (exit codes + JSON shape verified identical)
+
+---
+
 ### [TASK-094] Technical Writing — Doc-Code Alignment (README, api.md Module Tree, testing.md Counts)
 
 **Status**: Complete
