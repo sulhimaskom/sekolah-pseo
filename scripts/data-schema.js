@@ -125,7 +125,8 @@ const FIELDS = {
   updated_at: {
     type: 'string',
     required: false,
-    description: 'ISO date string of when the record was last updated',
+    pattern: /^\d{4}-\d{2}-\d{2}$/,
+    description: 'ISO date string of when the record was last updated (YYYY-MM-DD)',
     rawMappings: [],
   },
 };
@@ -278,16 +279,34 @@ function validateRecord(record) {
     }
   }
 
-  // Check optional categorical fields
+  // Check optional fields: categorical values, patterns, and coordinate bounds
   for (const fieldName of Object.keys(FIELDS)) {
     if (REQUIRED_FIELDS.includes(fieldName)) continue;
     const fieldDef = FIELDS[fieldName];
     const value = record[fieldName];
 
-    if (isNonEmpty(value) && fieldDef.allowedValues && !isValidCategoricalValue(fieldName, value)) {
+    if (!isNonEmpty(value)) continue;
+
+    // Categorical validation
+    if (fieldDef.allowedValues && !isValidCategoricalValue(fieldName, value)) {
       errors.push(
         `Field "${fieldName}" has invalid value "${value}"; allowed: ${fieldDef.allowedValues.join(', ')}`
       );
+    }
+
+    // Pattern validation (e.g., updated_at ISO date)
+    if (fieldDef.pattern && !matchesPattern(value, fieldDef.pattern)) {
+      errors.push(`Field "${fieldName}" value "${value}" does not match required pattern`);
+    }
+
+    // Coordinate integrity: non-empty, non-zero lat/lon must be within Indonesia bounds.
+    // Zero (or empty) means unset — treated as valid per zero-as-unset semantics.
+    if ((fieldName === 'lat' || fieldName === 'lon') && parseFloat(value) !== 0) {
+      if (!isValidCoordinate(value, fieldDef.min, fieldDef.max)) {
+        errors.push(
+          `Field "${fieldName}" value "${value}" outside Indonesia bounds [${fieldDef.min}, ${fieldDef.max}]`
+        );
+      }
     }
   }
 

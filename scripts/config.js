@@ -79,18 +79,14 @@ const CONFIG = {
     Math.max(1, parseInt(process.env.MAX_URLS_PER_SITEMAP) || 50000)
   ),
 
-  // Indonesia geographic bounds for coordinate validation
-  INDONESIA_BOUNDS: {
-    LAT_MIN: -11,
-    LAT_MAX: 6,
-    LON_MIN: 95,
-    LON_MAX: 141,
-  },
-
   // Rate limiter defaults
   RATE_LIMITER_DEFAULTS: {
     MAX_CONCURRENT: 100,
-    RATE_LIMIT_MS: 10,
+    // Minimum spacing (ms) between task starts. 0 = pacing disabled (default).
+    // Pacing is opt-in: bulk local operations (build, validate-links) must NOT
+    // be paced, while external-service integrations (e.g. Wikipedia API) opt in
+    // with an explicit rateLimitMs to respect upstream rate limits.
+    RATE_LIMIT_MS: 0,
     QUEUE_TIMEOUT_MS: 30000,
   },
 

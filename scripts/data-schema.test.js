@@ -259,6 +259,147 @@ test('validateRecord handles null/undefined record', () => {
   assert.deepStrictEqual(SCHEMA.validateRecord([]), ['Record must be a non-null object']);
 });
 
+test('validateRecord accepts valid ISO updated_at', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    updated_at: '2026-07-20',
+  };
+  assert.deepStrictEqual(SCHEMA.validateRecord(record), []);
+});
+
+test('validateRecord rejects malformed updated_at', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    updated_at: '20/07/2026',
+  };
+  const errors = SCHEMA.validateRecord(record);
+  assert.ok(errors.length > 0, 'Expected errors for malformed updated_at');
+  assert.ok(
+    errors.some(e => e.includes('updated_at')),
+    'Expected updated_at error'
+  );
+});
+
+test('validateRecord accepts empty updated_at (optional)', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    updated_at: '',
+  };
+  assert.deepStrictEqual(SCHEMA.validateRecord(record), []);
+});
+
+test('validateRecord rejects out-of-bounds latitude', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    lat: '50',
+    lon: '106.8456',
+  };
+  const errors = SCHEMA.validateRecord(record);
+  assert.ok(errors.length > 0, 'Expected errors for out-of-bounds latitude');
+  assert.ok(
+    errors.some(e => e.includes('lat')),
+    'Expected lat error'
+  );
+});
+
+test('validateRecord rejects out-of-bounds longitude', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    lat: '-6.2088',
+    lon: '200',
+  };
+  const errors = SCHEMA.validateRecord(record);
+  assert.ok(errors.length > 0, 'Expected errors for out-of-bounds longitude');
+  assert.ok(
+    errors.some(e => e.includes('lon')),
+    'Expected lon error'
+  );
+});
+
+test('validateRecord rejects non-numeric coordinates', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    lat: 'abc',
+    lon: '106.8456',
+  };
+  const errors = SCHEMA.validateRecord(record);
+  assert.ok(errors.length > 0, 'Expected errors for non-numeric latitude');
+  assert.ok(
+    errors.some(e => e.includes('lat')),
+    'Expected lat error'
+  );
+});
+
+test('validateRecord accepts zero coordinates (zero = unset)', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    lat: '0',
+    lon: '0',
+  };
+  assert.deepStrictEqual(SCHEMA.validateRecord(record), []);
+});
+
+test('validateRecord accepts missing coordinates (optional)', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+  };
+  assert.deepStrictEqual(SCHEMA.validateRecord(record), []);
+});
+
+test('validateRecord accepts in-bounds coordinates', () => {
+  const record = {
+    npsn: '12345',
+    nama: 'Test School',
+    bentuk_pendidikan: 'SD',
+    provinsi: 'Provinsi Test',
+    kab_kota: 'Kabupaten Test',
+    kecamatan: 'Kecamatan Test',
+    lat: '-6.2088',
+    lon: '106.8456',
+  };
+  assert.deepStrictEqual(SCHEMA.validateRecord(record), []);
+});
+
 // ── validateCoordinates ─────────────────────────────────────────────────────
 
 test('validateCoordinates returns valid for Indonesia coordinates', () => {

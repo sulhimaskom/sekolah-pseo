@@ -308,7 +308,7 @@ isValidCategoricalValue('nama', 'SMA Negeri 1'); // true (free-text field)
 
 #### `validateRecord(record)`
 
-Validates a normalized school record against the schema. Checks required fields, regex patterns, and categorical values.
+Validates a normalized school record against the schema. Checks required fields, regex patterns, categorical values, optional-field patterns (e.g., `updated_at` ISO date), and coordinate bounds (non-empty, non-zero `lat`/`lon` within Indonesia bounds — zero or empty coordinates pass as unset).
 
 **Parameters:**
 
@@ -322,6 +322,8 @@ Validates a normalized school record against the schema. Checks required fields,
 - Missing required fields → returns descriptive error per field
 - Pattern violations → returns format-specific message
 - Invalid categorical values → returns allowed values in message
+- Out-of-bounds/non-numeric coordinates → returns bounds range in message
+- Malformed `updated_at` → returns pattern message (must match `YYYY-MM-DD`)
 
 **Usage:**
 
@@ -582,6 +584,7 @@ Recursively walks a directory tree and processes each HTML file with a callback.
 **Behavior:**
 
 - Recursively traverses directory tree
+- Processes directory entries concurrently (parallel `safeReaddir`/`safeStat` and parallel subdirectory recursion); result order matches the sequential traversal order (depth-first, readdir order)
 - Filters for `.html` files only
 - Passes full path, relative path, entry name, and stat to callback
 - Collects non-undefined callback results
@@ -1471,7 +1474,7 @@ new RateLimiter(options);
 **Options:**
 
 - `maxConcurrent` (number, optional): Maximum concurrent operations (default: 100)
-- `rateLimitMs` (number, optional): Rate limit in milliseconds (default: 10, reserved for future use)
+- `rateLimitMs` (number, optional): Minimum spacing between task starts in ms (default: `0` = pacing disabled). When > 0, the limiter enforces a global start rate of at most 1 task per `rateLimitMs` — use for external-service integrations that must respect upstream rate limits (e.g. Wikipedia API).
 - `queueTimeoutMs` (number, optional): Queue timeout for operations (default: 30000)
 
 **Methods:**
@@ -1494,6 +1497,7 @@ Executes function with rate limiting and backpressure.
 **Behavior:**
 
 - Executes up to `maxConcurrent` operations simultaneously
+- When `rateLimitMs` > 0, enforces a global start rate of 1 task per `rateLimitMs` (pacing), serialized through a start-gate promise chain
 - Queues additional operations when limit reached
 - Rejects queued operations after `queueTimeoutMs`
 - Tracks metrics for all operations
@@ -1743,26 +1747,29 @@ const normalized = normaliseRecord({
 
 #### `validateRecord(record)`
 
-Validates normalized record meets required criteria.
+Validates normalized record against the centralized schema (`data-schema.js`). Delegates to `SCHEMA.validateRecord()` — the ETL boundary enforces the exact same constraints as every other consumer (single source of truth).
 
 **Parameters:**
 
 - `record` (Object): Normalized record
 
-**Returns:** `boolean` - `true` if valid
+**Returns:** `boolean` - `true` if the schema reports zero errors
 
 **Throws:** N/A (returns `false` for invalid input)
 
 **Validation Rules:**
 
 - Record must be an object
-- `npsn` field must exist
+- Required fields (`npsn`, `nama`, `bentuk_pendidikan`, `provinsi`, `kab_kota`, `kecamatan`) must be non-empty
 - `npsn` must be numeric (`^\d+$`)
+- Categorical values (`status`, `bentuk_pendidikan`) must be in the allowed lists
+- Non-empty, non-zero `lat`/`lon` must be within Indonesia bounds (zero/empty = unset, valid)
+- `updated_at` must match `YYYY-MM-DD` when present
 
 **Usage:**
 
 ```javascript
-validateRecord({ npsn: '12345678', nama: 'School' }); // true
+validateRecord({ npsn: '12345678', nama: 'School' }); // false (missing required fields)
 validateRecord({ npsn: 'abc', nama: 'School' }); // false (not numeric)
 validateRecord({ nama: 'School' }); // false (missing npsn)
 validateRecord(null); // false
@@ -1772,7 +1779,7 @@ validateRecord(null); // false
 
 #### `validateLatLon(lat, lon)`
 
-Validates latitude and longitude coordinates for Indonesia geographic bounds.
+Validates latitude and longitude coordinates for Indonesia geographic bounds. Delegates to `SCHEMA.isValidCoordinate()` using `SCHEMA.INDONESIA_BOUNDS` (single source of truth).
 
 **Parameters:**
 
@@ -1785,13 +1792,13 @@ Validates latitude and longitude coordinates for Indonesia geographic bounds.
 
 - Latitude: -11 to 6 (Indonesia bounds)
 - Longitude: 95 to 141 (Indonesia bounds)
-- Returns `false` for empty, null, or non-numeric values
+- Returns `false` for empty, `'0'` (unset), null, or non-numeric values
 
 **Usage:**
 
 ```javascript
 validateLatLon('-6.2088', '106.8456'); // true (Jakarta)
-validateLatLon('0', '0'); // false (outside Indonesia bounds)
+validateLatLon('0', '0'); // false (zero = unset)
 validateLatLon('', ''); // false (empty)
 ```
 
@@ -1887,7 +1894,11 @@ module.exports = {
   getUniqueDirectories: function,
   getUniqueProvinces: function,
   buildProvincePageData: function,
+  buildKabupatenPageData: function,
+  buildKecamatanPageData: function,
   groupSchoolsByProvince: function,
+  groupSchoolsByKabupaten: function,
+  groupSchoolsByKecamatan: function,
   prepareSchoolDataForSearch: function,
 };
 ```
@@ -2123,6 +2134,179 @@ const jakartaSchools = grouped.get('DKI Jakarta'); // Array of schools in Jakart
 
 ---
 
+#### `buildKabupatenPageData(provinceName, kabupatenName, schools, skipFilter)`
+
+Builds kabupaten page data with path and HTML content.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province/kabupaten when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, passes through to `generateKabupatenPageHtml` to skip internal filtering. Defaults to `false` for backward compatibility.
+
+**Returns:** `Object`
+
+```javascript
+{
+  relativePath: string,  // File path relative to DIST_DIR
+  content: string        // HTML content
+}
+```
+
+**Throws:**
+
+- `Error` if `provinceName` is not a string
+- `Error` if `kabupatenName` is not a string
+- `Error` if `schools` is not an array
+
+**Path Format:** `provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/index.html`
+
+**Dependencies:**
+
+- `slugify` (from `scripts/slugify.js`)
+- `generateKabupatenPageHtml` (from `src/presenters/templates/kabupaten-page.js`)
+
+**Usage:**
+
+```javascript
+// Default: pass all schools, internal filtering applied
+const pageData = buildKabupatenPageData('DKI Jakarta', 'Jakarta Pusat', schools);
+
+// Optimized: pass pre-filtered schools via groupSchoolsByKabupaten
+const grouped = groupSchoolsByKabupaten(schools);
+const pageData2 = buildKabupatenPageData(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat'),
+  true
+);
+```
+
+---
+
+#### `buildKecamatanPageData(provinceName, kabupatenName, kecamatanName, schools, skipFilter)`
+
+Builds kecamatan page data with path and HTML content.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name
+- `kecamatanName` (string): Kecamatan name
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this full location when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, passes through to `generateKecamatanPageHtml` to skip internal filtering. Defaults to `false` for backward compatibility.
+
+**Returns:** `Object`
+
+```javascript
+{
+  relativePath: string,  // File path relative to DIST_DIR
+  content: string        // HTML content
+}
+```
+
+**Throws:**
+
+- `Error` if `provinceName` is not a string
+- `Error` if `kabupatenName` is not a string
+- `Error` if `kecamatanName` is not a string
+- `Error` if `schools` is not an array
+
+**Path Format:** `provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/kecamatan/{kecamatanSlug}/index.html`
+
+**Dependencies:**
+
+- `slugify` (from `scripts/slugify.js`)
+- `generateKecamatanPageHtml` (from `src/presenters/templates/kecamatan-page.js`)
+
+**Usage:**
+
+```javascript
+// Default: pass all schools, internal filtering applied
+const pageData = buildKecamatanPageData('DKI Jakarta', 'Jakarta Pusat', 'Gambir', schools);
+
+// Optimized: pass pre-filtered schools via groupSchoolsByKecamatan
+const grouped = groupSchoolsByKecamatan(schools);
+const pageData2 = buildKecamatanPageData(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  'Gambir',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'),
+  true
+);
+```
+
+---
+
+#### `groupSchoolsByKabupaten(schools)`
+
+Groups all schools by province and kabupaten in a single O(n) pass. Used to eliminate O(n×p) filtering during kabupaten page generation.
+
+**Parameters:**
+
+- `schools` (Object[]): Array of school data objects
+
+**Returns:** `Map<string, Array>` - Map keyed by `province\0kabupaten` (NUL-joined composite key), each value is array of schools in that province/kabupaten
+
+**Throws:**
+
+- `Error` if `schools` is not an array
+
+**Dependencies:**
+
+- None (standalone utility function)
+
+**Usage:**
+
+```javascript
+const grouped = groupSchoolsByKabupaten(schools);
+// Returns Map:
+// {
+//   'DKI Jakarta\u0000Jakarta Pusat' => [school1, school2, ...],
+//   'Jawa Barat\u0000Bandung' => [school3, school4, ...],
+// }
+const jakartaPusatSchools = grouped.get('DKI Jakarta\u0000Jakarta Pusat'); // Array of schools
+```
+
+**Performance:** Single pass O(n) — processes the entire schools array once. Kabupaten pages can then receive pre-filtered arrays with `skipFilter=true` to avoid redundant filtering.
+
+---
+
+#### `groupSchoolsByKecamatan(schools)`
+
+Groups all schools by province, kabupaten, and kecamatan in a single O(n) pass. Used to eliminate O(n×p) filtering during kecamatan page generation.
+
+**Parameters:**
+
+- `schools` (Object[]): Array of school data objects
+
+**Returns:** `Map<string, Array>` - Map keyed by `province\0kabupaten\0kecamatan` (NUL-joined composite key), each value is array of schools in that full location
+
+**Throws:**
+
+- `Error` if `schools` is not an array
+
+**Dependencies:**
+
+- None (standalone utility function)
+
+**Usage:**
+
+```javascript
+const grouped = groupSchoolsByKecamatan(schools);
+// Returns Map:
+// {
+//   'DKI Jakarta\u0000Jakarta Pusat\u0000Gambir' => [school1, school2, ...],
+//   'Jawa Barat\u0000Bandung\u0000Coblong' => [school3, school4, ...],
+// }
+const gambirSchools = grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'); // Array of schools
+```
+
+**Performance:** Single pass O(n) — processes the entire schools array once. Kecamatan pages can then receive pre-filtered arrays with `skipFilter=true` to avoid redundant filtering.
+
+---
+
 #### `prepareSchoolDataForSearch(schools)`
 
 Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size. The field order is defined by `SEARCH_DATA_FIELDS` (single source of truth in `scripts/data-schema.js`) — the same constant is embedded into the homepage's generated client script, so server and client stay in sync automatically.
@@ -2190,6 +2374,8 @@ module.exports = {
   preCreateDirectories: function,
   preCreateProvinceDirectories: function,
   generateProvincePages: function,
+  generateKabupatenPages: function,
+  generateKecamatanPages: function,
   generateRobotsTxt: function,
   generateExternalStyles: function,
   // Re-exported from SearchDataService / ExportService (see sections below)
@@ -2395,6 +2581,68 @@ Generates all province-level index pages using O(n) province pre-grouping to avo
 
 ```javascript
 const { successful, failed } = await generateProvincePages(schools);
+```
+
+---
+
+#### `generateKabupatenPages(schools)`
+
+Generates all kabupaten/kota-level index pages using O(n) pre-grouping to avoid redundant per-kabupaten filtering.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Promise<Object>` — `{ successful: number, failed: number }`
+
+**Process:**
+
+1. Groups schools by `provinsi` + `kab_kota` in a single O(n) pass
+2. Derives the kabupaten list from the grouped Map
+3. Pre-creates kabupaten directories (recursive `fastMkdir` — safe when running concurrently with school-page directory creation)
+4. Generates kabupaten pages concurrently using `processInBatches` with `skipFilter=true`
+
+**Dependencies:**
+
+- `groupSchoolsByKabupaten`, `buildKabupatenPageData` (from `./PageBuilder.js`)
+- `slugify` (from `scripts/slugify.js`)
+- `fastMkdir`, `fastWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await generateKabupatenPages(schools);
+```
+
+---
+
+#### `generateKecamatanPages(schools)`
+
+Generates all kecamatan-level index pages using O(n) pre-grouping to avoid redundant per-kecamatan filtering.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Promise<Object>` — `{ successful: number, failed: number }`
+
+**Process:**
+
+1. Groups schools by `provinsi` + `kab_kota` + `kecamatan` in a single O(n) pass
+2. Derives the kecamatan list from the grouped Map
+3. Pre-creates kecamatan directories (recursive `fastMkdir` — safe when running concurrently with school-page directory creation)
+4. Generates kecamatan pages concurrently using `processInBatches` with `skipFilter=true`
+
+**Dependencies:**
+
+- `groupSchoolsByKecamatan`, `buildKecamatanPageData` (from `./PageBuilder.js`)
+- `slugify` (from `scripts/slugify.js`)
+- `fastMkdir`, `fastWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await generateKecamatanPages(schools);
 ```
 
 ---
@@ -2961,6 +3209,254 @@ Province pages are generated at:
 ```
 
 Example: `/provinsi/dki-jakarta/index.html`
+
+---
+
+## Kabupaten Page Template Module (`src/presenters/templates/kabupaten-page.js`)
+
+### Purpose
+
+Presentation layer for kabupaten/kota-level page HTML generation with kecamatan navigation. Restores the previously-broken Province → Kabupaten → Kecamatan → School navigation hierarchy (TASK-092).
+
+### Exports
+
+```javascript
+module.exports = {
+  generateKabupatenPageHtml: function,
+  filterSchoolsByProvinceAndKabupaten: function,
+  aggregateByKecamatan: function,
+};
+```
+
+### Functions
+
+#### `generateKabupatenPageHtml(provinceName, kabupatenName, schools, skipFilter)`
+
+Generates complete HTML page for a specific kabupaten/kota with kecamatan navigation.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name to generate page for
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province/kabupaten when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, skips internal `filterSchoolsByProvinceAndKabupaten` call (schools array is assumed to be pre-filtered). Defaults to `false` for backward compatibility.
+
+**Returns:** `string` - Complete HTML document
+
+**Features:**
+
+- Lists all kecamatan in the kabupaten/kota
+- Shows school count per kecamatan
+- Breadcrumb navigation (Home → Province → Kabupaten)
+- Responsive design with mobile support
+- Back-to-top button
+
+**Usage:**
+
+```javascript
+const { generateKabupatenPageHtml } = require('./templates/kabupaten-page');
+
+// Default: pass all schools, function filters internally
+const html = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', schools);
+
+// Optimized: pass pre-filtered schools, skip redundant filtering
+const grouped = groupSchoolsByKabupaten(schools);
+const html2 = generateKabupatenPageHtml(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat'),
+  true
+);
+```
+
+---
+
+#### `filterSchoolsByProvinceAndKabupaten(schools, provinceName, kabupatenName)`
+
+Filters schools by province and kabupaten/kota name.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+- `provinceName` (string): Province name to filter by
+- `kabupatenName` (string): Kabupaten/kota name to filter by
+
+**Returns:** `Array<Object>` - Filtered schools for the province/kabupaten
+
+**Exact Match:** Uses strict equality (`===`) for both matching.
+
+**Usage:**
+
+```javascript
+const { filterSchoolsByProvinceAndKabupaten } = require('./templates/kabupaten-page');
+const jakartaPusatSchools = filterSchoolsByProvinceAndKabupaten(
+  schools,
+  'DKI Jakarta',
+  'Jakarta Pusat'
+);
+console.log(`Found ${jakartaPusatSchools.length} schools`);
+```
+
+---
+
+#### `aggregateByKecamatan(schools)`
+
+Aggregates school data by kecamatan within a kabupaten/kota.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects (should be filtered by province and kabupaten)
+
+**Returns:** `Array<Object>` - Array of kecamatan objects with school count
+
+```javascript
+[
+  { name: 'Gambir', slug: 'gambir', count: 12 },
+  { name: 'Menteng', slug: 'menteng', count: 8 },
+];
+```
+
+**Sorting:** Kecamatan are sorted alphabetically by Indonesian locale.
+
+**Usage:**
+
+```javascript
+const { aggregateByKecamatan } = require('./templates/kabupaten-page');
+const kecamatans = aggregateByKecamatan(jakartaPusatSchools);
+kecamatans.forEach(k => console.log(`${k.name}: ${k.count}`));
+```
+
+---
+
+### Path Format
+
+Kabupaten pages are generated at:
+
+```
+/provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/index.html
+```
+
+Example: `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/index.html`
+
+---
+
+## Kecamatan Page Template Module (`src/presenters/templates/kecamatan-page.js`)
+
+### Purpose
+
+Presentation layer for kecamatan-level page HTML generation with direct school links. Restores the previously-broken Province → Kabupaten → Kecamatan → School navigation hierarchy (TASK-092).
+
+### Exports
+
+```javascript
+module.exports = {
+  generateKecamatanPageHtml: function,
+  filterSchoolsByLocation: function,
+  generateSchoolLinksHtml: function,
+};
+```
+
+### Functions
+
+#### `generateKecamatanPageHtml(provinceName, kabupatenName, kecamatanName, schools, skipFilter)`
+
+Generates complete HTML page for a specific kecamatan with school links.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name
+- `kecamatanName` (string): Kecamatan name to generate page for
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this full location when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, skips internal `filterSchoolsByLocation` call (schools array is assumed to be pre-filtered). Defaults to `false` for backward compatibility.
+
+**Returns:** `string` - Complete HTML document
+
+**Features:**
+
+- Lists all schools in the kecamatan with status/type badges
+- Breadcrumb navigation (Home → Province → Kabupaten → Kecamatan)
+- Responsive design with mobile support
+- Back-to-top button
+
+**Usage:**
+
+```javascript
+const { generateKecamatanPageHtml } = require('./templates/kecamatan-page');
+
+// Default: pass all schools, function filters internally
+const html = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir', schools);
+
+// Optimized: pass pre-filtered schools, skip redundant filtering
+const grouped = groupSchoolsByKecamatan(schools);
+const html2 = generateKecamatanPageHtml(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  'Gambir',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'),
+  true
+);
+```
+
+---
+
+#### `filterSchoolsByLocation(schools, provinceName, kabupatenName, kecamatanName)`
+
+Filters schools by full location (province, kabupaten, kecamatan).
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+- `provinceName` (string): Province name to filter by
+- `kabupatenName` (string): Kabupaten/kota name to filter by
+- `kecamatanName` (string): Kecamatan name to filter by
+
+**Returns:** `Array<Object>` - Filtered schools for the full location
+
+**Exact Match:** Uses strict equality (`===`) for all three matching.
+
+**Usage:**
+
+```javascript
+const { filterSchoolsByLocation } = require('./templates/kecamatan-page');
+const gambirSchools = filterSchoolsByLocation(schools, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir');
+console.log(`Found ${gambirSchools.length} schools`);
+```
+
+---
+
+#### `generateSchoolLinksHtml(schools, provinceSlug, kabupatenSlug)`
+
+Generates the school link list HTML for a kecamatan page.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects (pre-filtered to this kecamatan)
+- `provinceSlug` (string): URL slug of the province
+- `kabupatenSlug` (string): URL slug of the kabupaten/kota
+
+**Returns:** `string` - HTML list of school links with badges
+
+**Link Format:** `/provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/kecamatan/{kecamatanSlug}/{npsn}-{namaSlug}.html`
+
+**Usage:**
+
+```javascript
+const { generateSchoolLinksHtml } = require('./templates/kecamatan-page');
+const linksHtml = generateSchoolLinksHtml(gambirSchools, 'dki-jakarta', 'jakarta-pusat');
+```
+
+---
+
+### Path Format
+
+Kecamatan pages are generated at:
+
+```
+/provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/kecamatan/{kecamatanSlug}/index.html
+```
+
+Example: `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/index.html`
 
 ---
 
@@ -3854,7 +4350,9 @@ Crawls generated HTML files and validates internal hyperlinks to ensure they res
 module.exports = {
   extractLinks: function,
   validateLinksInFile: function,
-  validateLinks: function
+  validateLinks: function,
+  isRelativeLink: function,
+  statExistsCached: function
 };
 ```
 
@@ -3887,7 +4385,7 @@ const links = extractLinks(
 
 ---
 
-#### `validateLinksInFile(file, links, distDir)`
+#### `validateLinksInFile(file, links, distDir, statCache?)`
 
 Validates all links in a single file and returns broken links.
 
@@ -3896,6 +4394,10 @@ Validates all links in a single file and returns broken links.
 - `file` (string): Path to the HTML file
 - `links` (Array<string>): Array of link href values to validate
 - `distDir` (string): Base distribution directory for resolving absolute paths
+- `statCache` (Map, optional): Shared memoized target-existence cache. When
+  validating many files, pass one cache so identical targets across files are
+  stat'ed once per run instead of once per file. Defaults to a fresh cache per
+  call (unchanged direct-call behavior).
 
 **Returns:** `Promise<Array<Object>>` - Array of broken links
 
@@ -3930,6 +4432,33 @@ const broken = await validateLinksInFile(
   '/dist'
 );
 console.log(`Found ${broken.length} broken links`);
+```
+
+---
+
+#### `statExistsCached(cache, targetPath)`
+
+Memoized target-existence probe for link validation. Caches the promise (not
+the boolean) so concurrent in-flight probes of the same target are also
+deduplicated. Safe because the `dist/` tree is immutable during a validation
+run; the cache lives and dies with one `validateLinks()` call.
+
+At 5,014-page scale this reduces stat calls from ~15,067 to 27 unique targets
+(a 558x reduction), since every school page links to the same shared assets
+(`styles.css`, `favicon.svg`, `/`).
+
+**Parameters:**
+
+- `cache` (Map): `targetPath` → existence promise
+- `targetPath` (string): Absolute resolved target path
+
+**Returns:** `Promise<boolean>` - `true` if the target exists, `false` otherwise
+
+**Usage:**
+
+```javascript
+const statCache = new Map();
+const exists = await statExistsCached(statCache, '/dist/styles.css');
 ```
 
 ---
@@ -4864,7 +5393,7 @@ console.log('Manifest cleared - next build will be full');
 
 ### Purpose
 
-Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (dedicated circuit breaker, timeouts, retries for API calls).
+Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (dedicated circuit breaker, timeouts, retries, and rate limiting for API calls).
 
 ### Exports
 
@@ -4881,8 +5410,11 @@ module.exports = {
   buildWikipediaExtractUrl: function,
   fetchJson: function,
   wikipediaCircuitBreaker: CircuitBreaker,
+  wikipediaRateLimiter: RateLimiter,
   ENRICHMENT_DATA_PATH: string,
   WIKIPEDIA_API_URL: string,
+  WIKIPEDIA_MAX_CONCURRENT: number,
+  WIKIPEDIA_RATE_LIMIT_MS: number,
 };
 ```
 
@@ -4911,6 +5443,28 @@ module.exports = {
 - **Type:** `number`
 - **Value:** `120000` (2 minutes)
 - **Description:** Reset timeout for the Wikipedia circuit breaker — after this window elapses, a single probe request is allowed (half-open state).
+
+#### `WIKIPEDIA_MAX_CONCURRENT`
+
+- **Type:** `number`
+- **Value:** `2`
+- **Description:** Maximum concurrent Wikipedia API requests allowed by `wikipediaRateLimiter`.
+
+#### `WIKIPEDIA_RATE_LIMIT_MS`
+
+- **Type:** `number`
+- **Value:** `300`
+- **Description:** Minimum spacing (ms) between Wikipedia API request starts — caps the global start rate at ~3.3 req/sec, well under Wikipedia's anonymous-access etiquette limits.
+
+### Rate Limiting
+
+Every Wikipedia API HTTP request passes through `wikipediaRateLimiter` (a `RateLimiter` from `scripts/rate-limiter.js`) before hitting the network. The limiter combines a concurrency cap (`WIKIPEDIA_MAX_CONCURRENT` = 2) with start-spacing pacing (`WIKIPEDIA_RATE_LIMIT_MS` = 300ms), so `enrichSchools`' batch concurrency cannot burst requests past the upstream rate limit. Pacing is serialized through the limiter's start-gate promise chain and applies per HTTP request (each school triggers two: search + extract).
+
+#### `wikipediaRateLimiter`
+
+- **Type:** `RateLimiter`
+- **Config:** `{ maxConcurrent: 2, rateLimitMs: 300, queueTimeoutMs: 30000 }`
+- **Description:** Dedicated rate limiter for Wikipedia API traffic, isolated from the general-purpose limiters used by build/validation (which stay unpaced at `rateLimitMs: 0`).
 
 ### Functions
 

@@ -108,33 +108,20 @@ function normaliseRecord(raw) {
 }
 
 /**
- * Validate a normalized record to ensure it meets the required criteria.
+ * Validate a normalized record against the centralized schema.
+ * Delegates to SCHEMA.validateRecord so the ETL boundary enforces the exact
+ * same constraints as every other consumer (single source of truth).
  *
  * @param {Object} record
  * @returns {boolean}
  */
 function validateRecord(record) {
-  if (!record || typeof record !== 'object') {
-    return false;
-  }
-
-  const requiredFields = ['npsn', 'nama', 'bentuk_pendidikan', 'provinsi', 'kab_kota', 'kecamatan'];
-
-  for (const field of requiredFields) {
-    if (!record[field] || record[field].trim() === '') {
-      return false;
-    }
-  }
-
-  if (!/^\d+$/.test(record.npsn)) {
-    return false;
-  }
-
-  return true;
+  return SCHEMA.validateRecord(record).length === 0;
 }
 
 /**
  * Validate latitude and longitude coordinates for Indonesia bounds.
+ * Delegates to SCHEMA.isValidCoordinate (single source of truth).
  * Indonesia: Latitude -11 to 6, Longitude 95 to 141
  *
  * @param {string} lat - Latitude as string
@@ -142,20 +129,11 @@ function validateRecord(record) {
  * @returns {boolean}
  */
 function validateLatLon(lat, lon) {
-  if (!lat || !lon) {
-    return false;
-  }
-
-  const latNum = parseFloat(lat);
-  const lonNum = parseFloat(lon);
-
-  if (isNaN(latNum) || isNaN(lonNum)) {
-    return false;
-  }
-
-  const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = CONFIG.INDONESIA_BOUNDS;
-
-  return latNum >= LAT_MIN && latNum <= LAT_MAX && lonNum >= LON_MIN && lonNum <= LON_MAX;
+  const { LAT_MIN, LAT_MAX, LON_MIN, LON_MAX } = SCHEMA.INDONESIA_BOUNDS;
+  return (
+    SCHEMA.isValidCoordinate(lat, LAT_MIN, LAT_MAX) &&
+    SCHEMA.isValidCoordinate(lon, LON_MIN, LON_MAX)
+  );
 }
 
 /**
