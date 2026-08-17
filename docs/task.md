@@ -2,6 +2,51 @@
 
 ## Completed Tasks
 
+### [TASK-096] Flaky Test Fix — Test-Runner Protocol Corruption (ERR_TEST_FAILURE)
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Full-suite runs intermittently failed (1/10 baseline, up to 5/10 under parallel load) with `Unable to deserialize cloned data due to invalid or unsupported version` (ERR_TEST_FAILURE, `uncaughtException`) misattributed to `scripts/data-quality.test.js`. Root cause: the node:test runner parses child **stdout** as a v8-serialized binary protocol, and any stray write landing after a test-end marker desyncs the frame parser. Two writers leaked onto the protocol channel:
+
+1. **pino logger** — `src/core/config.js` emits a `SITE_URL` require-time warning in every test child; build-pages/SearchDataService emit more. pino's default destination is fd 1 (stdout); its async SonicBoom write could race the end-of-test message. Routing pino to stderr did **not** help (verified experimentally: the runner relays child stderr into its own stdout stream), so the output must be dropped entirely in test children.
+2. **`console.log` in `data-quality.js main()`** — three `main()` CLI tests mocked `logger.info`/`logger.warn` but not `console.log`, so `main()`'s human-readable report (`console.log(formatHuman(report))`) leaked to the real stdout pipe. Under parallel load the queued async write landed after the test-end marker.
+
+### Changes Made
+
+1. **`src/core/logger.js`** — in node:test test-file children (detected via `NODE_TEST_CONTEXT` env + `process.argv[1]` ending `.test.js`), pino is constructed with a null sink (`{ write() {} }`) instead of stdout/stderr. CLI children spawned by tests via `execSync` run the script itself (argv[1] = script path, not `.test.js`), so their stdout report streams — parsed by `check-freshness.test.js` / `freshness-report.test.js` — are unaffected (verified: 171 tests pass on the 5 key files).
+2. **`scripts/data-quality.test.js`** — the 3 `main()` tests that exercise report output (`--verbose`, `--threshold` pass, `--threshold` fail) now also mock `console.log` (capturing into an array), matching the pattern already used by the `--json` and human-default tests. No assertions were removed; the verbose/threshold assertions were preserved.
+
+### Verification
+
+| Check                      | Result                                                                 |
+| -------------------------- | ---------------------------------------------------------------------- |
+| Full JS suite (actual)     | 1270 tests, 1266 pass, 0 fail, 4 skipped (37 files)                    |
+| Flake stress test          | 10/10 consecutive full-suite runs clean (was 1/10 baseline, 5/10 mid-fix) |
+| data-quality.test.js solo  | 10/10 runs clean (confirms corruption originates from a concurrent child) |
+| CLI report tests           | check-freshness/freshness-report stdout parsing still passes (execSync children unaffected) |
+| ESLint                     | 0 errors on changed files                                              |
+| Prettier                   | clean on changed files                                                 |
+| Production behavior        | logger output unchanged outside test-file children (guard is env+argv-scoped) |
+
+### Files Modified
+
+- `src/core/logger.js` — null sink for pino in test-file children (stderr redirect proven insufficient)
+- `scripts/data-quality.test.js` — console.log mock added to 3 main() tests
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] Flaky ERR_TEST_FAILURE eliminated (10/10 consecutive full-suite runs)
+- [x] Root cause identified and fixed at the source (async stdout writes racing test-end marker)
+- [x] No test deleted, no assertion weakened; only added stdout capture mocks
+- [x] CLI children (execSync) report streams unaffected — stdout parsing tests still green
+- [x] Production logging behavior unchanged outside test-file children
+
+---
+
 ### [TASK-095] Critical Path Testing — Workflow Security Gate Coverage (check-workflow-security.js)
 
 **Status**: Complete
@@ -57,6 +102,74 @@
 - [x] CLI contract unchanged (exit codes + JSON shape verified identical)
 
 ---
+
+### [TASK-094] Architecture — Extract Shared Infrastructure from `scripts/` into a Dedicated `src/core/` Layer (Layer Separation)
+
+**Status**: Complete
+**Agent**: Code Architect (Sisyphus)
+
+### Description
+
+ADR-0005 documents the layer separation with dependency flow **inward**: controllers → services → presenters. In practice, the shared infrastructure (`config`, `logger`, `utils`, `fs-safe`, `resilience`, `slugify`, `data-schema`, `rate-limiter`) was co-located with the controller layer in `scripts/`, so **every** presenter template (6 files) and service module (4 files) imported from `scripts/` — the presentation and business layers depended on the controller directory, inverting the documented dependency direction. This is the highest-priority Code Architect task (Module Extraction + Layer Separation): decouple the shared infrastructure from controllers and restore clean dependency flow.
+
+### Changes Made
+
+**1. New `src/core/` shared infrastructure layer — 8 modules moved (with git history)**
+
+- `scripts/config.js` → `src/core/config.js` — ROOT_DIR depth fixed (`path.join(__dirname, '..')` → `'..', '..'`) for the new `src/core/` location (verified: resolves to project root, `dist/` still correct)
+- `scripts/logger.js`, `scripts/utils.js`, `scripts/fs-safe.js`, `scripts/resilience.js`, `scripts/slugify.js`, `scripts/data-schema.js`, `scripts/rate-limiter.js` → `src/core/` (byte-identical; all moved together so internal `./X` requires stay valid)
+- All 8 are pure infrastructure — no CLI entry points, no controller behavior; internal requires (`./config`, `./resilience`, `./fs-safe`, `./logger`, `./rate-limiter`) resolve within `src/core/`
+
+**2. All importers repointed (no stale references remain)**
+
+- `scripts/*.js` controllers + `test-helpers.js`: `./{module}` → `../src/core/{module}`
+- `src/services/*.js`: `../../scripts/{module}` → `../core/{module}` (domain modules `manifest`, `build-performance`, `enrichment`, `sitemap` correctly kept at `../../scripts/`)
+- `src/presenters/templates/**`: `../../../scripts/{module}` → `../../core/{module}` (path-depth corrected: `src/core/` is 2 levels up from templates, not 3)
+- 19 test files + `require.resolve` cache-bust calls in `config.test.js`/`etl.test.js`
+
+**3. Dependency graph after extraction**
+
+- `src/presenters` → imports only presenter + `src/core` modules (was `scripts/`) — **presentation↔controller coupling eliminated**
+- `src/services` → imports only services + presenters + `src/core` + 4 domain modules still in `scripts/` (business logic; follow-up to relocate)
+- `src/core` → imports nothing outward (neutral foundation)
+- Zero circular dependencies maintained (verified via DFS)
+
+**4. Docs updated**
+
+- `docs/blueprint.md` — project structure tree (src/core/ section), Decisions Log entry (2026-08-17), Data Schema section paths
+- `docs/adr/0005-layer-separation.md` — decision updated: `src/core/` as shared infra layer, status history entry
+- `docs/api.md` — 58 path references updated (`scripts/{8}` → `src/core/{8}`)
+- `README.md` — structure tree updated (scripts/ = controllers, src/core/ = shared infra)
+- `docs/task.md` — this entry
+
+### Verification
+
+| Check            | Result                                              |
+| ---------------- | --------------------------------------------------- |
+| JS tests         | 1238 total, **1234 pass, 0 fail**, 4 skipped        |
+| Coverage gate    | pass — 97.39% stmt / 93.44% branch (baseline match) |
+| ESLint           | 0 errors / 0 warnings                               |
+| Prettier         | clean on all touched files                          |
+| Build            | PASS, 0 failed pages, all performance budgets met   |
+| Python tests     | 27/27 (run_tests.py wrapper)                        |
+| validate-links   | No broken links found (10/10 files)                 |
+| Sitemap          | Generated (5 URLs)                                  |
+| ROOT_DIR sanity  | resolves to project root; dist/ path correct        |
+| All requires     | resolve (verified programmatically)                 |
+| Zero regressions | confirmed                                           |
+
+### Files Modified
+
+- `src/core/config.js`, `src/core/logger.js`, `src/core/utils.js`, `src/core/fs-safe.js`, `src/core/resilience.js`, `src/core/slugify.js`, `src/core/data-schema.js`, `src/core/rate-limiter.js` — moved from `scripts/` (git mv preserves history); config.js ROOT_DIR depth fix
+- `src/services/BuildOrchestrator.js`, `src/services/ExportService.js`, `src/services/PageBuilder.js`, `src/services/SearchDataService.js` — imports repointed to `../core/`
+- `src/presenters/templates/{homepage,province-page,school-page,kabupaten-page,kecamatan-page}.js`, `src/presenters/templates/shared/translations.js` — imports repointed to `../../core/`
+- `scripts/{build-pages,build-performance,check-freshness,data-quality,enrichment,etl,fetch-data,freshness-report,interactive,manifest,sitemap,validate-links,test-helpers}.js` — imports repointed to `../src/core/`
+- 19 test files in `scripts/` — imports repointed
+- `docs/blueprint.md`, `docs/adr/0005-layer-separation.md`, `docs/api.md`, `README.md`, `docs/task.md` — docs updated
+
+### Follow-ups
+
+- Relocate the 4 remaining business-logic modules that `src/services/BuildOrchestrator.js` still imports from `scripts/` (`manifest.js`, `build-performance.js`, `enrichment.js`, `sitemap.js`) into `src/services/` (or a domain layer) — they are service-layer logic, not controllers; `sitemap.js` also doubles as a CLI entry point, so its controller wrapper must stay in `scripts/`.
 
 ### [TASK-094] Technical Writing — Doc-Code Alignment (README, api.md Module Tree, testing.md Counts)
 

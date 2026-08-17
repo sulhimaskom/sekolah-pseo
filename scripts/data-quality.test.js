@@ -941,10 +941,15 @@ test('main() prints a human-readable report by default', async () => {
 test('main() with --verbose adds verbose stats logging', async () => {
   const { dir, csvPath } = makeTempCsv(VALID_CSV);
   const infoCalls = [];
+  const captured = [];
   const originalInfo = logger.info;
+  const originalLog = console.log;
   const originalArgv = process.argv;
   logger.info = (...args) => {
     infoCalls.push(args);
+  };
+  console.log = (...chunks) => {
+    captured.push(chunks.join(' '));
   };
   process.argv = ['node', 'data-quality.js', '--verbose'];
   try {
@@ -961,6 +966,7 @@ test('main() with --verbose adds verbose stats logging', async () => {
     );
   } finally {
     logger.info = originalInfo;
+    console.log = originalLog;
     process.argv = originalArgv;
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -969,10 +975,15 @@ test('main() with --verbose adds verbose stats logging', async () => {
 test('main() with --threshold passes when quality is good', async () => {
   const { dir, csvPath } = makeTempCsv(VALID_CSV);
   const infoCalls = [];
+  const captured = [];
   const originalInfo = logger.info;
+  const originalLog = console.log;
   const originalArgv = process.argv;
   logger.info = (...args) => {
     infoCalls.push(args);
+  };
+  console.log = (...chunks) => {
+    captured.push(chunks.join(' '));
   };
   process.argv = ['node', 'data-quality.js', '--threshold'];
   try {
@@ -984,6 +995,7 @@ test('main() with --threshold passes when quality is good', async () => {
     );
   } finally {
     logger.info = originalInfo;
+    console.log = originalLog;
     process.argv = originalArgv;
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -992,11 +1004,16 @@ test('main() with --threshold passes when quality is good', async () => {
 test('main() with --threshold terminates when quality is below threshold', async () => {
   const { dir, csvPath } = makeTempCsv(INCOMPLETE_CSV);
   const warnCalls = [];
+  const captured = [];
   const originalWarn = logger.warn;
+  const originalLog = console.log;
   const originalArgv = process.argv;
   const restoreExit = mockProcessExit();
   logger.warn = (...args) => {
     warnCalls.push(args);
+  };
+  console.log = (...chunks) => {
+    captured.push(chunks.join(' '));
   };
   process.argv = ['node', 'data-quality.js', '--threshold'];
   try {
@@ -1009,6 +1026,7 @@ test('main() with --threshold terminates when quality is below threshold', async
     );
   } finally {
     logger.warn = originalWarn;
+    console.log = originalLog;
     restoreExit();
     process.argv = originalArgv;
     fs.rmSync(dir, { recursive: true, force: true });
