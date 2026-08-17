@@ -32,16 +32,16 @@ Each install step now:
 
 ### Verification
 
-| Check                      | Result                                                                 |
-| -------------------------- | ---------------------------------------------------------------------- |
-| Root cause                 | Confirmed from run logs: `curl: (22) 429` → step green → `opencode: No such file or directory` (exit 127) |
-| YAML validity              | ✅ All 6 workflow files parse (PyYAML `safe_load`)                      |
-| Shell-logic test (retry→success) | ✅ 429 ×2 then success → installs and verifies binary (attempt 3)   |
-| Shell-logic test (retry exhausted) | ✅ 429 ×5 → clear `::error::` message + exit 1 (no silent success) |
-| Workflow security gate     | ✅ Unchanged at the documented 12-violation F037 baseline (exit 1, no regression beyond baseline) |
-| Pre-commit hook            | ✅ Passes (violations ≤ baseline 12)                                    |
-| Full JS suite              | ✅ 1309 pass / 0 fail / 4 skipped (unrelated to this change, sanity)    |
-| ESLint / Prettier          | ✅ Clean (workflow files are `.prettierignore`d; no lint targets)       |
+| Check                              | Result                                                                                                    |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Root cause                         | Confirmed from run logs: `curl: (22) 429` → step green → `opencode: No such file or directory` (exit 127) |
+| YAML validity                      | ✅ All 6 workflow files parse (PyYAML `safe_load`)                                                        |
+| Shell-logic test (retry→success)   | ✅ 429 ×2 then success → installs and verifies binary (attempt 3)                                         |
+| Shell-logic test (retry exhausted) | ✅ 429 ×5 → clear `::error::` message + exit 1 (no silent success)                                        |
+| Workflow security gate             | ✅ Unchanged at the documented 12-violation F037 baseline (exit 1, no regression beyond baseline)         |
+| Pre-commit hook                    | ✅ Passes (violations ≤ baseline 12)                                                                      |
+| Full JS suite                      | ✅ 1309 pass / 0 fail / 4 skipped (unrelated to this change, sanity)                                      |
+| ESLint / Prettier                  | ✅ Clean (workflow files are `.prettierignore`d; no lint targets)                                         |
 
 ### Delivery Blocker (F050)
 
@@ -232,14 +232,14 @@ Audited the setup, entry-point, and architecture docs against the current implem
 
 ### Verification
 
-| Check                                     | Result                                                                                      |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
-| setup.md tree vs disk                     | ✅ All 8 `src/core/` modules present; no infra module listed under `scripts/` (script-verified against `ls src/core/ scripts/`) |
-| README shared/ tree vs disk               | ✅ All 8 `src/presenters/templates/shared/*.js` files present (script-verified)             |
-| blueprint env vars vs `.env.example`      | ✅ 7/7 variables match (SITE_URL, RAW_DATA_PATH, BUILD_CONCURRENCY_LIMIT, VALIDATION_CONCURRENCY_LIMIT, MAX_URLS_PER_SITEMAP, LOG_LEVEL, ENRICHMENT_ENABLED) |
-| Env var consumption                       | ✅ `LOG_LEVEL` read in `src/core/logger.js:23`; `ENRICHMENT_ENABLED` read in `scripts/enrichment.js:81` |
-| JS suite (unchanged, sanity)              | ✅ 1313 tests / 1309 pass / 0 fail / 4 skipped (matches docs/testing.md)                    |
-| ESLint / Prettier                         | ✅ Clean (docs only; no lint targets touched)                                               |
+| Check                                | Result                                                                                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| setup.md tree vs disk                | ✅ All 8 `src/core/` modules present; no infra module listed under `scripts/` (script-verified against `ls src/core/ scripts/`)                              |
+| README shared/ tree vs disk          | ✅ All 8 `src/presenters/templates/shared/*.js` files present (script-verified)                                                                              |
+| blueprint env vars vs `.env.example` | ✅ 7/7 variables match (SITE_URL, RAW_DATA_PATH, BUILD_CONCURRENCY_LIMIT, VALIDATION_CONCURRENCY_LIMIT, MAX_URLS_PER_SITEMAP, LOG_LEVEL, ENRICHMENT_ENABLED) |
+| Env var consumption                  | ✅ `LOG_LEVEL` read in `src/core/logger.js:23`; `ENRICHMENT_ENABLED` read in `scripts/enrichment.js:81`                                                      |
+| JS suite (unchanged, sanity)         | ✅ 1313 tests / 1309 pass / 0 fail / 4 skipped (matches docs/testing.md)                                                                                     |
+| ESLint / Prettier                    | ✅ Clean (docs only; no lint targets touched)                                                                                                                |
 
 ### Files Modified
 
