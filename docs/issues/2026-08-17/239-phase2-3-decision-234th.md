@@ -48,21 +48,35 @@ captured under F228 (docs drift) for a docs-alignment pass.
 
 ## Action log (this run)
 
-| Timestamp (UTC)   | Action               | Target           | Result                                                                                                                                                      |
-| ----------------- | -------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-17T13:59Z | Phase 0 probe        | gh pr/issue list | **1 open PR** (#787) → PR HANDLER MODE                                                                                                                      |
-| 2026-08-17T14:00Z | PR #787 sync         | agent branch     | fetched origin/main; merged into agent (clean, 1 docs file); pushed 0caeb58..f7e501a                                                                        |
-| 2026-08-17T14:01Z | PR #787 verification | full matrix      | lint 0/0, prettier (PR files clean), build PASS, JS 1266/0/4, py 27/27, security gate 12 (=baseline, no regression)                                         |
-| 2026-08-17T14:04Z | PR #787 merge        | #787             | **MERGED (squash, admin)** commit 90c8919; branch auto-deleted                                                                                              |
-| 2026-08-17T14:05Z | Phase 0 re-probe     | gh pr/issue list | **0 open PRs / 0 open issues** → EMPTY → PHASE 1                                                                                                            |
-| 2026-08-17T14:06Z | Evidence delegation  | 2 explore agents | `bg_35ef3ec6` code-quality scan + `bg_44361562` config/CI/security scan — both returned, claims re-verified                                                 |
-| 2026-08-17T14:08Z | Verification probes  | direct           | coverage 97.45/93.62; prettier 105 md / 0 source; CI last-10 incl. 12:28Z timeout failure; layer inversion confirmed; computeSchoolHash excludes updated_at |
-| 2026-08-17T14:10Z | Phase 1 scoring      | 234th audit      | composite **70.0** (−0.8); new findings F225–F228                                                                                                           |
-| 2026-08-17T14:12Z | Phase 1 output       | ledger           | wrote `237-audit-report`, `238-issue-records` (194th batch), `239-phase2-3-decision`                                                                        |
+| Timestamp (UTC)   | Action               | Target            | Result                                                                                                                                                      |
+| ----------------- | -------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-17T13:59Z | Phase 0 probe        | gh pr/issue list  | **1 open PR** (#787) → PR HANDLER MODE                                                                                                                      |
+| 2026-08-17T14:00Z | PR #787 sync         | agent branch      | fetched origin/main; merged into agent (clean, 1 docs file); pushed 0caeb58..f7e501a                                                                        |
+| 2026-08-17T14:01Z | PR #787 verification | full matrix       | lint 0/0, prettier (PR files clean), build PASS, JS 1266/0/4, py 27/27, security gate 12 (=baseline, no regression)                                         |
+| 2026-08-17T14:04Z | PR #787 merge        | #787              | **MERGED (squash, admin)** commit 90c8919; branch auto-deleted                                                                                              |
+| 2026-08-17T14:05Z | Phase 0 re-probe     | gh pr/issue list  | **0 open PRs / 0 open issues** → EMPTY → PHASE 1                                                                                                            |
+| 2026-08-17T14:06Z | Evidence delegation  | 2 explore agents  | `bg_35ef3ec6` code-quality scan + `bg_44361562` config/CI/security scan — both returned, claims re-verified                                                 |
+| 2026-08-17T14:08Z | Verification probes  | direct            | coverage 97.45/93.62; prettier 105 md / 0 source; CI last-10 incl. 12:28Z timeout failure; layer inversion confirmed; computeSchoolHash excludes updated_at |
+| 2026-08-17T14:10Z | Phase 1 scoring      | 234th audit       | composite **70.0** (−0.8); new findings F225–F228                                                                                                           |
+| 2026-08-17T14:12Z | Phase 1 output       | ledger            | wrote `237-audit-report`, `238-issue-records` (194th batch), `239-phase2-3-decision`                                                                        |
+| 2026-08-17T14:13Z | Ledger format gate   | 237/238/239       | prettier-formatted at gate (F005 count held flat at 105)                                                                                                    |
+| 2026-08-17T14:14Z | Ledger commit        | docs-audit-234th  | committed 3 ledger files; pushed; PR #789 opened (labels: docs, P3)                                                                                         |
+| 2026-08-17T14:15Z | PR #789 merge        | #789              | **MERGED (squash, admin)** commit bfa0007 — ledger 237/238/239 landed on main                                                                               |
+| 2026-08-17T14:16Z | Phase 0 re-probe     | gh pr/issue list  | **1 open PR** (#788, TASK-098 wx fast path — appeared mid-window from parallel loop) → PR HANDLER MODE                                                      |
+| 2026-08-17T14:17Z | PR #788 sync         | agent branch      | fetched origin/agent (parallel loop force-pushed TASK-099 onto shared branch); reset to origin/agent; PR became combined TASK-098 + TASK-099 (8 files)      |
+| 2026-08-17T14:18Z | PR #788 verification | full matrix       | lint 0/0, build PASS (0 failed pages), JS 1275/0/4, py 27/27, prettier clean on all 8 files                                                                 |
+| 2026-08-17T14:20Z | Prettier fix         | docs/blueprint.md | TASK-098 decisions-log row: escaped pipe `open(O_CREAT\|O_EXCL)` (unescaped `\|` split table cell under prettier); content verified intact                  |
+| 2026-08-17T14:24Z | PR #788 push         | agent branch      | pushed b9592ce (style fix) after parallel-loop force-push conflict resolved; mergeable confirmed                                                            |
+| 2026-08-17T14:27Z | PR #788 merge        | #788              | **MERGED (squash, admin)** commit 08d714c — TASK-098 (perf) + TASK-099 (NPSN uniqueness) landed                                                             |
+| 2026-08-17T14:28Z | Post-merge verify    | main@08d714c      | build PASS, lint 0/0, JS 1275/0/4, py 27/27, security gate 12 (=baseline), working tree clean                                                               |
+| 2026-08-17T14:29Z | Phase 0 re-probe     | gh pr/issue list  | **0 open PRs / 0 open issues** → EMPTY                                                                                                                      |
 
 ## Final state
 
-- **Active phase at end**: Phase 1 completed (audit + ledger output); Phase
-  2/3 decision recorded — no execution (blocked/deferred candidates).
+- **Active phase at end**: Phase 0/PR-HANDLER cycle complete (PRs #787,
+  #789, #788 all merged); Phase 1 audit completed (composite 70.0, findings
+  F225–F228 recorded); Phase 2/3 decision recorded — no execution
+  (blocked/deferred candidates, F225 deferred to dedicated refactor window).
 - **Final state**: **idle** (0 open PRs, 0 open issues; ledger updated;
-  findings F225–F228 recorded for future windows)
+  main @ 08d714c; findings F225–F228 + F063 regression recorded for future
+  windows)
