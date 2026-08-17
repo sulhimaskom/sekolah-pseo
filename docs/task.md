@@ -2,6 +2,62 @@
 
 ## Completed Tasks
 
+### [TASK-098] Performance Optimization — Exclusive-Create Fast Path for Bulk Page Writes (fastWriteFile `wx`)
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Profiled the full static build at production scale (synthetic 5,000-school dataset; real CSV has 2 rows) and found the build is **I/O-bound, not CPU-bound**: a CPU profile showed ~40% of self-time in file-write machinery (`utf8Write` 9.8%, `writeBuffer` 7.2%, `openFileHandle` 6.8%, `rename` 5.8%, `close` 5.0%), while a phase benchmark summed only ~126ms of CPU across all phases of an ~840ms build (school HTML generation 54ms, CSV parse 19ms, homepage 15ms, kecamatan 22ms). `UV_THREADPOOL_SIZE=16` had no effect (846/860ms) — the threadpool was not the bottleneck.
+
+Direct write benchmarks on the CI filesystem (5,000 × 16KB files) confirmed the tmp+rename strategy used by `fastWriteFile()` is ~40% slower on fresh files than a direct async write (309ms vs 222ms; `writeFileSync` 81ms).
+
+### Optimization
+
+Added an **exclusive-create (`wx`) fast path** to `fastWriteFile()` in `src/core/fs-safe.js`: fresh files (the bulk-write case in a full build) are now written via `fs.promises.open(filePath, 'wx')` + `write` + `close` — **no temp file, no rename**. On `EEXIST` (an overwrite), it falls back to the original tmp+rename path unchanged, preserving the documented atomic-replace semantics for updates. Non-`EEXIST` open errors and write failures surface as `IntegrationError(FILE_WRITE_ERROR)` exactly as before, with the created file unlinked on write failure.
+
+### Results
+
+| Metric | Baseline | After | Delta |
+| ------ | -------- | ----- | ----- |
+| Build duration (3-run avg) | 837ms | 733ms | **~12.4% faster** |
+| Throughput | ~5,940 pages/s | ~6,820 pages/s | **+14.8%** |
+| Peak RSS | 166–172MB | 162MB | -3% |
+| Output bytes | 5,767 files | 5,767 files | byte-identical (`diff -rq` clean) |
+
+Fresh full build runs (3): 828/841/842ms → 733/726/741ms. Warm rebuild (overwrite fallback) PASS. Incremental build unaffected (5000 unchanged, 0 changed, no pages rebuilt).
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| `diff -rq` baseline vs new dist (both 5,000-school builds, old vs new code) | ✅ Byte-identical — 0 differing files |
+| fs-safe test suite | ✅ 40/40 pass (4 new `wx`-path tests: fresh = 0 rename calls, overwrite = exactly 1 rename, missing-parent `IntegrationError`, concurrent fresh-write race) |
+| Full JS suite | ✅ 1270 pass, 0 fail, 4 skipped |
+| Python suite | ✅ 27/27 pass |
+| ESLint | ✅ 0 errors |
+| Prettier | ✅ clean |
+| Coverage gate | ✅ 97.39% statements / 93.59% branches (min 80/75) |
+
+### Files Modified
+
+- `src/core/fs-safe.js` — `fastWriteFile()` `wx` exclusive-create fast path + `EEXIST` fallback
+- `scripts/fs-safe.test.js` — 4 new tests locking the fast-path/fallback contract
+- `docs/blueprint.md` — Decisions Log row (TASK-098)
+- `docs/task.md` — this entry
+
+### Acceptance Criteria
+
+- [x] Baseline measured before optimizing (CPU profile + phase + write benchmarks)
+- [x] Single optimization by measured impact (I/O-bound build, write machinery bottleneck)
+- [x] Byte-identical output (5,767 files, zero diff) — functionality not broken for speed
+- [x] Overwrite semantics preserved via `EEXIST` → tmp+rename fallback (no cache, no invalidation risk)
+- [x] Full test suite green (JS 1270 + Python 27), lint + Prettier clean, coverage gate met
+- [x] Docs updated (task.md entry + blueprint Decisions Log)
+
+---
+
 ### [TASK-097] Security Audit Pass 13 — Workflow Permission Hardening (11th Regression Fix)
 
 **Status**: Complete (delivery to `main` blocked by F050 — see below)
