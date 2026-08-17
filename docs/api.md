@@ -45,7 +45,8 @@ src/
 ├── head-meta.js # Shared HTML head prefix (security headers, meta)
 ├── back-to-top.js # Shared back-to-top button HTML + script
 ├── navigation.js # Shared breadcrumb navigation component
-└── footer.js # Shared footer component
+├── footer.js # Shared footer component
+└── translations.js # Shared pre-escaped translations (T)
 ```
 
 ## Configuration Module (`scripts/config.js`)
@@ -3196,6 +3197,46 @@ const html = generateFooterHtml({
 
 ---
 
+### Translations Module (`src/presenters/templates/shared/translations.js`)
+
+#### Purpose
+
+Provides the shared pre-escaped translations object (`T`) used by all page templates. UI text is read from `CONFIG.TEXT` and HTML-escaped **once at module load**, so every template accesses translations through the same interface and never calls `escapeHtml()` at the use site. This consolidates the previously inconsistent access patterns (school-page pre-escaped locally; homepage wrapped `CONFIG.TEXT` reads in `escapeHtml()`; province-page hardcoded strings) into a single canonical pattern (REFACTOR-009).
+
+#### Exports
+
+```javascript
+module.exports = {
+  T: Object, // Pre-escaped CONFIG.TEXT values, frozen
+};
+```
+
+#### Constants
+
+##### `T`
+
+A frozen plain object mapping every `CONFIG.TEXT` key to its HTML-escaped value.
+
+**Behavior:**
+
+- Keys and values mirror `CONFIG.TEXT` exactly (one key per translation, no extras)
+- Values are pre-escaped via `escapeHtml()` (single-pass regex, bounded cache)
+- The object is frozen (`Object.freeze`) — templates share one module-level instance across all page renders, so mutation would leak between pages
+- New keys added to `CONFIG.TEXT` are automatically available as `T.<KEY>` in every template
+
+**Dependencies:** `scripts/utils.js` (`escapeHtml`), `scripts/config.js` (`CONFIG.TEXT`)
+
+**Usage:**
+
+```javascript
+const { T } = require('./shared/translations');
+
+// Values are already HTML-escaped — safe for attribute and text contexts
+const html = `<span aria-label="${T.COPY_NPSN}">${T.NPSN}</span>`;
+```
+
+---
+
 ## Build Pages Controller (`scripts/build-pages.js`)
 
 ### Purpose
@@ -5949,6 +5990,7 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
          │  back-to-top.js   │  Depends: None (standalone)          │
          │  navigation.js    │  Depends: None (standalone)          │
          │  footer.js        │  Depends: None (standalone)          │
+         │  translations.js  │  Depends: utils.js, config.js        │
          └──────────────────────────────────────────────────────────┘
 ```
 

@@ -2,6 +2,120 @@
 
 ## Completed Tasks
 
+### [TASK-086] Code Sanitization — Test Coverage for `interactive.js` `pickFromList` (TASK-061)
+
+**Status**: Complete
+**Agent**: Lead Reliability Engineer (Sisyphus)
+
+### Description
+
+Resolved the last open backlog item (TASK-061, previously Partial): `pickFromList()` — the interactive list picker in `scripts/interactive.js` (lines 138-164, the largest untested block) — had zero test coverage. Health check confirmed build PASS, ESLint 0 errors, and the full JS suite green (1131 tests, 0 fail) before starting.
+
+### Changes Made
+
+**1. `scripts/interactive.test.js` — `mockReadline()` helper + 7 new tests:**
+
+- `mockReadline(answers)` — minimal mock `readline.Interface` whose `question()` resolves answers sequentially per call, enabling multi-turn retry-flow tests without a real TTY.
+- `pickFromList` suite (6 tests): valid numeric choice → 0-based index; back option (`items.length + 1`) → `-1`; non-numeric → `-2`; out-of-range → `-2`; below-range (`'0'`) → `-2`; prints title/numbered items/descriptions/back option; retry flow consumes one answer per call.
+- `pressEnter` suite — considered and rejected during implementation: `pressEnter` is an internal helper not in `module.exports`; untestable via the public API without a PTY harness.
+
+**2. Remaining uncovered lines (intentional):** `pressEnter` (191-193), `mainMenu` (199-253), TTY branch of `main()` (330-342) — internal interactive TTY loop, requires a real `readline` session over stdin; not unit-testable without a PTY harness. Out of scope.
+
+### Verification
+
+| Check                     | Result                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `interactive.js` coverage | Lines 71.76% → **79.54%**; branches 90% → **92.86%**; functions 66.67% → **77.78%** |
+| `pickFromList`            | 100% covered (lines 138-164)                                                        |
+| JS Tests (full suite)     | 1138 total, 1134 pass, **0 fail**, 4 skipped (+7 new)                               |
+| ESLint / Prettier         | 0 errors / clean                                                                    |
+| Zero regressions          | Confirmed                                                                           |
+
+### Files Modified
+
+- `scripts/interactive.test.js` — `mockReadline()` helper + `pickFromList` suite (7 new tests)
+- `docs/task.md` — This entry; backlog TASK-061 marked Complete
+
+### Acceptance Criteria
+
+- [x] Build passes, lint 0 errors, full test suite green (checked before and after)
+- [x] All six exported `interactive.js` functions exercised by tests
+- [x] `pickFromList` valid/invalid/back/below-range/print/retry paths covered (100%)
+- [x] No test noise from real subprocess spawns added (existing `runCommand` tests untouched)
+- [x] Backlog TASK-061 marked Complete
+- [x] Zero regressions
+
+---
+
+### [TASK-085] Architecture — Shared Pre-Escaped Translations Module (shared/translations.js, REFACTOR-009)
+
+**Status**: Complete
+**Agent**: Code Architect (Sisyphus)
+
+### Description
+
+Consolidated the three inconsistent text-translation access patterns across page templates into one canonical pattern (backlog REFACTOR-009, Option A — shared module):
+
+- **`school-page.js`** pre-escaped all `CONFIG.TEXT` values into a local `T` object at module load (`Object.fromEntries` over `Object.entries(CONFIG.TEXT).map(escapeHtml)`).
+- **`homepage.js`** wrapped each `CONFIG.TEXT` read in `escapeHtml()` at the use site (2 sites: `SEARCH_ARIA_LABEL`, `SELECT_PROVINCE_HEADING`).
+- **`province-page.js`** hardcoded Indonesian strings (`'Beranda'` breadcrumb, `'Kabupaten/Kota'` stat label) despite matching `CONFIG.TEXT` keys existing (`HOME`, `CITY_REGENCY`).
+
+New template developers had to know which pattern each file followed; a new text key required knowing whether to pre-escape, use-site escape, or hardcode.
+
+### Changes Made
+
+**1. New shared module `src/presenters/templates/shared/translations.js`** (the single implementation of the pattern):
+
+- `T` — frozen plain object mapping every `CONFIG.TEXT` key to its HTML-escaped value.
+- Pre-escape happens exactly **once at module load** (preserves the ~38K-redundant-escapeHtml-call optimization the school-page pattern existed for).
+- `Object.freeze(T)` guards the shared module-level instance against mutation leaking across page renders.
+- New `CONFIG.TEXT` keys automatically available as `T.<KEY>` in every template.
+
+**2. `school-page.js`** — replaced the local `T` construction (7 lines incl. comment) with `const { T } = require('./shared/translations');`. No usage-site changes (all `T.X` references unchanged).
+
+**3. `homepage.js`** — `escapeHtml(CONFIG.TEXT.SEARCH_ARIA_LABEL)` → `T.SEARCH_ARIA_LABEL` and `escapeHtml(CONFIG.TEXT.SELECT_PROVINCE_HEADING)` → `T.SELECT_PROVINCE_HEADING` (T is pre-escaped, so the use-site `escapeHtml` wrapper is redundant). Removed the now-unused `CONFIG` import (ESLint `no-unused-vars`).
+
+**4. `province-page.js`** — `'Beranda'` → `T.HOME` (breadcrumb label) and `<span class="stat-label">Kabupaten/Kota</span>` → `<span class="stat-label">${T.CITY_REGENCY}</span>`. Genuinely unkeyed strings (skip-link, hero descriptions, `Total Sekolah`, `Pilih Kabupaten/Kota`, `sekolah` count suffix) intentionally left hardcoded — no `CONFIG.TEXT` keys exist for them, and externalizing interpolated strings would be scope creep beyond the pattern-consistency goal.
+
+**5. New `scripts/translations.test.js`** (6 tests): key parity with `CONFIG.TEXT` (no missing, no extras), pre-escape correctness (`T[key] === escapeHtml(CONFIG.TEXT[key])`), non-empty string values, attribute-context safety (no raw `"`, `<`, `&`), and frozen-object invariant.
+
+### Verification
+
+| Check                               | Result                                                                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Output identity (gold standard)     | `diff -r` of generated `dist/` before vs after refactor — **byte-identical**                                                               |
+| JS Tests (full suite)               | 1131 total, 1127 pass, 0 fail, 4 skipped (baseline + 6 new translations tests)                                                             |
+| Targeted suites                     | translations 6/6, school-page, homepage, province-page, footer, navigation — 175/175 pass                                                  |
+| Coverage gate                       | 95.59% lines / 93.08% branches (thresholds 80/75); `translations.js` 100%                                                                  |
+| ESLint                              | 0 errors (all 5 changed files)                                                                                                             |
+| Prettier                            | Clean on all changed files                                                                                                                 |
+| Build                               | Status: PASS, 2 school pages + 2 province pages, 0 failed                                                                                  |
+| Generated HTML spot-check           | `aria-label="Cari sekolah berdasarkan nama, NPSN, atau alamat"`, `Pilih Provinsi`, `<a href="/">Beranda</a>`, `Kabupaten/Kota` all present |
+| Residual `CONFIG.TEXT` in templates | Zero — grep for `CONFIG.TEXT` in `src/presenters/templates/` returns no matches                                                            |
+| Zero regressions                    | Confirmed                                                                                                                                  |
+
+### Files Modified
+
+- `src/presenters/templates/shared/translations.js` — NEW shared pre-escaped `T` module (exported, frozen)
+- `src/presenters/templates/school-page.js` — local `T` construction replaced with shared import
+- `src/presenters/templates/homepage.js` — 2 use-site `escapeHtml(CONFIG.TEXT.X)` → `T.X`; unused `CONFIG` import removed
+- `src/presenters/templates/province-page.js` — `T.HOME` breadcrumb, `T.CITY_REGENCY` stat label
+- `scripts/translations.test.js` — NEW 6-test suite
+- `docs/api.md` — Translations Module section in Shared Template Modules + module tree + dependency graph row
+- `docs/blueprint.md` — decisions-log entry 2026-08-17
+- `docs/task.md` — This entry; REFACTOR-009 marked Complete
+
+### Acceptance Criteria
+
+- [x] Single canonical translation access pattern (`T`) across all three templates
+- [x] Pre-escaping performed exactly once at module load (no redundant escapeHtml calls during build)
+- [x] New `CONFIG.TEXT` keys automatically available as `T.<KEY>` in all templates
+- [x] All templates produce byte-identical HTML output (verified via generated-dist diff)
+- [x] All template tests continue to pass (1131 JS total, 0 fail)
+- [x] Backlog REFACTOR-009 marked Complete
+
+---
+
 ### [TASK-084] Technical Writing — Doc-Code Alignment for Homepage Module (api.md, feature.md, REFACTOR-007 follow-up)
 
 **Status**: Complete
@@ -6556,13 +6670,13 @@ Replace the three call sites:
 
 ### [TASK-061] Add test coverage for `interactive.js` exported functions
 
-**Status**: Partial (interactive.test.js exists — 19 tests; `pickFromList` and `runCommand` remain untested)
+**Status**: Complete (TASK-086)
 **Priority**: Medium
 **Effort**: Medium
 
 ### Description
 
-`scripts/interactive.js` (347 lines, 6 exported functions) has **zero test coverage**. The module exports:
+`scripts/interactive.js` (347 lines, 6 exported functions) had **incomplete test coverage**. The module exports:
 
 - `SCRIPTS` — static command registry
 - `runCommand(cmd, label)` — shell command executor
@@ -6571,35 +6685,53 @@ Replace the three call sites:
 - `printFlatList()` — flat JSON output
 - `printHelp()` — help text printer
 
-These are pure/deterministic functions (except `runCommand` and `pickFromList`) that are straightforward to test.
+`interactive.test.js` covered `SCRIPTS`, `printListAsJson`, `printFlatList`, `printHelp`, and `runCommand` (real-subprocess success/failure), but `pickFromList` — the interactive list picker — was **completely untested** (interactive.js lines 138-164, the largest untested block).
 
-### Suggestion
+### Changes Made
 
-Add test file `scripts/interactive.test.js` with coverage for:
+**1. `scripts/interactive.test.js` — added a `mockReadline()` helper + 7 new tests:**
 
-1. **SCRIPTS structure**: Verify data shape (5 categories, correct item structure)
-2. **printListAsJson()**: Verify outputs valid JSON matching SCRIPTS structure
-3. **printFlatList()**: Verify flat array with category+label+desc+cmd for each entry
-4. **printHelp()**: Verify outputs help text with key sections
-5. **pickFromList()**: Verify input parsing (valid choice → index, invalid → -2, back → -1)
-6. **runCommand()**: Command execution and error handling
+- `mockReadline(answers)` — minimal mock `readline.Interface` whose `question()` resolves answers sequentially per call (supports multi-turn retry flows); self-documenting, no comments needed.
+- `pickFromList` suite (6 tests):
+  - returns 0-based index for a valid numeric choice (`'2'` → `1`)
+  - returns `-1` when the back option (`items.length + 1`) is selected
+  - returns `-2` for non-numeric input (`'abc'`)
+  - returns `-2` for out-of-range input (`items.length + 2`)
+  - returns `-2` for input below the valid range (`'0'`)
+  - prints the title, numbered items with descriptions, and back option (captures `console.log`)
+  - consumes one answer per call for the retry flow (`'bad'` → `-2`, then `'3'` → `2`)
+- `pressEnter` suite (1 test): resolves after the user presses enter — **removed** during implementation because `pressEnter` is not part of `module.exports` (internal helper); the `pickFromList`/`mainMenu` coverage gap it would have addressed is not reachable via the public API.
 
-### Files
-
-- `scripts/interactive.test.js` (new)
-- `scripts/interactive.js` (export/import adjustments if needed)
+**2. Uncovered lines remaining (intentional):** `pressEnter` (191-193), `mainMenu` (199-253), and the TTY branch of `main()` (330-342) require a real interactive TTY session (`readline.createInterface` over stdin) — they are internal, not exported, and not unit-testable without a PTY harness. Out of scope for this task.
 
 ### Verification
 
-- All new tests pass
-- Existing tests unaffected
-- Zero regressions
+| Check                     | Result                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `interactive.js` coverage | Lines 71.76% → **79.54%**; branches 90% → **92.86%**; functions 66.67% → **77.78%** |
+| `pickFromList`            | 100% covered (lines 138-164)                                                        |
+| JS Tests (full suite)     | 1138 total, 1134 pass, **0 fail**, 4 skipped (+7 new)                               |
+| ESLint                    | 0 errors (all changed files)                                                        |
+| Prettier                  | Clean on all changed files                                                          |
+| Zero regressions          | Confirmed                                                                           |
+
+### Files Modified
+
+- `scripts/interactive.test.js` — `mockReadline()` helper; `pickFromList` suite (7 tests)
+- `docs/task.md` — This entry; TASK-061 marked Complete
+
+### Acceptance Criteria
+
+- [x] All six exported functions exercised by tests (`pickFromList` now included)
+- [x] `pickFromList` valid/invalid/back/below-range/print/retry paths covered
+- [x] 1134 JS tests pass (0 fail), ESLint + Prettier clean
+- [x] Zero regressions
 
 ---
 
 ### [REFACTOR-009] Consolidate text translation access patterns across page templates
 
-**Status**: Backlog
+**Status**: Complete (TASK-085)
 **Priority**: Low
 **Effort**: Small
 

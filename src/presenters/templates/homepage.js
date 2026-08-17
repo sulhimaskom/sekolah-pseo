@@ -1,11 +1,11 @@
 const { escapeHtml } = require('../../../scripts/utils');
-const CONFIG = require('../../../scripts/config');
 const slugify = require('../../../scripts/slugify');
 const { SEARCH_DATA_FIELDS } = require('../../../scripts/data-schema');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
+const { T } = require('./shared/translations');
 
 // Hoisted static back-to-top script body — computed once at module load
 // instead of rebuilding the template literal + 2 regex replaces + trim on
@@ -170,7 +170,7 @@ function generateHomepageHtml(schools) {
             id="school-search" 
             class="search-input" 
             placeholder="Cari sekolah... (Tekan / untuk fokus)"
-            aria-label="${escapeHtml(CONFIG.TEXT.SEARCH_ARIA_LABEL)}"
+            aria-label="${T.SEARCH_ARIA_LABEL}"
             aria-describedby="search-hint"
             aria-busy="true"
             role="combobox"
@@ -228,7 +228,7 @@ function generateHomepageHtml(schools) {
     </section>
 
     <section aria-labelledby="provinces-heading">
-      <h2 id="provinces-heading" class="section-title">${escapeHtml(CONFIG.TEXT.SELECT_PROVINCE_HEADING)}</h2>
+      <h2 id="provinces-heading" class="section-title">${T.SELECT_PROVINCE_HEADING}</h2>
       <p class="section-description">Klik pada provinsi untuk melihat daftar sekolah di wilayah tersebut.</p>
       <noscript>
         <p class="noscript-notice">JavaScript dinonaktifkan. Menampilkan daftar provinsi lengkap.</p>
