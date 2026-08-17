@@ -61,6 +61,8 @@ dist/
 
 **Option 1: Using GitHub Actions (Recommended)**
 
+> **Note**: This workflow file is not currently present in the repository. It is provided as a template — create it as part of your deployment setup.
+
 1. Create `.github/workflows/deploy.yml`:
 
 ```yaml

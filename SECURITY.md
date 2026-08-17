@@ -45,7 +45,7 @@ This project follows these security practices:
 ### Dependencies
 
 - Regular dependency updates
-- npm audit integration in CI pipeline
+- npm audit — 0 known vulnerabilities (verified locally via `npm ci` / `npm audit`; there is no dedicated audit step in CI workflows)
 - Minimal external dependencies
 
 ### Build Process

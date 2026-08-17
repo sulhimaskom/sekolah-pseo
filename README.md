@@ -298,8 +298,8 @@ Repositori ini menggunakan `.gitignore` yang telah dikonfigurasi untuk mencegah 
 
 Repositori ini menggunakan GitHub Actions (`.github/workflows/`) untuk otomatisasi:
 
-- **`on-push.yml`** — dijalankan saat push ke branch, termasuk quality gate (lint + format check) sebelum menjalankan agent workflow.
-- **`on-pull.yml`** — dijalankan saat pull request dan terjadwal (setiap jam), termasuk quality gate, build, dan test.
+- **`on-push.yml`** — dijalankan saat push ke branch; menjalankan agent workflow untuk pemeliharaan repositori. Lint dan format check dijalankan secara lokal melalui `npm run lint` dan `npm run format:check`.
+- **`on-pull.yml`** — dijalankan saat pull request dan terjadwal (setiap jam); menjalankan agent workflow untuk penanganan PR. Build dan test dijalankan secara lokal melalui `npm run build`, `npm run test:js`, dan `npm run test:py`.
 - **`orchestrator.yml`**, **`architect-agent.yml`**, **`opencode.yml`**, **`parallel.yml`** — workflow agent otomatis untuk pemeliharaan repositori.
 
 Semua workflow tervalidasi terhadap aturan keamanan oleh `scripts/check-workflow-security.js` yang memeriksa:
