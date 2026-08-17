@@ -7,18 +7,65 @@ const {
 } = require('../src/presenters/templates/kabupaten-page');
 
 const sampleSchools = [
-  { npsn: '1', nama: 'SDN 1 Jakarta', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Gambir', bentuk_pendidikan: 'SD', status: 'N' },
-  { npsn: '2', nama: 'SMPN 2 Jakarta', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Gambir', bentuk_pendidikan: 'SMP', status: 'S' },
-  { npsn: '3', nama: 'SMAN 3 Jakarta', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Menteng', bentuk_pendidikan: 'SMA', status: 'N' },
-  { npsn: '4', nama: 'SDN 1 Bandung', provinsi: 'Jawa Barat', kab_kota: 'Kota Bandung', kecamatan: 'Cicendo', bentuk_pendidikan: 'SD', status: 'N' },
+  {
+    npsn: '1',
+    nama: 'SDN 1 Jakarta',
+    provinsi: 'DKI Jakarta',
+    kab_kota: 'Jakarta Pusat',
+    kecamatan: 'Gambir',
+    bentuk_pendidikan: 'SD',
+    status: 'N',
+  },
+  {
+    npsn: '2',
+    nama: 'SMPN 2 Jakarta',
+    provinsi: 'DKI Jakarta',
+    kab_kota: 'Jakarta Pusat',
+    kecamatan: 'Gambir',
+    bentuk_pendidikan: 'SMP',
+    status: 'S',
+  },
+  {
+    npsn: '3',
+    nama: 'SMAN 3 Jakarta',
+    provinsi: 'DKI Jakarta',
+    kab_kota: 'Jakarta Pusat',
+    kecamatan: 'Menteng',
+    bentuk_pendidikan: 'SMA',
+    status: 'N',
+  },
+  {
+    npsn: '4',
+    nama: 'SDN 1 Bandung',
+    provinsi: 'Jawa Barat',
+    kab_kota: 'Kota Bandung',
+    kecamatan: 'Cicendo',
+    bentuk_pendidikan: 'SD',
+    status: 'N',
+  },
 ];
 
 test('filterSchoolsByProvinceAndKabupaten returns empty array for non-array input', () => {
-  assert.deepStrictEqual(filterSchoolsByProvinceAndKabupaten(null, 'DKI Jakarta', 'Jakarta Pusat'), []);
-  assert.deepStrictEqual(filterSchoolsByProvinceAndKabupaten(undefined, 'DKI Jakarta', 'Jakarta Pusat'), []);
-  assert.deepStrictEqual(filterSchoolsByProvinceAndKabupaten('invalid', 'DKI Jakarta', 'Jakarta Pusat'), []);
-  assert.deepStrictEqual(filterSchoolsByProvinceAndKabupaten(123, 'DKI Jakarta', 'Jakarta Pusat'), []);
-  assert.deepStrictEqual(filterSchoolsByProvinceAndKabupaten({}, 'DKI Jakarta', 'Jakarta Pusat'), []);
+  assert.deepStrictEqual(
+    filterSchoolsByProvinceAndKabupaten(null, 'DKI Jakarta', 'Jakarta Pusat'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByProvinceAndKabupaten(undefined, 'DKI Jakarta', 'Jakarta Pusat'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByProvinceAndKabupaten('invalid', 'DKI Jakarta', 'Jakarta Pusat'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByProvinceAndKabupaten(123, 'DKI Jakarta', 'Jakarta Pusat'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByProvinceAndKabupaten({}, 'DKI Jakarta', 'Jakarta Pusat'),
+    []
+  );
 });
 
 test('filterSchoolsByProvinceAndKabupaten filters by both province and kabupaten', () => {
@@ -77,7 +124,11 @@ test('generateKabupatenPageHtml renders kecamatan links with counts', () => {
 });
 
 test('generateKabupatenPageHtml skipFilter=true uses pre-filtered schools directly', () => {
-  const preFiltered = filterSchoolsByProvinceAndKabupaten(sampleSchools, 'DKI Jakarta', 'Jakarta Pusat');
+  const preFiltered = filterSchoolsByProvinceAndKabupaten(
+    sampleSchools,
+    'DKI Jakarta',
+    'Jakarta Pusat'
+  );
   const html = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', preFiltered, true);
   assert.ok(html.includes('3 sekolah'));
   assert.ok(html.includes('Menteng'));
@@ -85,7 +136,15 @@ test('generateKabupatenPageHtml skipFilter=true uses pre-filtered schools direct
 
 test('generateKabupatenPageHtml escapeHtml protects against XSS in names', () => {
   const evil = [
-    { npsn: '9', nama: 'SDN Aman', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: '<script>alert(1)</script>', bentuk_pendidikan: 'SD', status: 'N' },
+    {
+      npsn: '9',
+      nama: 'SDN Aman',
+      provinsi: 'DKI Jakarta',
+      kab_kota: 'Jakarta Pusat',
+      kecamatan: '<script>alert(1)</script>',
+      bentuk_pendidikan: 'SD',
+      status: 'N',
+    },
   ];
   const html = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', evil);
   assert.ok(!html.includes('<script>alert(1)</script>'));

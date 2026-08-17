@@ -793,8 +793,22 @@ test('generateKabupatenPages generates kabupaten pages for each province/kabupat
   assert.strictEqual(result.successful, 2, 'both kabupaten pages should succeed');
   assert.strictEqual(result.failed, 0, 'no kabupaten pages should fail');
 
-  const page1Path = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-barat', 'kabupaten', 'bandung', 'index.html');
-  const page2Path = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-timur', 'kabupaten', 'surabaya', 'index.html');
+  const page1Path = path.join(
+    CONFIG.DIST_DIR,
+    'provinsi',
+    'jawa-barat',
+    'kabupaten',
+    'bandung',
+    'index.html'
+  );
+  const page2Path = path.join(
+    CONFIG.DIST_DIR,
+    'provinsi',
+    'jawa-timur',
+    'kabupaten',
+    'surabaya',
+    'index.html'
+  );
 
   assert.ok(await waitForFile(page1Path), 'jawa-barat/bandung kabupaten page should exist');
   assert.ok(await waitForFile(page2Path), 'jawa-timur/surabaya kabupaten page should exist');
@@ -909,10 +923,7 @@ test('generateKecamatanPages generates kecamatan pages for each location', async
   assert.ok(content1.includes('<!DOCTYPE html>'), 'kecamatan page should be valid HTML');
   assert.ok(content1.includes('Kecamatan Coblong'), 'kecamatan page should contain kecamatan name');
   assert.ok(content1.includes('2 sekolah'), 'kecamatan page should count both schools');
-  assert.ok(
-    content1.includes('10001-sma-1.html'),
-    'kecamatan page should link to school pages'
-  );
+  assert.ok(content1.includes('10001-sma-1.html'), 'kecamatan page should link to school pages');
 });
 
 test('generateKecamatanPages handles empty schools array', async () => {

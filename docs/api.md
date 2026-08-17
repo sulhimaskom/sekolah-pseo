@@ -2175,7 +2175,12 @@ const pageData = buildKabupatenPageData('DKI Jakarta', 'Jakarta Pusat', schools)
 
 // Optimized: pass pre-filtered schools via groupSchoolsByKabupaten
 const grouped = groupSchoolsByKabupaten(schools);
-const pageData2 = buildKabupatenPageData('DKI Jakarta', 'Jakarta Pusat', grouped.get('DKI Jakarta\u0000Jakarta Pusat'), true);
+const pageData2 = buildKabupatenPageData(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat'),
+  true
+);
 ```
 
 ---
@@ -2223,7 +2228,13 @@ const pageData = buildKecamatanPageData('DKI Jakarta', 'Jakarta Pusat', 'Gambir'
 
 // Optimized: pass pre-filtered schools via groupSchoolsByKecamatan
 const grouped = groupSchoolsByKecamatan(schools);
-const pageData2 = buildKecamatanPageData('DKI Jakarta', 'Jakarta Pusat', 'Gambir', grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'), true);
+const pageData2 = buildKecamatanPageData(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  'Gambir',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'),
+  true
+);
 ```
 
 ---
@@ -3250,7 +3261,12 @@ const html = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', schools);
 
 // Optimized: pass pre-filtered schools, skip redundant filtering
 const grouped = groupSchoolsByKabupaten(schools);
-const html2 = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', grouped.get('DKI Jakarta\u0000Jakarta Pusat'), true);
+const html2 = generateKabupatenPageHtml(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat'),
+  true
+);
 ```
 
 ---
@@ -3273,7 +3289,11 @@ Filters schools by province and kabupaten/kota name.
 
 ```javascript
 const { filterSchoolsByProvinceAndKabupaten } = require('./templates/kabupaten-page');
-const jakartaPusatSchools = filterSchoolsByProvinceAndKabupaten(schools, 'DKI Jakarta', 'Jakarta Pusat');
+const jakartaPusatSchools = filterSchoolsByProvinceAndKabupaten(
+  schools,
+  'DKI Jakarta',
+  'Jakarta Pusat'
+);
 console.log(`Found ${jakartaPusatSchools.length} schools`);
 ```
 
@@ -3369,7 +3389,13 @@ const html = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir',
 
 // Optimized: pass pre-filtered schools, skip redundant filtering
 const grouped = groupSchoolsByKecamatan(schools);
-const html2 = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir', grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'), true);
+const html2 = generateKecamatanPageHtml(
+  'DKI Jakarta',
+  'Jakarta Pusat',
+  'Gambir',
+  grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'),
+  true
+);
 ```
 
 ---

@@ -1165,7 +1165,13 @@ describe('groupSchoolsByKecamatan', () => {
 
   it('skips schools without full location fields', () => {
     const schools = [
-      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
+      {
+        npsn: '1',
+        nama: 'School 1',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
       { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat', kab_kota: 'Bandung' },
       { npsn: '3', nama: 'School 3', kab_kota: 'Bandung', kecamatan: 'Coblong' },
       { npsn: '4', nama: 'School 4', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: '' },
@@ -1180,10 +1186,34 @@ describe('groupSchoolsByKecamatan', () => {
 
   it('groups schools from same full location together', () => {
     const schools = [
-      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
-      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Coblong' },
-      { npsn: '3', nama: 'School 3', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: 'Cidadap' },
-      { npsn: '4', nama: 'School 4', provinsi: 'Jawa Timur', kab_kota: 'Surabaya', kecamatan: 'Gubeng' },
+      {
+        npsn: '1',
+        nama: 'School 1',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+      {
+        npsn: '2',
+        nama: 'School 2',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+      {
+        npsn: '3',
+        nama: 'School 3',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Cidadap',
+      },
+      {
+        npsn: '4',
+        nama: 'School 4',
+        provinsi: 'Jawa Timur',
+        kab_kota: 'Surabaya',
+        kecamatan: 'Gubeng',
+      },
     ];
 
     const result = groupSchoolsByKecamatan(schools);
@@ -1196,8 +1226,20 @@ describe('groupSchoolsByKecamatan', () => {
 
   it('returns Map with correct composite keys', () => {
     const schools = [
-      { npsn: '1', nama: 'School 1', provinsi: 'Bali', kab_kota: 'Denpasar', kecamatan: 'Denpasar Barat' },
-      { npsn: '2', nama: 'School 2', provinsi: 'Bali', kab_kota: 'Denpasar', kecamatan: 'Denpasar Timur' },
+      {
+        npsn: '1',
+        nama: 'School 1',
+        provinsi: 'Bali',
+        kab_kota: 'Denpasar',
+        kecamatan: 'Denpasar Barat',
+      },
+      {
+        npsn: '2',
+        nama: 'School 2',
+        provinsi: 'Bali',
+        kab_kota: 'Denpasar',
+        kecamatan: 'Denpasar Timur',
+      },
     ];
 
     const result = groupSchoolsByKecamatan(schools);

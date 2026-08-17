@@ -348,7 +348,13 @@ function buildKabupatenPageData(provinceName, kabKotaName, schools, skipFilter =
  *        (schools array is assumed to be already filtered to this kecamatan)
  * @returns {Object} - Kecamatan page data with relativePath and content
  */
-function buildKecamatanPageData(provinceName, kabKotaName, kecamatanName, schools, skipFilter = false) {
+function buildKecamatanPageData(
+  provinceName,
+  kabKotaName,
+  kecamatanName,
+  schools,
+  skipFilter = false
+) {
   if (!provinceName || typeof provinceName !== 'string') {
     throw new IntegrationError('Invalid province name provided', ERROR_CODES.INVALID_INPUT, {
       field: 'provinceName',

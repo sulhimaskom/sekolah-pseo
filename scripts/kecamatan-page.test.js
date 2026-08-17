@@ -7,17 +7,61 @@ const {
 } = require('../src/presenters/templates/kecamatan-page');
 
 const sampleSchools = [
-  { npsn: '1', nama: 'SDN 1 Jakarta', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Gambir', bentuk_pendidikan: 'SD', status: 'N' },
-  { npsn: '2', nama: 'SMPN 2 Jakarta', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Gambir', bentuk_pendidikan: 'SMP', status: 'S' },
-  { npsn: '3', nama: 'SMAN 3 Jakarta', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Menteng', bentuk_pendidikan: 'SMA', status: 'N' },
-  { npsn: '4', nama: 'SDN 1 Bandung', provinsi: 'Jawa Barat', kab_kota: 'Kota Bandung', kecamatan: 'Cicendo', bentuk_pendidikan: 'SD', status: 'N' },
+  {
+    npsn: '1',
+    nama: 'SDN 1 Jakarta',
+    provinsi: 'DKI Jakarta',
+    kab_kota: 'Jakarta Pusat',
+    kecamatan: 'Gambir',
+    bentuk_pendidikan: 'SD',
+    status: 'N',
+  },
+  {
+    npsn: '2',
+    nama: 'SMPN 2 Jakarta',
+    provinsi: 'DKI Jakarta',
+    kab_kota: 'Jakarta Pusat',
+    kecamatan: 'Gambir',
+    bentuk_pendidikan: 'SMP',
+    status: 'S',
+  },
+  {
+    npsn: '3',
+    nama: 'SMAN 3 Jakarta',
+    provinsi: 'DKI Jakarta',
+    kab_kota: 'Jakarta Pusat',
+    kecamatan: 'Menteng',
+    bentuk_pendidikan: 'SMA',
+    status: 'N',
+  },
+  {
+    npsn: '4',
+    nama: 'SDN 1 Bandung',
+    provinsi: 'Jawa Barat',
+    kab_kota: 'Kota Bandung',
+    kecamatan: 'Cicendo',
+    bentuk_pendidikan: 'SD',
+    status: 'N',
+  },
 ];
 
 test('filterSchoolsByLocation returns empty array for non-array input', () => {
-  assert.deepStrictEqual(filterSchoolsByLocation(null, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'), []);
-  assert.deepStrictEqual(filterSchoolsByLocation(undefined, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'), []);
-  assert.deepStrictEqual(filterSchoolsByLocation('invalid', 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'), []);
-  assert.deepStrictEqual(filterSchoolsByLocation(123, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'), []);
+  assert.deepStrictEqual(
+    filterSchoolsByLocation(null, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByLocation(undefined, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByLocation('invalid', 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'),
+    []
+  );
+  assert.deepStrictEqual(
+    filterSchoolsByLocation(123, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'),
+    []
+  );
   assert.deepStrictEqual(filterSchoolsByLocation({}, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir'), []);
 });
 
@@ -38,8 +82,16 @@ test('generateSchoolLinksHtml builds correct school URLs', () => {
     'dki-jakarta',
     'jakarta-pusat'
   );
-  assert.ok(html.includes('/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/1-sdn-1-jakarta.html'));
-  assert.ok(html.includes('/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/2-smpn-2-jakarta.html'));
+  assert.ok(
+    html.includes(
+      '/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/1-sdn-1-jakarta.html'
+    )
+  );
+  assert.ok(
+    html.includes(
+      '/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/2-smpn-2-jakarta.html'
+    )
+  );
 });
 
 test('generateSchoolLinksHtml renders badges with status classes', () => {
@@ -57,7 +109,15 @@ test('generateSchoolLinksHtml renders badges with status classes', () => {
 
 test('generateSchoolLinksHtml escapes school names', () => {
   const evil = [
-    { npsn: '9', nama: '<img src=x onerror=alert(1)>', provinsi: 'DKI Jakarta', kab_kota: 'Jakarta Pusat', kecamatan: 'Gambir', bentuk_pendidikan: 'SD', status: 'N' },
+    {
+      npsn: '9',
+      nama: '<img src=x onerror=alert(1)>',
+      provinsi: 'DKI Jakarta',
+      kab_kota: 'Jakarta Pusat',
+      kecamatan: 'Gambir',
+      bentuk_pendidikan: 'SD',
+      status: 'N',
+    },
   ];
   const html = generateSchoolLinksHtml(evil, 'dki-jakarta', 'jakarta-pusat');
   assert.ok(!html.includes('<img src=x onerror=alert(1)>'));
@@ -77,8 +137,19 @@ test('generateKecamatanPageHtml renders school links and count', () => {
 });
 
 test('generateKecamatanPageHtml skipFilter=true uses pre-filtered schools directly', () => {
-  const preFiltered = filterSchoolsByLocation(sampleSchools, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir');
-  const html = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir', preFiltered, true);
+  const preFiltered = filterSchoolsByLocation(
+    sampleSchools,
+    'DKI Jakarta',
+    'Jakarta Pusat',
+    'Gambir'
+  );
+  const html = generateKecamatanPageHtml(
+    'DKI Jakarta',
+    'Jakarta Pusat',
+    'Gambir',
+    preFiltered,
+    true
+  );
   assert.ok(html.includes('2 sekolah'));
   assert.ok(html.includes('SMPN 2 Jakarta'));
 });
@@ -101,7 +172,11 @@ test('generateKecamatanPageHtml includes skip link, main landmark, footer, back-
 
 test('generateKecamatanPageHtml canonical URL is correct', () => {
   const html = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir', sampleSchools);
-  assert.ok(html.includes('https://example.com/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/'));
+  assert.ok(
+    html.includes(
+      'https://example.com/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/'
+    )
+  );
 });
 
 test('generateKecamatanPageHtml empty schools renders zero count', () => {

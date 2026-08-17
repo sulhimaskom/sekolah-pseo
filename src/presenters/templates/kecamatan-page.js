@@ -69,7 +69,13 @@ function generateSchoolLinksHtml(schools, provinceSlug, kabKotaSlug) {
  *        (schools are assumed to be pre-filtered to this kecamatan)
  * @returns {string} - Kecamatan page HTML
  */
-function generateKecamatanPageHtml(provinceName, kabKotaName, kecamatanName, schools, skipFilter = false) {
+function generateKecamatanPageHtml(
+  provinceName,
+  kabKotaName,
+  kecamatanName,
+  schools,
+  skipFilter = false
+) {
   const provinceSlug = slugify(provinceName);
   const kabKotaSlug = slugify(kabKotaName);
   const kecamatanSlug = slugify(kecamatanName);
@@ -102,7 +108,10 @@ function generateKecamatanPageHtml(provinceName, kabKotaName, kecamatanName, sch
     ${generateBreadcrumbHtml([
       { label: T.HOME, url: '/' },
       { label: escapeHtml(provinceName), url: `/provinsi/${provinceSlug}/` },
-      { label: escapeHtml(kabKotaName), url: `/provinsi/${provinceSlug}/kabupaten/${kabKotaSlug}/` },
+      {
+        label: escapeHtml(kabKotaName),
+        url: `/provinsi/${provinceSlug}/kabupaten/${kabKotaSlug}/`,
+      },
       { label: escapeHtml(kecamatanName) },
     ])}
   </header>

@@ -9,7 +9,7 @@
 
 ### Description
 
-Every province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no `index.html` was ever generated there — the entire Province → Kabupaten → Kecamatan → School navigation hierarchy was dead (all kabupaten links 404). Root cause: `kabupaten-page.js`/`kecamatan-page.js` templates were created (commit `4246776`) but **never wired into the build pipeline** — they were dead code, removed in commit `26dfc78` (PR #365), leaving the province-page links dangling. `validate-links.js` missed it because the target *directory* exists (school pages live beneath it) even though no `index.html` exists.
+Every province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no `index.html` was ever generated there — the entire Province → Kabupaten → Kecamatan → School navigation hierarchy was dead (all kabupaten links 404). Root cause: `kabupaten-page.js`/`kecamatan-page.js` templates were created (commit `4246776`) but **never wired into the build pipeline** — they were dead code, removed in commit `26dfc78` (PR #365), leaving the province-page links dangling. `validate-links.js` missed it because the target _directory_ exists (school pages live beneath it) even though no `index.html` exists.
 
 ### Changes Made
 
@@ -48,14 +48,14 @@ Every province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no `in
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| New template tests | 28/28 pass |
-| New builder/generator tests | 16/16 pass |
-| Full JS suite | green (no regressions) |
-| Full build | Status: PASS — 2 kabupaten pages, 2 kecamatan pages (current dataset) |
-| `validate-links.js` | No broken links found across 10 HTML files |
-| Nav chain (DKI Jakarta) | `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/12345678-sma-negeri-1-jakarta.html` exists |
+| Check                       | Result                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| New template tests          | 28/28 pass                                                                                                 |
+| New builder/generator tests | 16/16 pass                                                                                                 |
+| Full JS suite               | green (no regressions)                                                                                     |
+| Full build                  | Status: PASS — 2 kabupaten pages, 2 kecamatan pages (current dataset)                                      |
+| `validate-links.js`         | No broken links found across 10 HTML files                                                                 |
+| Nav chain (DKI Jakarta)     | `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/12345678-sma-negeri-1-jakarta.html` exists |
 
 ### Files Modified
 
@@ -81,7 +81,7 @@ Every province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no `in
 
 Two rate-limiting defects left the system unprotected from overload and out of alignment with its own claims:
 
-1. **`RateLimiter.rateLimitMs` was dead config.** The option was stored in the constructor, asserted in tests, and documented in `docs/api.md` as "(default: 10, reserved for future use)" — but never enforced anywhere in execution. Only *concurrency* was limited; no request *pacing* existed in the entire codebase.
+1. **`RateLimiter.rateLimitMs` was dead config.** The option was stored in the constructor, asserted in tests, and documented in `docs/api.md` as "(default: 10, reserved for future use)" — but never enforced anywhere in execution. Only _concurrency_ was limited; no request _pacing_ existed in the entire codebase.
 2. **`enrichment.js` claimed "Rate-limited: respects upstream API limits" but fired un-paced Wikipedia requests.** `enrichSchools` batches schools (default concurrency 10; ETL uses 5), and each school triggers two HTTP requests (search + extract) — so up to 20 simultaneous Wikipedia requests could hit the API with zero spacing. Wikipedia's API etiquette limits anonymous access to ~1 req/sec; this burst pattern risks 429s and IP blocks.
 
 ### Changes Made
@@ -99,7 +99,7 @@ Two rate-limiting defects left the system unprotected from overload and out of a
 **3. `scripts/enrichment.js` — dedicated Wikipedia rate limiter**
 
 - New `wikipediaRateLimiter = new RateLimiter({ maxConcurrent: 2, rateLimitMs: 300, queueTimeoutMs: 30000 })` — caps concurrency at 2 and paces starts to ~3.3 req/sec, well under Wikipedia's anonymous-access etiquette limits.
-- `fetchJson()` now wraps the actual HTTP request in `wikipediaRateLimiter.execute(...)`, so *every* request (search + extract, retries included) is rate-limited, not just per-school.
+- `fetchJson()` now wraps the actual HTTP request in `wikipediaRateLimiter.execute(...)`, so _every_ request (search + extract, retries included) is rate-limited, not just per-school.
 - New exported constants `WIKIPEDIA_MAX_CONCURRENT` (2) and `WIKIPEDIA_RATE_LIMIT_MS` (300); `wikipediaRateLimiter` exported for tests.
 - Module header claim ("Rate-limited") is now true.
 
@@ -119,13 +119,13 @@ Two rate-limiting defects left the system unprotected from overload and out of a
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| rate-limiter tests | 29/29 pass (+3 new pacing tests) |
-| enrichment tests | 42/42 pass (+2 new limiter tests) |
-| Pacing behavior | `rateLimitMs: 40` → start gaps ≥ 35ms; `0` → no delay |
-| Wikipedia pacing | requests capped at 2 concurrent, ~3.3 req/sec start rate |
-| Backward compat | `rateLimitMs` default 0 — build/validate-links unchanged |
+| Check              | Result                                                   |
+| ------------------ | -------------------------------------------------------- |
+| rate-limiter tests | 29/29 pass (+3 new pacing tests)                         |
+| enrichment tests   | 42/42 pass (+2 new limiter tests)                        |
+| Pacing behavior    | `rateLimitMs: 40` → start gaps ≥ 35ms; `0` → no delay    |
+| Wikipedia pacing   | requests capped at 2 concurrent, ~3.3 req/sec start rate |
+| Backward compat    | `rateLimitMs` default 0 — build/validate-links unchanged |
 
 ### Files Modified
 
@@ -162,7 +162,7 @@ The measured hotspot was link validation's existence probing: `validateLinksInFi
 
 **1. `scripts/validate-links.js` — memoized existence probe (`statExistsCached`)**
 
-- New exported helper `statExistsCached(cache, targetPath)` — caches the existence **promise** per resolved target path, so identical targets across files are stat'ed once per run *and* concurrent in-flight probes of the same target are deduplicated.
+- New exported helper `statExistsCached(cache, targetPath)` — caches the existence **promise** per resolved target path, so identical targets across files are stat'ed once per run _and_ concurrent in-flight probes of the same target are deduplicated.
 - `validateLinksInFile(file, links, distDir, statCache = new Map())` — optional 4th param; a fresh per-call cache keeps direct-call behavior identical (all existing tests pass untouched).
 - `validateLinks()` creates **one shared cache per run** and passes it through. Safe because `dist/` is immutable during a run — the cache lives and dies with the call, so there is no invalidation risk (the anti-pattern rule "cache without invalidation strategy" is satisfied by scoping the cache to the run).
 - Error semantics preserved exactly: `IntegrationError` → broken link; unexpected (non-IntegrationError) failures are silently skipped as before (optional catch binding).
@@ -178,17 +178,17 @@ The measured hotspot was link validation's existence probing: `validateLinksInFi
 
 ### Verification (synthetic 5,000-school scale)
 
-| Check | Before | After |
-| ----- | ------ | ----- |
-| validate-links wall time (3 runs) | 0.90 / 0.90 / 0.92s | 0.69 / 0.68 / 0.66s (**~25% faster**) |
-| Stat calls during validation | 15,067 (27 unique) | **27 (558x reduction)** |
-| Walk phase | 185-204ms sequential | parallel (validate-links total 0.66-0.69s) |
-| Sitemap | 0.10s | 0.10s (unchanged, walk a small fraction) |
-| JS Tests (full suite) | 1155 | **1160 total, 1156 pass, 0 fail** (+5 new) |
-| Python tests | 27/27 | 27/27 |
-| Coverage gate | pass | pass (97.37% lines / 93.31% branches) |
-| ESLint / Prettier | clean | clean |
-| Broken-link results | 0 broken (identical) | 0 broken (identical) |
+| Check                             | Before               | After                                      |
+| --------------------------------- | -------------------- | ------------------------------------------ |
+| validate-links wall time (3 runs) | 0.90 / 0.90 / 0.92s  | 0.69 / 0.68 / 0.66s (**~25% faster**)      |
+| Stat calls during validation      | 15,067 (27 unique)   | **27 (558x reduction)**                    |
+| Walk phase                        | 185-204ms sequential | parallel (validate-links total 0.66-0.69s) |
+| Sitemap                           | 0.10s                | 0.10s (unchanged, walk a small fraction)   |
+| JS Tests (full suite)             | 1155                 | **1160 total, 1156 pass, 0 fail** (+5 new) |
+| Python tests                      | 27/27                | 27/27                                      |
+| Coverage gate                     | pass                 | pass (97.37% lines / 93.31% branches)      |
+| ESLint / Prettier                 | clean                | clean                                      |
+| Broken-link results               | 0 broken (identical) | 0 broken (identical)                       |
 
 ### Files Modified
 
@@ -239,14 +239,14 @@ The centralized schema (`scripts/data-schema.js`) declared coordinate bounds and
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| JS tests (full suite) | **1169 total, 1165 pass, 4 skipped, 0 fail** (+8 new) |
-| Python tests | 27/27 pass |
-| Coverage gate | pass (97.37% lines / 93.48% branches) |
-| ESLint | clean |
-| Prettier | clean |
-| ETL boundary sanity | valid record accepted; out-of-bounds lat rejected; bad date rejected; zero coords = unset |
+| Check                 | Result                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| JS tests (full suite) | **1169 total, 1165 pass, 4 skipped, 0 fail** (+8 new)                                     |
+| Python tests          | 27/27 pass                                                                                |
+| Coverage gate         | pass (97.37% lines / 93.48% branches)                                                     |
+| ESLint                | clean                                                                                     |
+| Prettier              | clean                                                                                     |
+| ETL boundary sanity   | valid record accepted; out-of-bounds lat rejected; bad date rejected; zero coords = unset |
 
 ### Files Modified
 
