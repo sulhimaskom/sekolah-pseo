@@ -1,6 +1,6 @@
-const { escapeHtml } = require('../../../scripts/utils');
-const slugify = require('../../../scripts/slugify');
-const CONFIG = require('../../../scripts/config');
+const { escapeHtml } = require('../../core/utils');
+const slugify = require('../../core/slugify');
+const CONFIG = require('../../core/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');

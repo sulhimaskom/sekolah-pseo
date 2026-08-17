@@ -9,7 +9,7 @@ const os = require('os');
 // (dist/) sitemap artifacts — the only test file still mutating real build
 // output after the F052/F014 temp-dir redirects. Redirect DIST_DIR per-process
 // BEFORE requiring sitemap, mirroring build-pages.test.js / build-orchestrator.test.js.
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 const { withConfig } = require('./test-helpers');
 CONFIG.DIST_DIR = path.join(os.tmpdir(), `sitemap-test-dist-${process.pid}`);
 
@@ -630,7 +630,7 @@ test('writeSitemapFiles escapes XML in URLs without lastmod', async () => {
 
 test('generateSitemaps generates sitemaps from schools data', async () => {
   const { generateSitemaps } = require('./sitemap');
-  const CONFIG = require('./config');
+  const CONFIG = require('../src/core/config');
 
   const schools = [
     {
@@ -679,7 +679,7 @@ test('generateSitemaps generates sitemaps from schools data', async () => {
 
 test('generateSitemaps generates sitemap index referencing all sitemap files', async () => {
   const { generateSitemaps } = require('./sitemap');
-  const CONFIG = require('./config');
+  const CONFIG = require('../src/core/config');
 
   const schools = [
     { npsn: '11111111', nama: 'SDN 1', provinsi: 'Aceh', kab_kota: 'A', kecamatan: 'A' },
@@ -718,7 +718,7 @@ test('generateSitemaps uses collectUrlsFromSchools when schools provided', async
 
 test('generateSitemaps with single school produces consistent structure', async () => {
   const { generateSitemaps } = require('./sitemap');
-  const CONFIG = require('./config');
+  const CONFIG = require('../src/core/config');
 
   const schools = [
     {

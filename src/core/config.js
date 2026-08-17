@@ -29,7 +29,7 @@ function validatePath(targetPath, basePath) {
 }
 
 // Define base directories
-const ROOT_DIR = path.join(__dirname, '..');
+const ROOT_DIR = path.join(__dirname, '..', '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const EXTERNAL_DIR = path.join(ROOT_DIR, 'external');

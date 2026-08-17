@@ -16,8 +16,8 @@
 
 'use strict';
 
-const { escapeHtml } = require('../../../../scripts/utils');
-const CONFIG = require('../../../../scripts/config');
+const { escapeHtml } = require('../../../core/utils');
+const CONFIG = require('../../../core/config');
 
 // Pre-escape static CONFIG.TEXT values once at module load.
 const T = Object.fromEntries(

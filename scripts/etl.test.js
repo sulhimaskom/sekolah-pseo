@@ -338,7 +338,7 @@ async function withEtlRun(rawCsvRecords, testFn) {
   await fs.writeFile(rawPath, csvContent);
 
   // Backup the real schools.csv before running ETL (which writes to data/schools.csv)
-  const schoolsPath = require('./config').SCHOOLS_CSV_PATH;
+  const schoolsPath = require('../src/core/config').SCHOOLS_CSV_PATH;
   let backupContent = null;
   try {
     backupContent = await fs.readFile(schoolsPath, 'utf-8');
@@ -349,7 +349,7 @@ async function withEtlRun(rawCsvRecords, testFn) {
   const origRawPath = process.env.RAW_DATA_PATH;
   const origExit = process.exit;
   process.env.RAW_DATA_PATH = rawPath;
-  delete require.cache[require.resolve('./config')];
+  delete require.cache[require.resolve('../src/core/config')];
 
   const { run } = require('./etl');
 
@@ -358,7 +358,7 @@ async function withEtlRun(rawCsvRecords, testFn) {
   } finally {
     process.env.RAW_DATA_PATH = origRawPath;
     process.exit = origExit;
-    delete require.cache[require.resolve('./config')];
+    delete require.cache[require.resolve('../src/core/config')];
     // Restore original schools.csv
     if (backupContent !== null) {
       await fs.writeFile(schoolsPath, backupContent, 'utf-8');

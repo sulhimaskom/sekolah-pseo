@@ -15,7 +15,7 @@
 
 const { execSync } = require('child_process');
 const readline = require('readline');
-const { terminate } = require('./utils');
+const { terminate } = require('../src/core/utils');
 
 const SCRIPTS = {
   Development: [

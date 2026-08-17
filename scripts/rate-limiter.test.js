@@ -1,6 +1,6 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert');
-const { RateLimiter } = require('./rate-limiter');
+const { RateLimiter } = require('../src/core/rate-limiter');
 
 describe('RateLimiter', () => {
   let limiter;

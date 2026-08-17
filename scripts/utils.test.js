@@ -16,7 +16,7 @@ const {
   processConcurrently,
   generateMetaDescription,
   fileExists,
-} = require('./utils');
+} = require('../src/core/utils');
 
 test('parseCsv handles empty data', () => {
   assert.deepStrictEqual(parseCsv(''), []);
@@ -264,12 +264,12 @@ test('writeCsv handles formula injection protection', async () => {
 });
 
 test('writeCsv throws for empty array', async () => {
-  const { IntegrationError } = require('./resilience');
+  const { IntegrationError } = require('../src/core/resilience');
   await assert.rejects(() => writeCsv([], '/tmp/nonexistent/test.csv'), IntegrationError);
 });
 
 test('writeCsv throws for non-array input', async () => {
-  const { IntegrationError } = require('./resilience');
+  const { IntegrationError } = require('../src/core/resilience');
   await assert.rejects(() => writeCsv(null, '/tmp/nonexistent/test.csv'), IntegrationError);
   await assert.rejects(() => writeCsv(undefined, '/tmp/nonexistent/test.csv'), IntegrationError);
   await assert.rejects(() => writeCsv('string', '/tmp/nonexistent/test.csv'), IntegrationError);

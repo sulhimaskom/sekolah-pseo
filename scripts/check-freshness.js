@@ -12,11 +12,11 @@
 
 'use strict';
 
-const { IntegrationError, ERROR_CODES } = require('./resilience');
-const { safeReadFile } = require('./fs-safe');
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { parseCsv, terminate, fileExists } = require('./utils');
+const { IntegrationError, ERROR_CODES } = require('../src/core/resilience');
+const { safeReadFile } = require('../src/core/fs-safe');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { parseCsv, terminate, fileExists } = require('../src/core/utils');
 
 const DEFAULT_MAX_AGE_DAYS = 7;
 

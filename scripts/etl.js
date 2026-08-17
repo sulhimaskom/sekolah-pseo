@@ -21,17 +21,17 @@
 
 'use strict';
 
-const { parseCsv, writeCsv, terminate } = require('./utils');
-const logger = require('./logger');
-const CONFIG = require('./config');
-const { safeReadFile, safeAccess } = require('./fs-safe');
+const { parseCsv, writeCsv, terminate } = require('../src/core/utils');
+const logger = require('../src/core/logger');
+const CONFIG = require('../src/core/config');
+const { safeReadFile, safeAccess } = require('../src/core/fs-safe');
 const {
   isEnrichmentEnabled,
   enrichSchools,
   saveEnrichmentData,
   logEnrichmentSummary,
 } = require('./enrichment');
-const SCHEMA = require('./data-schema');
+const SCHEMA = require('../src/core/data-schema');
 
 // Hoisted regex patterns for sanitize — avoids recreating them on every call.
 // For ~42K calls (3474 records × ~12 fields each) this eliminates ~126K regex

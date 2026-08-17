@@ -15,10 +15,10 @@
 
 const path = require('path');
 const { getDataFreshness, getDataQualityMetrics } = require('./check-freshness');
-const { safeWriteFile, safeMkdir } = require('./fs-safe');
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { terminate } = require('./utils');
+const { safeWriteFile, safeMkdir } = require('../src/core/fs-safe');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { terminate } = require('../src/core/utils');
 const { DESIGN_TOKENS } = require('../src/presenters/design-system');
 
 const REPORT_DIR = path.join(CONFIG.DIST_DIR, 'freshness-report');

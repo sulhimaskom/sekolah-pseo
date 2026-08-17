@@ -22,8 +22,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
 
-const CONFIG = require('./config');
-const { resetCircuitBreakers } = require('./fs-safe');
+const CONFIG = require('../src/core/config');
+const { resetCircuitBreakers } = require('../src/core/fs-safe');
 const { withConfig } = require('./test-helpers');
 
 // ── Process exit mock ───────────────────────────────────────────
@@ -90,7 +90,7 @@ function parseCsvSimple(csv) {
 }
 
 // We require etl lazily because the module reads CONFIG at import time
-// (via require('./config') which returns a reference — the function reads
+// (via require('../src/core/config') which returns a reference — the function reads
 // CONFIG.RAW_DATA_PATH at call time, so lazy import is fine but we still
 // need the module object for run()).
 let etl;

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const CONFIG = require('../scripts/config');
-const { escapeHtml } = require('../scripts/utils');
+const CONFIG = require('../src/core/config');
+const { escapeHtml } = require('../src/core/utils');
 const { T } = require('../src/presenters/templates/shared/translations');
 
 test('T exposes every CONFIG.TEXT key', () => {

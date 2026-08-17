@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { IntegrationError, ERROR_CODES } = require('./resilience');
+const { IntegrationError, ERROR_CODES } = require('../src/core/resilience');
 
 // Isolate the external-data clone/cache away from the repo working directory
 // into a per-process temp dir BEFORE fetch-data is required, so parallel

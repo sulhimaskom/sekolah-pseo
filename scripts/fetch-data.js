@@ -16,9 +16,9 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { terminate } = require('./utils');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { terminate } = require('../src/core/utils');
 const {
   IntegrationError,
   ERROR_CODES,
@@ -26,7 +26,7 @@ const {
   withTimeoutSync,
   CircuitBreaker,
   isTransientError,
-} = require('./resilience');
+} = require('../src/core/resilience');
 
 // Default external data configuration
 const DEFAULT_SOURCE_REPO = 'https://github.com/suryavip/daftar-sekolah-indonesia.git';

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const slugify = require('../scripts/slugify');
+const slugify = require('../src/core/slugify');
 
 test('slugify converts string to lowercase', () => {
   assert.strictEqual(slugify('Hello World'), 'hello-world');

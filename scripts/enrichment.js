@@ -17,8 +17,8 @@
 
 'use strict';
 
-const logger = require('./logger');
-const { safeReadFile, safeWriteFile, safeAccess } = require('./fs-safe');
+const logger = require('../src/core/logger');
+const { safeReadFile, safeWriteFile, safeAccess } = require('../src/core/fs-safe');
 const {
   withTimeout,
   retry,
@@ -26,9 +26,9 @@ const {
   IntegrationError,
   ERROR_CODES,
   CircuitBreaker,
-} = require('./resilience');
-const CONFIG = require('./config');
-const { RateLimiter } = require('./rate-limiter');
+} = require('../src/core/resilience');
+const CONFIG = require('../src/core/config');
+const { RateLimiter } = require('../src/core/rate-limiter');
 const path = require('path');
 
 // Enrichment data file path

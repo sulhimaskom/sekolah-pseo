@@ -15,7 +15,7 @@ const {
   fastMkdir,
   DEFAULT_FILE_TIMEOUT_MS,
   resetCircuitBreakers,
-} = require('./fs-safe');
+} = require('../src/core/fs-safe');
 
 describe('fs-safe', () => {
   // Test fixtures - defined at top level

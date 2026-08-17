@@ -640,7 +640,7 @@ test('clearManifest handles non-existent file gracefully', async () => {
 
 test('saveManifest throws IntegrationError when write fails', async () => {
   const { saveManifest } = require('./manifest');
-  const { IntegrationError } = require('./resilience');
+  const { IntegrationError } = require('../src/core/resilience');
 
   const testDir = process.env.TEST_TEMP_DIR;
   await withConfig({ ROOT_DIR: testDir }, async () => {
@@ -669,7 +669,7 @@ test('saveManifest throws IntegrationError when write fails', async () => {
 
 test('saveManifest wraps non-IntegrationError in IntegrationError', async () => {
   const { saveManifest } = require('./manifest');
-  const { IntegrationError } = require('./resilience');
+  const { IntegrationError } = require('../src/core/resilience');
 
   const testDir = process.env.TEST_TEMP_DIR;
   // Use a non-existent deep path so safeWriteFile fails with ENOENT

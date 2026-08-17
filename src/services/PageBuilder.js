@@ -1,9 +1,9 @@
 'use strict';
 
 const path = require('path');
-const slugify = require('../../scripts/slugify');
-const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
-const { REQUIRED_SCHOOL_FIELDS, SEARCH_DATA_FIELDS } = require('../../scripts/data-schema');
+const slugify = require('../core/slugify');
+const { IntegrationError, ERROR_CODES } = require('../core/resilience');
+const { REQUIRED_SCHOOL_FIELDS, SEARCH_DATA_FIELDS } = require('../core/data-schema');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
 const { generateKabupatenPageHtml } = require('../presenters/templates/kabupaten-page');
@@ -426,7 +426,7 @@ function prepareSchoolDataForSearch(schools) {
     return [];
   }
 
-  const logger = require('../../scripts/logger');
+  const logger = require('../core/logger');
 
   // F046: isolate per-school failures — a single malformed row must not abort
   // the whole build via the search-data path (page pipeline already guards per-school).

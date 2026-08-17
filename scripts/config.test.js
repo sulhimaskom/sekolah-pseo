@@ -3,9 +3,9 @@ const assert = require('node:assert');
 const path = require('path');
 
 // Clear module cache to get fresh config
-delete require.cache[require.resolve('./config')];
+delete require.cache[require.resolve('../src/core/config')];
 
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 
 describe('config', () => {
   describe('validatePath', () => {
@@ -164,8 +164,8 @@ describe('config', () => {
       process.env.BUILD_CONCURRENCY_LIMIT = '50';
 
       // Clear require cache to get fresh config
-      delete require.cache[require.resolve('./config')];
-      const CONFIG2 = require('./config');
+      delete require.cache[require.resolve('../src/core/config')];
+      const CONFIG2 = require('../src/core/config');
 
       assert.strictEqual(CONFIG2.BUILD_CONCURRENCY_LIMIT, 50);
 
@@ -181,8 +181,8 @@ describe('config', () => {
       const originalEnv = process.env.BUILD_CONCURRENCY_LIMIT;
       process.env.BUILD_CONCURRENCY_LIMIT = '-5';
 
-      delete require.cache[require.resolve('./config')];
-      const CONFIG2 = require('./config');
+      delete require.cache[require.resolve('../src/core/config')];
+      const CONFIG2 = require('../src/core/config');
 
       assert.strictEqual(CONFIG2.BUILD_CONCURRENCY_LIMIT, 1);
 
@@ -197,8 +197,8 @@ describe('config', () => {
       const originalEnv = process.env.BUILD_CONCURRENCY_LIMIT;
       process.env.BUILD_CONCURRENCY_LIMIT = '5000';
 
-      delete require.cache[require.resolve('./config')];
-      const CONFIG2 = require('./config');
+      delete require.cache[require.resolve('../src/core/config')];
+      const CONFIG2 = require('../src/core/config');
 
       assert.strictEqual(CONFIG2.BUILD_CONCURRENCY_LIMIT, 1000);
 
@@ -223,8 +223,8 @@ describe('config', () => {
       const originalEnv = process.env.VALIDATION_CONCURRENCY_LIMIT;
       process.env.VALIDATION_CONCURRENCY_LIMIT = '25';
 
-      delete require.cache[require.resolve('./config')];
-      const CONFIG2 = require('./config');
+      delete require.cache[require.resolve('../src/core/config')];
+      const CONFIG2 = require('../src/core/config');
 
       assert.strictEqual(CONFIG2.VALIDATION_CONCURRENCY_LIMIT, 25);
 
@@ -249,8 +249,8 @@ describe('config', () => {
       const originalEnv = process.env.MAX_URLS_PER_SITEMAP;
       process.env.MAX_URLS_PER_SITEMAP = '1000';
 
-      delete require.cache[require.resolve('./config')];
-      const CONFIG2 = require('./config');
+      delete require.cache[require.resolve('../src/core/config')];
+      const CONFIG2 = require('../src/core/config');
 
       assert.strictEqual(CONFIG2.MAX_URLS_PER_SITEMAP, 1000);
 

@@ -25,11 +25,11 @@
 
 'use strict';
 
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { safeReadFile } = require('./fs-safe');
-const { parseCsv, terminate, fileExists } = require('./utils');
-const SCHEMA = require('./data-schema');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { safeReadFile } = require('../src/core/fs-safe');
+const { parseCsv, terminate, fileExists } = require('../src/core/utils');
+const SCHEMA = require('../src/core/data-schema');
 
 // ── Configuration ───────────────────────────────────────────────────────────
 

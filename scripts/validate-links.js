@@ -7,10 +7,10 @@
  */
 
 const path = require('path');
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { safeReadFile, safeAccess, safeStat } = require('./fs-safe');
-const { walkDirectory, processConcurrently, terminate } = require('./utils');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { safeReadFile, safeAccess, safeStat } = require('../src/core/fs-safe');
+const { walkDirectory, processConcurrently, terminate } = require('../src/core/utils');
 
 /**
  * Checks if a link is a relative link (should be validated locally).

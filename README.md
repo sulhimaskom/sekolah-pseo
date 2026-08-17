@@ -193,35 +193,30 @@ sekolah-pseo/
 ├── data/                   # File data sekolah (schools.csv)
 ├── external/               # Data mentah dalam format CSV
 ├── public/                # Asset statis (favicon, dll)
-├── scripts/               # Script pemrosesan data dan utilitas
+├── scripts/               # Controller / CLI entry point
 │   ├── build-pages.js     # Halaman pembangunan (full + incremental)
 │   ├── build-performance.js # Profiling performa build
 │   ├── check-freshness.js # Pengecekkan kesegaran data
 │   ├── check-workflow-security.js # Validasi keamanan GitHub Actions
-│   ├── config.js          # Konfigurasi
 │   ├── data-quality.js    # Laporan kualitas data
-│   ├── data-schema.js     # Skema data terpusat (single source of truth)
 │   ├── enrichment.js      # Pengayaan data eksternal (Wikipedia)
 │   ├── etl.js            # Proses ETL
 │   ├── fetch-data.js      # Pengambilan data eksternal
 │   ├── freshness-report.js # Laporan kesegaran data detail
-│   ├── fs-safe.js        # File system wrapper aman
 │   ├── interactive.js    # Menu CLI interaktif
-│   ├── logger.js         # Logging
 │   ├── manifest.js       # Build manifest
-│   ├── rate-limiter.js   # Rate limiting
-│   ├── resilience.js     # Pola resilience
 │   ├── sitemap.js       # Peta situs
-│   ├── slugify.js       # URL slug
-│   ├── utils.js         # Utilitas
 │   └── validate-links.js # Validasi tautan
 ├── src/
+│   ├── core/             # Shared infrastructure layer (config, data-schema, fs-safe, logger, rate-limiter, resilience, slugify, utils)
 │   ├── presenters/
 │   │   ├── design-system.js  # Design tokens
 │   │   ├── styles.js        # CSS generator
 │   │   └── templates/      # Template HTML
 │   │       ├── homepage.js
 │   │       ├── province-page.js
+│   │       ├── kabupaten-page.js
+│   │       ├── kecamatan-page.js
 │   │       ├── school-page.js
 │   │       └── shared/
 │   │           ├── head-meta.js    # Shared HTML head prefix

@@ -19,9 +19,9 @@ const path = require('path');
 const zlib = require('zlib');
 const { promisify } = require('util');
 const { prepareSchoolDataForSearch } = require('./PageBuilder');
-const logger = require('../../scripts/logger');
-const CONFIG = require('../../scripts/config');
-const { safeWriteFile } = require('../../scripts/fs-safe');
+const logger = require('../core/logger');
+const CONFIG = require('../core/config');
+const { safeWriteFile } = require('../core/fs-safe');
 
 const gzipAsync = promisify(zlib.gzip);
 const distDir = CONFIG.DIST_DIR;

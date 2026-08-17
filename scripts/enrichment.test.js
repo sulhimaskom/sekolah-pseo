@@ -13,7 +13,7 @@ const https = require('https');
 // paths, racing with other test files and concurrent suite runs. Redirect
 // CONFIG.DATA_DIR to a per-process temp dir BEFORE requiring ./enrichment, and
 // point the hardcoded paths at it too.
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 CONFIG.DATA_DIR = path.join(os.tmpdir(), `enrichment-test-data-${process.pid}`);
 fs.mkdirSync(CONFIG.DATA_DIR, { recursive: true });
 
