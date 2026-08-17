@@ -1658,6 +1658,7 @@ module.exports = {
   validateLatLon: function,
   validateCategoricalField: function,
   checkNpsnUniqueness: function,
+  enforceNpsnUniqueness: function,
   generateDataQualityReport: function,
 };
 ```
@@ -1852,6 +1853,34 @@ Checks all NPSN values in the dataset for uniqueness.
 const { isUnique, duplicates } = checkNpsnUniqueness(schools);
 if (!isUnique) {
   console.warn(`Duplicate NPSN found: ${duplicates.join(', ')}`);
+}
+```
+
+---
+
+#### `enforceNpsnUniqueness(records)`
+
+Enforces the NPSN primary-key constraint: keeps the first occurrence of each NPSN and rejects subsequent duplicates. Called by `run()` before enrichment and CSV output so `data/schools.csv` never contains duplicate NPSNs — duplicates would otherwise resolve to the same school page path (`{npsn}-{slug}.html`) and silently overwrite each other (data loss).
+
+**Parameters:**
+
+- `records` (Array<Object>): Normalized, schema-valid school records
+
+**Returns:** `Object`
+
+```javascript
+{
+  kept: Array<Object>,     // Unique records (first occurrence per NPSN, input order)
+  rejected: Array<{ npsn: string, reason: string }>  // Duplicate records with reasons
+}
+```
+
+**Usage:**
+
+```javascript
+const { kept, rejected } = enforceNpsnUniqueness(validatedRecords);
+if (rejected.length > 0) {
+  logger.warn(`Rejected ${rejected.length} duplicate NPSN record(s)`);
 }
 ```
 

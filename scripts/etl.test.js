@@ -11,6 +11,7 @@ const {
   validateLatLon,
   validateCategoricalField,
   checkNpsnUniqueness,
+  enforceNpsnUniqueness,
   generateDataQualityReport,
 } = require('../scripts/etl');
 
@@ -194,6 +195,64 @@ test('checkNpsnUniqueness handles empty array', () => {
   const result = checkNpsnUniqueness([]);
   assert.strictEqual(result.isUnique, true);
   assert.deepStrictEqual(result.duplicates, []);
+});
+
+test('enforceNpsnUniqueness keeps first occurrence and rejects duplicates', () => {
+  const records = [
+    { npsn: '12345', nama: 'School 1' },
+    { npsn: '67890', nama: 'School 2' },
+    { npsn: '12345', nama: 'School 3' },
+    { npsn: '12345', nama: 'School 4' },
+  ];
+  const result = enforceNpsnUniqueness(records);
+  assert.strictEqual(result.kept.length, 2, 'Only unique first occurrences kept');
+  assert.deepStrictEqual(
+    result.kept.map(r => r.nama),
+    ['School 1', 'School 2'],
+    'First occurrence order preserved'
+  );
+  assert.strictEqual(result.rejected.length, 2);
+  assert.ok(
+    result.rejected.every(r => r.npsn === '12345'),
+    'All rejected records share the duplicate NPSN'
+  );
+  assert.ok(
+    result.rejected.every(r => typeof r.reason === 'string' && r.reason.includes('Duplicate NPSN')),
+    'Each rejection carries a descriptive reason'
+  );
+});
+
+test('enforceNpsnUniqueness returns all records when NPSNs are unique', () => {
+  const records = [
+    { npsn: '12345', nama: 'School 1' },
+    { npsn: '67890', nama: 'School 2' },
+  ];
+  const result = enforceNpsnUniqueness(records);
+  assert.strictEqual(result.kept.length, 2);
+  assert.deepStrictEqual(result.rejected, []);
+});
+
+test('enforceNpsnUniqueness handles empty array', () => {
+  const result = enforceNpsnUniqueness([]);
+  assert.deepStrictEqual(result.kept, []);
+  assert.deepStrictEqual(result.rejected, []);
+});
+
+test('enforceNpsnUniqueness keeps records without npsn (no constraint to apply)', () => {
+  const records = [{ nama: 'No NPSN' }, { npsn: '12345', nama: 'School 1' }];
+  const result = enforceNpsnUniqueness(records);
+  assert.strictEqual(result.kept.length, 2);
+  assert.deepStrictEqual(result.rejected, []);
+});
+
+test('enforceNpsnUniqueness trims NPSN before comparison', () => {
+  const records = [
+    { npsn: ' 12345 ', nama: 'School 1' },
+    { npsn: '12345', nama: 'School 2' },
+  ];
+  const result = enforceNpsnUniqueness(records);
+  assert.strictEqual(result.kept.length, 1);
+  assert.strictEqual(result.rejected.length, 1);
 });
 
 test('generateDataQualityReport calculates field completeness', () => {
