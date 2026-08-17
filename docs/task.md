@@ -2,6 +2,75 @@
 
 ## Completed Tasks
 
+### [TASK-097] Security Audit Pass 13 — Workflow Permission Hardening (11th Regression Fix)
+
+**Status**: Complete
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted **13th comprehensive security audit** of the Indonesian School PSEO project. The workflow security regression gate (`scripts/check-workflow-security.js`, built in TASK-095) reported **12 violations** — the documented recurring anti-patterns (F037) present since the `main→agent` merge commit `c190086` restored the insecure workflow versions. TASK-088's fix (12th attempt) was documented but never actually applied to the workflow files (blocked on "workflows-enabled token"), so the insecure state persisted.
+
+### Security Audit Results
+
+| Check | Result |
+| ----- | ------ |
+| npm audit | ✅ 0 vulnerabilities |
+| Python deps | ✅ Test-only; no runtime packages |
+| Hardcoded secrets scan | ✅ None found |
+| Workflow security gate | ❌→✅ 12 violations → 0 (this pass) |
+| Deprecated packages | ✅ None (eslint 10, prettier 3, husky 9, lint-staged 17, c8 12, pino 10) |
+
+### Fixes Applied (This Audit)
+
+| # | File | Violation | Severity | Fix |
+| -- | ---- | --------- | -------- | --- |
+| 1 | `on-push.yml` | Duplicate `API_KEY` = `GEMINI_API_KEY` | 🔴 Critical | Removed duplicate `API_KEY: ${{ secrets.GEMINI_API_KEY }}` |
+| 2 | `on-push.yml` | Incorrect `VITE_SUPABASE_ANON_KEY` → `VITE_SUPABASE_KEY` mapping | 🔴 Critical | Removed wrong mapping (documented in pass 6) |
+| 3 | `parallel.yml` | 4× duplicate `API_KEY` = `GEMINI_API_KEY` (architect, specialists, Fixer, PR-Handler) | 🔴 Critical | Removed all 4 duplicate entries |
+| 4 | `orchestrator.yml` | `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN` (2×: env + checkout token) | 🟠 High | Replaced both with `secrets.GITHUB_TOKEN` |
+| 5 | `architect-agent.yml` | `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN` | 🟠 High | Replaced with `secrets.GITHUB_TOKEN` |
+| 6 | `parallel.yml` | `id-token: write` + `actions: write` (non-OIDC, non-merge) | 🟠 High | Removed both |
+| 7 | `orchestrator.yml` | `id-token: write` + `actions: write` at top-level AND job-level | 🟠 High | Removed from both levels |
+| 8 | `architect-agent.yml` | `id-token: write` + `actions: write` at top-level AND job-level | 🟠 High | Removed from both levels |
+| 9 | `opencode.yml` | `id-token: write` + `actions: write` at top-level AND job-level | 🟠 High | Removed from both levels |
+
+### Root Cause of Regression (11th occurrence)
+
+Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-060, TASK-063, TASK-065, TASK-088): workflow file security fixes were applied on the `agent` branch but never merged to `main`. When `main` was merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions. **This pass is being delivered to `main` via PR immediately to break the cycle.**
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| `node scripts/check-workflow-security.js` | ✅ 0 violations, exit 0 (was 12, exit 1) |
+| Security gate tests | 32/32 pass |
+| Full JS suite | 1270 tests, 1266 pass, 0 fail, 4 skipped |
+| Python suite | 27/27 pass |
+| ESLint | 0 errors |
+| Prettier | clean on all workflow files |
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — removed id-token/actions write (both levels), GH_TOKEN→GITHUB_TOKEN
+- `.github/workflows/on-push.yml` — removed duplicate API_KEY + wrong VITE_SUPABASE_ANON_KEY mapping
+- `.github/workflows/opencode.yml` — removed id-token/actions write (both levels)
+- `.github/workflows/orchestrator.yml` — removed id-token/actions write (both levels), GH_TOKEN→GITHUB_TOKEN (2×)
+- `.github/workflows/parallel.yml` — removed id-token/actions write + 4× duplicate API_KEY
+- `docs/security-engineer.md` — regression count updated
+- `SECURITY_AUDIT_NOTE.md` — pass 13 summary added
+- `docs/task.md` — this entry
+
+### Acceptance Criteria
+
+- [x] All 12 workflow security violations remediated (gate: 0 violations, exit 0)
+- [x] No secrets exposed — duplicate API_KEY aliases removed, GITHUB_TOKEN used everywhere
+- [x] Least-privilege enforced — no id-token/actions write on non-OIDC/non-merge workflows
+- [x] Full test suite green (JS 1266 + Python 27), lint + prettier clean
+- [x] Fix delivered to `main` via PR to prevent the 12th regression
+
+---
+
 ### [TASK-096] Flaky Test Fix — Test-Runner Protocol Corruption (ERR_TEST_FAILURE)
 
 **Status**: Complete

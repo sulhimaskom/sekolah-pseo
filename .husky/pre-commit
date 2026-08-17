@@ -1,18 +1,19 @@
 # Security regression check — validate workflow file invariants
-# Fails the commit if the violation count EXCEEDS the documented baseline
-# (12, held finding F037 — see docs/issues ledger). Baseline violations are
-# reported but do not block; a regression beyond baseline blocks the commit
-# (F067). Fail-open on parse error so a broken check never false-blocks.
+# BLOCKS the commit if ANY violation exists (baseline 0 since TASK-097,
+# 2026-08-17 — all 12 F037 violations remediated). Previously tolerated up
+# to 12 baseline violations (F037/F067); now zero-tolerance so a regression
+# can never silently slip through the pre-commit gate again.
+# Fail-open on parse error so a broken check never false-blocks.
 # The `if` wrapper keeps this safe under `sh -e` (husky invokes hooks with
 # `sh -e`) even though the check exits 1 whenever violations exist.
 if output=$(node scripts/check-workflow-security.js --json 2>/dev/null); then
   :
 fi
 violations=$(printf '%s' "$output" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).totalViolations)}catch(e){console.log('0')}})")
-if [ "${violations:-0}" -gt 12 ]; then
-  echo "⚠️  Workflow security REGRESSION: ${violations} violations (baseline 12, F037). Run 'node scripts/check-workflow-security.js' to audit."
+if [ "${violations:-0}" -gt 0 ]; then
+  echo "⚠️  Workflow security VIOLATIONS: ${violations} found (baseline 0 since TASK-097). Run 'node scripts/check-workflow-security.js' to audit."
   exit 1
 fi
-echo "ℹ️  Workflow security: ${violations} known violation(s) (baseline 12, F037 — non-blocking)."
+echo "✅  Workflow security: ${violations} violations (baseline 0, TASK-097)."
 
 npx lint-staged
