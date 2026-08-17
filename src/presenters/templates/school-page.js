@@ -6,11 +6,7 @@ const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/bac
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
-// Pre-escape static CONFIG.TEXT values to avoid ~38K redundant escapeHtml calls
-// during full build (each escapeHtml does 5 regex replacements)
-const T = Object.fromEntries(
-  Object.entries(CONFIG.TEXT).map(([key, value]) => [key, escapeHtml(value)])
-);
+const { T } = require('./shared/translations');
 
 // Hoisted static back-to-top script body — computed once at module load.
 // Avoids rebuilding the template literal + 2 regex replaces + trim for every

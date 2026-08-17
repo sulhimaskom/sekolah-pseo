@@ -5,6 +5,7 @@ const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/bac
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
+const { T } = require('./shared/translations');
 
 /**
  * Filter schools by province
@@ -100,7 +101,7 @@ function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
   
   <header role="banner">
-    ${generateBreadcrumbHtml([{ label: 'Beranda', url: '/' }, { label: escapeHtml(provinceName) }])}
+    ${generateBreadcrumbHtml([{ label: T.HOME, url: '/' }, { label: escapeHtml(provinceName) }])}
   </header>
   
   <main id="main-content" role="main">
@@ -117,7 +118,7 @@ function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
         </div>
         <div class="stat-item">
           <span class="stat-value">${kabupatenList.length}</span>
-          <span class="stat-label">Kabupaten/Kota</span>
+          <span class="stat-label">${T.CITY_REGENCY}</span>
         </div>
       </div>
     </div>
