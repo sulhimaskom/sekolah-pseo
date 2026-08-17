@@ -35,6 +35,7 @@ const SCHEMA = require('./data-schema');
 
 const REQUIRED_FIELDS = SCHEMA.REQUIRED_FIELDS;
 const INDONESIA_BOUNDS = SCHEMA.INDONESIA_BOUNDS;
+const { isNonEmpty, isValidCoordinate } = SCHEMA;
 
 const DEFAULT_THRESHOLDS = {
   MIN_COMPLETENESS_PCT: 90,
@@ -43,32 +44,6 @@ const DEFAULT_THRESHOLDS = {
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Check if a value is non-empty.
- * @param {*} value
- * @returns {boolean}
- */
-function isNonEmpty(value) {
-  if (value === null || value === undefined) return false;
-  if (typeof value === 'string' && value.trim() === '') return false;
-  return true;
-}
-
-/**
- * Validate a coordinate value.
- * @param {string|number} value
- * @param {number} min
- * @param {number} max
- * @returns {boolean}
- */
-function isValidCoordinate(value, min, max) {
-  if (value === null || value === undefined || value === '') return false;
-  const num = parseFloat(value);
-  if (isNaN(num)) return false;
-  if (num === 0) return false; // zero typically means unset
-  return num >= min && num <= max;
-}
 
 /**
  * Format a percentage value.

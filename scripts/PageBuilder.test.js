@@ -6,7 +6,11 @@ const {
   getUniqueDirectories,
   getUniqueProvinces,
   buildProvincePageData,
+  buildKabupatenPageData,
+  buildKecamatanPageData,
   groupSchoolsByProvince,
+  groupSchoolsByKabupaten,
+  groupSchoolsByKecamatan,
   prepareSchoolDataForSearch,
 } = require('../src/services/PageBuilder');
 
@@ -945,5 +949,303 @@ describe('buildHomepageData', () => {
     const result = buildHomepageData([]);
     assert.ok(result.includes('search'));
     assert.ok(result.includes('provinsi'));
+  });
+});
+
+describe('buildKabupatenPageData', () => {
+  it('throws error for empty string province name', () => {
+    assert.throws(() => buildKabupatenPageData('', 'Bandung', []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for null province name', () => {
+    assert.throws(() => buildKabupatenPageData(null, 'Bandung', []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for undefined province name', () => {
+    assert.throws(() => buildKabupatenPageData(undefined, 'Bandung', []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for empty string kabupaten name', () => {
+    assert.throws(() => buildKabupatenPageData('Jawa Barat', '', []), {
+      message: 'Invalid kabupaten name provided',
+    });
+  });
+
+  it('throws error for null kabupaten name', () => {
+    assert.throws(() => buildKabupatenPageData('Jawa Barat', null, []), {
+      message: 'Invalid kabupaten name provided',
+    });
+  });
+
+  it('throws error for non-array schools (null)', () => {
+    assert.throws(() => buildKabupatenPageData('Jawa Barat', 'Bandung', null), {
+      message: 'schools must be an array',
+    });
+  });
+
+  it('throws error for non-array schools (object)', () => {
+    assert.throws(() => buildKabupatenPageData('Jawa Barat', 'Bandung', { school: 'data' }), {
+      message: 'schools must be an array',
+    });
+  });
+
+  it('returns object with relativePath and content for valid inputs', () => {
+    const result = buildKabupatenPageData('Jawa Barat', 'Bandung', []);
+
+    assert.ok(result.hasOwnProperty('relativePath'));
+    assert.ok(result.hasOwnProperty('content'));
+    assert.strictEqual(typeof result.relativePath, 'string');
+    assert.strictEqual(typeof result.content, 'string');
+  });
+
+  it('generates correct relative path structure for kabupaten', () => {
+    const result = buildKabupatenPageData('DKI Jakarta', 'Jakarta Pusat', []);
+
+    assert.ok(result.relativePath.includes('provinsi'));
+    assert.ok(result.relativePath.includes('dki-jakarta'));
+    assert.ok(result.relativePath.includes('kabupaten'));
+    assert.ok(result.relativePath.includes('jakarta-pusat'));
+    assert.ok(result.relativePath.includes('index.html'));
+  });
+});
+
+describe('buildKecamatanPageData', () => {
+  it('throws error for empty string province name', () => {
+    assert.throws(() => buildKecamatanPageData('', 'Bandung', 'Coblong', []), {
+      message: 'Invalid province name provided',
+    });
+  });
+
+  it('throws error for empty string kabupaten name', () => {
+    assert.throws(() => buildKecamatanPageData('Jawa Barat', '', 'Coblong', []), {
+      message: 'Invalid kabupaten name provided',
+    });
+  });
+
+  it('throws error for empty string kecamatan name', () => {
+    assert.throws(() => buildKecamatanPageData('Jawa Barat', 'Bandung', '', []), {
+      message: 'Invalid kecamatan name provided',
+    });
+  });
+
+  it('throws error for null kecamatan name', () => {
+    assert.throws(() => buildKecamatanPageData('Jawa Barat', 'Bandung', null, []), {
+      message: 'Invalid kecamatan name provided',
+    });
+  });
+
+  it('throws error for non-array schools (null)', () => {
+    assert.throws(() => buildKecamatanPageData('Jawa Barat', 'Bandung', 'Coblong', null), {
+      message: 'schools must be an array',
+    });
+  });
+
+  it('returns object with relativePath and content for valid inputs', () => {
+    const result = buildKecamatanPageData('Jawa Barat', 'Bandung', 'Coblong', []);
+
+    assert.ok(result.hasOwnProperty('relativePath'));
+    assert.ok(result.hasOwnProperty('content'));
+    assert.strictEqual(typeof result.relativePath, 'string');
+    assert.strictEqual(typeof result.content, 'string');
+  });
+
+  it('generates correct relative path structure for kecamatan', () => {
+    const result = buildKecamatanPageData('DKI Jakarta', 'Jakarta Pusat', 'Gambir', []);
+
+    assert.ok(result.relativePath.includes('provinsi'));
+    assert.ok(result.relativePath.includes('dki-jakarta'));
+    assert.ok(result.relativePath.includes('kabupaten'));
+    assert.ok(result.relativePath.includes('jakarta-pusat'));
+    assert.ok(result.relativePath.includes('kecamatan'));
+    assert.ok(result.relativePath.includes('gambir'));
+    assert.ok(result.relativePath.includes('index.html'));
+  });
+});
+
+describe('groupSchoolsByKabupaten', () => {
+  it('returns empty Map for null input', () => {
+    const result = groupSchoolsByKabupaten(null);
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for undefined input', () => {
+    const result = groupSchoolsByKabupaten(undefined);
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for object input', () => {
+    const result = groupSchoolsByKabupaten({});
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for empty array', () => {
+    const result = groupSchoolsByKabupaten([]);
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('skips schools without provinsi or kab_kota field', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat' },
+      { npsn: '3', nama: 'School 3', kab_kota: 'Bandung' },
+      { npsn: '4', nama: 'School 4', provinsi: 'Jawa Barat', kab_kota: '' },
+    ];
+
+    const result = groupSchoolsByKabupaten(schools);
+
+    assert.strictEqual(result.size, 1);
+    assert.ok(result.has('Jawa Barat\u0000Bandung'));
+    assert.strictEqual(result.get('Jawa Barat\u0000Bandung').length, 1);
+  });
+
+  it('groups schools from same province and kabupaten together', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Jawa Barat', kab_kota: 'Bandung' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat', kab_kota: 'Bandung' },
+      { npsn: '3', nama: 'School 3', provinsi: 'Jawa Barat', kab_kota: 'Bogor' },
+      { npsn: '4', nama: 'School 4', provinsi: 'Jawa Timur', kab_kota: 'Surabaya' },
+    ];
+
+    const result = groupSchoolsByKabupaten(schools);
+
+    assert.strictEqual(result.size, 3);
+    assert.strictEqual(result.get('Jawa Barat\u0000Bandung').length, 2);
+    assert.strictEqual(result.get('Jawa Barat\u0000Bogor').length, 1);
+    assert.strictEqual(result.get('Jawa Timur\u0000Surabaya').length, 1);
+  });
+
+  it('returns Map with correct composite keys', () => {
+    const schools = [
+      { npsn: '1', nama: 'School 1', provinsi: 'Bali', kab_kota: 'Denpasar' },
+      { npsn: '2', nama: 'School 2', provinsi: 'Aceh', kab_kota: 'Banda Aceh' },
+    ];
+
+    const result = groupSchoolsByKabupaten(schools);
+
+    assert.strictEqual(result.size, 2);
+    assert.ok(result.has('Bali\u0000Denpasar'));
+    assert.ok(result.has('Aceh\u0000Banda Aceh'));
+  });
+});
+
+describe('groupSchoolsByKecamatan', () => {
+  it('returns empty Map for null input', () => {
+    const result = groupSchoolsByKecamatan(null);
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for undefined input', () => {
+    const result = groupSchoolsByKecamatan(undefined);
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for object input', () => {
+    const result = groupSchoolsByKecamatan({});
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('returns empty Map for empty array', () => {
+    const result = groupSchoolsByKecamatan([]);
+    assert.ok(result instanceof Map);
+    assert.strictEqual(result.size, 0);
+  });
+
+  it('skips schools without full location fields', () => {
+    const schools = [
+      {
+        npsn: '1',
+        nama: 'School 1',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+      { npsn: '2', nama: 'School 2', provinsi: 'Jawa Barat', kab_kota: 'Bandung' },
+      { npsn: '3', nama: 'School 3', kab_kota: 'Bandung', kecamatan: 'Coblong' },
+      { npsn: '4', nama: 'School 4', provinsi: 'Jawa Barat', kab_kota: 'Bandung', kecamatan: '' },
+    ];
+
+    const result = groupSchoolsByKecamatan(schools);
+
+    assert.strictEqual(result.size, 1);
+    assert.ok(result.has('Jawa Barat\u0000Bandung\u0000Coblong'));
+    assert.strictEqual(result.get('Jawa Barat\u0000Bandung\u0000Coblong').length, 1);
+  });
+
+  it('groups schools from same full location together', () => {
+    const schools = [
+      {
+        npsn: '1',
+        nama: 'School 1',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+      {
+        npsn: '2',
+        nama: 'School 2',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Coblong',
+      },
+      {
+        npsn: '3',
+        nama: 'School 3',
+        provinsi: 'Jawa Barat',
+        kab_kota: 'Bandung',
+        kecamatan: 'Cidadap',
+      },
+      {
+        npsn: '4',
+        nama: 'School 4',
+        provinsi: 'Jawa Timur',
+        kab_kota: 'Surabaya',
+        kecamatan: 'Gubeng',
+      },
+    ];
+
+    const result = groupSchoolsByKecamatan(schools);
+
+    assert.strictEqual(result.size, 3);
+    assert.strictEqual(result.get('Jawa Barat\u0000Bandung\u0000Coblong').length, 2);
+    assert.strictEqual(result.get('Jawa Barat\u0000Bandung\u0000Cidadap').length, 1);
+    assert.strictEqual(result.get('Jawa Timur\u0000Surabaya\u0000Gubeng').length, 1);
+  });
+
+  it('returns Map with correct composite keys', () => {
+    const schools = [
+      {
+        npsn: '1',
+        nama: 'School 1',
+        provinsi: 'Bali',
+        kab_kota: 'Denpasar',
+        kecamatan: 'Denpasar Barat',
+      },
+      {
+        npsn: '2',
+        nama: 'School 2',
+        provinsi: 'Bali',
+        kab_kota: 'Denpasar',
+        kecamatan: 'Denpasar Timur',
+      },
+    ];
+
+    const result = groupSchoolsByKecamatan(schools);
+
+    assert.strictEqual(result.size, 2);
+    assert.ok(result.has('Bali\u0000Denpasar\u0000Denpasar Barat'));
+    assert.ok(result.has('Bali\u0000Denpasar\u0000Denpasar Timur'));
   });
 });

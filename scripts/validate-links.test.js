@@ -5,6 +5,7 @@ const {
   validateLinksInFile,
   validateLinks,
   isRelativeLink,
+  statExistsCached,
 } = require('./validate-links');
 const { withConfig } = require('./test-helpers');
 
@@ -317,6 +318,109 @@ test('validateLinks processes HTML files with valid links and returns true', asy
       // Should return true because all links are valid
       assert.strictEqual(result, true);
     });
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+// ── statExistsCached (memoized existence probe) ────────────────────────────
+
+test('statExistsCached resolves true for existing targets and caches one entry', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stat-cache-' + Date.now()));
+  try {
+    const target = path.join(tempDir, 'existing.html');
+    fs.writeFileSync(target, '<html></html>');
+
+    const cache = new Map();
+    assert.strictEqual(await statExistsCached(cache, target), true);
+    assert.strictEqual(await statExistsCached(cache, target), true);
+    // Same target probed twice → only one cache entry (deduplicated stat).
+    assert.strictEqual(cache.size, 1);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('statExistsCached resolves false for missing targets', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stat-cache-missing-' + Date.now()));
+  try {
+    const cache = new Map();
+    const missing = path.join(tempDir, 'missing.html');
+    assert.strictEqual(await statExistsCached(cache, missing), false);
+    assert.strictEqual(cache.get(missing) !== undefined, true);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('statExistsCached short-circuits on pre-populated cache entries', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stat-cache-pre-' + Date.now()));
+  try {
+    const existing = path.join(tempDir, 'existing.html');
+    fs.writeFileSync(existing, '<html></html>');
+
+    const cache = new Map();
+    // Cache says the target does NOT exist even though the file does —
+    // proves the probe is skipped entirely.
+    cache.set(existing, Promise.resolve(false));
+    assert.strictEqual(await statExistsCached(cache, existing), false);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('validateLinksInFile honors a shared statCache across calls', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-shared-cache-' + Date.now()));
+  try {
+    fs.writeFileSync(path.join(tempDir, 'about.html'), '<html><body>About</body></html>');
+    const file = path.join(tempDir, 'index.html');
+    const statCache = new Map();
+
+    const first = await validateLinksInFile(file, ['about.html'], tempDir, statCache);
+    const second = await validateLinksInFile(file, ['about.html'], tempDir, statCache);
+
+    assert.deepStrictEqual(first, []);
+    assert.deepStrictEqual(second, []);
+    // Both calls resolved the same target → exactly one stat was performed.
+    assert.strictEqual(statCache.size, 1);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('validateLinksInFile with pre-populated false cache reports broken link without stat', async () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-cached-broken-' + Date.now()));
+  try {
+    fs.writeFileSync(path.join(tempDir, 'about.html'), '<html><body>About</body></html>');
+    const file = path.join(tempDir, 'index.html');
+
+    const statCache = new Map();
+    // Cache says the existing target is missing — the probe is skipped and the
+    // cached verdict is used, proving cache consultation in validateLinksInFile.
+    statCache.set(path.join(tempDir, 'about.html'), Promise.resolve(false));
+
+    const result = await validateLinksInFile(file, ['about.html'], tempDir, statCache);
+    assert.deepStrictEqual(result, [{ source: file, link: 'about.html' }]);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }

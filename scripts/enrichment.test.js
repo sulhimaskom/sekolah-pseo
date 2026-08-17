@@ -78,9 +78,17 @@ const {
   buildWikipediaExtractUrl,
   fetchJson,
   wikipediaCircuitBreaker,
+  wikipediaRateLimiter,
   ENRICHMENT_DATA_PATH,
   WIKIPEDIA_API_URL,
 } = require('./enrichment');
+
+// Rate-limiter pacing is exercised by rate-limiter.test.js; the Wikipedia
+// integration tests mock https and must run fast, so disable pacing here.
+beforeEach(() => {
+  wikipediaRateLimiter.reset();
+  wikipediaRateLimiter.rateLimitMs = 0;
+});
 
 describe('isEnrichmentEnabled', () => {
   beforeEach(() => {
@@ -531,6 +539,7 @@ describe('fetchJson resilience (timeout retry + circuit breaker)', () => {
   beforeEach(() => {
     callCount = 0;
     wikipediaCircuitBreaker.reset();
+    wikipediaRateLimiter.reset();
   });
 
   afterEach(() => {
@@ -709,5 +718,34 @@ describe('fetchJson resilience (timeout retry + circuit breaker)', () => {
 
     // Graceful degradation — enrichment failure must never propagate
     assert.deepStrictEqual(result, {});
+  });
+
+  it('routes every HTTP request through wikipediaRateLimiter', async () => {
+    mockHttpsGetStatus(200);
+    wikipediaRateLimiter.reset();
+
+    const metricsBefore = wikipediaRateLimiter.getMetrics().total;
+    await fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50);
+    const metricsAfter = wikipediaRateLimiter.getMetrics().total;
+
+    // Exactly one limiter slot consumed per HTTP request
+    assert.strictEqual(metricsAfter - metricsBefore, 1);
+  });
+
+  it('does not exceed wikipediaRateLimiter maxConcurrent when requests overlap', async () => {
+    mockHttpsGetStatus(200);
+    wikipediaRateLimiter.reset();
+
+    let maxActive = 0;
+    const probe = setInterval(() => {
+      maxActive = Math.max(maxActive, wikipediaRateLimiter.getMetrics().active);
+    }, 2);
+
+    await Promise.all(
+      Array.from({ length: 5 }, () => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50))
+    );
+    clearInterval(probe);
+
+    assert.ok(maxActive <= 2, `expected <= 2 concurrent, saw ${maxActive}`);
   });
 });

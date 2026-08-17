@@ -14,6 +14,11 @@ const logger = require('./logger');
  * Recursively walk a directory tree and process each file with a callback.
  * This is a shared utility to eliminate code duplication between scripts.
  *
+ * Directory entries are processed concurrently (parallel safeReaddir/safeStat
+ * and parallel subdirectory recursion). Result ordering is preserved: entries
+ * resolve through Promise.all in readdir order and are flattened depth-first,
+ * exactly matching the previous sequential walk's output order.
+ *
  * @param {string} dir - Directory path to walk
  * @param {Function} callback - Callback function for each HTML file.
  *                              Receives (fullPath, relativePath, entry, stat)
@@ -21,28 +26,28 @@ const logger = require('./logger');
  * @returns {Array} - Array of results returned by the callback for each HTML file
  */
 async function walkDirectory(dir, callback) {
-  const results = [];
-
   async function walk(current, relative) {
     const entries = await safeReaddir(current);
-    for (const entry of entries) {
-      const fullPath = path.join(current, entry);
-      const relPath = path.join(relative, entry);
-      const stat = await safeStat(fullPath);
+    const results = await Promise.all(
+      entries.map(async entry => {
+        const fullPath = path.join(current, entry);
+        const relPath = path.join(relative, entry);
+        const stat = await safeStat(fullPath);
 
-      if (stat.isDirectory()) {
-        await walk(fullPath, relPath);
-      } else if (entry.endsWith('.html') && typeof callback === 'function') {
-        const result = await callback(fullPath, relPath, entry, stat);
-        if (result !== undefined) {
-          results.push(result);
+        if (stat.isDirectory()) {
+          return walk(fullPath, relPath);
         }
-      }
-    }
+        if (entry.endsWith('.html') && typeof callback === 'function') {
+          const result = await callback(fullPath, relPath, entry, stat);
+          return result !== undefined ? [result] : [];
+        }
+        return [];
+      })
+    );
+    return results.flat();
   }
 
-  await walk(dir, '');
-  return results;
+  return walk(dir, '');
 }
 
 /**
