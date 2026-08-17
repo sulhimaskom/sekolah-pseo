@@ -35,6 +35,10 @@ const {
   getUniqueProvinces,
   buildProvincePageData,
   groupSchoolsByProvince,
+  buildKabupatenPageData,
+  buildKecamatanPageData,
+  groupSchoolsByKabupaten,
+  groupSchoolsByKecamatan,
 } = require('./PageBuilder');
 const { writeSearchDataFile } = require('./SearchDataService');
 const { exportSchoolsCsv, writeExternalStylesFile } = require('./ExportService');
@@ -313,6 +317,144 @@ async function generateProvincePages(schools) {
 }
 
 /**
+ * Generate all kabupaten/kota pages (the second level of the
+ * Province → Kabupaten → Kecamatan → School navigation hierarchy).
+ * Uses kabupaten pre-grouping (O(n) single pass) to avoid redundant filtering.
+ *
+ * @param {Array<Object>} schools
+ */
+async function generateKabupatenPages(schools) {
+  const grouped = groupSchoolsByKabupaten(schools);
+  const entries = Array.from(grouped.entries());
+
+  logger.info(`Generating ${entries.length} kabupaten pages...`);
+
+  const dirFailures = await Promise.all(
+    entries.map(async ([key]) => {
+      const [provinceName, kabKotaName] = key.split('\u0000');
+      const dirPath = path.join(
+        distDir,
+        'provinsi',
+        slugify(provinceName),
+        'kabupaten',
+        slugify(kabKotaName)
+      );
+      try {
+        await fastMkdir(dirPath);
+      } catch (err) {
+        logger.error({ err, path: dirPath }, 'Failed to create kabupaten directory');
+        return dirPath;
+      }
+      return null;
+    })
+  );
+
+  if (dirFailures.some(Boolean)) {
+    logger.warn(`${dirFailures.filter(Boolean).length} kabupaten directories failed to create`);
+  }
+
+  const { results } = await processInBatches(
+    entries,
+    async ([key, kabupatenSchools]) => {
+      const [provinceName, kabKotaName] = key.split('\u0000');
+      try {
+        const pageData = buildKabupatenPageData(provinceName, kabKotaName, kabupatenSchools, true);
+        const outputPath = path.join(distDir, pageData.relativePath);
+        await fastWriteFile(outputPath, pageData.content);
+        return { success: true, name: kabKotaName };
+      } catch (err) {
+        logger.error({ err, kabKota: kabKotaName }, 'Failed to generate kabupaten page');
+        return { success: false, name: kabKotaName };
+      }
+    },
+    {
+      batchSize: CONFIG.BUILD_CONCURRENCY_LIMIT,
+    }
+  );
+
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const failed = results.filter(
+    r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
+  ).length;
+
+  logger.info(`Generated ${successful} kabupaten pages (${failed} failed)`);
+  return { successful, failed };
+}
+
+/**
+ * Generate all kecamatan pages (the third level of the
+ * Province → Kabupaten → Kecamatan → School navigation hierarchy).
+ * Uses kecamatan pre-grouping (O(n) single pass) to avoid redundant filtering.
+ *
+ * @param {Array<Object>} schools
+ */
+async function generateKecamatanPages(schools) {
+  const grouped = groupSchoolsByKecamatan(schools);
+  const entries = Array.from(grouped.entries());
+
+  logger.info(`Generating ${entries.length} kecamatan pages...`);
+
+  const dirFailures = await Promise.all(
+    entries.map(async ([key]) => {
+      const [provinceName, kabKotaName, kecamatanName] = key.split('\u0000');
+      const dirPath = path.join(
+        distDir,
+        'provinsi',
+        slugify(provinceName),
+        'kabupaten',
+        slugify(kabKotaName),
+        'kecamatan',
+        slugify(kecamatanName)
+      );
+      try {
+        await fastMkdir(dirPath);
+      } catch (err) {
+        logger.error({ err, path: dirPath }, 'Failed to create kecamatan directory');
+        return dirPath;
+      }
+      return null;
+    })
+  );
+
+  if (dirFailures.some(Boolean)) {
+    logger.warn(`${dirFailures.filter(Boolean).length} kecamatan directories failed to create`);
+  }
+
+  const { results } = await processInBatches(
+    entries,
+    async ([key, kecamatanSchools]) => {
+      const [provinceName, kabKotaName, kecamatanName] = key.split('\u0000');
+      try {
+        const pageData = buildKecamatanPageData(
+          provinceName,
+          kabKotaName,
+          kecamatanName,
+          kecamatanSchools,
+          true
+        );
+        const outputPath = path.join(distDir, pageData.relativePath);
+        await fastWriteFile(outputPath, pageData.content);
+        return { success: true, name: kecamatanName };
+      } catch (err) {
+        logger.error({ err, kecamatan: kecamatanName }, 'Failed to generate kecamatan page');
+        return { success: false, name: kecamatanName };
+      }
+    },
+    {
+      batchSize: CONFIG.BUILD_CONCURRENCY_LIMIT,
+    }
+  );
+
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const failed = results.filter(
+    r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
+  ).length;
+
+  logger.info(`Generated ${successful} kecamatan pages (${failed} failed)`);
+  return { successful, failed };
+}
+
+/**
  * Write multiple school pages concurrently with a controlled concurrency limit
  * to avoid overwhelming the file system.
  *
@@ -413,6 +555,8 @@ async function prepareBuildEnvironment() {
     })(),
     writeSearchDataFile(schools),
     generateProvincePages(schools),
+    generateKabupatenPages(schools),
+    generateKecamatanPages(schools),
   ]);
 
   return { schools, enrichmentMap, sharedPagesPromise };
@@ -556,6 +700,8 @@ module.exports = {
   preCreateDirectories,
   preCreateProvinceDirectories,
   generateProvincePages,
+  generateKabupatenPages,
+  generateKecamatanPages,
   generateRobotsTxt,
   generateExternalStyles,
   writeExternalStylesFile,

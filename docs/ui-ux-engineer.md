@@ -165,6 +165,15 @@ Static site generator for Indonesian school pages.
 - **CSV button focus**: added `.download-csv-btn:focus-visible` outline (was opacity-only).
 - **Forced-colors support**: `@media (forced-colors: active)` gives search/filter inputs, the CSV button, and the active autocomplete option explicit `Highlight` outlines (box-shadow focus indicators are suppressed in Windows High Contrast).
 
+### 17. Restore Kabupaten & Kecamatan Navigation Pages ✅ (TASK-092, 2026-08-17)
+
+- **Critical UX bug**: every province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no `index.html` was ever generated there — all kabupaten links were 404s, and the entire Province → Kabupaten → Kecamatan → School hierarchy was dead navigation. `validate-links.js` missed it because the target *directory* exists (school pages live beneath it).
+- **Root cause**: `kabupaten-page.js`/`kecamatan-page.js` templates were created (commit `4246776`) but never wired into the build pipeline — they were dead code and removed in commit `26dfc78` (PR #365), leaving the province-page links dangling.
+- **Recreated** `src/presenters/templates/kabupaten-page.js` and `src/presenters/templates/kecamatan-page.js`, modernized to the shared-component convention (`T` translations, `generateBreadcrumbHtml`, `generateFooterHtml`, `generateBackToTopHtml/Script`, `HTML_HEAD_PREFIX`) and fixed the original `localeCompare(a.name, a.name)` bug (self-compare → `b.name`).
+- **Wired into the build**: `PageBuilder.js` gained `buildKabupatenPageData`/`buildKecamatanPageData` + O(n) groupers `groupSchoolsByKabupaten`/`groupSchoolsByKecamatan` (NUL-joined composite keys); `BuildOrchestrator.js` gained `generateKabupatenPages`/`generateKecamatanPages` (recursive `fastMkdir` pre-creation so they're safe running in parallel with school-page dir creation), both invoked in `prepareBuildEnvironment`.
+- **Navigation now works end-to-end**: Homepage → Province → Kabupaten → Kecamatan → School. Full build emits 2 kabupaten pages and 2 kecamatan pages (current dataset), `validate-links.js` reports zero broken links across all 10 HTML files.
+- **Verified**: 28 new template tests + 16 new builder/generator tests pass; full JS suite green; build Status: PASS.
+
 ## Testing
 
 - `npm run test:js` runs comprehensive tests for styles and design-system

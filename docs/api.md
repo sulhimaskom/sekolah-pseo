@@ -1894,7 +1894,11 @@ module.exports = {
   getUniqueDirectories: function,
   getUniqueProvinces: function,
   buildProvincePageData: function,
+  buildKabupatenPageData: function,
+  buildKecamatanPageData: function,
   groupSchoolsByProvince: function,
+  groupSchoolsByKabupaten: function,
+  groupSchoolsByKecamatan: function,
   prepareSchoolDataForSearch: function,
 };
 ```
@@ -2130,6 +2134,168 @@ const jakartaSchools = grouped.get('DKI Jakarta'); // Array of schools in Jakart
 
 ---
 
+#### `buildKabupatenPageData(provinceName, kabupatenName, schools, skipFilter)`
+
+Builds kabupaten page data with path and HTML content.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province/kabupaten when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, passes through to `generateKabupatenPageHtml` to skip internal filtering. Defaults to `false` for backward compatibility.
+
+**Returns:** `Object`
+
+```javascript
+{
+  relativePath: string,  // File path relative to DIST_DIR
+  content: string        // HTML content
+}
+```
+
+**Throws:**
+
+- `Error` if `provinceName` is not a string
+- `Error` if `kabupatenName` is not a string
+- `Error` if `schools` is not an array
+
+**Path Format:** `provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/index.html`
+
+**Dependencies:**
+
+- `slugify` (from `scripts/slugify.js`)
+- `generateKabupatenPageHtml` (from `src/presenters/templates/kabupaten-page.js`)
+
+**Usage:**
+
+```javascript
+// Default: pass all schools, internal filtering applied
+const pageData = buildKabupatenPageData('DKI Jakarta', 'Jakarta Pusat', schools);
+
+// Optimized: pass pre-filtered schools via groupSchoolsByKabupaten
+const grouped = groupSchoolsByKabupaten(schools);
+const pageData2 = buildKabupatenPageData('DKI Jakarta', 'Jakarta Pusat', grouped.get('DKI Jakarta\u0000Jakarta Pusat'), true);
+```
+
+---
+
+#### `buildKecamatanPageData(provinceName, kabupatenName, kecamatanName, schools, skipFilter)`
+
+Builds kecamatan page data with path and HTML content.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name
+- `kecamatanName` (string): Kecamatan name
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this full location when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, passes through to `generateKecamatanPageHtml` to skip internal filtering. Defaults to `false` for backward compatibility.
+
+**Returns:** `Object`
+
+```javascript
+{
+  relativePath: string,  // File path relative to DIST_DIR
+  content: string        // HTML content
+}
+```
+
+**Throws:**
+
+- `Error` if `provinceName` is not a string
+- `Error` if `kabupatenName` is not a string
+- `Error` if `kecamatanName` is not a string
+- `Error` if `schools` is not an array
+
+**Path Format:** `provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/kecamatan/{kecamatanSlug}/index.html`
+
+**Dependencies:**
+
+- `slugify` (from `scripts/slugify.js`)
+- `generateKecamatanPageHtml` (from `src/presenters/templates/kecamatan-page.js`)
+
+**Usage:**
+
+```javascript
+// Default: pass all schools, internal filtering applied
+const pageData = buildKecamatanPageData('DKI Jakarta', 'Jakarta Pusat', 'Gambir', schools);
+
+// Optimized: pass pre-filtered schools via groupSchoolsByKecamatan
+const grouped = groupSchoolsByKecamatan(schools);
+const pageData2 = buildKecamatanPageData('DKI Jakarta', 'Jakarta Pusat', 'Gambir', grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'), true);
+```
+
+---
+
+#### `groupSchoolsByKabupaten(schools)`
+
+Groups all schools by province and kabupaten in a single O(n) pass. Used to eliminate O(n×p) filtering during kabupaten page generation.
+
+**Parameters:**
+
+- `schools` (Object[]): Array of school data objects
+
+**Returns:** `Map<string, Array>` - Map keyed by `province\0kabupaten` (NUL-joined composite key), each value is array of schools in that province/kabupaten
+
+**Throws:**
+
+- `Error` if `schools` is not an array
+
+**Dependencies:**
+
+- None (standalone utility function)
+
+**Usage:**
+
+```javascript
+const grouped = groupSchoolsByKabupaten(schools);
+// Returns Map:
+// {
+//   'DKI Jakarta\u0000Jakarta Pusat' => [school1, school2, ...],
+//   'Jawa Barat\u0000Bandung' => [school3, school4, ...],
+// }
+const jakartaPusatSchools = grouped.get('DKI Jakarta\u0000Jakarta Pusat'); // Array of schools
+```
+
+**Performance:** Single pass O(n) — processes the entire schools array once. Kabupaten pages can then receive pre-filtered arrays with `skipFilter=true` to avoid redundant filtering.
+
+---
+
+#### `groupSchoolsByKecamatan(schools)`
+
+Groups all schools by province, kabupaten, and kecamatan in a single O(n) pass. Used to eliminate O(n×p) filtering during kecamatan page generation.
+
+**Parameters:**
+
+- `schools` (Object[]): Array of school data objects
+
+**Returns:** `Map<string, Array>` - Map keyed by `province\0kabupaten\0kecamatan` (NUL-joined composite key), each value is array of schools in that full location
+
+**Throws:**
+
+- `Error` if `schools` is not an array
+
+**Dependencies:**
+
+- None (standalone utility function)
+
+**Usage:**
+
+```javascript
+const grouped = groupSchoolsByKecamatan(schools);
+// Returns Map:
+// {
+//   'DKI Jakarta\u0000Jakarta Pusat\u0000Gambir' => [school1, school2, ...],
+//   'Jawa Barat\u0000Bandung\u0000Coblong' => [school3, school4, ...],
+// }
+const gambirSchools = grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'); // Array of schools
+```
+
+**Performance:** Single pass O(n) — processes the entire schools array once. Kecamatan pages can then receive pre-filtered arrays with `skipFilter=true` to avoid redundant filtering.
+
+---
+
 #### `prepareSchoolDataForSearch(schools)`
 
 Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size. The field order is defined by `SEARCH_DATA_FIELDS` (single source of truth in `scripts/data-schema.js`) — the same constant is embedded into the homepage's generated client script, so server and client stay in sync automatically.
@@ -2197,6 +2363,8 @@ module.exports = {
   preCreateDirectories: function,
   preCreateProvinceDirectories: function,
   generateProvincePages: function,
+  generateKabupatenPages: function,
+  generateKecamatanPages: function,
   generateRobotsTxt: function,
   generateExternalStyles: function,
   // Re-exported from SearchDataService / ExportService (see sections below)
@@ -2402,6 +2570,68 @@ Generates all province-level index pages using O(n) province pre-grouping to avo
 
 ```javascript
 const { successful, failed } = await generateProvincePages(schools);
+```
+
+---
+
+#### `generateKabupatenPages(schools)`
+
+Generates all kabupaten/kota-level index pages using O(n) pre-grouping to avoid redundant per-kabupaten filtering.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Promise<Object>` — `{ successful: number, failed: number }`
+
+**Process:**
+
+1. Groups schools by `provinsi` + `kab_kota` in a single O(n) pass
+2. Derives the kabupaten list from the grouped Map
+3. Pre-creates kabupaten directories (recursive `fastMkdir` — safe when running concurrently with school-page directory creation)
+4. Generates kabupaten pages concurrently using `processInBatches` with `skipFilter=true`
+
+**Dependencies:**
+
+- `groupSchoolsByKabupaten`, `buildKabupatenPageData` (from `./PageBuilder.js`)
+- `slugify` (from `scripts/slugify.js`)
+- `fastMkdir`, `fastWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await generateKabupatenPages(schools);
+```
+
+---
+
+#### `generateKecamatanPages(schools)`
+
+Generates all kecamatan-level index pages using O(n) pre-grouping to avoid redundant per-kecamatan filtering.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of all school data objects
+
+**Returns:** `Promise<Object>` — `{ successful: number, failed: number }`
+
+**Process:**
+
+1. Groups schools by `provinsi` + `kab_kota` + `kecamatan` in a single O(n) pass
+2. Derives the kecamatan list from the grouped Map
+3. Pre-creates kecamatan directories (recursive `fastMkdir` — safe when running concurrently with school-page directory creation)
+4. Generates kecamatan pages concurrently using `processInBatches` with `skipFilter=true`
+
+**Dependencies:**
+
+- `groupSchoolsByKecamatan`, `buildKecamatanPageData` (from `./PageBuilder.js`)
+- `slugify` (from `scripts/slugify.js`)
+- `fastMkdir`, `fastWriteFile` (from `scripts/fs-safe.js`)
+
+**Usage:**
+
+```javascript
+const { successful, failed } = await generateKecamatanPages(schools);
 ```
 
 ---
@@ -2968,6 +3198,239 @@ Province pages are generated at:
 ```
 
 Example: `/provinsi/dki-jakarta/index.html`
+
+---
+
+## Kabupaten Page Template Module (`src/presenters/templates/kabupaten-page.js`)
+
+### Purpose
+
+Presentation layer for kabupaten/kota-level page HTML generation with kecamatan navigation. Restores the previously-broken Province → Kabupaten → Kecamatan → School navigation hierarchy (TASK-092).
+
+### Exports
+
+```javascript
+module.exports = {
+  generateKabupatenPageHtml: function,
+  filterSchoolsByProvinceAndKabupaten: function,
+  aggregateByKecamatan: function,
+};
+```
+
+### Functions
+
+#### `generateKabupatenPageHtml(provinceName, kabupatenName, schools, skipFilter)`
+
+Generates complete HTML page for a specific kabupaten/kota with kecamatan navigation.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name to generate page for
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this province/kabupaten when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, skips internal `filterSchoolsByProvinceAndKabupaten` call (schools array is assumed to be pre-filtered). Defaults to `false` for backward compatibility.
+
+**Returns:** `string` - Complete HTML document
+
+**Features:**
+
+- Lists all kecamatan in the kabupaten/kota
+- Shows school count per kecamatan
+- Breadcrumb navigation (Home → Province → Kabupaten)
+- Responsive design with mobile support
+- Back-to-top button
+
+**Usage:**
+
+```javascript
+const { generateKabupatenPageHtml } = require('./templates/kabupaten-page');
+
+// Default: pass all schools, function filters internally
+const html = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', schools);
+
+// Optimized: pass pre-filtered schools, skip redundant filtering
+const grouped = groupSchoolsByKabupaten(schools);
+const html2 = generateKabupatenPageHtml('DKI Jakarta', 'Jakarta Pusat', grouped.get('DKI Jakarta\u0000Jakarta Pusat'), true);
+```
+
+---
+
+#### `filterSchoolsByProvinceAndKabupaten(schools, provinceName, kabupatenName)`
+
+Filters schools by province and kabupaten/kota name.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+- `provinceName` (string): Province name to filter by
+- `kabupatenName` (string): Kabupaten/kota name to filter by
+
+**Returns:** `Array<Object>` - Filtered schools for the province/kabupaten
+
+**Exact Match:** Uses strict equality (`===`) for both matching.
+
+**Usage:**
+
+```javascript
+const { filterSchoolsByProvinceAndKabupaten } = require('./templates/kabupaten-page');
+const jakartaPusatSchools = filterSchoolsByProvinceAndKabupaten(schools, 'DKI Jakarta', 'Jakarta Pusat');
+console.log(`Found ${jakartaPusatSchools.length} schools`);
+```
+
+---
+
+#### `aggregateByKecamatan(schools)`
+
+Aggregates school data by kecamatan within a kabupaten/kota.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects (should be filtered by province and kabupaten)
+
+**Returns:** `Array<Object>` - Array of kecamatan objects with school count
+
+```javascript
+[
+  { name: 'Gambir', slug: 'gambir', count: 12 },
+  { name: 'Menteng', slug: 'menteng', count: 8 },
+];
+```
+
+**Sorting:** Kecamatan are sorted alphabetically by Indonesian locale.
+
+**Usage:**
+
+```javascript
+const { aggregateByKecamatan } = require('./templates/kabupaten-page');
+const kecamatans = aggregateByKecamatan(jakartaPusatSchools);
+kecamatans.forEach(k => console.log(`${k.name}: ${k.count}`));
+```
+
+---
+
+### Path Format
+
+Kabupaten pages are generated at:
+
+```
+/provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/index.html
+```
+
+Example: `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/index.html`
+
+---
+
+## Kecamatan Page Template Module (`src/presenters/templates/kecamatan-page.js`)
+
+### Purpose
+
+Presentation layer for kecamatan-level page HTML generation with direct school links. Restores the previously-broken Province → Kabupaten → Kecamatan → School navigation hierarchy (TASK-092).
+
+### Exports
+
+```javascript
+module.exports = {
+  generateKecamatanPageHtml: function,
+  filterSchoolsByLocation: function,
+  generateSchoolLinksHtml: function,
+};
+```
+
+### Functions
+
+#### `generateKecamatanPageHtml(provinceName, kabupatenName, kecamatanName, schools, skipFilter)`
+
+Generates complete HTML page for a specific kecamatan with school links.
+
+**Parameters:**
+
+- `provinceName` (string): Province name
+- `kabupatenName` (string): Kabupaten/kota name
+- `kecamatanName` (string): Kecamatan name to generate page for
+- `schools` (Array<Object>): Array of school data objects (all schools, or pre-filtered for this full location when `skipFilter` is true)
+- `skipFilter` (boolean, optional): When `true`, skips internal `filterSchoolsByLocation` call (schools array is assumed to be pre-filtered). Defaults to `false` for backward compatibility.
+
+**Returns:** `string` - Complete HTML document
+
+**Features:**
+
+- Lists all schools in the kecamatan with status/type badges
+- Breadcrumb navigation (Home → Province → Kabupaten → Kecamatan)
+- Responsive design with mobile support
+- Back-to-top button
+
+**Usage:**
+
+```javascript
+const { generateKecamatanPageHtml } = require('./templates/kecamatan-page');
+
+// Default: pass all schools, function filters internally
+const html = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir', schools);
+
+// Optimized: pass pre-filtered schools, skip redundant filtering
+const grouped = groupSchoolsByKecamatan(schools);
+const html2 = generateKecamatanPageHtml('DKI Jakarta', 'Jakarta Pusat', 'Gambir', grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir'), true);
+```
+
+---
+
+#### `filterSchoolsByLocation(schools, provinceName, kabupatenName, kecamatanName)`
+
+Filters schools by full location (province, kabupaten, kecamatan).
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects
+- `provinceName` (string): Province name to filter by
+- `kabupatenName` (string): Kabupaten/kota name to filter by
+- `kecamatanName` (string): Kecamatan name to filter by
+
+**Returns:** `Array<Object>` - Filtered schools for the full location
+
+**Exact Match:** Uses strict equality (`===`) for all three matching.
+
+**Usage:**
+
+```javascript
+const { filterSchoolsByLocation } = require('./templates/kecamatan-page');
+const gambirSchools = filterSchoolsByLocation(schools, 'DKI Jakarta', 'Jakarta Pusat', 'Gambir');
+console.log(`Found ${gambirSchools.length} schools`);
+```
+
+---
+
+#### `generateSchoolLinksHtml(schools, provinceSlug, kabupatenSlug)`
+
+Generates the school link list HTML for a kecamatan page.
+
+**Parameters:**
+
+- `schools` (Array<Object>): Array of school data objects (pre-filtered to this kecamatan)
+- `provinceSlug` (string): URL slug of the province
+- `kabupatenSlug` (string): URL slug of the kabupaten/kota
+
+**Returns:** `string` - HTML list of school links with badges
+
+**Link Format:** `/provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/kecamatan/{kecamatanSlug}/{npsn}-{namaSlug}.html`
+
+**Usage:**
+
+```javascript
+const { generateSchoolLinksHtml } = require('./templates/kecamatan-page');
+const linksHtml = generateSchoolLinksHtml(gambirSchools, 'dki-jakarta', 'jakarta-pusat');
+```
+
+---
+
+### Path Format
+
+Kecamatan pages are generated at:
+
+```
+/provinsi/{provinceSlug}/kabupaten/{kabupatenSlug}/kecamatan/{kecamatanSlug}/index.html
+```
+
+Example: `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/index.html`
 
 ---
 

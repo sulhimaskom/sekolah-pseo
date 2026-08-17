@@ -6,6 +6,8 @@ const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
 const { REQUIRED_SCHOOL_FIELDS, SEARCH_DATA_FIELDS } = require('../../scripts/data-schema');
 const { generateSchoolPageHtml } = require('../presenters/templates/school-page');
 const { generateProvincePageHtml } = require('../presenters/templates/province-page');
+const { generateKabupatenPageHtml } = require('../presenters/templates/kabupaten-page');
+const { generateKecamatanPageHtml } = require('../presenters/templates/kecamatan-page');
 const { generateHomepageHtml } = require('../presenters/templates/homepage');
 
 // WeakMap cache for getSchoolRelativePath - caches computed path by school object reference.
@@ -232,6 +234,175 @@ function buildHomepageData(schools) {
 }
 
 /**
+ * Group schools by kabupaten/kota within their province in a single O(n) pass.
+ *
+ * Returns a Map keyed by `${provinsi}\u0000${kab_kota}` → filtered schools array.
+ * Use this to pre-group schools once and then pass pre-filtered arrays
+ * to buildKabupatenPageData with skipFilter=true, eliminating the
+ * per-kabupaten filterSchoolsByProvinceAndKabupaten call (O(n×k) → O(n)).
+ *
+ * @param {Array<Object>} schools - Array of all school data objects
+ * @returns {Map<string, Array<Object>>} Map of `${provinsi}\u0000${kab_kota}` → schools
+ */
+function groupSchoolsByKabupaten(schools) {
+  if (!Array.isArray(schools)) {
+    return new Map();
+  }
+
+  const grouped = new Map();
+
+  for (const school of schools) {
+    if (!school.provinsi || !school.kab_kota) continue;
+
+    const key = `${school.provinsi}\u0000${school.kab_kota}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(school);
+  }
+
+  return grouped;
+}
+
+/**
+ * Group schools by kecamatan within their province/kabupaten in a single O(n) pass.
+ *
+ * Returns a Map keyed by `${provinsi}\u0000${kab_kota}\u0000${kecamatan}` → filtered
+ * schools array. Use this to pre-group schools once and then pass pre-filtered
+ * arrays to buildKecamatanPageData with skipFilter=true, eliminating the
+ * per-kecamatan filterSchoolsByLocation call (O(n×c) → O(n)).
+ *
+ * @param {Array<Object>} schools - Array of all school data objects
+ * @returns {Map<string, Array<Object>>} Map of `${provinsi}\u0000${kab_kota}\u0000${kecamatan}` → schools
+ */
+function groupSchoolsByKecamatan(schools) {
+  if (!Array.isArray(schools)) {
+    return new Map();
+  }
+
+  const grouped = new Map();
+
+  for (const school of schools) {
+    if (!school.provinsi || !school.kab_kota || !school.kecamatan) continue;
+
+    const key = `${school.provinsi}\u0000${school.kab_kota}\u0000${school.kecamatan}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(school);
+  }
+
+  return grouped;
+}
+
+/**
+ * Build kabupaten/kota page data (HTML content).
+ *
+ * @param {string} provinceName - Province name
+ * @param {string} kabKotaName - Kabupaten/Kota name
+ * @param {Array<Object>} schools - Array of school data objects (all schools or pre-filtered)
+ * @param {boolean} [skipFilter=false] - When true, skip internal kabupaten filtering
+ *        (schools array is assumed to be already filtered to this kabupaten)
+ * @returns {Object} - Kabupaten page data with relativePath and content
+ */
+function buildKabupatenPageData(provinceName, kabKotaName, schools, skipFilter = false) {
+  if (!provinceName || typeof provinceName !== 'string') {
+    throw new IntegrationError('Invalid province name provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'provinceName',
+      expectedType: 'non-empty string',
+    });
+  }
+
+  if (!kabKotaName || typeof kabKotaName !== 'string') {
+    throw new IntegrationError('Invalid kabupaten name provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'kabKotaName',
+      expectedType: 'non-empty string',
+    });
+  }
+
+  if (!Array.isArray(schools)) {
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
+  }
+
+  const provinceSlug = slugify(provinceName);
+  const kabKotaSlug = slugify(kabKotaName);
+  const relativePath = path.join('provinsi', provinceSlug, 'kabupaten', kabKotaSlug, 'index.html');
+
+  return {
+    relativePath,
+    content: generateKabupatenPageHtml(provinceName, kabKotaName, schools, skipFilter),
+  };
+}
+
+/**
+ * Build kecamatan page data (HTML content).
+ *
+ * @param {string} provinceName - Province name
+ * @param {string} kabKotaName - Kabupaten/Kota name
+ * @param {string} kecamatanName - Kecamatan name
+ * @param {Array<Object>} schools - Array of school data objects (all schools or pre-filtered)
+ * @param {boolean} [skipFilter=false] - When true, skip internal kecamatan filtering
+ *        (schools array is assumed to be already filtered to this kecamatan)
+ * @returns {Object} - Kecamatan page data with relativePath and content
+ */
+function buildKecamatanPageData(provinceName, kabKotaName, kecamatanName, schools, skipFilter = false) {
+  if (!provinceName || typeof provinceName !== 'string') {
+    throw new IntegrationError('Invalid province name provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'provinceName',
+      expectedType: 'non-empty string',
+    });
+  }
+
+  if (!kabKotaName || typeof kabKotaName !== 'string') {
+    throw new IntegrationError('Invalid kabupaten name provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'kabKotaName',
+      expectedType: 'non-empty string',
+    });
+  }
+
+  if (!kecamatanName || typeof kecamatanName !== 'string') {
+    throw new IntegrationError('Invalid kecamatan name provided', ERROR_CODES.INVALID_INPUT, {
+      field: 'kecamatanName',
+      expectedType: 'non-empty string',
+    });
+  }
+
+  if (!Array.isArray(schools)) {
+    throw new IntegrationError('schools must be an array', ERROR_CODES.INVALID_INPUT, {
+      field: 'schools',
+      expectedType: 'array',
+    });
+  }
+
+  const provinceSlug = slugify(provinceName);
+  const kabKotaSlug = slugify(kabKotaName);
+  const kecamatanSlug = slugify(kecamatanName);
+  const relativePath = path.join(
+    'provinsi',
+    provinceSlug,
+    'kabupaten',
+    kabKotaSlug,
+    'kecamatan',
+    kecamatanSlug,
+    'index.html'
+  );
+
+  return {
+    relativePath,
+    content: generateKecamatanPageHtml(
+      provinceName,
+      kabKotaName,
+      kecamatanName,
+      schools,
+      skipFilter
+    ),
+  };
+}
+
+/**
  * Prepare minimal school data for client-side search.
  * This belongs in the service layer (not the template/presenter) because it:
  * 1. Computes relative paths via getSchoolRelativePath() (service concern)
@@ -280,5 +451,9 @@ module.exports = {
   getUniqueProvinces,
   buildProvincePageData,
   groupSchoolsByProvince,
+  buildKabupatenPageData,
+  buildKecamatanPageData,
+  groupSchoolsByKabupaten,
+  groupSchoolsByKecamatan,
   prepareSchoolDataForSearch,
 };

@@ -33,6 +33,8 @@ const {
   writeSearchDataFile,
   preCreateProvinceDirectories,
   generateProvincePages,
+  generateKabupatenPages,
+  generateKecamatanPages,
   build,
   buildIncremental,
   createManifestFromSchools,
@@ -745,5 +747,198 @@ test('generateProvincePages skips schools without provinsi in grouping', async (
 
   const result = await generateProvincePages(schools);
   assert.strictEqual(result.successful, 1, 'only valid province should succeed');
+  assert.strictEqual(result.failed, 0, 'no failures - invalid schools are skipped in grouping');
+});
+
+// --- generateKabupatenPages tests ---
+
+test('generateKabupatenPages generates kabupaten pages for each province/kabupaten', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test',
+    },
+    {
+      npsn: '10002',
+      nama: 'SMA 2',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Swasta',
+      alamat: 'Jl. Test 2',
+    },
+    {
+      npsn: '10003',
+      nama: 'SMA 3',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Gubeng',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test 3',
+    },
+  ];
+
+  const result = await generateKabupatenPages(schools);
+
+  assert.strictEqual(result.successful, 2, 'both kabupaten pages should succeed');
+  assert.strictEqual(result.failed, 0, 'no kabupaten pages should fail');
+
+  const page1Path = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-barat', 'kabupaten', 'bandung', 'index.html');
+  const page2Path = path.join(CONFIG.DIST_DIR, 'provinsi', 'jawa-timur', 'kabupaten', 'surabaya', 'index.html');
+
+  assert.ok(await waitForFile(page1Path), 'jawa-barat/bandung kabupaten page should exist');
+  assert.ok(await waitForFile(page2Path), 'jawa-timur/surabaya kabupaten page should exist');
+
+  const content1 = await fs.readFile(page1Path, 'utf-8');
+  assert.ok(content1.includes('<!DOCTYPE html>'), 'kabupaten page should be valid HTML');
+  assert.ok(content1.includes('Bandung'), 'kabupaten page should contain kabupaten name');
+  assert.ok(content1.includes('2 sekolah'), 'kabupaten page should count both schools');
+  assert.ok(
+    content1.includes('/provinsi/jawa-barat/kabupaten/bandung/kecamatan/coblong/'),
+    'kabupaten page should link to kecamatan page'
+  );
+});
+
+test('generateKabupatenPages handles empty schools array', async () => {
+  const result = await generateKabupatenPages([]);
+  assert.strictEqual(result.successful, 0, 'no kabupaten pages with empty schools');
+  assert.strictEqual(result.failed, 0, 'no kabupaten page failures with empty schools');
+});
+
+test('generateKabupatenPages skips schools without provinsi or kab_kota in grouping', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test',
+    },
+    { npsn: '10002', nama: 'SMA 2', provinsi: 'Jawa Timur', kecamatan: 'Gubeng' },
+    { npsn: '10003', nama: 'SMA 3', kab_kota: 'Surabaya', kecamatan: 'Gubeng' },
+  ];
+
+  const result = await generateKabupatenPages(schools);
+  assert.strictEqual(result.successful, 1, 'only valid province/kabupaten should succeed');
+  assert.strictEqual(result.failed, 0, 'no failures - invalid schools are skipped in grouping');
+});
+
+// --- generateKecamatanPages tests ---
+
+test('generateKecamatanPages generates kecamatan pages for each location', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test',
+    },
+    {
+      npsn: '10002',
+      nama: 'SMA 2',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Swasta',
+      alamat: 'Jl. Test 2',
+    },
+    {
+      npsn: '10003',
+      nama: 'SMA 3',
+      provinsi: 'Jawa Timur',
+      kab_kota: 'Surabaya',
+      kecamatan: 'Gubeng',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test 3',
+    },
+  ];
+
+  const result = await generateKecamatanPages(schools);
+
+  assert.strictEqual(result.successful, 2, 'both kecamatan pages should succeed');
+  assert.strictEqual(result.failed, 0, 'no kecamatan pages should fail');
+
+  const page1Path = path.join(
+    CONFIG.DIST_DIR,
+    'provinsi',
+    'jawa-barat',
+    'kabupaten',
+    'bandung',
+    'kecamatan',
+    'coblong',
+    'index.html'
+  );
+  const page2Path = path.join(
+    CONFIG.DIST_DIR,
+    'provinsi',
+    'jawa-timur',
+    'kabupaten',
+    'surabaya',
+    'kecamatan',
+    'gubeng',
+    'index.html'
+  );
+
+  assert.ok(await waitForFile(page1Path), 'jawa-barat/bandung/coblong kecamatan page should exist');
+  assert.ok(await waitForFile(page2Path), 'jawa-timur/surabaya/gubeng kecamatan page should exist');
+
+  const content1 = await fs.readFile(page1Path, 'utf-8');
+  assert.ok(content1.includes('<!DOCTYPE html>'), 'kecamatan page should be valid HTML');
+  assert.ok(content1.includes('Kecamatan Coblong'), 'kecamatan page should contain kecamatan name');
+  assert.ok(content1.includes('2 sekolah'), 'kecamatan page should count both schools');
+  assert.ok(
+    content1.includes('10001-sma-1.html'),
+    'kecamatan page should link to school pages'
+  );
+});
+
+test('generateKecamatanPages handles empty schools array', async () => {
+  const result = await generateKecamatanPages([]);
+  assert.strictEqual(result.successful, 0, 'no kecamatan pages with empty schools');
+  assert.strictEqual(result.failed, 0, 'no kecamatan page failures with empty schools');
+});
+
+test('generateKecamatanPages skips schools without full location in grouping', async () => {
+  await fs.mkdir(CONFIG.DIST_DIR, { recursive: true });
+
+  const schools = [
+    {
+      npsn: '10001',
+      nama: 'SMA 1',
+      provinsi: 'Jawa Barat',
+      kab_kota: 'Bandung',
+      kecamatan: 'Coblong',
+      bentuk_pendidikan: 'SMA',
+      status: 'Negeri',
+      alamat: 'Jl. Test',
+    },
+    { npsn: '10002', nama: 'SMA 2', provinsi: 'Jawa Barat', kab_kota: 'Bandung' },
+  ];
+
+  const result = await generateKecamatanPages(schools);
+  assert.strictEqual(result.successful, 1, 'only valid location should succeed');
   assert.strictEqual(result.failed, 0, 'no failures - invalid schools are skipped in grouping');
 });

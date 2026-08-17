@@ -2,6 +2,76 @@
 
 ## Completed Tasks
 
+### [TASK-092] Restore Broken Navigation — Kabupaten & Kecamatan Pages
+
+**Status**: Complete
+**Agent**: UI/UX Engineer (Sisyphus)
+
+### Description
+
+Every province page linked to `/provinsi/{slug}/kabupaten/{kabSlug}/` but no `index.html` was ever generated there — the entire Province → Kabupaten → Kecamatan → School navigation hierarchy was dead (all kabupaten links 404). Root cause: `kabupaten-page.js`/`kecamatan-page.js` templates were created (commit `4246776`) but **never wired into the build pipeline** — they were dead code, removed in commit `26dfc78` (PR #365), leaving the province-page links dangling. `validate-links.js` missed it because the target *directory* exists (school pages live beneath it) even though no `index.html` exists.
+
+### Changes Made
+
+**1. `src/presenters/templates/kabupaten-page.js` — recreated (modernized)**
+
+- Restored the kabupaten/kota listing template, modernized to the shared-component convention: `HTML_HEAD_PREFIX`, pre-escaped `T` translations, `generateBreadcrumbHtml`, `generateFooterHtml`, `generateBackToTopHtml`/`generateBackToTopScript`.
+- Fixed the original `localeCompare` bug: `a.name.localeCompare(a.name, 'id')` (self-compare, always 0) → `a.name.localeCompare(b.name, 'id')`.
+- Exports: `generateKabupatenPageHtml`, `filterSchoolsByProvinceAndKabupaten`, `aggregateByKecamatan`.
+
+**2. `src/presenters/templates/kecamatan-page.js` — recreated (modernized)**
+
+- Restored the kecamatan listing template with school links and status/type badges (`badge badge-n` / `badge badge-s`), same shared-component convention as above.
+- Exports: `generateKecamatanPageHtml`, `filterSchoolsByLocation`, `generateSchoolLinksHtml`.
+
+**3. `src/services/PageBuilder.js` — new builders + O(n) groupers**
+
+- `buildKabupatenPageData(provinceName, kabupatenName, schools, skipFilter)` — validates inputs, emits `provinsi/{provSlug}/kabupaten/{kabSlug}/index.html`.
+- `buildKecamatanPageData(provinceName, kabupatenName, kecamatanName, schools, skipFilter)` — emits `provinsi/{provSlug}/kabupaten/{kabSlug}/kecamatan/{kecSlug}/index.html`.
+- `groupSchoolsByKabupaten(schools)` / `groupSchoolsByKecamatan(schools)` — single O(n) pass, NUL-joined composite Map keys (`provinsi\0kab_kota`, `provinsi\0kab_kota\0kecamatan`), skips records missing required fields.
+- Exports updated (additive).
+
+**4. `src/services/BuildOrchestrator.js` — generators wired into the build**
+
+- `generateKabupatenPages(schools)` / `generateKecamatanPages(schools)` — group via the new groupers, pre-create directories with recursive `fastMkdir` (safe when running in parallel with school-page dir creation — the first attempt failed with ENOENT until dirs were pre-created), write via `processInBatches` + `fastWriteFile` with `skipFilter=true`.
+- Both invoked inside `prepareBuildEnvironment`'s `sharedPagesPromise` (`Promise.all` with province pages).
+- Exports updated (additive); `scripts/build-pages.js` re-exports updated for backward compatibility.
+
+**5. Tests — 44 new**
+
+- `scripts/kabupaten-page.test.js` (13 tests): filter edge cases (non-array/null), aggregation + Indonesian-locale sorting, HTML output (kecamatan links, breadcrumb `aria-current="page"`, skip-link, XSS escaping of rendered names, canonical URL, empty-school rendering).
+- `scripts/kecamatan-page.test.js` (15 tests): location filtering, school-link URL format, badge classes, XSS escaping, breadcrumb hierarchy, skip-link/footer/back-to-top, canonical URL.
+- `scripts/PageBuilder.test.js` (+12): builder validation errors, relative-path structure, grouper composite-key behavior + missing-field skipping.
+- `scripts/build-pages.test.js` (+4): generator end-to-end (dirs + HTML content + counts), empty-input, missing-field skipping.
+
+**6. Docs** — `docs/api.md` (PageBuilder/BuildOrchestrator exports + function docs + two new template module sections), `docs/blueprint.md` (project structure + Decisions Log entry), `docs/ui-ux-engineer.md` (improvement #17), `docs/task.md` (this entry).
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| New template tests | 28/28 pass |
+| New builder/generator tests | 16/16 pass |
+| Full JS suite | green (no regressions) |
+| Full build | Status: PASS — 2 kabupaten pages, 2 kecamatan pages (current dataset) |
+| `validate-links.js` | No broken links found across 10 HTML files |
+| Nav chain (DKI Jakarta) | `/provinsi/dki-jakarta/kabupaten/jakarta-pusat/kecamatan/gambir/12345678-sma-negeri-1-jakarta.html` exists |
+
+### Files Modified
+
+- `src/presenters/templates/kabupaten-page.js` — recreated template (restored + modernized)
+- `src/presenters/templates/kecamatan-page.js` — recreated template (restored + modernized)
+- `src/services/PageBuilder.js` — `buildKabupatenPageData`/`buildKecamatanPageData` + `groupSchoolsByKabupaten`/`groupSchoolsByKecamatan`
+- `src/services/BuildOrchestrator.js` — `generateKabupatenPages`/`generateKecamatanPages` wired into `prepareBuildEnvironment`
+- `scripts/build-pages.js` — re-export the two new generators
+- `scripts/kabupaten-page.test.js` — new (13 tests)
+- `scripts/kecamatan-page.test.js` — new (15 tests)
+- `scripts/PageBuilder.test.js` — +12 tests
+- `scripts/build-pages.test.js` — +4 tests
+- `docs/api.md`, `docs/blueprint.md`, `docs/ui-ux-engineer.md`, `docs/task.md` — docs updated
+
+---
+
 ### [TASK-091] Integration — Rate Limiting: Enforce `rateLimitMs` Pacing + Dedicated Wikipedia API Limiter
 
 **Status**: Complete
