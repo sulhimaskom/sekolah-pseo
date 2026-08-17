@@ -79,14 +79,6 @@ const CONFIG = {
     Math.max(1, parseInt(process.env.MAX_URLS_PER_SITEMAP) || 50000)
   ),
 
-  // Indonesia geographic bounds for coordinate validation
-  INDONESIA_BOUNDS: {
-    LAT_MIN: -11,
-    LAT_MAX: 6,
-    LON_MIN: 95,
-    LON_MAX: 141,
-  },
-
   // Rate limiter defaults
   RATE_LIMITER_DEFAULTS: {
     MAX_CONCURRENT: 100,

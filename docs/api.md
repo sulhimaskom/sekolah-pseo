@@ -308,7 +308,7 @@ isValidCategoricalValue('nama', 'SMA Negeri 1'); // true (free-text field)
 
 #### `validateRecord(record)`
 
-Validates a normalized school record against the schema. Checks required fields, regex patterns, and categorical values.
+Validates a normalized school record against the schema. Checks required fields, regex patterns, categorical values, optional-field patterns (e.g., `updated_at` ISO date), and coordinate bounds (non-empty, non-zero `lat`/`lon` within Indonesia bounds — zero or empty coordinates pass as unset).
 
 **Parameters:**
 
@@ -322,6 +322,8 @@ Validates a normalized school record against the schema. Checks required fields,
 - Missing required fields → returns descriptive error per field
 - Pattern violations → returns format-specific message
 - Invalid categorical values → returns allowed values in message
+- Out-of-bounds/non-numeric coordinates → returns bounds range in message
+- Malformed `updated_at` → returns pattern message (must match `YYYY-MM-DD`)
 
 **Usage:**
 
@@ -1744,26 +1746,29 @@ const normalized = normaliseRecord({
 
 #### `validateRecord(record)`
 
-Validates normalized record meets required criteria.
+Validates normalized record against the centralized schema (`data-schema.js`). Delegates to `SCHEMA.validateRecord()` — the ETL boundary enforces the exact same constraints as every other consumer (single source of truth).
 
 **Parameters:**
 
 - `record` (Object): Normalized record
 
-**Returns:** `boolean` - `true` if valid
+**Returns:** `boolean` - `true` if the schema reports zero errors
 
 **Throws:** N/A (returns `false` for invalid input)
 
 **Validation Rules:**
 
 - Record must be an object
-- `npsn` field must exist
+- Required fields (`npsn`, `nama`, `bentuk_pendidikan`, `provinsi`, `kab_kota`, `kecamatan`) must be non-empty
 - `npsn` must be numeric (`^\d+$`)
+- Categorical values (`status`, `bentuk_pendidikan`) must be in the allowed lists
+- Non-empty, non-zero `lat`/`lon` must be within Indonesia bounds (zero/empty = unset, valid)
+- `updated_at` must match `YYYY-MM-DD` when present
 
 **Usage:**
 
 ```javascript
-validateRecord({ npsn: '12345678', nama: 'School' }); // true
+validateRecord({ npsn: '12345678', nama: 'School' }); // false (missing required fields)
 validateRecord({ npsn: 'abc', nama: 'School' }); // false (not numeric)
 validateRecord({ nama: 'School' }); // false (missing npsn)
 validateRecord(null); // false
@@ -1773,7 +1778,7 @@ validateRecord(null); // false
 
 #### `validateLatLon(lat, lon)`
 
-Validates latitude and longitude coordinates for Indonesia geographic bounds.
+Validates latitude and longitude coordinates for Indonesia geographic bounds. Delegates to `SCHEMA.isValidCoordinate()` using `SCHEMA.INDONESIA_BOUNDS` (single source of truth).
 
 **Parameters:**
 
@@ -1786,13 +1791,13 @@ Validates latitude and longitude coordinates for Indonesia geographic bounds.
 
 - Latitude: -11 to 6 (Indonesia bounds)
 - Longitude: 95 to 141 (Indonesia bounds)
-- Returns `false` for empty, null, or non-numeric values
+- Returns `false` for empty, `'0'` (unset), null, or non-numeric values
 
 **Usage:**
 
 ```javascript
 validateLatLon('-6.2088', '106.8456'); // true (Jakarta)
-validateLatLon('0', '0'); // false (outside Indonesia bounds)
+validateLatLon('0', '0'); // false (zero = unset)
 validateLatLon('', ''); // false (empty)
 ```
 

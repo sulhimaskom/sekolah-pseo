@@ -63,6 +63,68 @@ The measured hotspot was link validation's existence probing: `validateLinksInFi
 
 ---
 
+### [TASK-090] Data Validation — Coordinate Bounds + Date-Pattern Enforcement at the ETL Boundary (Single Source of Truth)
+
+**Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission; PR #775 will carry this fix together with TASK-087/088/089 once pushed with a `workflows`-enabled token)
+**Agent**: Principal Data Architect (Sisyphus)
+
+### Description
+
+The centralized schema (`scripts/data-schema.js`) declared coordinate bounds and field patterns, but the ETL boundary did not enforce them: `SCHEMA.validateRecord` only checked required fields, patterns, and categorical values — **non-empty lat/lon were never checked against Indonesia bounds**, so an out-of-bounds or non-numeric coordinate flowed straight into `data/schools.csv`. Bounds enforcement existed only in `validateLatLon`, which `run()` never calls. Second, `updated_at` had a `description` but no `pattern`, so malformed dates were accepted. Third, the constraint definitions were duplicated: `INDONESIA_BOUNDS` existed in both `config.js` and `data-schema.js`, and `data-quality.js` re-implemented `isNonEmpty`/`isValidCoordinate` locally.
+
+### Changes Made
+
+**1. `scripts/data-schema.js` — enforce constraints in `validateRecord` (single source of truth)**
+
+- `updated_at` field: added `pattern: /^\d{4}-\d{2}-\d{2}$/` (ISO date).
+- The optional-field loop in `validateRecord` now checks `allowedValues`, `fieldDef.pattern`, and — for `lat`/`lon` — coordinate bounds: non-empty, non-zero values must pass `isValidCoordinate` (zero/empty = unset, valid).
+
+**2. `scripts/etl.js` — delegate to the schema (remove weaker duplicate validators)**
+
+- `validateRecord` now returns `SCHEMA.validateRecord(record).length === 0`.
+- `validateLatLon` now delegates to `SCHEMA.isValidCoordinate` using `SCHEMA.INDONESIA_BOUNDS` (dropped `CONFIG.INDONESIA_BOUNDS` dependency).
+
+**3. `scripts/config.js` — removed duplicated `INDONESIA_BOUNDS`** (single source stays in `data-schema.js`).
+
+**4. `scripts/data-quality.js` — removed local `isNonEmpty`/`isValidCoordinate`**, replaced with destructured `const { isNonEmpty, isValidCoordinate } = SCHEMA;` (re-exports unchanged).
+
+**5. `scripts/data-schema.test.js` — 8 new tests** covering: valid ISO `updated_at` accepted, malformed `updated_at` rejected, empty `updated_at` accepted (optional), out-of-bounds lat rejected, out-of-bounds lon rejected, non-numeric lat rejected, zero coordinates accepted (unset), in-bounds coordinates accepted.
+
+**6. `docs/api.md` + `docs/blueprint.md`** — updated `validateRecord`/`validateLatLon` contracts, Data Validation section, and decisions log.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| JS tests (full suite) | **1169 total, 1165 pass, 4 skipped, 0 fail** (+8 new) |
+| Python tests | 27/27 pass |
+| Coverage gate | pass (97.37% lines / 93.48% branches) |
+| ESLint | clean |
+| Prettier | clean |
+| ETL boundary sanity | valid record accepted; out-of-bounds lat rejected; bad date rejected; zero coords = unset |
+
+### Files Modified
+
+- `scripts/data-schema.js` — `updated_at` pattern + optional-field/coordinate enforcement in `validateRecord`
+- `scripts/etl.js` — `validateRecord`/`validateLatLon` delegate to SCHEMA
+- `scripts/config.js` — removed `INDONESIA_BOUNDS`
+- `scripts/data-quality.js` — removed local validator duplicates
+- `scripts/data-schema.test.js` — 8 new tests
+- `docs/api.md` — validateRecord/validateLatLon contracts
+- `docs/blueprint.md` — Data Validation section + decisions log
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] Coordinate bounds enforced at the ETL boundary (out-of-bounds/non-numeric rejected, zero/empty = unset)
+- [x] `updated_at` ISO date pattern enforced for optional fields
+- [x] `INDONESIA_BOUNDS` + validators defined once in `data-schema.js` — no duplicates in `config.js`/`etl.js`/`data-quality.js`
+- [x] Non-destructive: behavior unchanged for valid/in-bounds data
+- [x] Full suite green (1165 JS pass / 27 Python), coverage gate passes, lint + prettier clean
+- [x] Zero regressions
+
+---
+
 ### [TASK-088] Security Hardening — Workflow Permission Repair (12th Regression Fix)
 
 **Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission; PR #775 will carry the fix once pushed with a `workflows`-enabled token)
