@@ -582,6 +582,7 @@ Recursively walks a directory tree and processes each HTML file with a callback.
 **Behavior:**
 
 - Recursively traverses directory tree
+- Processes directory entries concurrently (parallel `safeReaddir`/`safeStat` and parallel subdirectory recursion); result order matches the sequential traversal order (depth-first, readdir order)
 - Filters for `.html` files only
 - Passes full path, relative path, entry name, and stat to callback
 - Collects non-undefined callback results
@@ -3854,7 +3855,9 @@ Crawls generated HTML files and validates internal hyperlinks to ensure they res
 module.exports = {
   extractLinks: function,
   validateLinksInFile: function,
-  validateLinks: function
+  validateLinks: function,
+  isRelativeLink: function,
+  statExistsCached: function
 };
 ```
 
@@ -3887,7 +3890,7 @@ const links = extractLinks(
 
 ---
 
-#### `validateLinksInFile(file, links, distDir)`
+#### `validateLinksInFile(file, links, distDir, statCache?)`
 
 Validates all links in a single file and returns broken links.
 
@@ -3896,6 +3899,10 @@ Validates all links in a single file and returns broken links.
 - `file` (string): Path to the HTML file
 - `links` (Array<string>): Array of link href values to validate
 - `distDir` (string): Base distribution directory for resolving absolute paths
+- `statCache` (Map, optional): Shared memoized target-existence cache. When
+  validating many files, pass one cache so identical targets across files are
+  stat'ed once per run instead of once per file. Defaults to a fresh cache per
+  call (unchanged direct-call behavior).
 
 **Returns:** `Promise<Array<Object>>` - Array of broken links
 
@@ -3930,6 +3937,33 @@ const broken = await validateLinksInFile(
   '/dist'
 );
 console.log(`Found ${broken.length} broken links`);
+```
+
+---
+
+#### `statExistsCached(cache, targetPath)`
+
+Memoized target-existence probe for link validation. Caches the promise (not
+the boolean) so concurrent in-flight probes of the same target are also
+deduplicated. Safe because the `dist/` tree is immutable during a validation
+run; the cache lives and dies with one `validateLinks()` call.
+
+At 5,014-page scale this reduces stat calls from ~15,067 to 27 unique targets
+(a 558x reduction), since every school page links to the same shared assets
+(`styles.css`, `favicon.svg`, `/`).
+
+**Parameters:**
+
+- `cache` (Map): `targetPath` → existence promise
+- `targetPath` (string): Absolute resolved target path
+
+**Returns:** `Promise<boolean>` - `true` if the target exists, `false` otherwise
+
+**Usage:**
+
+```javascript
+const statCache = new Map();
+const exists = await statExistsCached(statCache, '/dist/styles.css');
 ```
 
 ---

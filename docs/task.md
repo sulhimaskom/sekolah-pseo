@@ -2,6 +2,67 @@
 
 ## Completed Tasks
 
+### [TASK-089] Performance — Link Validation Stat-Cache + Parallel Directory Walk
+
+**Status**: Complete
+**Agent**: Performance Engineer (Sisyphus)
+
+### Description
+
+Profiled the full pipeline at production scale (synthetic 5,000-school dataset, matching the ~3,474-school production scale referenced in code comments) to find the actual bottlenecks — not guess. Baseline: full build 0.78s (6,915 pages/sec, budgets met), sitemap 0.10s, **validate-links 0.90s** for 5,014 HTML files.
+
+The measured hotspot was link validation's existence probing: `validateLinksInFile` stat'ed every link target per file, so the shared targets every page links to (`/`, `favicon.svg`, `styles.css`) were probed once per file. At 5,014 files that was **15,067 stat calls against only 27 unique targets — a 558x duplicate ratio**, each routed through `safeStat`'s retry + timeout + circuit-breaker wrappers. A second measured cost was `walkDirectory` (the shared discovery util used by validate-links and sitemap) being fully sequential: `await safeReaddir` then one `await safeStat` per entry, recursing serially — 185ms of the critical path.
+
+### Changes Made
+
+**1. `scripts/validate-links.js` — memoized existence probe (`statExistsCached`)**
+
+- New exported helper `statExistsCached(cache, targetPath)` — caches the existence **promise** per resolved target path, so identical targets across files are stat'ed once per run *and* concurrent in-flight probes of the same target are deduplicated.
+- `validateLinksInFile(file, links, distDir, statCache = new Map())` — optional 4th param; a fresh per-call cache keeps direct-call behavior identical (all existing tests pass untouched).
+- `validateLinks()` creates **one shared cache per run** and passes it through. Safe because `dist/` is immutable during a run — the cache lives and dies with the call, so there is no invalidation risk (the anti-pattern rule "cache without invalidation strategy" is satisfied by scoping the cache to the run).
+- Error semantics preserved exactly: `IntegrationError` → broken link; unexpected (non-IntegrationError) failures are silently skipped as before (optional catch binding).
+
+**2. `scripts/utils.js` — `walkDirectory` parallelized (order-preserving)**
+
+- Directory entries are now processed concurrently — parallel `safeReaddir`/`safeStat` and parallel subdirectory recursion via `Promise.all`.
+- Result order is preserved exactly: `Promise.all` resolves in `readdir` order and the depth-first flattening matches the previous sequential walk's output, so both consumers (validate-links, sitemap) see identical ordering.
+
+**3. `scripts/validate-links.test.js` — 5 new tests** covering: cache dedup (one entry for repeated target), missing-target caching, pre-populated cache short-circuit (skips the probe entirely), shared-cache use across `validateLinksInFile` calls, and cached-false verdict reporting broken without a stat.
+
+**4. `docs/api.md`** — exports block + `validateLinksInFile` signature + new `statExistsCached` section + `walkDirectory` concurrency behavior note.
+
+### Verification (synthetic 5,000-school scale)
+
+| Check | Before | After |
+| ----- | ------ | ----- |
+| validate-links wall time (3 runs) | 0.90 / 0.90 / 0.92s | 0.69 / 0.68 / 0.66s (**~25% faster**) |
+| Stat calls during validation | 15,067 (27 unique) | **27 (558x reduction)** |
+| Walk phase | 185-204ms sequential | parallel (validate-links total 0.66-0.69s) |
+| Sitemap | 0.10s | 0.10s (unchanged, walk a small fraction) |
+| JS Tests (full suite) | 1155 | **1160 total, 1156 pass, 0 fail** (+5 new) |
+| Python tests | 27/27 | 27/27 |
+| Coverage gate | pass | pass (97.37% lines / 93.31% branches) |
+| ESLint / Prettier | clean | clean |
+| Broken-link results | 0 broken (identical) | 0 broken (identical) |
+
+### Files Modified
+
+- `scripts/validate-links.js` — `statExistsCached` + shared per-run cache in `validateLinks`
+- `scripts/utils.js` — parallel, order-preserving `walkDirectory`
+- `scripts/validate-links.test.js` — 5 cache tests
+- `docs/api.md` — validate-links exports/functions + walkDirectory behavior
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] Bottleneck measured first (15,067 stats / 27 unique; sequential walk 185ms), then targeted
+- [x] Stat calls reduced 558x; validate-links wall time ~25% faster; identical broken-link output
+- [x] Cache scoped to a single run over immutable `dist/` — no invalidation hazard
+- [x] Full suite green (1160 JS, 27 Python), coverage gate passes, lint + prettier clean
+- [x] Zero regressions
+
+---
+
 ### [TASK-088] Security Hardening — Workflow Permission Repair (12th Regression Fix)
 
 **Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission; PR #775 will carry the fix once pushed with a `workflows`-enabled token)
