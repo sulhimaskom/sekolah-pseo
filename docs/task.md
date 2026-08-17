@@ -2,6 +2,66 @@
 
 ## Completed Tasks
 
+### [TASK-102] CI Health Fix — Hardened opencode CLI Install Against HTTP 429 Rate-Limit Flakes
+
+**Status**: Complete (delivery to remote push-blocked by F050 — see below)
+**Agent**: DevOps Engineer (Sisyphus)
+
+### Description
+
+CI health check found the hourly scheduled `pull` workflow on `main` failing intermittently with exit 127 (`opencode: No such file or directory`): run 32041877601 (15:17Z, 33s, `failure`) and run 32030053702 (12:28Z) both died in the `On-Pull` step. The `Install OpenCode CLI` step just before it showed `curl: (22) The requested URL returned error: 429` — but the step was reported green.
+
+**Root cause**: every workflow's install step ran `curl -fsSL https://opencode.ai/install | bash` **without `set -o pipefail`**. When curl hit a transient HTTP 429 (opencode.ai install endpoint rate limit), the pipe masked the failure: `bash` received empty stdin and exited 0, so the step "succeeded" without installing the CLI, and the subsequent agent step failed with exit 127. The flake is intermittent because opencode.ai rate-limits install requests — some hourly runs got through (13:33Z, 14:20Z green), others hit the limit.
+
+### Changes Made
+
+Hardened **all 9 install sites across 6 workflows** (the same latent bug existed everywhere):
+
+1. `.github/workflows/on-pull.yml` — `Install OpenCode CLI` step
+2. `.github/workflows/on-push.yml` — `Install OpenCode` step
+3. `.github/workflows/architect-agent.yml` — `Install OpenCode CLI` step
+4. `.github/workflows/opencode.yml` — `Install OpenCode CLI` step
+5. `.github/workflows/orchestrator.yml` — `Install OpenCode CLI` step
+6. `.github/workflows/parallel.yml` — 4× `Install OpenCode` steps
+
+Each install step now:
+
+- **`set -euo pipefail`** — a curl failure now fails the pipeline instead of being masked by an empty-stdin `bash`
+- **Retry with backoff** — install retried up to 5 attempts with 10s sleep between attempts; curl itself retries 3× with `--retry-all-errors --retry-delay 5` to ride out transient 429s
+- **Hard binary-existence check** — after the loop, fails fast with a clear `::error::opencode CLI not found after 5 install attempts (HTTP 429 rate limit?)` message + exit 1 if `$HOME/.opencode/bin/opencode` is missing (no more cryptic 127 in a later step)
+
+### Verification
+
+| Check                      | Result                                                                 |
+| -------------------------- | ---------------------------------------------------------------------- |
+| Root cause                 | Confirmed from run logs: `curl: (22) 429` → step green → `opencode: No such file or directory` (exit 127) |
+| YAML validity              | ✅ All 6 workflow files parse (PyYAML `safe_load`)                      |
+| Shell-logic test (retry→success) | ✅ 429 ×2 then success → installs and verifies binary (attempt 3)   |
+| Shell-logic test (retry exhausted) | ✅ 429 ×5 → clear `::error::` message + exit 1 (no silent success) |
+| Workflow security gate     | ✅ Unchanged at the documented 12-violation F037 baseline (exit 1, no regression beyond baseline) |
+| Pre-commit hook            | ✅ Passes (violations ≤ baseline 12)                                    |
+| Full JS suite              | ✅ 1309 pass / 0 fail / 4 skipped (unrelated to this change, sanity)    |
+| ESLint / Prettier          | ✅ Clean (workflow files are `.prettierignore`d; no lint targets)       |
+
+### Delivery Blocker (F050)
+
+**⚠️ Push-blocked by F050**: pushing `.github/workflows/*` is refused by the GitHub App token (`github-actions[bot]`) — it lacks the `workflows` permission (`refusing to allow a GitHub App to create or update workflow ... without workflows permission`). Same documented blocker behind TASK-088/097. The fix is committed on `agent` (`0056ad8`) and fully verified locally; it requires a **workflows-enabled token (repo admin PAT or workflows-scoped GitHub App)** to reach the remote. Until then the hourly `pull` runs remain exposed to the 429 flake.
+
+### Files Modified
+
+- `.github/workflows/on-pull.yml`, `on-push.yml`, `architect-agent.yml`, `opencode.yml`, `orchestrator.yml`, `parallel.yml` — install steps hardened (9 sites)
+- `docs/blueprint.md` — Decisions Log row (TASK-102)
+- `docs/task.md` — this entry
+
+### Acceptance Criteria
+
+- [x] Root cause identified (pipe masked curl 429 → missing binary → exit 127)
+- [x] All 9 install sites hardened (pipefail + retry + binary verification)
+- [x] Fix verified locally (YAML valid, both shell-logic paths tested, security gate unchanged)
+- [ ] ~~Delivered to remote~~ — **BLOCKED by F050** (token lacks `workflows` permission)
+
+---
+
 ### [TASK-101] Component Extraction — Shared Hero & Index-Page Head Components
 
 **Status**: Complete
