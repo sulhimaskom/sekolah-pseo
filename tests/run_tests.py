@@ -17,12 +17,6 @@ import csv
 import traceback
 import argparse
 from typing import Dict, List, Any, Optional
-import sys
-import json
-import time
-import traceback
-import argparse
-from typing import Dict, List, Any, Optional
 
 
 class TestResult:
