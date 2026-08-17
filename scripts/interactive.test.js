@@ -56,6 +56,17 @@ after(() => {
   mock.restoreAll();
 });
 
+function mockReadline(answers = []) {
+  let callCount = 0;
+  return {
+    async question() {
+      const answer = answers[callCount] ?? '';
+      callCount += 1;
+      return answer;
+    },
+  };
+}
+
 // Save originals
 const originalIsTTY = process.stdin.isTTY;
 const originalArgv = process.argv;
