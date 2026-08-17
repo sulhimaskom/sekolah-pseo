@@ -2,6 +2,75 @@
 
 ## Completed Tasks
 
+### [TASK-101] Component Extraction — Shared Hero & Index-Page Head Components
+
+**Status**: Complete
+**Agent**: UI/UX Engineer (Sisyphus)
+
+### Description
+
+Component-extraction pass over the presentation layer found two duplicated UI patterns:
+
+1. **Hero section** — the `.homepage-hero` block (h1 title + `.hero-description` paragraph + `.hero-stats` stat items) was duplicated verbatim across **4 templates**: homepage, province-page, kabupaten-page, kecamatan-page. Any one-off edit to a hero risked the page types drifting apart.
+2. **Index-page `<head>` block** — the description / title / canonical / Open Graph meta block plus the stylesheet link was duplicated verbatim across **3 templates**: province-page, kabupaten-page, kecamatan-page. Keeping `<title>`/`og:title`, `description`/`og:description` and `canonical`/`og:url` in sync was manual work at three copy sites.
+
+### Changes Made
+
+**1. New `src/presenters/templates/shared/hero.js` — `generateHeroHtml({ title, description, stats })`**
+
+- Renders the hero with stat items (`stat-item` / `stat-value` / `stat-label`), following the existing shared-component convention (`footer.js`/`navigation.js` — caller pre-escapes values).
+- First line carries no leading indentation so the caller's `${generateHeroHtml(...)}` placeholder padding reproduces the original 4-space markup exactly.
+
+**2. New `src/presenters/templates/shared/index-head.js` — `generateIndexPageHead({ title, description, canonicalUrl })`**
+
+- Renders the SEO meta block once; the `<title>`/`og:title`, `description`/`og:description` and `canonical`/`og:url` pairs are emitted from the same inputs and can no longer fall out of sync.
+
+**3. Templates refactored to use the shared components**
+
+- `province-page.js`, `kabupaten-page.js`, `kecamatan-page.js` — hero + index head replaced with the shared components.
+- `homepage.js` — hero replaced with the shared component; head intentionally left inline (search `preload` differs).
+
+**4. Tests — 18 new**
+
+- `scripts/hero.test.js` (10 tests): hero wrapper, h1 title, description paragraph, stat rendering (value/label), multiple stats, empty stats default, landmark structure order, no-escaping contract.
+- `scripts/index-head.test.js` (8 tests): meta description, title, canonical, all four OG tags, og-sync order, stylesheet link, no-escaping contract.
+
+**5. Docs** — `docs/api.md` (Module Organization tree, two new module sections, Dependency Graph, Changelog 2.2.0), `docs/blueprint.md` (project structure tree + Decisions Log row), `docs/ui-ux-engineer.md` (improvement #18), `docs/task.md` (this entry).
+
+### Verification
+
+| Check               | Result                                                                       |
+| ------------------- | ---------------------------------------------------------------------------- |
+| Build byte-identity | ✅ `diff -rq` baseline vs new dist — zero differences (21 files)             |
+| New component tests | ✅ 18/18 pass (hero 10 + index-head 8)                                       |
+| Full JS suite       | ✅ 1309 pass / 0 fail, 4 pre-existing skips                                  |
+| ESLint              | ✅ 0 errors on changed files                                                 |
+| Prettier            | ✅ clean on changed files                                                    |
+| Zero regressions    | Rendered HTML unchanged (byte-identical); template tests untouched and green |
+
+### Files Modified
+
+- `src/presenters/templates/shared/hero.js` — new shared hero component
+- `src/presenters/templates/shared/index-head.js` — new shared index-page head component
+- `src/presenters/templates/homepage.js` — hero replaced with `generateHeroHtml`
+- `src/presenters/templates/province-page.js` — hero + head replaced with shared components
+- `src/presenters/templates/kabupaten-page.js` — hero + head replaced with shared components
+- `src/presenters/templates/kecamatan-page.js` — hero + head replaced with shared components
+- `scripts/hero.test.js` — new: 10 tests
+- `scripts/index-head.test.js` — new: 8 tests
+- `docs/api.md`, `docs/blueprint.md`, `docs/ui-ux-engineer.md`, `docs/task.md` — docs updated
+
+### Acceptance Criteria
+
+- [x] Duplicated hero markup (4 templates) and index head markup (3 templates) extracted into shared components
+- [x] Rendered HTML byte-identical to the pre-refactor baseline (21 files, `diff -rq` clean)
+- [x] Component tests (18) lock the markup contract; full JS suite green (1309 pass / 0 fail)
+- [x] SEO meta pairs (`title`/`og:title`, `description`/`og:description`, `canonical`/`og:url`) always emitted in sync
+- [x] Docs updated (api.md tree/sections/graph/changelog, blueprint tree + Decisions Log, ui-ux-engineer.md, task.md)
+- [x] ESLint 0 errors, Prettier clean, zero regressions
+
+---
+
 ### [TASK-100] Integration Hardening — Jitter, Retry-After, HALF_OPEN Single-Probe, Abort-on-Timeout
 
 **Status**: Complete

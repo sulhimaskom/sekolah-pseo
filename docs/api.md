@@ -50,6 +50,8 @@ src/
 ├── back-to-top.js # Shared back-to-top button HTML + script
 ├── navigation.js # Shared breadcrumb navigation component
 ├── footer.js # Shared footer component
+├── hero.js # Shared hero section component (title, description, stats)
+├── index-head.js # Shared index-page <head> block (SEO meta + stylesheet)
 ├── comparison.js # Shared school comparison tray (Bandingkan)
 └── translations.js # Shared pre-escaped translations (T)
 ```
@@ -3735,6 +3737,112 @@ const html = generateFooterHtml({
 
 ---
 
+### Hero Module (`src/presenters/templates/shared/hero.js`)
+
+#### Purpose
+
+Provides the shared hero section component (`.homepage-hero` with an `h1` title, `.hero-description` paragraph and `.hero-stats` stat items). The hero block was duplicated verbatim across four templates — homepage, province-page, kabupaten-page and kecamatan-page — so it is extracted to keep all four heroes structurally identical (same classes, same semantics) and prevent one-off edits from drifting between templates.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateHeroHtml: function,
+};
+```
+
+#### Functions
+
+##### `generateHeroHtml({ title, description, stats })`
+
+Generates a hero section HTML block.
+
+**Parameters:**
+
+- `options` (Object, required):
+  - `title` (string): Hero heading rendered as `<h1>` (must be pre-escaped)
+  - `description` (string): Hero description text rendered inside `<p class="hero-description">` (must be pre-escaped)
+  - `stats` (Array, optional): Stat items rendered inside `.hero-stats` (default: `[]`). Each item is `{ value: string, label: string }` where both values must be pre-escaped.
+
+**Returns:** `string` — Hero HTML string
+
+**Output Structure:**
+
+```html
+<div class="homepage-hero">
+  <h1>Provinsi Jawa Barat</h1>
+  <p class="hero-description">…</p>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-value">123</span>
+      <span class="stat-label">Total Sekolah</span>
+    </div>
+  </div>
+</div>
+```
+
+**Usage:**
+
+```javascript
+const { generateHeroHtml } = require('./shared/hero');
+
+const html = generateHeroHtml({
+  title: 'Provinsi Jawa Barat',
+  description: 'Jelajahi daftar sekolah-sekolah di Provinsi Jawa Barat.',
+  stats: [
+    { value: totalSchools.toLocaleString('id-ID'), label: 'Total Sekolah' },
+    { value: kabupatenList.length, label: 'Kabupaten/Kota' },
+  ],
+});
+```
+
+**Note:** The first line carries no leading indentation — templates embed the result via a `${generateHeroHtml(...)}` placeholder whose indentation pads the opening `<div>`, matching the hand-written markup the component replaces.
+
+---
+
+### Index Page Head Module (`src/presenters/templates/shared/index-head.js`)
+
+#### Purpose
+
+Provides the shared `<head>` block for index pages (province, kabupaten, kecamatan). The description / title / canonical / Open Graph block plus the stylesheet link was duplicated verbatim across the three index templates. Extracting it keeps the SEO meta block consistent — the plain tags and their `og:` counterparts always stay in sync — and removes the duplication from every index template.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateIndexPageHead: function,
+};
+```
+
+#### Functions
+
+##### `generateIndexPageHead({ title, description, canonicalUrl })`
+
+Generates the `<head>` block shared by index pages (appended after `HTML_HEAD_PREFIX`).
+
+**Parameters:**
+
+- `options` (Object, required):
+  - `title` (string): Page title used for `<title>` and `og:title` (must be pre-escaped)
+  - `description` (string): Meta description used for the `description` and `og:description` meta tags (must be pre-escaped)
+  - `canonicalUrl` (string): Canonical URL used for the canonical link and `og:url` (must be pre-escaped)
+
+**Returns:** `string` — Head block HTML string ending with the `<link rel="stylesheet" href="/styles.css">` line
+
+**Usage:**
+
+```javascript
+const { generateIndexPageHead } = require('./shared/index-head');
+
+const head = generateIndexPageHead({
+  title: `Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO`,
+  description: escapeHtml(metaDescription),
+  canonicalUrl: escapeHtml(canonicalUrl),
+});
+```
+
+---
+
 ### Translations Module (`src/presenters/templates/shared/translations.js`)
 
 #### Purpose
@@ -6627,6 +6735,8 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
          │  back-to-top.js   │  Depends: None (standalone)          │
          │  navigation.js    │  Depends: None (standalone)          │
          │  footer.js        │  Depends: None (standalone)          │
+         │  hero.js          │  Depends: None (standalone)          │
+         │  index-head.js    │  Depends: None (standalone)          │
          │  comparison.js    │  Depends: None (standalone)          │
          │  translations.js  │  Depends: utils.js, config.js        │
          └──────────────────────────────────────────────────────────┘
@@ -6786,6 +6896,13 @@ None.
 ---
 
 ## Changelog
+
+### Version 2.2.0 (2026-08-17)
+
+- Added Hero Module documentation (`shared/hero.js`) — shared hero section component (`generateHeroHtml`) used by homepage + province/kabupaten/kecamatan templates
+- Added Index Page Head Module documentation (`shared/index-head.js`) — shared index-page `<head>` block (`generateIndexPageHead`) used by province/kabupaten/kecamatan templates
+- Updated Module Organization tree with `hero.js` and `index-head.js`
+- Updated Dependency Graph Shared Template Modules with `hero.js` and `index-head.js` (both standalone)
 
 ### Version 2.1.0 (2026-08-17)
 

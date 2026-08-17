@@ -3,6 +3,8 @@ const slugify = require('../../core/slugify');
 const CONFIG = require('../../core/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
+const { generateHeroHtml } = require('./shared/hero');
+const { generateIndexPageHead } = require('./shared/index-head');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
 const { T } = require('./shared/translations');
@@ -87,15 +89,11 @@ function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
     .join('');
 
   return `${HTML_HEAD_PREFIX}
-  <meta name="description" content="${escapeHtml(metaDescription)}" />
-  <title>Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO</title>
-  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
-  <meta property="og:title" content="Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO" />
-  <meta property="og:description" content="${escapeHtml(metaDescription)}" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
-
-  <link rel="stylesheet" href="/styles.css">
+${generateIndexPageHead({
+  title: `Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO`,
+  description: escapeHtml(metaDescription),
+  canonicalUrl: escapeHtml(canonicalUrl),
+})}
 </head>
 <body>
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
@@ -105,23 +103,15 @@ function generateProvincePageHtml(provinceName, schools, skipFilter = false) {
   </header>
   
   <main id="main-content" role="main">
-    <div class="homepage-hero">
-      <h1>Provinsi ${escapeHtml(provinceName)}</h1>
-      <p class="hero-description">
-        Jelajahi daftar sekolah-sekolah di Provinsi ${escapeHtml(provinceName)}. 
-        Temukan informasi lengkap tentang NPSN, alamat, jenjang pendidikan, dan status sekolah.
-      </p>
-      <div class="hero-stats">
-        <div class="stat-item">
-          <span class="stat-value">${totalSchools.toLocaleString('id-ID')}</span>
-          <span class="stat-label">Total Sekolah</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">${kabupatenList.length}</span>
-          <span class="stat-label">${T.CITY_REGENCY}</span>
-        </div>
-      </div>
-    </div>
+    ${generateHeroHtml({
+      title: `Provinsi ${escapeHtml(provinceName)}`,
+      description: `Jelajahi daftar sekolah-sekolah di Provinsi ${escapeHtml(provinceName)}. 
+        Temukan informasi lengkap tentang NPSN, alamat, jenjang pendidikan, dan status sekolah.`,
+      stats: [
+        { value: totalSchools.toLocaleString('id-ID'), label: 'Total Sekolah' },
+        { value: kabupatenList.length, label: T.CITY_REGENCY },
+      ],
+    })}
 
     <section aria-labelledby="kabupaten-heading">
       <h2 id="kabupaten-heading" class="section-title">Pilih Kabupaten/Kota</h2>

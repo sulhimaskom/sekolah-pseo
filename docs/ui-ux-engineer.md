@@ -174,6 +174,14 @@ Static site generator for Indonesian school pages.
 - **Navigation now works end-to-end**: Homepage → Province → Kabupaten → Kecamatan → School. Full build emits 2 kabupaten pages and 2 kecamatan pages (current dataset), `validate-links.js` reports zero broken links across all 10 HTML files.
 - **Verified**: 28 new template tests + 16 new builder/generator tests pass; full JS suite green; build Status: PASS.
 
+### 18. Component Extraction — Shared Hero & Index-Page Head ✅ (TASK-101, 2026-08-17)
+
+- **Duplication found**: the hero block (`.homepage-hero` with `h1` + `.hero-description` + `.hero-stats`) was duplicated verbatim across **4 templates** (homepage, province, kabupaten, kecamatan), and the index-page `<head>` block (description / title / canonical / Open Graph + stylesheet link) was duplicated across **3 templates** (province, kabupaten, kecamatan). Any one-off edit to a hero or meta block risked drifting the page types apart.
+- **Extracted `shared/hero.js`** — `generateHeroHtml({ title, description, stats })` renders the hero with stat items (`stat-item` / `stat-value` / `stat-label`), caller pre-escapes values (same convention as `footer.js`/`navigation.js`). First line unindented so the caller's `${...}` placeholder padding reproduces the original 4-space markup.
+- **Extracted `shared/index-head.js`** — `generateIndexPageHead({ title, description, canonicalUrl })` renders the SEO meta block once; the `<title>`/`og:title`, `description`/`og:description` and `canonical`/`og:url` pairs can no longer fall out of sync.
+- **Refactored all 4 templates** to use the shared components; homepage keeps its distinct head (search preload) and school-page keeps its JSON-LD head.
+- **Verified**: **build output byte-identical** to the pre-refactor baseline (21 files, `diff -rq` zero differences), 18 new component tests (hero 10 + index-head 8) + full JS suite 1309 pass / 0 fail, ESLint 0 errors, Prettier clean.
+
 ## Testing
 
 - `npm run test:js` runs comprehensive tests for styles and design-system
