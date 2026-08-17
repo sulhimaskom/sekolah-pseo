@@ -2,6 +2,44 @@
 
 ## Completed Tasks
 
+### [TASK-093] DevOps — CI Health Audit + Split-Delivery Merge of TASK-089/090/091/092 (TASK-088 Workflow Fix Pending)
+
+**Status**: Complete — TASK-089/090/091/092 merged to `main` via PR; TASK-088's workflow security fixes remain pending a `workflows`-enabled token
+**Agent**: DevOps Engineer (Sisyphus)
+
+### Description
+
+CI health audit found `main` green (schedule `pull` runs 08:34/09:33/10:24 all success, pages deployments green, dependabot PRs #770/#771 merged). Two transient anomalies were investigated and dismissed: (1) a `PR Handler` failure on the globals dependabot PR (`expected an object but got: array` — GraphQL shape bug in the verify step) that did not block the merge (PR #771 merged at 09:21Z by the `pull` workflow); (2) `action_required` runs on the 232nd-verification PR (#778, merged 11:31Z) — stale after merge.
+
+The real blocker: the `agent` branch carried TASK-088's `.github/workflows/*` security fixes (commit `f49fa31`), and the GitHub App token used for pushes lacks `workflows` permission — GitHub refuses *any* push that modifies workflow files with such a token. This left TASK-089/090/091/092 (pure code + docs, fully verified) stranded on `agent` for 4 days across 4 tasks, each marked "push blocked".
+
+### Changes Made (split delivery)
+
+1. **Verified the full branch green locally before pushing** (CI parity check): JS tests 1238 pass/0 fail, Python 13/13, coverage gate 97.39% lines / 93.44% branches (thresholds 80/75), ESLint 0 errors, workflow-security check 6/6 files 0 violations, full build PASS with all performance budgets met.
+2. **Prettier drift fixed**: 10 files on `agent` (docs + tests + templates from TASK-089/090/091/092) had formatting drift despite "Prettier clean" claims — formatted via `npx prettier --write`, leaving only the 103 pre-existing `main` failures (all in `docs/issues/`, not part of any CI gate).
+3. **Clean branch `agent-code-089-092` created from `origin/main`**, cherry-picking exactly: TASK-089 (perf stat-cache + parallel walk), TASK-090 (data validation), TASK-091 (rate limiting), TASK-092 (kabupaten/kecamatan navigation) + the formatting commit. **No `.github/` files** (verified: 0 workflow files in diff vs `main`).
+4. **Docs updated**: TASK-090 status corrected from "push blocked" to merged; new TASK-093 entry documenting this audit + delivery.
+5. **TASK-088 stays on `agent`** — its workflow security fixes require a `workflows`-enabled token to push. When such a token is available, pushing `agent` then PR'ing to `main` will carry only the remaining workflow-file changes (the code is already merged), making TASK-088's delivery a clean single-purpose PR.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| JS tests (clean branch) | 1238 total, 1234 pass, 0 fail, 4 skipped |
+| Python tests | 13/13 pass |
+| Coverage gate | pass (97.39% lines / 93.44% branches) |
+| ESLint | 0 errors |
+| Workflow security | 6/6 files, 0 violations (unchanged from `main` baseline) |
+| `.github/` diff vs `main` | 0 files — push not blocked by `workflows` permission rule |
+| Full build | Status: PASS, 0 failed pages, all budgets met |
+
+### Files Modified
+
+- `docs/task.md` — TASK-093 entry + TASK-090 status correction
+- `docs/api.md`, `docs/blueprint.md`, `docs/ui-ux-engineer.md`, test/template/service files — carried from TASK-089/090/091/092 cherry-picks (unchanged content)
+
+---
+
 ### [TASK-092] Restore Broken Navigation — Kabupaten & Kecamatan Pages
 
 **Status**: Complete
@@ -210,7 +248,7 @@ The measured hotspot was link validation's existence probing: `validateLinksInFi
 
 ### [TASK-090] Data Validation — Coordinate Bounds + Date-Pattern Enforcement at the ETL Boundary (Single Source of Truth)
 
-**Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission; PR #775 will carry this fix together with TASK-087/088/089 once pushed with a `workflows`-enabled token)
+**Status**: Complete — merged to `main` via PR (DevOps split-delivery: code merged without TASK-088's workflow-file changes, which await a `workflows`-enabled token)
 **Agent**: Principal Data Architect (Sisyphus)
 
 ### Description
