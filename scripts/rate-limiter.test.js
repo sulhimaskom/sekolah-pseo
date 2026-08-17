@@ -13,13 +13,13 @@ describe('RateLimiter', () => {
     it('should create rate limiter with default options', () => {
       const defaultLimiter = new RateLimiter();
       assert.strictEqual(defaultLimiter.maxConcurrent, 100);
-      assert.strictEqual(defaultLimiter.rateLimitMs, 10);
+      assert.strictEqual(defaultLimiter.rateLimitMs, 0);
       assert.strictEqual(defaultLimiter.queueTimeoutMs, 30000);
     });
 
     it('should create rate limiter with custom options', () => {
       assert.strictEqual(limiter.maxConcurrent, 2);
-      assert.strictEqual(limiter.rateLimitMs, 10);
+      assert.strictEqual(limiter.rateLimitMs, 0);
       assert.strictEqual(limiter.queueTimeoutMs, 1000);
     });
 
@@ -131,6 +131,57 @@ describe('RateLimiter', () => {
 
       await Promise.all(ops);
       assert.strictEqual(executionOrder.length, 4);
+    });
+  });
+
+  describe('rateLimitMs pacing', () => {
+    it('should not delay task starts when rateLimitMs is 0 (disabled)', async () => {
+      const startTimes = [];
+      const pacedLimiter = new RateLimiter({ maxConcurrent: 3, rateLimitMs: 0 });
+
+      const ops = Array.from({ length: 3 }, (_, i) =>
+        pacedLimiter.execute(async () => {
+          startTimes.push(Date.now());
+          return i;
+        })
+      );
+
+      await Promise.all(ops);
+      const spread = Math.max(...startTimes) - Math.min(...startTimes);
+      assert.ok(spread < 50, `expected no pacing delay, got ${spread}ms`);
+    });
+
+    it('should enforce minimum spacing between task starts', async () => {
+      const startTimes = [];
+      const pacedLimiter = new RateLimiter({ maxConcurrent: 3, rateLimitMs: 40 });
+
+      const ops = Array.from({ length: 5 }, (_, i) =>
+        pacedLimiter.execute(async () => {
+          startTimes.push(Date.now());
+          return i;
+        })
+      );
+
+      await Promise.all(ops);
+
+      // Consecutive starts must be spaced >= rateLimitMs apart (allow 5ms clock slack)
+      for (let i = 1; i < startTimes.length; i++) {
+        const gap = startTimes[i] - startTimes[i - 1];
+        assert.ok(gap >= 35, `start gap ${gap}ms is below rateLimitMs 40ms (pair ${i - 1}->${i})`);
+      }
+    });
+
+    it('should reset pacing state on reset()', async () => {
+      const pacedLimiter = new RateLimiter({ maxConcurrent: 2, rateLimitMs: 40 });
+
+      await pacedLimiter.execute(async () => 'first');
+      pacedLimiter.reset();
+
+      // After reset, the next start should not wait on stale lastStartTime
+      const t0 = Date.now();
+      await pacedLimiter.execute(async () => 'second');
+      const elapsed = Date.now() - t0;
+      assert.ok(elapsed < 35, `expected immediate start after reset, took ${elapsed}ms`);
     });
   });
 

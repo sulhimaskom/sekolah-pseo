@@ -13,7 +13,7 @@ const CONFIG = require('./config');
  * Rate limiter options.
  * @typedef {Object} RateLimiterOptions
  * @property {number} [maxConcurrent=100] - Maximum concurrent operations
- * @property {number} [rateLimitMs=10] - Minimum time between operations (ms)
+ * @property {number} [rateLimitMs=0] - Minimum time between task starts (ms). 0 disables pacing.
  * @property {number} [queueTimeoutMs=30000] - Maximum time a task can wait in queue (ms)
  */
 
@@ -50,6 +50,8 @@ class RateLimiter {
 
     this.activeCount = 0;
     this.queue = [];
+    this.lastStartTime = 0;
+    this.startGate = Promise.resolve();
     this.metrics = {
       total: 0,
       completed: 0,
@@ -91,6 +93,7 @@ class RateLimiter {
 
     const executeAndTrack = async () => {
       try {
+        await this._paceStart();
         const result = await task.fn();
         this.metrics.completed++;
         task.resolve(result);
@@ -104,6 +107,28 @@ class RateLimiter {
     };
 
     executeAndTrack();
+  }
+
+  /**
+   * Enforces the minimum spacing between task starts when rateLimitMs > 0.
+   * Serialized through a promise chain so concurrent slot-holders each wait
+   * their turn in start order — the global start rate stays at 1/rateLimitMs.
+   *
+   * @returns {Promise<void>} Resolves when this task's start slot is reached
+   */
+  _paceStart() {
+    if (this.rateLimitMs <= 0) {
+      return Promise.resolve();
+    }
+    const gate = this.startGate.then(async () => {
+      const delay = this.rateLimitMs - (Date.now() - this.lastStartTime);
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      this.lastStartTime = Date.now();
+    });
+    this.startGate = gate.catch(() => {});
+    return gate;
   }
 
   queueTask(task) {
@@ -179,6 +204,8 @@ class RateLimiter {
       }
     });
     this.queue = [];
+    this.lastStartTime = 0;
+    this.startGate = Promise.resolve();
     this.metrics = {
       total: 0,
       completed: 0,

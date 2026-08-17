@@ -28,6 +28,7 @@ const {
   CircuitBreaker,
 } = require('./resilience');
 const CONFIG = require('./config');
+const { RateLimiter } = require('./rate-limiter');
 const path = require('path');
 
 // Enrichment data file path
@@ -47,6 +48,21 @@ const WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS = 120000; // 2 min reset for external s
 const wikipediaCircuitBreaker = new CircuitBreaker({
   failureThreshold: WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD,
   resetTimeoutMs: WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS,
+});
+
+// Rate limiting for the Wikipedia API — Wikipedia's API etiquette asks clients
+// to space requests (anonymous access is limited to ~1 req/sec); enrichment
+// must not hammer the upstream service. Each school triggers two requests
+// (search + extract), so enrichSchools' batch concurrency alone is insufficient
+// pacing. Opts in to the RateLimiter's pacing (rateLimitMs) on top of a small
+// concurrency cap.
+const WIKIPEDIA_MAX_CONCURRENT = 2;
+const WIKIPEDIA_RATE_LIMIT_MS = 300; // ~3.3 req/sec ceiling, well under etiquette limits
+
+const wikipediaRateLimiter = new RateLimiter({
+  maxConcurrent: WIKIPEDIA_MAX_CONCURRENT,
+  rateLimitMs: WIKIPEDIA_RATE_LIMIT_MS,
+  queueTimeoutMs: CONFIG.RATE_LIMITER_DEFAULTS.QUEUE_TIMEOUT_MS,
 });
 
 // Maximum results per enrichment source
@@ -108,55 +124,58 @@ function buildWikipediaExtractUrl(pageTitles) {
 }
 
 /**
- * Fetch a URL with a timeout, retry, and circuit breaker.
+ * Fetch a URL with a timeout, retry, circuit breaker, and rate limiting.
  * Uses native https/http module to avoid external dependencies.
+ * Each HTTP request passes through wikipediaRateLimiter (concurrency cap +
+ * minimum spacing between starts) to respect the upstream API's rate limits.
  *
  * @param {string} url - URL to fetch
  * @param {number} [timeoutMs=10000] - Timeout in milliseconds
  * @returns {Promise<Object>} Parsed JSON response
  */
 function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
-  const doFetch = () => {
-    const protocol = url.startsWith('https') ? require('https') : require('http');
+  const doFetch = () =>
+    wikipediaRateLimiter.execute(() => {
+      const protocol = url.startsWith('https') ? require('https') : require('http');
 
-    return withTimeout(
-      new Promise((resolve, reject) => {
-        protocol
-          .get(
-            url,
-            { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
-            res => {
-              if (res.statusCode && res.statusCode >= 400) {
-                const httpError = new Error(`HTTP ${res.statusCode}`);
-                httpError.statusCode = res.statusCode;
-                reject(httpError);
-                return;
-              }
-              let data = '';
-              res.on('data', chunk => {
-                data += chunk;
-              });
-              res.on('end', () => {
-                try {
-                  resolve(JSON.parse(data));
-                } catch (parseError) {
-                  reject(
-                    new IntegrationError(
-                      `Failed to parse API response: ${parseError.message}`,
-                      ERROR_CODES.HTTP_ERROR,
-                      { url: url.slice(0, 200), parseError: parseError.message }
-                    )
-                  );
+      return withTimeout(
+        new Promise((resolve, reject) => {
+          protocol
+            .get(
+              url,
+              { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
+              res => {
+                if (res.statusCode && res.statusCode >= 400) {
+                  const httpError = new Error(`HTTP ${res.statusCode}`);
+                  httpError.statusCode = res.statusCode;
+                  reject(httpError);
+                  return;
                 }
-              });
-            }
-          )
-          .on('error', reject);
-      }),
-      timeoutMs,
-      `Wikipedia API request: ${url.slice(0, 100)}...`
-    );
-  };
+                let data = '';
+                res.on('data', chunk => {
+                  data += chunk;
+                });
+                res.on('end', () => {
+                  try {
+                    resolve(JSON.parse(data));
+                  } catch (parseError) {
+                    reject(
+                      new IntegrationError(
+                        `Failed to parse API response: ${parseError.message}`,
+                        ERROR_CODES.HTTP_ERROR,
+                        { url: url.slice(0, 200), parseError: parseError.message }
+                      )
+                    );
+                  }
+                });
+              }
+            )
+            .on('error', reject);
+        }),
+        timeoutMs,
+        `Wikipedia API request: ${url.slice(0, 100)}...`
+      );
+    }, 'Wikipedia API request');
 
   return wikipediaCircuitBreaker.execute(
     () =>
@@ -386,6 +405,9 @@ module.exports = {
   buildWikipediaExtractUrl,
   fetchJson,
   wikipediaCircuitBreaker,
+  wikipediaRateLimiter,
   ENRICHMENT_DATA_PATH,
   WIKIPEDIA_API_URL,
+  WIKIPEDIA_MAX_CONCURRENT,
+  WIKIPEDIA_RATE_LIMIT_MS,
 };

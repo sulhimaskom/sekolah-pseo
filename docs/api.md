@@ -1474,7 +1474,7 @@ new RateLimiter(options);
 **Options:**
 
 - `maxConcurrent` (number, optional): Maximum concurrent operations (default: 100)
-- `rateLimitMs` (number, optional): Rate limit in milliseconds (default: 10, reserved for future use)
+- `rateLimitMs` (number, optional): Minimum spacing between task starts in ms (default: `0` = pacing disabled). When > 0, the limiter enforces a global start rate of at most 1 task per `rateLimitMs` — use for external-service integrations that must respect upstream rate limits (e.g. Wikipedia API).
 - `queueTimeoutMs` (number, optional): Queue timeout for operations (default: 30000)
 
 **Methods:**
@@ -1497,6 +1497,7 @@ Executes function with rate limiting and backpressure.
 **Behavior:**
 
 - Executes up to `maxConcurrent` operations simultaneously
+- When `rateLimitMs` > 0, enforces a global start rate of 1 task per `rateLimitMs` (pacing), serialized through a start-gate promise chain
 - Queues additional operations when limit reached
 - Rejects queued operations after `queueTimeoutMs`
 - Tracks metrics for all operations
@@ -4903,7 +4904,7 @@ console.log('Manifest cleared - next build will be full');
 
 ### Purpose
 
-Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (dedicated circuit breaker, timeouts, retries for API calls).
+Provides AI-powered data enrichment for school records using external data sources (Wikipedia API). The enrichment pipeline uses safety-first principles: feature-flagged (disabled by default, opt-in via `--enrich` flag or `ENRICHMENT_ENABLED` env var), graceful degradation (failures never block the ETL pipeline), and resilience patterns (dedicated circuit breaker, timeouts, retries, and rate limiting for API calls).
 
 ### Exports
 
@@ -4920,8 +4921,11 @@ module.exports = {
   buildWikipediaExtractUrl: function,
   fetchJson: function,
   wikipediaCircuitBreaker: CircuitBreaker,
+  wikipediaRateLimiter: RateLimiter,
   ENRICHMENT_DATA_PATH: string,
   WIKIPEDIA_API_URL: string,
+  WIKIPEDIA_MAX_CONCURRENT: number,
+  WIKIPEDIA_RATE_LIMIT_MS: number,
 };
 ```
 
@@ -4950,6 +4954,28 @@ module.exports = {
 - **Type:** `number`
 - **Value:** `120000` (2 minutes)
 - **Description:** Reset timeout for the Wikipedia circuit breaker — after this window elapses, a single probe request is allowed (half-open state).
+
+#### `WIKIPEDIA_MAX_CONCURRENT`
+
+- **Type:** `number`
+- **Value:** `2`
+- **Description:** Maximum concurrent Wikipedia API requests allowed by `wikipediaRateLimiter`.
+
+#### `WIKIPEDIA_RATE_LIMIT_MS`
+
+- **Type:** `number`
+- **Value:** `300`
+- **Description:** Minimum spacing (ms) between Wikipedia API request starts — caps the global start rate at ~3.3 req/sec, well under Wikipedia's anonymous-access etiquette limits.
+
+### Rate Limiting
+
+Every Wikipedia API HTTP request passes through `wikipediaRateLimiter` (a `RateLimiter` from `scripts/rate-limiter.js`) before hitting the network. The limiter combines a concurrency cap (`WIKIPEDIA_MAX_CONCURRENT` = 2) with start-spacing pacing (`WIKIPEDIA_RATE_LIMIT_MS` = 300ms), so `enrichSchools`' batch concurrency cannot burst requests past the upstream rate limit. Pacing is serialized through the limiter's start-gate promise chain and applies per HTTP request (each school triggers two: search + extract).
+
+#### `wikipediaRateLimiter`
+
+- **Type:** `RateLimiter`
+- **Config:** `{ maxConcurrent: 2, rateLimitMs: 300, queueTimeoutMs: 30000 }`
+- **Description:** Dedicated rate limiter for Wikipedia API traffic, isolated from the general-purpose limiters used by build/validation (which stay unpaced at `rateLimitMs: 0`).
 
 ### Functions
 

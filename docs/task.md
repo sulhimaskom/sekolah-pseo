@@ -2,6 +2,81 @@
 
 ## Completed Tasks
 
+### [TASK-091] Integration — Rate Limiting: Enforce `rateLimitMs` Pacing + Dedicated Wikipedia API Limiter
+
+**Status**: Complete
+**Agent**: Integration Engineer (Sisyphus)
+
+### Description
+
+Two rate-limiting defects left the system unprotected from overload and out of alignment with its own claims:
+
+1. **`RateLimiter.rateLimitMs` was dead config.** The option was stored in the constructor, asserted in tests, and documented in `docs/api.md` as "(default: 10, reserved for future use)" — but never enforced anywhere in execution. Only *concurrency* was limited; no request *pacing* existed in the entire codebase.
+2. **`enrichment.js` claimed "Rate-limited: respects upstream API limits" but fired un-paced Wikipedia requests.** `enrichSchools` batches schools (default concurrency 10; ETL uses 5), and each school triggers two HTTP requests (search + extract) — so up to 20 simultaneous Wikipedia requests could hit the API with zero spacing. Wikipedia's API etiquette limits anonymous access to ~1 req/sec; this burst pattern risks 429s and IP blocks.
+
+### Changes Made
+
+**1. `scripts/rate-limiter.js` — implemented pacing (`_paceStart`)**
+
+- New `_paceStart()` method: when `rateLimitMs > 0`, enforces a **global** start rate of at most 1 task per `rateLimitMs`, serialized through a start-gate promise chain (`this.startGate`) so concurrent slot-holders each wait their turn in start order. `lastStartTime` tracks the previous start; the gate swallows per-link errors so one rejection can't stall the chain.
+- `executeTask()` awaits `_paceStart()` before running `task.fn()`; `reset()` clears `lastStartTime` and rebuilds `startGate` so a reset limiter starts fresh.
+- Backward compatible: default `rateLimitMs` is now `0` (disabled), so existing callers (`processConcurrently` in validate-links, build) are completely unaffected — no pacing regression.
+
+**2. `scripts/config.js` — `RATE_LIMIT_MS` default `10` → `0`**
+
+- Pacing is opt-in. Bulk local operations (build, validate-links — 5014 files × 10ms would be a ~50s regression) must NOT be paced; external-service integrations opt in with an explicit `rateLimitMs`.
+
+**3. `scripts/enrichment.js` — dedicated Wikipedia rate limiter**
+
+- New `wikipediaRateLimiter = new RateLimiter({ maxConcurrent: 2, rateLimitMs: 300, queueTimeoutMs: 30000 })` — caps concurrency at 2 and paces starts to ~3.3 req/sec, well under Wikipedia's anonymous-access etiquette limits.
+- `fetchJson()` now wraps the actual HTTP request in `wikipediaRateLimiter.execute(...)`, so *every* request (search + extract, retries included) is rate-limited, not just per-school.
+- New exported constants `WIKIPEDIA_MAX_CONCURRENT` (2) and `WIKIPEDIA_RATE_LIMIT_MS` (300); `wikipediaRateLimiter` exported for tests.
+- Module header claim ("Rate-limited") is now true.
+
+**4. `scripts/rate-limiter.test.js` — 3 new pacing tests**
+
+- `rateLimitMs: 0` (default) → no start delay (spread < 50ms for 3 concurrent ops).
+- `rateLimitMs: 40` → consecutive start gaps ≥ 35ms (5 ops).
+- `reset()` clears pacing state → next start is immediate.
+
+**5. `scripts/enrichment.test.js` — 2 new tests + pacing disabled for fast mocked tests**
+
+- Top-level `beforeEach` resets `wikipediaRateLimiter` and sets `rateLimitMs = 0` (pacing is exercised in rate-limiter.test.js; mocked https tests must run fast).
+- New: "routes every HTTP request through wikipediaRateLimiter" (limiter `total` metric increments by exactly 1 per `fetchJson` call).
+- New: "does not exceed wikipediaRateLimiter maxConcurrent when requests overlap" (5 parallel `fetchJson` calls never exceed 2 active).
+
+**6. `docs/api.md` + `docs/blueprint.md`** — RateLimiter options/behavior (`rateLimitMs` now enforced, default 0), enrichment exports/constants, "Rate Limiting" section, Decisions Log entry.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| rate-limiter tests | 29/29 pass (+3 new pacing tests) |
+| enrichment tests | 42/42 pass (+2 new limiter tests) |
+| Pacing behavior | `rateLimitMs: 40` → start gaps ≥ 35ms; `0` → no delay |
+| Wikipedia pacing | requests capped at 2 concurrent, ~3.3 req/sec start rate |
+| Backward compat | `rateLimitMs` default 0 — build/validate-links unchanged |
+
+### Files Modified
+
+- `scripts/rate-limiter.js` — `_paceStart()` start-gate pacing + `reset()` clears pacing state
+- `scripts/config.js` — `RATE_LIMIT_MS` default 10 → 0 (opt-in pacing)
+- `scripts/enrichment.js` — `wikipediaRateLimiter` + `fetchJson` routed through it + 2 new exports
+- `scripts/rate-limiter.test.js` — default assertions 10→0 + 3 pacing tests
+- `scripts/enrichment.test.js` — 2 limiter tests + pacing disabled in mocked tests
+- `docs/api.md` — RateLimiter/enrichment docs aligned
+- `docs/blueprint.md` — Rate Limiting section + Decisions Log
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] `rateLimitMs` actually enforced (spacing between task starts) when > 0; disabled (`0`) by default
+- [x] Wikipedia API requests rate-limited (2 concurrent, ~3.3 req/sec) — module's "Rate-limited" claim is true
+- [x] Zero regressions: default behavior unchanged (build, validate-links unaffected)
+- [x] Full suite green, docs updated
+
+---
+
 ### [TASK-089] Performance — Link Validation Stat-Cache + Parallel Directory Walk
 
 **Status**: Complete
