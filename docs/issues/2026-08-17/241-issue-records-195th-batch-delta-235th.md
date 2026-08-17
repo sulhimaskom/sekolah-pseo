@@ -2,17 +2,19 @@
 
 **Evaluation Date**: 2026-08-17
 **Evaluator**: Sisyphus (ULW Loop, autonomous run)
-**Basis**: Phase 1 audit on `bfa0007` (234th records commit; zero source
-delta since 234th basis `90c8919`) — full command matrix re-executed fresh +
-targeted verification probes, all witnessed in-session.
+**Basis**: Phase 1 audit on `af9f516` (post-PR #791 merge; incl. PR #788
+TASK-098/099 source changes) — full command matrix re-executed fresh +
+targeted verification probes, all witnessed in-session. **Basis correction**:
+initial pass ran on stale local ref `bfa0007`; re-verified on `af9f516` (see
+`243-basis-correction-235th.md`).
 **Batch**: 195th issue-records batch (234th = 194th).
 
 ## New findings this batch
 
-**None.** Zero source delta since the 234th run (`bfa0007` adds only the 3
-ledger records 237/238/239); every finding in the active ledger was
-re-verified HELD, maintained RESOLVED, or status-updated (F063). The only
-observation changes this window:
+**None.** Source delta since 234th = TASK-098/099 (wx fast path + NPSN
+uniqueness, PR #788) — a quality improvement with tests, not a defect. Every
+finding in the active ledger was re-verified HELD, maintained RESOLVED, or
+status-updated (F063). The only observation changes this window:
 
 ### F004 status update (ci, P2) — secret-reference count drifted 59 → 61
 
@@ -64,7 +66,7 @@ stable.
 | --------- | ----------------------------------------------------------------- | -------- | -------- | ---------------------------------------------------------- |
 | F002      | Loop token lacks `issues: write` (403 createIssue)                | ci       | P1       | HELD (probe inconclusive — API 503; 222nd-record baseline) |
 | F004      | `secrets.*` over-scoping (F044 cluster)                           | security | P2       | **61 refs / 10 names (drift +2)**                          |
-| F005      | Prettier drift — 105 ledger md, 0 source                          | docs     | P3       | HELD flat (83rd obs)                                       |
+| F005      | Prettier drift — 104 ledger md, 0 source                          | docs     | P3       | HELD (83rd obs; −1 — ledger-239 reformatted)               |
 | F007      | Workflow YAML overcomplexity (2045L)                              | refactor | P2       | HELD                                                       |
 | F011      | No tags / no release process                                      | release  | P2       | HELD (0 tags)                                              |
 | F014      | Parallel test-file race on DIST_DIR                               | test     | P1       | NOT observed (2/2 clean)                                   |
@@ -90,5 +92,5 @@ stable.
 
 All other tracked findings (F001–F224 minus rows above) re-verified HELD or
 maintained RESOLVED per the prior ledger; no regressions observed this
-window. Zero source delta means zero new code findings — consistent with the
-flat suite and coverage.
+window. Source delta (TASK-098/099) is a tested improvement — no new code
+findings; suite grew +9 to 1275 pass (coverage 97.34/93.62).
