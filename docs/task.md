@@ -24,19 +24,19 @@ Fixed **12 security violations** across 4 workflow files + hardened the new-work
 
 ### Verification
 
-| Check                     | Result                                                                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------- |
-| Workflow Security (txt)   | 6/6 files pass all 5 rules — 0 violations, exit 0                                           |
-| Workflow Security (json)  | `passed: true`, 0 violations, exit 0 (CI gate mode)                                         |
-| YAML validity             | All 6 workflow files parse cleanly (PyYAML safe_load, permissions verified per job)         |
-| npm audit                 | 0 vulnerabilities                                                                           |
-| npm ls                    | `eslint@10.8.1` + `globals@17.11.0` valid (node_modules resynced via `npm ci`)              |
+| Check                          | Result                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
+| Workflow Security (txt)        | 6/6 files pass all 5 rules — 0 violations, exit 0                                            |
+| Workflow Security (json)       | `passed: true`, 0 violations, exit 0 (CI gate mode)                                          |
+| YAML validity                  | All 6 workflow files parse cleanly (PyYAML safe_load, permissions verified per job)          |
+| npm audit                      | 0 vulnerabilities                                                                            |
+| npm ls                         | `eslint@10.8.1` + `globals@17.11.0` valid (node_modules resynced via `npm ci`)               |
 | pip-audit (`requirements.txt`) | No known vulnerabilities (urllib3/wheel flags were Ubuntu system packages, not project deps) |
-| Hardcoded secrets scan    | None found in source/config/workflow files (docs/issues audit records excluded)             |
-| JS Tests                  | 1155 total, 1151 pass, **0 fail**, 4 skipped                                                |
-| Python Tests              | 27/27 pass                                                                                  |
-| ESLint / Prettier         | 0 errors / all changed files formatted cleanly                                              |
-| Zero regressions          | Confirmed                                                                                   |
+| Hardcoded secrets scan         | None found in source/config/workflow files (docs/issues audit records excluded)              |
+| JS Tests                       | 1155 total, 1151 pass, **0 fail**, 4 skipped                                                 |
+| Python Tests                   | 27/27 pass                                                                                   |
+| ESLint / Prettier              | 0 errors / all changed files formatted cleanly                                               |
+| Zero regressions               | Confirmed                                                                                    |
 
 ### Files Modified
 
@@ -78,7 +78,7 @@ Closed the last remaining coverage gaps in CLI entry-point logic. Health check b
 
 **2. `scripts/interactive.test.js` — `main()` TTY-mode suite (7 new tests):**
 
-- File-level `execSync` mock (installed *before* the module's first require, since `interactive.js` destructures `execSync` at load time) prevents real npm scripts from running when a menu item is selected; preserves the failure semantics the existing `runCommand` tests rely on.
+- File-level `execSync` mock (installed _before_ the module's first require, since `interactive.js` destructures `execSync` at load time) prevents real npm scripts from running when a menu item is selected; preserves the failure semantics the existing `runCommand` tests rely on.
 - `createScriptedRl()` — scripted fake `readline.Interface` that returns answers per call, counts `question`/`close`, and can throw to exercise the error path.
 - `driveMenu()` helper — mocks `console.log/error/clear`, `readline.createInterface`, `process.stdin.isTTY`, `process.argv`, and `process.exit` (throws `PROCESS_EXIT:code`), restores all in `finally`.
 - Scenarios: exit option → `rl.close()` + "Goodbye!"; non-numeric input → invalid-option message + continue; out-of-range → same; category → Back → main menu; category → invalid item → retry → Back; category → select item → `runCommand` + `pressEnter` → Back; readline throws → error logged + `terminate` (`PROCESS_EXIT:1`).
@@ -101,16 +101,16 @@ Closed the last remaining coverage gaps in CLI entry-point logic. Health check b
 
 ### Verification
 
-| Check                     | Result                                                                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------- |
-| `interactive.js` coverage | Lines 79.53% → **100%**; branches 92.85% → **97.82%**; functions 75% → **100%**             |
-| `data-quality.js` coverage| Lines 86.74% → **98.79%** (remaining: `require.main` guard only)                            |
-| `freshness-report.js` cov.| Lines 87.73% → **99.37%** (remaining: `require.main` guard only)                            |
-| JS Tests (full suite)     | 1138 → **1155** total, 1151 pass, **0 fail**, 4 skipped (+17 new)                           |
-| Coverage gate             | All files 95.85% → **97.4%** lines, 93.14% → **93.43%** branches — `npm run coverage` passes |
-| Python tests              | 27/27 pass                                                                                  |
-| ESLint / Prettier         | 0 errors / changed files clean                                                              |
-| Zero regressions          | Confirmed                                                                                   |
+| Check                      | Result                                                                                       |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `interactive.js` coverage  | Lines 79.53% → **100%**; branches 92.85% → **97.82%**; functions 75% → **100%**              |
+| `data-quality.js` coverage | Lines 86.74% → **98.79%** (remaining: `require.main` guard only)                             |
+| `freshness-report.js` cov. | Lines 87.73% → **99.37%** (remaining: `require.main` guard only)                             |
+| JS Tests (full suite)      | 1138 → **1155** total, 1151 pass, **0 fail**, 4 skipped (+17 new)                            |
+| Coverage gate              | All files 95.85% → **97.4%** lines, 93.14% → **93.43%** branches — `npm run coverage` passes |
+| Python tests               | 27/27 pass                                                                                   |
+| ESLint / Prettier          | 0 errors / changed files clean                                                               |
+| Zero regressions           | Confirmed                                                                                    |
 
 ### Files Modified
 
