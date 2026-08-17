@@ -126,19 +126,16 @@ const RULES = [
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function findWorkflowFiles() {
+function findWorkflowFiles(dir = WORKFLOW_DIR) {
   try {
-    // Try glob if available (from glob package, commonly installed)
-    const files = fs
-      .readdirSync(WORKFLOW_DIR)
-      .filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
     return files.map(f => ({
       filename: f,
-      path: path.join(WORKFLOW_DIR, f),
-      content: fs.readFileSync(path.join(WORKFLOW_DIR, f), 'utf8'),
+      path: path.join(dir, f),
+      content: fs.readFileSync(path.join(dir, f), 'utf8'),
     }));
   } catch (err) {
-    console.error(`Error reading workflow directory: ${WORKFLOW_DIR}`);
+    console.error(`Error reading workflow directory: ${dir}`);
     console.error(err.message);
     process.exit(1);
   }
@@ -174,8 +171,18 @@ function checkFile(file) {
   return violations;
 }
 
-function run() {
-  const files = findWorkflowFiles();
+/**
+ * Run the security regression check.
+ *
+ * @param {Object} [options] - Test seam; when omitted the CLI behavior is used.
+ * @param {string} [options.dir] - Workflow directory to scan (defaults to WORKFLOW_DIR).
+ * @param {boolean} [options.json] - Emit JSON output (defaults to `--json` on argv).
+ * @returns {number} Process exit code: 0 = no violations, 1 = violations found.
+ */
+function run(options = {}) {
+  const dir = options.dir || WORKFLOW_DIR;
+  const formatJson = options.json !== undefined ? options.json : process.argv.includes('--json');
+  const files = findWorkflowFiles(dir);
   let allViolations = [];
   const resultsByFile = {};
 
@@ -188,8 +195,6 @@ function run() {
   }
 
   // ── Output ──────────────────────────────────────────────────────────────
-  const formatJson = process.argv.includes('--json');
-
   if (formatJson) {
     console.log(
       JSON.stringify(
@@ -206,31 +211,42 @@ function run() {
     );
 
     // JSON mode doubles as a CI gate — non-zero exit on violations (F027).
-    process.exit(allViolations.length === 0 ? 0 : 1);
-  } else {
-    console.log('\n\u{1F512} Workflow Security Regression Check');
-    console.log('   Files checked: ' + files.length);
-    console.log('   Rules applied: ' + RULES.length);
-    console.log('');
-
-    if (allViolations.length === 0) {
-      console.log('   ✅ All checks passed — no security regressions detected.\n');
-      process.exit(0);
-    }
-
-    console.log(`   ❌ Found ${allViolations.length} violation(s):\n`);
-
-    for (const v of allViolations) {
-      const icon = v.severity === 'CRITICAL' ? '🔴' : v.severity === 'HIGH' ? '🟠' : '🟡';
-      console.log(`   ${icon} [${v.severity}] ${v.rule}`);
-      console.log(`      File: ${v.file}${v.line ? `:${v.line}` : ''}`);
-      console.log(`      ${v.description}`);
-      console.log(`      ${v.message}`);
-      console.log('');
-    }
-
-    process.exit(1);
+    return allViolations.length === 0 ? 0 : 1;
   }
+
+  console.log('\n\u{1F512} Workflow Security Regression Check');
+  console.log('   Files checked: ' + files.length);
+  console.log('   Rules applied: ' + RULES.length);
+  console.log('');
+
+  if (allViolations.length === 0) {
+    console.log('   ✅ All checks passed — no security regressions detected.\n');
+    return 0;
+  }
+
+  console.log(`   ❌ Found ${allViolations.length} violation(s):\n`);
+
+  for (const v of allViolations) {
+    const icon = v.severity === 'CRITICAL' ? '🔴' : v.severity === 'HIGH' ? '🟠' : '🟡';
+    console.log(`   ${icon} [${v.severity}] ${v.rule}`);
+    console.log(`      File: ${v.file}${v.line ? `:${v.line}` : ''}`);
+    console.log(`      ${v.description}`);
+    console.log(`      ${v.message}`);
+    console.log('');
+  }
+
+  return 1;
 }
 
-run();
+module.exports = {
+  RULES,
+  ALLOWED_OVERRIDES,
+  WORKFLOW_DIR,
+  findWorkflowFiles,
+  checkFile,
+  run,
+};
+
+if (require.main === module) {
+  process.exit(run());
+}
