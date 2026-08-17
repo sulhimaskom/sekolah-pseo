@@ -73,6 +73,8 @@ Located in `scripts/*.test.js`:
 - `navigation.test.js` - Breadcrumb navigation component tests
 - `footer.test.js` - Footer component tests
 - `back-to-top.test.js` - Back-to-top button component tests
+- `hero.test.js` - Shared hero section component tests
+- `index-head.test.js` - Shared index-page head component tests
 - `build-orchestrator.test.js` - Build pipeline orchestration tests
 - `etl-run.test.js` - ETL end-to-end run tests
 - `check-workflow-security.test.js` - Workflow security regression gate tests
@@ -230,9 +232,9 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 37 test files, 1270 test cases (1266 pass, 0 fail, 4 skipped)
+- JavaScript: 39 test files, 1313 test cases (1309 pass, 0 fail, 4 skipped)
 - Python: 27 test cases (standalone runner) / 13 test cases (pytest)
-- Total: 1297 test cases, 1293 passed, 0 failed, 4 skipped
+- Total: 1340 test cases, 1336 passed, 0 failed, 4 skipped
 
 ## Test Output Examples
 

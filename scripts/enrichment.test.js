@@ -77,6 +77,7 @@ const {
   buildWikipediaSearchUrl,
   buildWikipediaExtractUrl,
   fetchJson,
+  parseRetryAfterMs,
   wikipediaCircuitBreaker,
   wikipediaRateLimiter,
   ENRICHMENT_DATA_PATH,
@@ -533,6 +534,31 @@ describe('enrichSchools edge cases', () => {
   });
 });
 
+describe('parseRetryAfterMs', () => {
+  it('parses delta-seconds form', () => {
+    assert.strictEqual(parseRetryAfterMs('120'), 120000);
+    assert.strictEqual(parseRetryAfterMs(' 5 '), 5000);
+  });
+
+  it('parses HTTP-date form', () => {
+    const future = new Date(Date.now() + 30000).toUTCString();
+    const result = parseRetryAfterMs(future);
+    assert.ok(result > 25000 && result <= 30000, `expected ~30000ms, got ${result}`);
+  });
+
+  it('returns undefined for empty or missing values', () => {
+    assert.strictEqual(parseRetryAfterMs(undefined), undefined);
+    assert.strictEqual(parseRetryAfterMs(''), undefined);
+    assert.strictEqual(parseRetryAfterMs('   '), undefined);
+  });
+
+  it('returns undefined for unparseable values', () => {
+    assert.strictEqual(parseRetryAfterMs('banana'), undefined);
+    // Invalid calendar date (month 13) — Date.parse returns NaN.
+    assert.strictEqual(parseRetryAfterMs('2026-13-01'), undefined);
+  });
+});
+
 describe('fetchJson resilience (timeout retry + circuit breaker)', () => {
   let callCount;
 
@@ -747,5 +773,77 @@ describe('fetchJson resilience (timeout retry + circuit breaker)', () => {
     clearInterval(probe);
 
     assert.ok(maxActive <= 2, `expected <= 2 concurrent, saw ${maxActive}`);
+  });
+
+  it('honors the Retry-After header from a 429 response before retrying', async () => {
+    let requestCount = 0;
+    const mockReq = {
+      on() {
+        return mockReq;
+      },
+    };
+    https.get = function (...args) {
+      requestCount++;
+      const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+      const mockRes = new Readable({
+        read() {
+          if (requestCount === 1) {
+            // 429 with Retry-After: 1 second
+            this.push('{}');
+          } else {
+            this.push('{"ok": true}');
+          }
+          this.push(null);
+        },
+      });
+      mockRes.statusCode = requestCount === 1 ? 429 : 200;
+      mockRes.headers = {
+        'content-type': 'application/json',
+        'retry-after': requestCount === 1 ? '1' : undefined,
+      };
+      if (typeof cb === 'function') {
+        cb(mockRes);
+      }
+      return mockReq;
+    };
+
+    const startedAt = Date.now();
+    const result = await fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50);
+    const elapsed = Date.now() - startedAt;
+
+    assert.strictEqual(requestCount, 2);
+    assert.deepStrictEqual(result, { ok: true });
+    // Retry-After: 1s must be honored — the retry waited at least ~1s.
+    assert.ok(elapsed >= 900, `expected ~1000ms wait for Retry-After, got ${elapsed}ms`);
+  });
+
+  it('aborts (destroys) the underlying request when the timeout fires', async () => {
+    let destroyCalls = 0;
+    const mockReq = {
+      on() {
+        return mockReq;
+      },
+      destroy() {
+        destroyCalls++;
+      },
+    };
+    https.get = function () {
+      callCount++;
+      // Never invoke the callback — request hangs until the timeout fires.
+      return mockReq;
+    };
+
+    await assert.rejects(
+      () => fetchJson('https://id.wikipedia.org/w/api.php?test=1', 50),
+      err => {
+        assert.strictEqual(err.name, 'IntegrationError');
+        assert.strictEqual(err.code, 'RETRY_EXHAUSTED');
+        return true;
+      }
+    );
+
+    // Every timed-out attempt must have destroyed its request (socket released).
+    assert.strictEqual(callCount, 3);
+    assert.strictEqual(destroyCalls, 3);
   });
 });

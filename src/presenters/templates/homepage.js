@@ -3,6 +3,7 @@ const slugify = require('../../core/slugify');
 const { SEARCH_DATA_FIELDS } = require('../../core/data-schema');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
+const { generateHeroHtml } = require('./shared/hero');
 const { generateBreadcrumbHtml } = require('./shared/navigation');
 const { HTML_HEAD_PREFIX } = require('./shared/head-meta');
 const { T } = require('./shared/translations');
@@ -141,23 +142,15 @@ function generateHomepageHtml(schools) {
   </header>
   
   <main id="main-content" role="main">
-    <div class="homepage-hero">
-      <h1>Sekolah PSEO</h1>
-      <p class="hero-description">
-        Direktori lengkap sekolah-sekolah di Indonesia. Temukan informasi lengkap tentang 
-        NPSN, alamat, jenjang pendidikan, dan status sekolah di seluruh Indonesia.
-      </p>
-      <div class="hero-stats">
-        <div class="stat-item">
-          <span class="stat-value">${totalSchools.toLocaleString('id-ID')}</span>
-          <span class="stat-label">Total Sekolah</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">${provinces.length}</span>
-          <span class="stat-label">Provinsi</span>
-        </div>
-      </div>
-    </div>
+    ${generateHeroHtml({
+      title: 'Sekolah PSEO',
+      description: `Direktori lengkap sekolah-sekolah di Indonesia. Temukan informasi lengkap tentang 
+        NPSN, alamat, jenjang pendidikan, dan status sekolah di seluruh Indonesia.`,
+      stats: [
+        { value: totalSchools.toLocaleString('id-ID'), label: 'Total Sekolah' },
+        { value: provinces.length, label: 'Provinsi' },
+      ],
+    })}
 
     <!-- Search Section -->
     <section aria-labelledby="search-heading" class="search-section">

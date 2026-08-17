@@ -274,6 +274,7 @@ function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH)
       {
         maxAttempts: GIT_RETRY_MAX_ATTEMPTS,
         initialDelayMs: GIT_RETRY_INITIAL_DELAY_MS,
+        jitter: true,
         shouldRetry: err =>
           isTransientError(err) || err.code === ERROR_CODES.EXTERNAL_SERVICE_ERROR,
       }

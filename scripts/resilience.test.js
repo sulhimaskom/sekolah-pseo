@@ -217,6 +217,45 @@ describe('withTimeout', () => {
     });
   });
 
+  test('invokes onTimeout callback when the deadline fires', async () => {
+    let cleanupCalled = false;
+    const promise = new Promise(() => {});
+    await assert.rejects(
+      withTimeout(promise, 20, 'slow op', () => {
+        cleanupCalled = true;
+      }),
+      error => {
+        assert.ok(error instanceof IntegrationError);
+        assert.strictEqual(error.code, ERROR_CODES.TIMEOUT);
+        return true;
+      }
+    );
+    assert.strictEqual(cleanupCalled, true);
+  });
+
+  test('does not invoke onTimeout when the promise settles first', async () => {
+    let cleanupCalled = false;
+    const result = await withTimeout(Promise.resolve('ok'), 50, 'fast op', () => {
+      cleanupCalled = true;
+    });
+    assert.strictEqual(result, 'ok');
+    assert.strictEqual(cleanupCalled, false);
+  });
+
+  test('onTimeout errors do not mask the TIMEOUT error', async () => {
+    const promise = new Promise(() => {});
+    await assert.rejects(
+      withTimeout(promise, 20, 'op', () => {
+        throw new Error('cleanup exploded');
+      }),
+      error => {
+        assert.ok(error instanceof IntegrationError);
+        assert.strictEqual(error.code, ERROR_CODES.TIMEOUT);
+        return true;
+      }
+    );
+  });
+
   test('preserves operation name in error message', async () => {
     const promise = new Promise(() => {});
     await assert.rejects(withTimeout(promise, 10, 'my custom operation'), error => {
@@ -493,6 +532,124 @@ describe('retry', () => {
       return true;
     });
   });
+
+  test('jitter option does not change retry count or success', async () => {
+    let attemptCount = 0;
+    const fn = () => {
+      attemptCount++;
+      if (attemptCount < 3) {
+        return Promise.reject(new Error('EAGAIN'));
+      }
+      return Promise.resolve('success');
+    };
+
+    const result = await retry(fn, { maxAttempts: 5, initialDelayMs: 10, jitter: true });
+    assert.strictEqual(result, 'success');
+    assert.strictEqual(attemptCount, 3);
+  });
+
+  test('jitter keeps each delay within the exponential backoff bound', async () => {
+    let attemptCount = 0;
+    const timestamps = [];
+
+    const fn = () => {
+      timestamps.push(Date.now());
+      attemptCount++;
+      if (attemptCount < 4) {
+        return Promise.reject(new Error('EAGAIN'));
+      }
+      return Promise.resolve('success');
+    };
+
+    await retry(fn, {
+      maxAttempts: 5,
+      initialDelayMs: 100,
+      maxDelayMs: 300,
+      backoffMultiplier: 2,
+      jitter: true,
+    });
+
+    assert.strictEqual(attemptCount, 4);
+    const delays = [
+      timestamps[1] - timestamps[0],
+      timestamps[2] - timestamps[1],
+      timestamps[3] - timestamps[2],
+    ];
+
+    // Full jitter: delay in [0, backoff]. Bounds: attempt 1 ≤ 100ms,
+    // attempt 2 ≤ 200ms, attempt 3 ≤ 300ms (capped). Use a generous
+    // tolerance for CI event-loop latency.
+    assert.ok(delays[0] <= 500, `delay 1 should be ≤ ~100ms (jittered), got ${delays[0]}ms`);
+    assert.ok(delays[1] <= 500, `delay 2 should be ≤ ~200ms (jittered), got ${delays[1]}ms`);
+    assert.ok(delays[2] <= 600, `delay 3 should be ≤ ~300ms (jittered), got ${delays[2]}ms`);
+  });
+
+  test('honors retryAfterMs as a floor when it exceeds the backoff', async () => {
+    let attemptCount = 0;
+    const timestamps = [];
+
+    const fn = () => {
+      timestamps.push(Date.now());
+      attemptCount++;
+      if (attemptCount < 2) {
+        const err = new Error('HTTP 429');
+        err.statusCode = 429;
+        err.retryAfterMs = 200;
+        return Promise.reject(err);
+      }
+      return Promise.resolve('success');
+    };
+
+    await retry(fn, { maxAttempts: 3, initialDelayMs: 20, maxDelayMs: 10000 });
+
+    const delay = timestamps[1] - timestamps[0];
+    // retryAfterMs (200) dominates the 20ms backoff — the client must not
+    // retry sooner than the server asked.
+    assert.ok(delay >= 150, `expected ≥ ~200ms retryAfterMs floor, got ${delay}ms`);
+  });
+
+  test('caps retryAfterMs at maxDelayMs', async () => {
+    let attemptCount = 0;
+    const timestamps = [];
+
+    const fn = () => {
+      timestamps.push(Date.now());
+      attemptCount++;
+      if (attemptCount < 2) {
+        const err = new Error('HTTP 503');
+        err.statusCode = 503;
+        err.retryAfterMs = 60000;
+        return Promise.reject(err);
+      }
+      return Promise.resolve('success');
+    };
+
+    await retry(fn, { maxAttempts: 3, initialDelayMs: 10, maxDelayMs: 150 });
+
+    const delay = timestamps[1] - timestamps[0];
+    // Capped at maxDelayMs (150) — no unbounded waits even if the server
+    // asks for a very long delay.
+    assert.ok(delay <= 1000, `delay should be capped at ~150ms, got ${delay}ms`);
+  });
+
+  test('does not delay extra when retryAfterMs is missing', async () => {
+    let attemptCount = 0;
+    const timestamps = [];
+
+    const fn = () => {
+      timestamps.push(Date.now());
+      attemptCount++;
+      if (attemptCount < 2) {
+        return Promise.reject(new Error('EAGAIN'));
+      }
+      return Promise.resolve('success');
+    };
+
+    await retry(fn, { maxAttempts: 3, initialDelayMs: 20 });
+
+    const delay = timestamps[1] - timestamps[0];
+    assert.ok(delay < 150, `plain backoff should stay small, got ${delay}ms`);
+  });
 });
 
 describe('CircuitBreaker', () => {
@@ -662,5 +819,92 @@ describe('CircuitBreaker', () => {
     assert.ok(state.hasOwnProperty('state'));
     assert.ok(state.hasOwnProperty('failureCount'));
     assert.ok(state.hasOwnProperty('lastFailureTime'));
+  });
+
+  test('allows only one probe in flight during HALF_OPEN', async () => {
+    const failFn = () => Promise.reject(new Error('EAGAIN'));
+
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(circuitBreaker.execute(failFn));
+    }
+    assert.strictEqual(circuitBreaker.getState().state, 'OPEN');
+
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // The first caller after the reset window transitions OPEN -> HALF_OPEN
+    // and claims the single-flight probe slot.
+    let releaseProbe;
+    const probeGate = new Promise(resolve => {
+      releaseProbe = resolve;
+    });
+    const probe = circuitBreaker.execute(() => probeGate, 'probe');
+    assert.strictEqual(circuitBreaker.getState().state, 'HALF_OPEN');
+    assert.strictEqual(circuitBreaker.getState().probeInFlight, true);
+
+    // Concurrent callers are rejected immediately while the probe runs.
+    await assert.rejects(
+      circuitBreaker.execute(() => Promise.resolve('should not run'), 'second'),
+      error => {
+        assert.strictEqual(error.code, ERROR_CODES.CIRCUIT_BREAKER_OPEN);
+        return true;
+      }
+    );
+
+    // Probe completes successfully — circuit closes, flag clears.
+    releaseProbe('ok');
+    const result = await probe;
+    assert.strictEqual(result, 'ok');
+    assert.strictEqual(circuitBreaker.getState().state, 'CLOSED');
+    assert.strictEqual(circuitBreaker.getState().probeInFlight, false);
+  });
+
+  test('rejects concurrent probes in HALF_OPEN without executing fn', async () => {
+    const failFn = () => Promise.reject(new Error('EAGAIN'));
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(circuitBreaker.execute(failFn));
+    }
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    let fnCalls = 0;
+    let releaseProbe;
+    const probeGate = new Promise(resolve => {
+      releaseProbe = resolve;
+    });
+    const probe = circuitBreaker.execute(() => {
+      fnCalls++;
+      return probeGate;
+    });
+
+    // Give the probe a tick to claim the single-flight slot.
+    await new Promise(resolve => setTimeout(resolve, 5));
+    assert.strictEqual(fnCalls, 1);
+
+    await assert.rejects(
+      circuitBreaker.execute(() => {
+        fnCalls++;
+        return Promise.resolve('x');
+      })
+    );
+
+    releaseProbe('ok');
+    await probe;
+    assert.strictEqual(fnCalls, 1, 'second caller must not execute fn');
+  });
+
+  test('probeInFlight is false when circuit is CLOSED or OPEN', async () => {
+    assert.strictEqual(circuitBreaker.getState().probeInFlight, false);
+
+    const failFn = () => Promise.reject(new Error('EAGAIN'));
+    for (let i = 0; i < 3; i++) {
+      await assert.rejects(circuitBreaker.execute(failFn));
+    }
+    assert.strictEqual(circuitBreaker.getState().state, 'OPEN');
+    assert.strictEqual(circuitBreaker.getState().probeInFlight, false);
+  });
+
+  test('reset clears probeInFlight', async () => {
+    circuitBreaker.halfOpenProbeInFlight = true;
+    circuitBreaker.reset();
+    assert.strictEqual(circuitBreaker.getState().probeInFlight, false);
   });
 });

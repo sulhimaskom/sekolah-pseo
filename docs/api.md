@@ -50,6 +50,8 @@ src/
 ├── back-to-top.js # Shared back-to-top button HTML + script
 ├── navigation.js # Shared breadcrumb navigation component
 ├── footer.js # Shared footer component
+├── hero.js # Shared hero section component (title, description, stats)
+├── index-head.js # Shared index-page <head> block (SEO meta + stylesheet)
 ├── comparison.js # Shared school comparison tray (Bandingkan)
 └── translations.js # Shared pre-escaped translations (T)
 ```
@@ -936,6 +938,8 @@ new CircuitBreaker(options);
 - `OPEN`: Blocking operations
 - `HALF_OPEN`: Testing recovery
 
+**HALF_OPEN single-probe guard:** while in `HALF_OPEN`, exactly one probe call is allowed at a time. Concurrent callers are rejected immediately with `CIRCUIT_BREAKER_OPEN` (the circuit stays `OPEN` from their perspective) instead of cascading onto a recovering service. The probe flag is cleared when the probe settles, via `finally` (also on failure), and by `reset()`.
+
 **Methods:**
 
 ##### `execute(fn, operationName)`
@@ -951,7 +955,7 @@ Executes function with circuit breaker protection.
 
 **Throws:**
 
-- `IntegrationError` with `CIRCUIT_BREAKER_OPEN` code if circuit is open
+- `IntegrationError` with `CIRCUIT_BREAKER_OPEN` code if circuit is open (or if another probe is already in flight in `HALF_OPEN`)
 - Error from `fn` if execution fails
 
 **Usage:**
@@ -983,7 +987,8 @@ Returns current circuit breaker state.
 {
   state: 'CLOSED' | 'OPEN' | 'HALF_OPEN',
   failureCount: number,
-  lastFailureTime: number | null
+  lastFailureTime: number | null,
+  probeInFlight: boolean
 }
 ```
 
@@ -1035,7 +1040,7 @@ if (isTransientError(error)) {
 
 ---
 
-#### `withTimeout(promise, timeoutMs, operationName)`
+#### `withTimeout(promise, timeoutMs, operationName, onTimeout)`
 
 Wraps promise with timeout enforcement.
 
@@ -1044,6 +1049,7 @@ Wraps promise with timeout enforcement.
 - `promise` (Promise): Promise to timeout
 - `timeoutMs` (number): Timeout in milliseconds
 - `operationName` (string, optional): Operation name for error message
+- `onTimeout` (function, optional): Callback invoked just before the `TIMEOUT` error is rejected — used to release underlying resources (e.g. abort an in-flight HTTP request). Errors thrown by the callback are swallowed so they never mask the `TIMEOUT` error.
 
 **Returns:** `Promise<any>` - Promise result or timeout error
 
@@ -1117,12 +1123,16 @@ Retries function with exponential backoff.
   - `maxDelayMs` (number): Maximum delay in ms (default: 10000)
   - `backoffMultiplier` (number): Backoff multiplier (default: 2)
   - `shouldRetry` (function): Function to determine if error is retryable (default: `isTransientError`)
+  - `jitter` (boolean): Randomize each backoff delay (full jitter, `random() × backoff`) to de-synchronize concurrent retries (default: `false`)
 
 **Returns:** `Promise<any>` - Function result
 
 **Throws:** `IntegrationError` with `RETRY_EXHAUSTED` code if all retries fail
 
-**Backoff Formula:** `min(initialDelayMs * multiplier^(attempt-1), maxDelayMs)`
+**Backoff Formula:** `min(initialDelayMs * multiplier^(attempt-1), maxDelayMs)`, then:
+
+1. If `jitter` is enabled, the delay is randomized to `random() × backoff`.
+2. If the last error carries a positive numeric `retryAfterMs` (e.g. parsed from an HTTP `429 Retry-After` header), the delay is raised to at least that value, capped at `maxDelayMs` — the client never retries sooner than the server asked.
 
 **Usage:**
 
@@ -3727,6 +3737,112 @@ const html = generateFooterHtml({
 
 ---
 
+### Hero Module (`src/presenters/templates/shared/hero.js`)
+
+#### Purpose
+
+Provides the shared hero section component (`.homepage-hero` with an `h1` title, `.hero-description` paragraph and `.hero-stats` stat items). The hero block was duplicated verbatim across four templates — homepage, province-page, kabupaten-page and kecamatan-page — so it is extracted to keep all four heroes structurally identical (same classes, same semantics) and prevent one-off edits from drifting between templates.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateHeroHtml: function,
+};
+```
+
+#### Functions
+
+##### `generateHeroHtml({ title, description, stats })`
+
+Generates a hero section HTML block.
+
+**Parameters:**
+
+- `options` (Object, required):
+  - `title` (string): Hero heading rendered as `<h1>` (must be pre-escaped)
+  - `description` (string): Hero description text rendered inside `<p class="hero-description">` (must be pre-escaped)
+  - `stats` (Array, optional): Stat items rendered inside `.hero-stats` (default: `[]`). Each item is `{ value: string, label: string }` where both values must be pre-escaped.
+
+**Returns:** `string` — Hero HTML string
+
+**Output Structure:**
+
+```html
+<div class="homepage-hero">
+  <h1>Provinsi Jawa Barat</h1>
+  <p class="hero-description">…</p>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-value">123</span>
+      <span class="stat-label">Total Sekolah</span>
+    </div>
+  </div>
+</div>
+```
+
+**Usage:**
+
+```javascript
+const { generateHeroHtml } = require('./shared/hero');
+
+const html = generateHeroHtml({
+  title: 'Provinsi Jawa Barat',
+  description: 'Jelajahi daftar sekolah-sekolah di Provinsi Jawa Barat.',
+  stats: [
+    { value: totalSchools.toLocaleString('id-ID'), label: 'Total Sekolah' },
+    { value: kabupatenList.length, label: 'Kabupaten/Kota' },
+  ],
+});
+```
+
+**Note:** The first line carries no leading indentation — templates embed the result via a `${generateHeroHtml(...)}` placeholder whose indentation pads the opening `<div>`, matching the hand-written markup the component replaces.
+
+---
+
+### Index Page Head Module (`src/presenters/templates/shared/index-head.js`)
+
+#### Purpose
+
+Provides the shared `<head>` block for index pages (province, kabupaten, kecamatan). The description / title / canonical / Open Graph block plus the stylesheet link was duplicated verbatim across the three index templates. Extracting it keeps the SEO meta block consistent — the plain tags and their `og:` counterparts always stay in sync — and removes the duplication from every index template.
+
+#### Exports
+
+```javascript
+module.exports = {
+  generateIndexPageHead: function,
+};
+```
+
+#### Functions
+
+##### `generateIndexPageHead({ title, description, canonicalUrl })`
+
+Generates the `<head>` block shared by index pages (appended after `HTML_HEAD_PREFIX`).
+
+**Parameters:**
+
+- `options` (Object, required):
+  - `title` (string): Page title used for `<title>` and `og:title` (must be pre-escaped)
+  - `description` (string): Meta description used for the `description` and `og:description` meta tags (must be pre-escaped)
+  - `canonicalUrl` (string): Canonical URL used for the canonical link and `og:url` (must be pre-escaped)
+
+**Returns:** `string` — Head block HTML string ending with the `<link rel="stylesheet" href="/styles.css">` line
+
+**Usage:**
+
+```javascript
+const { generateIndexPageHead } = require('./shared/index-head');
+
+const head = generateIndexPageHead({
+  title: `Daftar Sekolah di Provinsi ${escapeHtml(provinceName)} - Sekolah PSEO`,
+  description: escapeHtml(metaDescription),
+  canonicalUrl: escapeHtml(canonicalUrl),
+});
+```
+
+---
+
 ### Translations Module (`src/presenters/templates/shared/translations.js`)
 
 #### Purpose
@@ -5736,7 +5852,7 @@ const url = buildWikipediaExtractUrl(['SMA Negeri 1 Jakarta', 'SMAN 1 Jakarta'])
 
 #### `fetchJson(url, timeoutMs)`
 
-Fetches a URL and parses the response as JSON, protected by timeout, retry, and the Wikipedia circuit breaker.
+Fetches a URL and parses the response as JSON, protected by timeout, retry, and the Wikipedia circuit breaker. On timeout the underlying HTTP request is aborted (`destroy()`), releasing the socket instead of leaking it until the remote end closes.
 
 **Parameters:**
 
@@ -5747,17 +5863,36 @@ Fetches a URL and parses the response as JSON, protected by timeout, retry, and 
 
 **Retry Policy:**
 
-- Max 3 attempts with exponential backoff (1s initial delay)
+- Max 3 attempts with exponential backoff (1s initial delay), full **jitter** enabled
 - **Retryable**: `IntegrationError` with code `TIMEOUT` (request deadline exceeded), HTTP `429`, HTTP `5xx`, and other transient network errors (`isTransientError`)
+- **Retry-After honored**: an HTTP `429` response's `Retry-After` header (delta-seconds or HTTP-date) is parsed into `retryAfterMs` on the error; `retry()` waits at least that long before the next attempt (capped at 10s)
 - **Non-retryable**: parse failures (`HTTP_ERROR` — invalid JSON or non-2xx with unrecoverable status), since retrying would produce the same result
 
-**Circuit Breaker:** 3 consecutive failures → `OPEN` for 120s. When open, requests reject immediately with `CIRCUIT_BREAKER_OPEN` without hitting the network, giving the Wikipedia API time to recover.
+**Circuit Breaker:** 3 consecutive failures → `OPEN` for 120s. When open, requests reject immediately with `CIRCUIT_BREAKER_OPEN` without hitting the network, giving the Wikipedia API time to recover. In `HALF_OPEN` only one probe request runs at a time.
 
 **Usage:**
 
 ```javascript
 const data = await fetchJson('https://id.wikipedia.org/w/api.php?action=query');
 ```
+
+---
+
+#### `parseRetryAfterMs(headerValue)`
+
+Parses an HTTP `Retry-After` header value into a retry delay in milliseconds. Supports both valid RFC 7231 forms.
+
+**Parameters:**
+
+- `headerValue` (string | undefined): Raw `Retry-After` header value
+
+**Returns:** `number | undefined` — Retry delay in milliseconds, or `undefined` when the value is missing, empty, or unparseable
+
+**Behavior:**
+
+- Delta-seconds form (`"120"`) → `120000`
+- HTTP-date form (absolute timestamp) → `max(0, dateMs - now)`
+- Anything else (including values that look numeric but are not delta-seconds, e.g. `"12.5"`) → `undefined`
 
 ---
 
@@ -6600,6 +6735,8 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
          │  back-to-top.js   │  Depends: None (standalone)          │
          │  navigation.js    │  Depends: None (standalone)          │
          │  footer.js        │  Depends: None (standalone)          │
+         │  hero.js          │  Depends: None (standalone)          │
+         │  index-head.js    │  Depends: None (standalone)          │
          │  comparison.js    │  Depends: None (standalone)          │
          │  translations.js  │  Depends: utils.js, config.js        │
          └──────────────────────────────────────────────────────────┘
@@ -6759,6 +6896,13 @@ None.
 ---
 
 ## Changelog
+
+### Version 2.2.0 (2026-08-17)
+
+- Added Hero Module documentation (`shared/hero.js`) — shared hero section component (`generateHeroHtml`) used by homepage + province/kabupaten/kecamatan templates
+- Added Index Page Head Module documentation (`shared/index-head.js`) — shared index-page `<head>` block (`generateIndexPageHead`) used by province/kabupaten/kecamatan templates
+- Updated Module Organization tree with `hero.js` and `index-head.js`
+- Updated Dependency Graph Shared Template Modules with `hero.js` and `index-head.js` (both standalone)
 
 ### Version 2.1.0 (2026-08-17)
 
