@@ -32,8 +32,10 @@ scripts/ # Controllers, utilities, and CLI tools
 
 src/
 ├── services/
-│ ├── PageBuilder.js # Page data builders (paths, grouping, search)
-│ └── BuildOrchestrator.js # Build pipeline orchestration service
+│   ├── PageBuilder.js # Page data builders (paths, grouping, search)
+│   ├── BuildOrchestrator.js # Build pipeline orchestration service
+│   ├── SearchDataService.js # Search data artifact generation (schools.json + gzip)
+│   └── ExportService.js # Static artifact exports (styles.css, schools.csv)
 └── presenters/
 ├── design-system.js # Design tokens
 ├── styles.js # CSS generator
@@ -41,11 +43,14 @@ src/
 ├── school-page.js # School page HTML template
 ├── homepage.js # Homepage HTML template
 ├── province-page.js # Province page HTML template
+├── kabupaten-page.js # Kabupaten/kota page HTML template
+├── kecamatan-page.js # Kecamatan page HTML template
 └── shared/
 ├── head-meta.js # Shared HTML head prefix (security headers, meta)
 ├── back-to-top.js # Shared back-to-top button HTML + script
 ├── navigation.js # Shared breadcrumb navigation component
 ├── footer.js # Shared footer component
+├── comparison.js # Shared school comparison tray (Bandingkan)
 └── translations.js # Shared pre-escaped translations (T)
 ```
 
@@ -6532,6 +6537,8 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
          │  - resilience.js (IntegrationError)                      │
          │  - src/presenters/templates/school-page.js               │
          │  - src/presenters/templates/province-page.js             │
+         │  - src/presenters/templates/kabupaten-page.js            │
+         │  - src/presenters/templates/kecamatan-page.js            │
          │  - src/presenters/templates/homepage.js                  │
          └──────────────────────────┬───────────────────────────────┘
                                     │
@@ -6545,6 +6552,14 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
 │  - shared/*         │ │  - shared/*         │ │  - shared/*         │
 └─────────────────────┘ └─────────────────────┘ └─────────────────────┘
           │                         │                        │
+          ▼                         ▼                        ▼
+┌─────────────────────┐ ┌─────────────────────┐
+│  kabupaten-page.js  │ │  kecamatan-page.js  │
+│  Depends:           │ │  Depends:           │
+│  - utils.js         │ │  - utils.js         │
+│  - shared/*         │ │  - shared/*         │
+└─────────────────────┘ └─────────────────────┘
+          │                         │
           └─────────────────────────┼────────────────────────┘
                                     │
                                     ▼
@@ -6556,6 +6571,7 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
          │  back-to-top.js   │  Depends: None (standalone)          │
          │  navigation.js    │  Depends: None (standalone)          │
          │  footer.js        │  Depends: None (standalone)          │
+         │  comparison.js    │  Depends: None (standalone)          │
          │  translations.js  │  Depends: utils.js, config.js        │
          └──────────────────────────────────────────────────────────┘
 ```
@@ -6714,6 +6730,11 @@ None.
 ---
 
 ## Changelog
+
+### Version 2.1.0 (2026-08-17)
+
+- Updated Module Organization tree with 5 missing modules: `kabupaten-page.js`, `kecamatan-page.js` (templates), `comparison.js` (shared), `SearchDataService.js`, `ExportService.js` (services)
+- Updated Dependency Graph with kabupaten/kecamatan template modules and `comparison.js`
 
 ### Version 2.0.0 (2026-07-20)
 

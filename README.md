@@ -16,9 +16,13 @@ Membuat halaman HTML statis untuk setiap sekolah dengan informasi lengkap melipu
 - Lokasi (alamat, kelurahan, kecamatan, kabupaten/kota, provinsi)
 - Koordinat geografis (latitude, longitude)
 
-### 3. Halaman Provinsi
+### 3. Halaman Provinsi, Kabupaten/Kota, dan Kecamatan
 
-Membuat halaman indeks per provinsi yang menampilkan semua kabupaten/kota dalam provinsi tersebut beserta jumlah sekolah.
+Membuat hierarki navigasi lengkap:
+
+- Halaman indeks per provinsi yang menampilkan semua kabupaten/kota dalam provinsi tersebut beserta jumlah sekolah
+- Halaman indeks per kabupaten/kota yang menampilkan semua kecamatan beserta jumlah sekolah
+- Halaman indeks per kecamatan yang menampilkan daftar sekolah beserta status dan jenis pendidikan
 
 ### 4. Halaman Utama
 
@@ -27,6 +31,7 @@ Halaman utama dengan fungsionalitas:
 - Pencarian sekolah berdasarkan nama
 - Filter berdasarkan provinsi
 - Filter berdasarkan jenis pendidikan
+- Filter berdasarkan status (negeri/swasta)
 - Navigasi cepat ke halaman provinsi
 
 ### 5. Peta Situs (Sitemap)
@@ -52,6 +57,8 @@ external/raw.csv → ETL Process → data/schools.csv → Build Process → dist
                                                                     ├── index.html (Homepage)
                                                                     ├── provinsi/
                                                                     │   └── {province}/index.html
+                                                                    │       └── kabupaten/{kabupaten}/index.html
+                                                                    │           └── kecamatan/{kecamatan}/index.html
                                                                     ├── {path}/{npsn}-{slug}.html (School pages)
                                                                     └── styles.css
                                         Sitemap Generator → dist/sitemap-index.xml
@@ -213,6 +220,7 @@ sekolah-pseo/
 │   ├── resilience.js     # Pola resilience
 │   ├── sitemap.js       # Peta situs
 │   ├── slugify.js       # URL slug
+│   ├── test-helpers.js  # Utilitas bersama untuk test
 │   ├── utils.js         # Utilitas
 │   └── validate-links.js # Validasi tautan
 ├── src/
@@ -222,12 +230,16 @@ sekolah-pseo/
 │   │   └── templates/      # Template HTML
 │   │       ├── homepage.js
 │   │       ├── province-page.js
+│   │       ├── kabupaten-page.js
+│   │       ├── kecamatan-page.js
 │   │       ├── school-page.js
 │   │       └── shared/
 │   │           ├── head-meta.js    # Shared HTML head prefix
 │   │           ├── back-to-top.js  # Shared back-to-top button
+│   │           ├── comparison.js   # Shared comparison tray (Bandingkan)
 │   │           ├── navigation.js   # Shared breadcrumb navigation component
-│   │           └── footer.js       # Shared footer component
+│   │           ├── footer.js       # Shared footer component
+│   │           └── translations.js # Shared pre-escaped translations (T)
 │   └── services/
 │       ├── PageBuilder.js       # Page data builders (paths, grouping, search)
 │       ├── BuildOrchestrator.js # Build pipeline orchestration service
