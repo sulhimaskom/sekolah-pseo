@@ -941,16 +941,13 @@ test('main() prints a human-readable report by default', async () => {
 test('main() with --verbose adds verbose stats logging', async () => {
   const { dir, csvPath } = makeTempCsv(VALID_CSV);
   const infoCalls = [];
-  const captured = [];
   const originalInfo = logger.info;
   const originalLog = console.log;
   const originalArgv = process.argv;
   logger.info = (...args) => {
     infoCalls.push(args);
   };
-  console.log = (...chunks) => {
-    captured.push(chunks.join(' '));
-  };
+  console.log = () => {};
   process.argv = ['node', 'data-quality.js', '--verbose'];
   try {
     await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => main());
@@ -975,16 +972,13 @@ test('main() with --verbose adds verbose stats logging', async () => {
 test('main() with --threshold passes when quality is good', async () => {
   const { dir, csvPath } = makeTempCsv(VALID_CSV);
   const infoCalls = [];
-  const captured = [];
   const originalInfo = logger.info;
   const originalLog = console.log;
   const originalArgv = process.argv;
   logger.info = (...args) => {
     infoCalls.push(args);
   };
-  console.log = (...chunks) => {
-    captured.push(chunks.join(' '));
-  };
+  console.log = () => {};
   process.argv = ['node', 'data-quality.js', '--threshold'];
   try {
     await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => main());
@@ -1004,7 +998,6 @@ test('main() with --threshold passes when quality is good', async () => {
 test('main() with --threshold terminates when quality is below threshold', async () => {
   const { dir, csvPath } = makeTempCsv(INCOMPLETE_CSV);
   const warnCalls = [];
-  const captured = [];
   const originalWarn = logger.warn;
   const originalLog = console.log;
   const originalArgv = process.argv;
@@ -1012,9 +1005,7 @@ test('main() with --threshold terminates when quality is below threshold', async
   logger.warn = (...args) => {
     warnCalls.push(args);
   };
-  console.log = (...chunks) => {
-    captured.push(chunks.join(' '));
-  };
+  console.log = () => {};
   process.argv = ['node', 'data-quality.js', '--threshold'];
   try {
     await withConfig({ SCHOOLS_CSV_PATH: csvPath }, () => assert.rejects(main(), /PROCESS_EXIT:1/));
