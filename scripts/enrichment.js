@@ -124,10 +124,37 @@ function buildWikipediaExtractUrl(pageTitles) {
 }
 
 /**
+ * Parse an HTTP `Retry-After` header value into milliseconds.
+ * Supports both delta-seconds (e.g. "120") and HTTP-date formats.
+ * Returns undefined when the value is missing or unparseable.
+ *
+ * @param {string|undefined} headerValue - Raw Retry-After header value
+ * @returns {number|undefined} Retry delay in milliseconds, or undefined
+ */
+function parseRetryAfterMs(headerValue) {
+  if (typeof headerValue !== 'string' || headerValue.trim() === '') {
+    return undefined;
+  }
+  const trimmed = headerValue.trim();
+  // Delta-seconds form: a bare integer number of seconds.
+  if (/^\d+$/.test(trimmed)) {
+    return parseInt(trimmed, 10) * 1000;
+  }
+  // HTTP-date form: an absolute timestamp.
+  const dateMs = Date.parse(trimmed);
+  if (Number.isNaN(dateMs)) {
+    return undefined;
+  }
+  return Math.max(0, dateMs - Date.now());
+}
+
+/**
  * Fetch a URL with a timeout, retry, circuit breaker, and rate limiting.
  * Uses native https/http module to avoid external dependencies.
  * Each HTTP request passes through wikipediaRateLimiter (concurrency cap +
  * minimum spacing between starts) to respect the upstream API's rate limits.
+ * On timeout the underlying request is aborted (destroyed) so the socket is
+ * released instead of leaking until the remote end closes it.
  *
  * @param {string} url - URL to fetch
  * @param {number} [timeoutMs=10000] - Timeout in milliseconds
@@ -138,42 +165,51 @@ function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
     wikipediaRateLimiter.execute(() => {
       const protocol = url.startsWith('https') ? require('https') : require('http');
 
-      return withTimeout(
-        new Promise((resolve, reject) => {
-          protocol
-            .get(
-              url,
-              { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
-              res => {
-                if (res.statusCode && res.statusCode >= 400) {
-                  const httpError = new Error(`HTTP ${res.statusCode}`);
-                  httpError.statusCode = res.statusCode;
-                  reject(httpError);
-                  return;
-                }
-                let data = '';
-                res.on('data', chunk => {
-                  data += chunk;
-                });
-                res.on('end', () => {
-                  try {
-                    resolve(JSON.parse(data));
-                  } catch (parseError) {
-                    reject(
-                      new IntegrationError(
-                        `Failed to parse API response: ${parseError.message}`,
-                        ERROR_CODES.HTTP_ERROR,
-                        { url: url.slice(0, 200), parseError: parseError.message }
-                      )
-                    );
-                  }
-                });
+      let request;
+
+      const requestPromise = new Promise((resolve, reject) => {
+        request = protocol.get(
+          url,
+          { headers: { 'User-Agent': 'SekolahPSEO/1.0 (school directory project)' } },
+          res => {
+            if (res.statusCode && res.statusCode >= 400) {
+              const httpError = new Error(`HTTP ${res.statusCode}`);
+              httpError.statusCode = res.statusCode;
+              httpError.retryAfterMs = parseRetryAfterMs(res.headers['retry-after']);
+              reject(httpError);
+              return;
+            }
+            let data = '';
+            res.on('data', chunk => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              try {
+                resolve(JSON.parse(data));
+              } catch (parseError) {
+                reject(
+                  new IntegrationError(
+                    `Failed to parse API response: ${parseError.message}`,
+                    ERROR_CODES.HTTP_ERROR,
+                    { url: url.slice(0, 200), parseError: parseError.message }
+                  )
+                );
               }
-            )
-            .on('error', reject);
-        }),
+            });
+          }
+        );
+        request.on('error', reject);
+      });
+
+      return withTimeout(
+        requestPromise,
         timeoutMs,
-        `Wikipedia API request: ${url.slice(0, 100)}...`
+        `Wikipedia API request: ${url.slice(0, 100)}...`,
+        () => {
+          if (request && typeof request.destroy === 'function') {
+            request.destroy();
+          }
+        }
       );
     }, 'Wikipedia API request');
 
@@ -182,6 +218,7 @@ function fetchJson(url, timeoutMs = WIKIPEDIA_API_TIMEOUT_MS) {
       retry(doFetch, {
         maxAttempts: 3,
         initialDelayMs: 1000,
+        jitter: true,
         shouldRetry: err => {
           // Timeouts are transient — retry them. withTimeout rejects with an
           // IntegrationError whose code is TIMEOUT; rejecting all IntegrationErrors
@@ -404,6 +441,7 @@ module.exports = {
   buildWikipediaSearchUrl,
   buildWikipediaExtractUrl,
   fetchJson,
+  parseRetryAfterMs,
   wikipediaCircuitBreaker,
   wikipediaRateLimiter,
   ENRICHMENT_DATA_PATH,

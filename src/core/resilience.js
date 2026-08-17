@@ -134,14 +134,24 @@ function isTransientError(error) {
  * @param {Promise<*>} promise - Promise to execute
  * @param {number} timeoutMs - Timeout in milliseconds
  * @param {string} [operationName='operation'] - Name for this operation (for logging)
+ * @param {Function} [onTimeout] - Optional cleanup callback invoked when the
+ *   deadline fires (e.g. to abort/destroy an in-flight HTTP request). Errors
+ *   thrown by the callback are swallowed so they never mask the TIMEOUT error.
  * @returns {Promise<*>} Result of the promise
  * @throws {IntegrationError} Throws TIMEOUT error if deadline exceeded
  */
-async function withTimeout(promise, timeoutMs, operationName = 'operation') {
+async function withTimeout(promise, timeoutMs, operationName = 'operation', onTimeout) {
   let timeoutHandle;
 
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => {
+      if (typeof onTimeout === 'function') {
+        try {
+          onTimeout();
+        } catch {
+          // Cleanup errors must never mask the TIMEOUT error.
+        }
+      }
       reject(
         new IntegrationError(
           `${operationName} timed out after ${timeoutMs}ms`,
@@ -201,10 +211,14 @@ function withTimeoutSync(syncFn, timeoutMs, operationName = 'operation') {
  * @property {number} [maxDelayMs=10000] - Maximum delay between retries (ms)
  * @property {number} [backoffMultiplier=2] - Multiplier for exponential backoff
  * @property {Function} [shouldRetry=isTransientError] - Function to determine if error should be retried
+ * @property {boolean} [jitter=false] - Randomize backoff delays (full jitter) to de-synchronize concurrent retries
  */
 
 /**
  * Executes a function with exponential backoff retry.
+ * Honors a server-provided `Retry-After` hint: if the last error carries a
+ * positive numeric `retryAfterMs` (e.g. parsed from an HTTP 429 response),
+ * the retry waits at least that long, capped at maxDelayMs.
  * @param {Function} fn - Function to execute
  * @param {RetryOptions} [options={}] - Retry configuration
  * @returns {Promise<*>} Result of the function execution
@@ -217,6 +231,7 @@ async function retry(fn, options = {}) {
     maxDelayMs = 10000,
     backoffMultiplier = 2,
     shouldRetry = isTransientError,
+    jitter = false,
   } = options;
 
   let lastError;
@@ -240,7 +255,19 @@ async function retry(fn, options = {}) {
         );
       }
 
-      const delay = Math.min(initialDelayMs * Math.pow(backoffMultiplier, attempt - 1), maxDelayMs);
+      let delay = Math.min(initialDelayMs * Math.pow(backoffMultiplier, attempt - 1), maxDelayMs);
+
+      // Full jitter (AWS recommendation): randomize the backoff so concurrent
+      // retries don't fire in lockstep and amplify load on a recovering service.
+      if (jitter) {
+        delay = Math.random() * delay;
+      }
+
+      // Retry-After (e.g. HTTP 429) is a floor: never retry sooner than the
+      // server asked, but cap at maxDelayMs to bound total wait time.
+      if (lastError && Number.isFinite(lastError.retryAfterMs) && lastError.retryAfterMs > 0) {
+        delay = Math.max(delay, Math.min(lastError.retryAfterMs, maxDelayMs));
+      }
 
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -277,6 +304,9 @@ class CircuitBreaker {
     this.state = 'CLOSED';
     this.eventEmitter = new EventEmitter();
     this.monitoringStart = null;
+    // Single-flight guard for HALF_OPEN: only one probe may run at a time so
+    // a recovering service isn't hit by every queued caller at once.
+    this.halfOpenProbeInFlight = false;
   }
 
   /**
@@ -304,6 +334,25 @@ class CircuitBreaker {
       }
     }
 
+    // HALF_OPEN: allow exactly one probe. While a probe is in flight, further
+    // callers are rejected immediately (no cascade onto the recovering service).
+    const isHalfOpen = this.state === 'HALF_OPEN';
+    if (isHalfOpen) {
+      if (this.halfOpenProbeInFlight) {
+        throw new IntegrationError(
+          `Circuit breaker is OPEN for ${operationName}`,
+          ERROR_CODES.CIRCUIT_BREAKER_OPEN,
+          {
+            failureCount: this.failureCount,
+            lastFailureTime: this.lastFailureTime,
+            resetTimeoutMs: this.resetTimeoutMs,
+            probeInFlight: true,
+          }
+        );
+      }
+      this.halfOpenProbeInFlight = true;
+    }
+
     try {
       const result = await fn();
       this.onSuccess();
@@ -311,6 +360,10 @@ class CircuitBreaker {
     } catch (error) {
       this.onFailure();
       throw error;
+    } finally {
+      if (isHalfOpen) {
+        this.halfOpenProbeInFlight = false;
+      }
     }
   }
 
@@ -349,6 +402,7 @@ class CircuitBreaker {
       state: this.state,
       failureCount: this.failureCount,
       lastFailureTime: this.lastFailureTime,
+      probeInFlight: this.halfOpenProbeInFlight,
     };
   }
 
@@ -360,6 +414,7 @@ class CircuitBreaker {
     this.failureCount = 0;
     this.lastFailureTime = null;
     this.state = 'CLOSED';
+    this.halfOpenProbeInFlight = false;
     this.eventEmitter.emit('stateChange', { from: this.state, to: 'CLOSED' });
   }
 }

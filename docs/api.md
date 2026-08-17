@@ -936,6 +936,8 @@ new CircuitBreaker(options);
 - `OPEN`: Blocking operations
 - `HALF_OPEN`: Testing recovery
 
+**HALF_OPEN single-probe guard:** while in `HALF_OPEN`, exactly one probe call is allowed at a time. Concurrent callers are rejected immediately with `CIRCUIT_BREAKER_OPEN` (the circuit stays `OPEN` from their perspective) instead of cascading onto a recovering service. The probe flag is cleared when the probe settles, via `finally` (also on failure), and by `reset()`.
+
 **Methods:**
 
 ##### `execute(fn, operationName)`
@@ -951,7 +953,7 @@ Executes function with circuit breaker protection.
 
 **Throws:**
 
-- `IntegrationError` with `CIRCUIT_BREAKER_OPEN` code if circuit is open
+- `IntegrationError` with `CIRCUIT_BREAKER_OPEN` code if circuit is open (or if another probe is already in flight in `HALF_OPEN`)
 - Error from `fn` if execution fails
 
 **Usage:**
@@ -983,7 +985,8 @@ Returns current circuit breaker state.
 {
   state: 'CLOSED' | 'OPEN' | 'HALF_OPEN',
   failureCount: number,
-  lastFailureTime: number | null
+  lastFailureTime: number | null,
+  probeInFlight: boolean
 }
 ```
 
@@ -1035,7 +1038,7 @@ if (isTransientError(error)) {
 
 ---
 
-#### `withTimeout(promise, timeoutMs, operationName)`
+#### `withTimeout(promise, timeoutMs, operationName, onTimeout)`
 
 Wraps promise with timeout enforcement.
 
@@ -1044,6 +1047,7 @@ Wraps promise with timeout enforcement.
 - `promise` (Promise): Promise to timeout
 - `timeoutMs` (number): Timeout in milliseconds
 - `operationName` (string, optional): Operation name for error message
+- `onTimeout` (function, optional): Callback invoked just before the `TIMEOUT` error is rejected — used to release underlying resources (e.g. abort an in-flight HTTP request). Errors thrown by the callback are swallowed so they never mask the `TIMEOUT` error.
 
 **Returns:** `Promise<any>` - Promise result or timeout error
 
@@ -1117,12 +1121,16 @@ Retries function with exponential backoff.
   - `maxDelayMs` (number): Maximum delay in ms (default: 10000)
   - `backoffMultiplier` (number): Backoff multiplier (default: 2)
   - `shouldRetry` (function): Function to determine if error is retryable (default: `isTransientError`)
+  - `jitter` (boolean): Randomize each backoff delay (full jitter, `random() × backoff`) to de-synchronize concurrent retries (default: `false`)
 
 **Returns:** `Promise<any>` - Function result
 
 **Throws:** `IntegrationError` with `RETRY_EXHAUSTED` code if all retries fail
 
-**Backoff Formula:** `min(initialDelayMs * multiplier^(attempt-1), maxDelayMs)`
+**Backoff Formula:** `min(initialDelayMs * multiplier^(attempt-1), maxDelayMs)`, then:
+
+1. If `jitter` is enabled, the delay is randomized to `random() × backoff`.
+2. If the last error carries a positive numeric `retryAfterMs` (e.g. parsed from an HTTP `429 Retry-After` header), the delay is raised to at least that value, capped at `maxDelayMs` — the client never retries sooner than the server asked.
 
 **Usage:**
 
@@ -5736,7 +5744,7 @@ const url = buildWikipediaExtractUrl(['SMA Negeri 1 Jakarta', 'SMAN 1 Jakarta'])
 
 #### `fetchJson(url, timeoutMs)`
 
-Fetches a URL and parses the response as JSON, protected by timeout, retry, and the Wikipedia circuit breaker.
+Fetches a URL and parses the response as JSON, protected by timeout, retry, and the Wikipedia circuit breaker. On timeout the underlying HTTP request is aborted (`destroy()`), releasing the socket instead of leaking it until the remote end closes.
 
 **Parameters:**
 
@@ -5747,17 +5755,36 @@ Fetches a URL and parses the response as JSON, protected by timeout, retry, and 
 
 **Retry Policy:**
 
-- Max 3 attempts with exponential backoff (1s initial delay)
+- Max 3 attempts with exponential backoff (1s initial delay), full **jitter** enabled
 - **Retryable**: `IntegrationError` with code `TIMEOUT` (request deadline exceeded), HTTP `429`, HTTP `5xx`, and other transient network errors (`isTransientError`)
+- **Retry-After honored**: an HTTP `429` response's `Retry-After` header (delta-seconds or HTTP-date) is parsed into `retryAfterMs` on the error; `retry()` waits at least that long before the next attempt (capped at 10s)
 - **Non-retryable**: parse failures (`HTTP_ERROR` — invalid JSON or non-2xx with unrecoverable status), since retrying would produce the same result
 
-**Circuit Breaker:** 3 consecutive failures → `OPEN` for 120s. When open, requests reject immediately with `CIRCUIT_BREAKER_OPEN` without hitting the network, giving the Wikipedia API time to recover.
+**Circuit Breaker:** 3 consecutive failures → `OPEN` for 120s. When open, requests reject immediately with `CIRCUIT_BREAKER_OPEN` without hitting the network, giving the Wikipedia API time to recover. In `HALF_OPEN` only one probe request runs at a time.
 
 **Usage:**
 
 ```javascript
 const data = await fetchJson('https://id.wikipedia.org/w/api.php?action=query');
 ```
+
+---
+
+#### `parseRetryAfterMs(headerValue)`
+
+Parses an HTTP `Retry-After` header value into a retry delay in milliseconds. Supports both valid RFC 7231 forms.
+
+**Parameters:**
+
+- `headerValue` (string | undefined): Raw `Retry-After` header value
+
+**Returns:** `number | undefined` — Retry delay in milliseconds, or `undefined` when the value is missing, empty, or unparseable
+
+**Behavior:**
+
+- Delta-seconds form (`"120"`) → `120000`
+- HTTP-date form (absolute timestamp) → `max(0, dateMs - now)`
+- Anything else (including values that look numeric but are not delta-seconds, e.g. `"12.5"`) → `undefined`
 
 ---
 

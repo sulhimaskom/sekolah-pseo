@@ -2,6 +2,85 @@
 
 ## Completed Tasks
 
+### [TASK-100] Integration Hardening — Jitter, Retry-After, HALF_OPEN Single-Probe, Abort-on-Timeout
+
+**Status**: Complete
+**Agent**: Senior Integration Engineer (Sisyphus)
+
+### Description
+
+Gap analysis of the resilience layer (`src/core/resilience.js` + `scripts/enrichment.js`) against real-world failure modes found **four unaddressed hardening gaps**:
+
+1. **Circuit-breaker HALF_OPEN thundering herd** — while `HALF_OPEN`, every queued caller passed through as a probe, hammering a recovering service with concurrent requests. No single-flight guard existed.
+2. **No retry jitter** — concurrent callers shared the same backoff schedule and fired retries in lockstep, amplifying load on a struggling service (synchronized retry storms).
+3. **HTTP 429 `Retry-After` ignored** — when the upstream asked the client to back off, `fetchJson` retried on its own schedule, potentially causing repeated 429s or IP blocks.
+4. **Socket leak on timeout** — `withTimeout` rejected with `TIMEOUT` but never aborted the underlying HTTP request; the socket stayed open until the remote end closed it (resource leak on every timed-out attempt).
+
+### Changes Made
+
+**1. `src/core/resilience.js` — `withTimeout(promise, timeoutMs, operationName, onTimeout)`**
+
+- New optional 4th parameter: `onTimeout` callback invoked just before the `TIMEOUT` error is rejected.
+- Errors thrown by the callback are swallowed (`catch {}`) so cleanup failures never mask the `TIMEOUT` error.
+- Backward-compatible: existing 3-arg callers unaffected.
+
+**2. `src/core/resilience.js` — `retry()` jitter + Retry-After honoring**
+
+- New `jitter` option (default `false`): full jitter (`delay = Math.random() * delay`) applied after exponential backoff, so concurrent retries de-synchronize (AWS-recommended pattern).
+- `error.retryAfterMs` honored as a floor: `delay = Math.max(delay, Math.min(lastError.retryAfterMs, maxDelayMs))` — never retries sooner than the server asked, capped at `maxDelayMs`.
+- Backward-compatible: default behavior (deterministic backoff, no Retry-After floor) unchanged.
+
+**3. `src/core/resilience.js` — CircuitBreaker HALF_OPEN single-probe guard**
+
+- New `halfOpenProbeInFlight` flag (init in constructor + `reset()`, cleared in `finally`).
+- In `HALF_OPEN`, the first caller claims the probe slot; concurrent callers are rejected immediately with `CIRCUIT_BREAKER_OPEN` (with `probeInFlight: true` in details).
+- `getState()` now exposes `probeInFlight` (additive; existing tests only assert `hasOwnProperty` of the three original keys).
+
+**4. `scripts/enrichment.js` — `fetchJson()` abort-on-timeout + Retry-After parsing**
+
+- Request object captured; `withTimeout(..., onTimeout)` passes a callback that `destroy()`s the in-flight request (guarded by `typeof request.destroy === 'function'` for mock compat).
+- HTTP `>= 400` responses parse the `Retry-After` header into `httpError.retryAfterMs` (new exported `parseRetryAfterMs` helper — supports delta-seconds and HTTP-date forms, `undefined` for missing/invalid).
+- Retry options now use `jitter: true`.
+
+**5. `scripts/fetch-data.js` — jitter enabled on git retries**
+
+- `jitter: true` on the `retry()` call wrapping git operations.
+
+**6. Tests — 18 new tests**
+
+- `scripts/resilience.test.js`: `withTimeout` onTimeout (called / not-called / errors masked), jitter bounded-delay + unchanged retry-count, `retryAfterMs` floor honored + capped at `maxDelayMs` + no-extra-delay when missing, HALF_OPEN single-probe (in-flight rejection, fn not executed, flag lifecycle, reset clears flag).
+- `scripts/enrichment.test.js`: `parseRetryAfterMs` (delta-seconds, HTTP-date, empty/invalid), 429 `Retry-After` honored end-to-end (waits ≥ ~1s before retrying), request `destroy()`ed on every timed-out attempt.
+
+**7. Docs** — `docs/blueprint.md` (External Service Resilience section + Decisions Log row), `docs/api.md` (`withTimeout` 4th param, `retry` jitter/Retry-After semantics, CircuitBreaker HALF_OPEN guard + `probeInFlight` in `getState()`, `fetchJson` Retry-After/abort behavior, new `parseRetryAfterMs` section), `docs/task.md` (this entry).
+
+### Verification
+
+| Check              | Result                                                                                                            |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| resilience.test.js | ✅ 30 suites / all pass (new: onTimeout, jitter, Retry-After, probe)                                              |
+| enrichment.test.js | ✅ 19 suites / all pass (new: parseRetryAfterMs, 429 Retry-After, destroy)                                        |
+| Full JS suite      | ✅ 181 pass / 0 fail (baseline 163 → +18 new tests)                                                               |
+| ESLint             | ✅ 0 errors                                                                                                       |
+| Prettier           | ✅ clean                                                                                                          |
+| Backward compat    | `jitter` defaults `false`; `onTimeout` optional; `probeInFlight` additive; existing 163 tests untouched and green |
+
+### Files Modified
+
+- `src/core/resilience.js` — `withTimeout` `onTimeout` param; `retry` `jitter` + `retryAfterMs` floor; `CircuitBreaker` `halfOpenProbeInFlight` single-probe guard; `getState()` + `reset()` updated
+- `scripts/enrichment.js` — `fetchJson` request-abort-on-timeout + `Retry-After` parsing; new exported `parseRetryAfterMs`; `jitter: true`
+- `scripts/fetch-data.js` — `jitter: true` on git retry
+- `scripts/resilience.test.js` — new hardening tests
+- `scripts/enrichment.test.js` — new hardening tests
+- `docs/blueprint.md`, `docs/api.md`, `docs/task.md` — docs updated
+
+### Acceptance Criteria
+
+- ✅ Retries de-synchronize under concurrency (jitter) or stay deterministic when disabled
+- ✅ HTTP 429 `Retry-After` respected (never sooner than asked, capped at `maxDelayMs`)
+- ✅ Only one probe runs in `HALF_OPEN`; concurrent callers rejected immediately
+- ✅ Timed-out HTTP requests release their socket (`destroy()`), no leak
+- ✅ Zero breaking changes — all new behavior opt-in / additive, full suite green
+
 ### [TASK-099] Data Integrity — Enforce NPSN Uniqueness as a Hard Constraint at the ETL Boundary
 
 **Status**: Complete
