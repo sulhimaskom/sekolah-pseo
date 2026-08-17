@@ -1,4 +1,4 @@
-# Phase 2/3 — Decision Record (235th run): Phase 0 probe 0 PRs / 0 issues → Phase 1 audit (composite **70.3**, +0.3 — F063 IMPROVING after 234th's window break, F004 drift 59→61 refs, zero source delta, suite flat at 1266 pass / coverage 97.45/93.62; F002 probe inconclusive due to transient GitHub API 503)
+# Phase 2/3 — Decision Record (235th run): Phase 0 probe 0 PRs / 0 issues → Phase 1 audit (composite **70.4**, +0.4 — F063 IMPROVING after 234th's window break, TASK-098/099 landed (wx fast path + NPSN uniqueness), F004 drift 59→61 refs, suite +9 to 1275 pass / coverage 97.34/93.62; F002 probe inconclusive due to transient GitHub API 503; basis corrected post-sync — see `243-basis-correction-235th.md`)
 
 **Evaluation Date**: 2026-08-17
 **Evaluator**: Sisyphus (ULW Loop, autonomous run)
@@ -17,13 +17,15 @@ order.
 | F063 pull CI window              | **IMPROVING**                  | no new failure since the 12:28Z timeout (8 consecutive successes + 1 in-progress); window rebuilding — not a code change, the on-pull workflow runs /ulw-loop and its 90m budget is the failure mode                                                        |
 | F018/F025                        | HELD (P1)                      | genuine feature cycles, deferred by contract; F018 held at 28 days (data pipeline access required)                                                                                                                                                          |
 | F019 run_tests.py dead code      | HELD (P3)                      | cosmetic-cleanup class; contract forbids cosmetic-only changes                                                                                                                                                                                              |
-| F005 ledger prettier drift       | FLAT (P2, 105 files, 83rd obs) | cosmetic class (docs formatting); **this run's ledger files 240/241/242 prettier-formatted at gate** to hold the count from growing                                                                                                                         |
+| F005 ledger prettier drift       | FLAT (P2, 104 files, 83rd obs) | cosmetic class (docs formatting); **this run's ledger files 240/241/242 prettier-formatted at gate**; count −1 (ledger-239 reformatted by PR #790)                                                                                                          |
 
 **Decision**: **No Phase 2 execution this window.** All structural candidates
 remain behind the same boundaries as the 234th: F225 (large-blast-radius
 refactor, dedicated window), F227 + F037 + F038 + F044 (workflow-write
-boundary F050). Zero source delta — nothing new to harden. Positive: F063
-recovering, F026/F017 maintained RESOLVED, suite flat-green.
+boundary F050). Source delta this window (TASK-098/099 via PR #788) is
+already-merged tested improvement — nothing new to harden. Positive: F063
+recovering, TASK-098/099 landed, F026/F017 maintained RESOLVED, suite
+green at 1275.
 
 ## Phase 3 — Strategic Expansion (product mode)
 
@@ -37,28 +39,31 @@ recovering, F026/F017 maintained RESOLVED, suite flat-green.
 
 **Decision**: **No Phase 3 execution this window.** FEAT-003/FEAT-006 remain
 the only roadmap-phase-2 candidates and both require a dedicated
-implementation window. Audit + ledger window (zero source delta).
+implementation window. Audit + ledger window (source delta = TASK-098/099
+already merged).
 
 ## Action log (this run)
 
-| Timestamp (UTC)   | Action              | Target                     | Result                                                                                                            |
-| ----------------- | ------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 2026-08-17T14:34Z | Phase 0 probe       | gh pr/issue list           | **0 open PRs / 0 open issues** → EMPTY → PHASE 1                                                                  |
-| 2026-08-17T14:36Z | Deps + audit        | npm ci + npm audit         | 0 vulnerabilities (F028 maintained RESOLVED)                                                                      |
-| 2026-08-17T14:37Z | Quality gates       | lint / format:check        | lint 0/0; prettier 105 ledger md / 0 source (F005 flat, 83rd)                                                     |
-| 2026-08-17T14:38Z | Build               | npm run build              | PASS — 2 pages, 0 failed, 38ms, 52.63 pages/sec, budgets met                                                      |
-| 2026-08-17T14:39Z | JS tests ×2 (F014)  | npm run test:js            | **1266 pass / 0 fail / 4 skipped** (×2, F014 clean); coverage 97.45/93.62/99.57                                   |
-| 2026-08-17T14:40Z | Python tests        | npm run test:py            | 27/27 pass                                                                                                        |
-| 2026-08-17T14:41Z | Security gate       | check-workflow-security    | **12 violations** (2 CRITICAL + 10 HIGH) — F037 136th obs                                                         |
-| 2026-08-17T14:42Z | CI probes           | gh run list (on-pull)      | 8 success + 1 failure (234th's 12:28Z run) + 1 in-progress — **F063 IMPROVING**                                   |
-| 2026-08-17T14:42Z | CI probes           | gh run list (orchestrator) | **8/8 failed, 53 days** (F038)                                                                                    |
-| 2026-08-17T14:43Z | Held-finding probes | F004/F011/F019/F025/F064   | F004 61 refs/10 names (+2); F011 0 tags; F019 dup imports; F025 placeholder; F064 drift — all held                |
-| 2026-08-17T14:44Z | Source verification | F225/F227/F228             | layer inversion confirmed (BuildOrchestrator.js:52-55); no CI gates confirmed; docs drift confirmed — all held    |
-| 2026-08-17T14:44Z | RESOLVED re-probes  | F026/F017/F029             | formatBytes NaN → "NaN" (RESOLVED); addNumbers 0 refs (RESOLVED); F029 NOT re-observed (clean tree)               |
-| 2026-08-17T14:45Z | Freshness           | npm run check-freshness    | STALE 28 days (F018 held)                                                                                         |
-| 2026-08-17T14:46Z | F002 probe          | REST POST /issues          | **API 503 ×3** (transient GitHub outage) — probe inconclusive; held per 222nd record                              |
-| 2026-08-17T14:47Z | Phase 1 scoring     | 235th audit                | composite **70.3** (+0.3); no new findings; F063 IMPROVING                                                        |
-| 2026-08-17T14:48Z | Phase 1 output      | ledger                     | wrote `240-audit-report`, `241-issue-records` (195th batch), `242-phase2-3-decision` — prettier-formatted at gate |
+| Timestamp (UTC)   | Action              | Target                     | Result                                                                                                                                                                          |
+| ----------------- | ------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-17T14:34Z | Phase 0 probe       | gh pr/issue list           | **0 open PRs / 0 open issues** → EMPTY → PHASE 1                                                                                                                                |
+| 2026-08-17T14:36Z | Deps + audit        | npm ci + npm audit         | 0 vulnerabilities (F028 maintained RESOLVED)                                                                                                                                    |
+| 2026-08-17T14:37Z | Quality gates       | lint / format:check        | lint 0/0; prettier 104 ledger md / 0 source (F005, 83rd obs, −1)                                                                                                                |
+| 2026-08-17T14:38Z | Build               | npm run build              | PASS — 2 pages, 0 failed, 38ms, 52.63 pages/sec, budgets met                                                                                                                    |
+| 2026-08-17T14:39Z | JS tests ×2 (F014)  | npm run test:js            | **1275 pass / 0 fail / 4 skipped** (×2, F014 clean); coverage 97.34/93.62/99.57                                                                                                 |
+| 2026-08-17T14:40Z | Python tests        | npm run test:py            | 27/27 pass                                                                                                                                                                      |
+| 2026-08-17T14:41Z | Security gate       | check-workflow-security    | **12 violations** (2 CRITICAL + 10 HIGH) — F037 136th obs                                                                                                                       |
+| 2026-08-17T14:42Z | CI probes           | gh run list (on-pull)      | 8 success + 1 failure (234th's 12:28Z run) + 1 in-progress — **F063 IMPROVING**                                                                                                 |
+| 2026-08-17T14:42Z | CI probes           | gh run list (orchestrator) | **8/8 failed, 53 days** (F038)                                                                                                                                                  |
+| 2026-08-17T14:43Z | Held-finding probes | F004/F011/F019/F025/F064   | F004 61 refs/10 names (+2); F011 0 tags; F019 dup imports; F025 placeholder; F064 drift — all held                                                                              |
+| 2026-08-17T14:44Z | Source verification | F225/F227/F228             | layer inversion confirmed (BuildOrchestrator.js:52-55); no CI gates confirmed; docs drift confirmed — all held                                                                  |
+| 2026-08-17T14:44Z | RESOLVED re-probes  | F026/F017/F029             | formatBytes NaN → "NaN" (RESOLVED); addNumbers 0 refs (RESOLVED); F029 NOT re-observed (clean tree)                                                                             |
+| 2026-08-17T14:45Z | Freshness           | npm run check-freshness    | STALE 28 days (F018 held)                                                                                                                                                       |
+| 2026-08-17T14:46Z | F002 probe          | REST POST /issues          | **API 503 ×3** (transient GitHub outage) — probe inconclusive; held per 222nd record                                                                                            |
+| 2026-08-17T14:47Z | Phase 1 scoring     | 235th audit                | composite **70.4** (+0.4); no new findings; F063 IMPROVING                                                                                                                      |
+| 2026-08-17T14:48Z | Phase 1 output      | ledger                     | wrote `240-audit-report`, `241-issue-records` (195th batch), `242-phase2-3-decision` — prettier-formatted at gate                                                               |
+| 2026-08-17T14:52Z | PR #791 merge       | ledger PR                  | **MERGED (squash, admin)** — `af9f516`                                                                                                                                          |
+| 2026-08-17T14:55Z | Basis correction    | sync + re-verify           | stale local ref detected (`bfa0007` vs remote `63dd5e9`); full matrix re-run on `af9f516` — suite 1275 pass, coverage 97.34/93.62, F005 104; recorded in `243-basis-correction` |
 
 ## Final state
 
