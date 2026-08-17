@@ -14,11 +14,11 @@
 'use strict';
 
 const path = require('path');
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { safeWriteFile, safeMkdir } = require('./fs-safe');
-const { IntegrationError, ERROR_CODES } = require('./resilience');
-const { walkDirectory, terminate } = require('./utils');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { safeWriteFile, safeMkdir } = require('../src/core/fs-safe');
+const { IntegrationError, ERROR_CODES } = require('../src/core/resilience');
+const { walkDirectory, terminate } = require('../src/core/utils');
 const { getSchoolRelativePath, getUniqueProvinces } = require('../src/services/PageBuilder');
 
 // Export functions for testing
@@ -223,8 +223,8 @@ async function generateSitemaps(schools) {
 
 if (require.main === module) {
   // Try to load schools data for faster sitemap generation
-  const { safeReadFile } = require('./fs-safe');
-  const { parseCsv } = require('./utils');
+  const { safeReadFile } = require('../src/core/fs-safe');
+  const { parseCsv } = require('../src/core/utils');
 
   safeReadFile(CONFIG.SCHOOLS_CSV_PATH)
     .then(text => {

@@ -13,7 +13,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert');
 
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 const { withConfig } = require('./test-helpers');
 
 describe('withConfig', () => {

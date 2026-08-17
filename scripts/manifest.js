@@ -20,11 +20,11 @@
 
 const path = require('path');
 const crypto = require('crypto');
-const CONFIG = require('./config');
-const logger = require('./logger');
-const { safeReadFile, safeUnlink, fastWriteFile } = require('./fs-safe');
-const { IntegrationError, ERROR_CODES } = require('./resilience');
-const { fileExists } = require('./utils');
+const CONFIG = require('../src/core/config');
+const logger = require('../src/core/logger');
+const { safeReadFile, safeUnlink, fastWriteFile } = require('../src/core/fs-safe');
+const { IntegrationError, ERROR_CODES } = require('../src/core/resilience');
+const { fileExists } = require('../src/core/utils');
 
 const MANIFEST_FILE = '.build-manifest.json';
 

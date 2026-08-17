@@ -412,7 +412,7 @@ describe('aggregateProvinceAndFilters edge cases', () => {
 
 describe('generateHomepageHtml search-data contract', () => {
   const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
-  const { SEARCH_DATA_FIELDS } = require('./data-schema');
+  const { SEARCH_DATA_FIELDS } = require('../src/core/data-schema');
 
   function extractSearchScript(html) {
     const match = html.match(/<script>([\s\S]*?)<\/script>/g);

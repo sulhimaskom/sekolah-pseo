@@ -880,7 +880,7 @@ describe('prepareSchoolDataForSearch', () => {
   });
 
   it('output field order follows SEARCH_DATA_FIELDS (single source of truth)', () => {
-    const { SEARCH_DATA_FIELDS } = require('./data-schema');
+    const { SEARCH_DATA_FIELDS } = require('../src/core/data-schema');
     const school = {
       npsn: '12345678',
       nama: 'SD Negeri 1 Jakarta',

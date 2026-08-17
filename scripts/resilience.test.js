@@ -8,7 +8,7 @@ const {
   withTimeoutSync,
   retry,
   CircuitBreaker,
-} = require('./resilience');
+} = require('../src/core/resilience');
 
 describe('IntegrationError', () => {
   test('creates error with all properties', () => {

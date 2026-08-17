@@ -17,9 +17,9 @@
 
 const path = require('path');
 const { generateSchoolPageStyles } = require('../presenters/styles');
-const logger = require('../../scripts/logger');
-const CONFIG = require('../../scripts/config');
-const { safeMkdir, safeWriteFile, safeReadFile } = require('../../scripts/fs-safe');
+const logger = require('../core/logger');
+const CONFIG = require('../core/config');
+const { safeMkdir, safeWriteFile, safeReadFile } = require('../core/fs-safe');
 
 const distDir = CONFIG.DIST_DIR;
 

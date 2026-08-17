@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const SCHEMA = require('./data-schema');
+const SCHEMA = require('../src/core/data-schema');
 
 // ── Constants ───────────────────────────────────────────────────────────────
 

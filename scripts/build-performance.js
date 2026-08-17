@@ -7,8 +7,8 @@
 
 'use strict';
 
-const { IntegrationError, ERROR_CODES } = require('./resilience');
-const logger = require('./logger');
+const { IntegrationError, ERROR_CODES } = require('../src/core/resilience');
+const logger = require('../src/core/logger');
 
 /**
  * Default performance budgets.

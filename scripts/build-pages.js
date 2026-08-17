@@ -14,7 +14,7 @@
 
 'use strict';
 
-const { terminate } = require('./utils');
+const { terminate } = require('../src/core/utils');
 const buildOrchestrator = require('../src/services/BuildOrchestrator');
 
 // Re-export all orchestrator functions for backward-compatible imports.

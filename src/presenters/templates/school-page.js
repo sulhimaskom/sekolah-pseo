@@ -1,7 +1,7 @@
-const { escapeHtml, formatStatus, generateMetaDescription } = require('../../../scripts/utils');
-const { IntegrationError, ERROR_CODES } = require('../../../scripts/resilience');
-const { REQUIRED_SCHOOL_FIELDS } = require('../../../scripts/data-schema');
-const CONFIG = require('../../../scripts/config');
+const { escapeHtml, formatStatus, generateMetaDescription } = require('../../core/utils');
+const { IntegrationError, ERROR_CODES } = require('../../core/resilience');
+const { REQUIRED_SCHOOL_FIELDS } = require('../../core/data-schema');
+const CONFIG = require('../../core/config');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');

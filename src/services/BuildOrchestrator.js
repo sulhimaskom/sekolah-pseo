@@ -15,18 +15,18 @@
 
 const fs = require('fs');
 const path = require('path');
-const slugify = require('../../scripts/slugify');
-const { parseCsv, processInBatches } = require('../../scripts/utils');
-const logger = require('../../scripts/logger');
-const CONFIG = require('../../scripts/config');
-const { IntegrationError, ERROR_CODES } = require('../../scripts/resilience');
+const slugify = require('../core/slugify');
+const { parseCsv, processInBatches } = require('../core/utils');
+const logger = require('../core/logger');
+const CONFIG = require('../core/config');
+const { IntegrationError, ERROR_CODES } = require('../core/resilience');
 const {
   safeReadFile,
   safeWriteFile,
   fastWriteFile,
   fastMkdir,
   safeUnlink,
-} = require('../../scripts/fs-safe');
+} = require('../core/fs-safe');
 const {
   buildSchoolPageData,
   buildHomepageData,

@@ -845,7 +845,7 @@ test('DEFAULT_THRESHOLDS has all expected keys', () => {
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const logger = require('./logger');
+const logger = require('../src/core/logger');
 const { withConfig } = require('./test-helpers');
 const { main } = require('./data-quality');
 

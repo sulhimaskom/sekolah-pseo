@@ -1,6 +1,6 @@
-const { escapeHtml } = require('../../../scripts/utils');
-const slugify = require('../../../scripts/slugify');
-const { SEARCH_DATA_FIELDS } = require('../../../scripts/data-schema');
+const { escapeHtml } = require('../../core/utils');
+const slugify = require('../../core/slugify');
+const { SEARCH_DATA_FIELDS } = require('../../core/data-schema');
 const { generateBackToTopHtml, generateBackToTopScript } = require('./shared/back-to-top');
 const { generateFooterHtml } = require('./shared/footer');
 const { generateBreadcrumbHtml } = require('./shared/navigation');

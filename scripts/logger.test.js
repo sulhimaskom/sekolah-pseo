@@ -2,7 +2,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const logger = require('./logger');
+const logger = require('../src/core/logger');
 
 describe('logger', () => {
   describe('log level configuration', () => {

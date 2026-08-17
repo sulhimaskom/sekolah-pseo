@@ -12,7 +12,7 @@
  * isolated regardless of pass/fail. (REFACTOR-002)
  */
 
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 
 /**
  * Temporarily override CONFIG values for the duration of `fn`, restoring the

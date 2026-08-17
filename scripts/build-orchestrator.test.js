@@ -11,7 +11,7 @@ const fs = require('fs').promises;
 // the prepareBuildEnvironment smoke tests below (observed mkdir dist/ ENOENT,
 // 3 of 4 paired runs failed). Redirect DIST_DIR per-process BEFORE requiring
 // BuildOrchestrator — it captures CONFIG.DIST_DIR at module load.
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 CONFIG.DIST_DIR = path.join(os.tmpdir(), `build-orchestrator-test-${process.pid}`);
 
 const {
@@ -20,7 +20,7 @@ const {
   prepareBuildEnvironment,
   removeOrphanedSchoolPages,
 } = require('../src/services/BuildOrchestrator');
-const { resetCircuitBreakers } = require('./fs-safe');
+const { resetCircuitBreakers } = require('../src/core/fs-safe');
 
 // ── Setup / Teardown ─────────────────────────────────────────────────────────
 

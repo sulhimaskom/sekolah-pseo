@@ -17,7 +17,7 @@ process.env.PERF_MAX_FAILED_PAGES = '0';
 // ExportService and SearchDataService all capture CONFIG.DIST_DIR at module
 // load (const distDir = CONFIG.DIST_DIR), and manifest.js resolves the
 // manifest path from CONFIG.ROOT_DIR at call time.
-const CONFIG = require('./config');
+const CONFIG = require('../src/core/config');
 const { withConfig } = require('./test-helpers');
 CONFIG.ROOT_DIR = path.join(os.tmpdir(), `build-pages-test-root-${process.pid}`);
 CONFIG.DIST_DIR = path.join(CONFIG.ROOT_DIR, 'dist');
@@ -39,9 +39,9 @@ const {
   buildIncremental,
   createManifestFromSchools,
 } = require('./build-pages');
-const { resetCircuitBreakers } = require('./fs-safe');
+const { resetCircuitBreakers } = require('../src/core/fs-safe');
 const { MANIFEST_VERSION } = require('./manifest');
-const slugify = require('./slugify');
+const slugify = require('../src/core/slugify');
 
 // Retry file existence checks with backoff to handle transient
 // filesystem delays under parallel CI I/O load (parallel test workers
@@ -451,7 +451,7 @@ test('ensureDistDir creates dist directory when it does not exist', async () => 
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ensureDistDir-test-'));
   const testDistDir = path.join(tempRoot, 'dist');
 
-  const { safeMkdir } = require('./fs-safe');
+  const { safeMkdir } = require('../src/core/fs-safe');
   await safeMkdir(testDistDir);
 
   const exists = await fs

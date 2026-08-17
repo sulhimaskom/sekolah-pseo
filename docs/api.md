@@ -54,7 +54,7 @@ src/
 └── translations.js # Shared pre-escaped translations (T)
 ```
 
-## Configuration Module (`scripts/config.js`)
+## Configuration Module (`src/core/config.js`)
 
 ### Purpose
 
@@ -113,7 +113,7 @@ const isValid = validatePath('/project/data/file.csv', '/project');
 
 ---
 
-## Data Schema Module (`scripts/data-schema.js`)
+## Data Schema Module (`src/core/data-schema.js`)
 
 ### Purpose
 
@@ -453,12 +453,12 @@ None — this is a standalone module. It is consumed by:
 
 ### Source
 
-- `scripts/data-schema.js` (392 lines)
+- `src/core/data-schema.js` (392 lines)
 - `scripts/data-schema.test.js` (33 tests)
 
 ---
 
-## Utility Module (`scripts/utils.js`)
+## Utility Module (`src/core/utils.js`)
 
 ### Purpose
 
@@ -596,8 +596,8 @@ Recursively walks a directory tree and processes each HTML file with a callback.
 
 **Dependencies:**
 
-- `safeReaddir` (from `scripts/fs-safe.js`)
-- `safeStat` (from `scripts/fs-safe.js`)
+- `safeReaddir` (from `src/core/fs-safe.js`)
+- `safeStat` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -642,7 +642,7 @@ Processes an array of items concurrently with a configurable concurrency limit u
 
 **Dependencies:**
 
-- `RateLimiter` (from `scripts/rate-limiter.js`)
+- `RateLimiter` (from `src/core/rate-limiter.js`)
 
 **Usage:**
 
@@ -686,7 +686,7 @@ Writes an array of objects to a CSV file with header row.
 
 **Dependencies:**
 
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -835,7 +835,7 @@ if (await fileExists(CONFIG.SCHOOLS_CSV_PATH)) {
 
 ---
 
-## Resilience Module (`scripts/resilience.js`)
+## Resilience Module (`src/core/resilience.js`)
 
 ### Purpose
 
@@ -1142,7 +1142,7 @@ try {
 
 ---
 
-## File System Module (`scripts/fs-safe.js`)
+## File System Module (`src/core/fs-safe.js`)
 
 ### Purpose
 
@@ -1450,7 +1450,7 @@ await fsSafe.safeReadFile('/path/to/file.csv');
 
 ---
 
-## Rate Limiter Module (`scripts/rate-limiter.js`)
+## Rate Limiter Module (`src/core/rate-limiter.js`)
 
 ### Purpose
 
@@ -1593,7 +1593,7 @@ console.log(metrics.total); // 0
 
 ---
 
-## Slugify Module (`scripts/slugify.js`)
+## Slugify Module (`src/core/slugify.js`)
 
 ### Purpose
 
@@ -1926,7 +1926,7 @@ Computes the relative file path for a school page without generating HTML. Used 
 
 **Dependencies:**
 
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 
 **Usage:**
 
@@ -1971,7 +1971,7 @@ Builds school page data with path and HTML content.
 
 **Dependencies:**
 
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 - `generateSchoolPageHtml` (from `src/presenters/templates/school-page.js`)
 
 **Usage:**
@@ -2013,7 +2013,7 @@ Extracts unique directory paths from schools array.
 
 **Dependencies:**
 
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 
 **Usage:**
 
@@ -2089,7 +2089,7 @@ Builds province page data with path and HTML content.
 
 **Dependencies:**
 
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 - `generateProvincePageHtml` (from `src/presenters/templates/province-page.js`)
 
 **Usage:**
@@ -2169,7 +2169,7 @@ Builds kabupaten page data with path and HTML content.
 
 **Dependencies:**
 
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 - `generateKabupatenPageHtml` (from `src/presenters/templates/kabupaten-page.js`)
 
 **Usage:**
@@ -2222,7 +2222,7 @@ Builds kecamatan page data with path and HTML content.
 
 **Dependencies:**
 
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 - `generateKecamatanPageHtml` (from `src/presenters/templates/kecamatan-page.js`)
 
 **Usage:**
@@ -2314,7 +2314,7 @@ const gambirSchools = grouped.get('DKI Jakarta\u0000Jakarta Pusat\u0000Gambir');
 
 #### `prepareSchoolDataForSearch(schools)`
 
-Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size. The field order is defined by `SEARCH_DATA_FIELDS` (single source of truth in `scripts/data-schema.js`) — the same constant is embedded into the homepage's generated client script, so server and client stay in sync automatically.
+Prepares school data into a compact format for client-side search. Converts school objects into flat arrays to minimize payload size. The field order is defined by `SEARCH_DATA_FIELDS` (single source of truth in `src/core/data-schema.js`) — the same constant is embedded into the homepage's generated client script, so server and client stay in sync automatically.
 
 **Parameters:**
 
@@ -2476,7 +2476,7 @@ Writes a single school page using `fastWriteFile` (no retry/timeout/circuit-brea
 **Dependencies:**
 
 - `buildSchoolPageData` (from `./PageBuilder.js`)
-- `fastWriteFile` (from `scripts/fs-safe.js`)
+- `fastWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -2580,7 +2580,7 @@ Generates all province-level index pages using O(n) province pre-grouping to avo
 **Dependencies:**
 
 - `groupSchoolsByProvince`, `buildProvincePageData` (from `./PageBuilder.js`)
-- `slugify` (from `scripts/slugify.js`)
+- `slugify` (from `src/core/slugify.js`)
 
 **Usage:**
 
@@ -2610,8 +2610,8 @@ Generates all kabupaten/kota-level index pages using O(n) pre-grouping to avoid 
 **Dependencies:**
 
 - `groupSchoolsByKabupaten`, `buildKabupatenPageData` (from `./PageBuilder.js`)
-- `slugify` (from `scripts/slugify.js`)
-- `fastMkdir`, `fastWriteFile` (from `scripts/fs-safe.js`)
+- `slugify` (from `src/core/slugify.js`)
+- `fastMkdir`, `fastWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -2641,8 +2641,8 @@ Generates all kecamatan-level index pages using O(n) pre-grouping to avoid redun
 **Dependencies:**
 
 - `groupSchoolsByKecamatan`, `buildKecamatanPageData` (from `./PageBuilder.js`)
-- `slugify` (from `scripts/slugify.js`)
-- `fastMkdir`, `fastWriteFile` (from `scripts/fs-safe.js`)
+- `slugify` (from `src/core/slugify.js`)
+- `fastMkdir`, `fastWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -2707,7 +2707,7 @@ Generates `schools.json` for lazy-loaded client-side search and a pre-compressed
 **Dependencies:**
 
 - `prepareSchoolDataForSearch` (from `./PageBuilder.js`)
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Output:** `dist/schools.json`, `dist/schools.json.gz`
 
@@ -2814,7 +2814,7 @@ Generates `schools.json` for lazy-loaded client-side search and a pre-compressed
 **Dependencies:**
 
 - `prepareSchoolDataForSearch` (from `./PageBuilder.js`)
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Output:** `dist/schools.json`, `dist/schools.json.gz`
 
@@ -2857,7 +2857,7 @@ Writes the external `styles.css` file to disk. CSS generation (pure presentation
 **Dependencies:**
 
 - `generateSchoolPageStyles` (from `src/presenters/styles.js`)
-- `safeMkdir`, `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeMkdir`, `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -2874,7 +2874,7 @@ Exports `schools.csv` to `dist/data/schools.csv` for user download. Only runs du
 
 **Dependencies:**
 
-- `safeReadFile`, `safeWriteFile`, `safeMkdir` (from `scripts/fs-safe.js`)
+- `safeReadFile`, `safeWriteFile`, `safeMkdir` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -2939,9 +2939,9 @@ Generates complete HTML page for school.
 
 **Dependencies:**
 
-- `escapeHtml` (from `scripts/utils.js`)
-- `formatStatus` (from `scripts/utils.js`)
-- `CONFIG` (from `scripts/config.js`)
+- `escapeHtml` (from `src/core/utils.js`)
+- `formatStatus` (from `src/core/utils.js`)
+- `CONFIG` (from `src/core/config.js`)
 
 **Usage:**
 
@@ -2978,7 +2978,7 @@ Generates full canonical URL from relative path and SITE_URL config.
 
 **Dependencies:**
 
-- `CONFIG.SITE_URL` (from `scripts/config.js`)
+- `CONFIG.SITE_URL` (from `src/core/config.js`)
 
 **Usage:**
 
@@ -3001,7 +3001,7 @@ Generates an enrichment data section for school pages, displaying additional inf
 
 **Dependencies:**
 
-- `escapeHtml` (from `scripts/utils.js`)
+- `escapeHtml` (from `src/core/utils.js`)
 
 **Usage:**
 
@@ -3725,7 +3725,7 @@ A frozen plain object mapping every `CONFIG.TEXT` key to its HTML-escaped value.
 - The object is frozen (`Object.freeze`) — templates share one module-level instance across all page renders, so mutation would leak between pages
 - New keys added to `CONFIG.TEXT` are automatically available as `T.<KEY>` in every template
 
-**Dependencies:** `scripts/utils.js` (`escapeHtml`), `scripts/config.js` (`CONFIG.TEXT`)
+**Dependencies:** `src/core/utils.js` (`escapeHtml`), `src/core/config.js` (`CONFIG.TEXT`)
 
 **Usage:**
 
@@ -3822,7 +3822,7 @@ Writes a single school page to the file system.
 **Dependencies:**
 
 - `buildSchoolPageData` (from `src/services/PageBuilder.js`)
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -3860,7 +3860,7 @@ Generates the external CSS file for all school pages.
 **Dependencies:**
 
 - `generateSchoolPageStyles` (from `src/presenters/styles.js`)
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -3889,7 +3889,7 @@ Generates a dynamic `robots.txt` file with the correct sitemap URL and writes it
 
 **Dependencies:**
 
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -3918,7 +3918,7 @@ Generates a searchable JSON data file (`schools.json`) from school records for c
 
 **Dependencies:**
 
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -3943,7 +3943,7 @@ Pre-creates all unique province directories (e.g., `dist/provinsi/{slug}/`).
 **Dependencies:**
 
 - `getUniqueProvinces` (from `src/services/PageBuilder.js`)
-- `safeMkdir` (from `scripts/fs-safe.js`)
+- `safeMkdir` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -4011,7 +4011,7 @@ Writes multiple school pages concurrently with controlled concurrency using `pro
 
 **Dependencies:**
 
-- `processConcurrently` (from `scripts/utils.js`)
+- `processConcurrently` (from `src/core/utils.js`)
 - `getUniqueDirectories()` (from `src/services/PageBuilder.js`) for pre-creating school page directories
 - `writeSchoolPage()`
 
@@ -4159,7 +4159,7 @@ Collects all HTML file URLs from the distribution directory.
 
 **Dependencies:**
 
-- `walkDirectory` (from `scripts/utils.js`)
+- `walkDirectory` (from `src/core/utils.js`)
 
 **Usage:**
 
@@ -4259,7 +4259,7 @@ Writes URLs to sitemap XML files, splitting them into chunks respecting `MAX_URL
 
 **Dependencies:**
 
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -4296,7 +4296,7 @@ Writes a sitemap index XML file that references all sitemap files.
 
 **Dependencies:**
 
-- `safeWriteFile` (from `scripts/fs-safe.js`)
+- `safeWriteFile` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -4425,8 +4425,8 @@ Validates all links in a single file and returns broken links.
 
 **Dependencies:**
 
-- `safeAccess` (from `scripts/fs-safe.js`)
-- `safeStat` (from `scripts/fs-safe.js`)
+- `safeAccess` (from `src/core/fs-safe.js`)
+- `safeStat` (from `src/core/fs-safe.js`)
 
 **Usage:**
 
@@ -4486,9 +4486,9 @@ Main validation function that checks all links across all generated HTML files.
 
 **Dependencies:**
 
-- `walkDirectory` (from `scripts/utils.js`)
-- `RateLimiter` (from `scripts/rate-limiter.js`)
-- `safeReadFile` (from `scripts/fs-safe.js`)
+- `walkDirectory` (from `src/core/utils.js`)
+- `RateLimiter` (from `src/core/rate-limiter.js`)
+- `safeReadFile` (from `src/core/fs-safe.js`)
 - `extractLinks()`
 - `validateLinksInFile()`
 
@@ -4662,7 +4662,7 @@ await safeWriteFile('/dist/styles.css', css);
 
 ---
 
-## Logger Module (`scripts/logger.js`)
+## Logger Module (`src/core/logger.js`)
 
 ### Purpose
 
@@ -5463,7 +5463,7 @@ module.exports = {
 
 ### Rate Limiting
 
-Every Wikipedia API HTTP request passes through `wikipediaRateLimiter` (a `RateLimiter` from `scripts/rate-limiter.js`) before hitting the network. The limiter combines a concurrency cap (`WIKIPEDIA_MAX_CONCURRENT` = 2) with start-spacing pacing (`WIKIPEDIA_RATE_LIMIT_MS` = 300ms), so `enrichSchools`' batch concurrency cannot burst requests past the upstream rate limit. Pacing is serialized through the limiter's start-gate promise chain and applies per HTTP request (each school triggers two: search + extract).
+Every Wikipedia API HTTP request passes through `wikipediaRateLimiter` (a `RateLimiter` from `src/core/rate-limiter.js`) before hitting the network. The limiter combines a concurrency cap (`WIKIPEDIA_MAX_CONCURRENT` = 2) with start-spacing pacing (`WIKIPEDIA_RATE_LIMIT_MS` = 300ms), so `enrichSchools`' batch concurrency cannot burst requests past the upstream rate limit. Pacing is serialized through the limiter's start-gate promise chain and applies per HTTP request (each school triggers two: search + extract).
 
 #### `wikipediaRateLimiter`
 
@@ -6521,9 +6521,9 @@ fileReadCircuitBreaker.onStateChange(({ from, to }) => {
          ┌──────────────────────────────────────────────────────────┐
          │        src/services/BuildOrchestrator.js                 │
          │  Depends:                                                │
-         │  - scripts/slugify.js, scripts/utils.js                  │
-         │  - scripts/logger.js, scripts/config.js                  │
-         │  - scripts/resilience.js, scripts/fs-safe.js             │
+         │  - src/core/slugify.js, src/core/utils.js                  │
+         │  - src/core/logger.js, src/core/config.js                  │
+         │  - src/core/resilience.js, src/core/fs-safe.js             │
          │  - scripts/manifest.js, scripts/build-performance.js     │
          │  - scripts/enrichment.js                                 │
          │  - src/services/PageBuilder.js                           │
