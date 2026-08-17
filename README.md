@@ -232,6 +232,8 @@ sekolah-pseo/
 │   │           ├── comparison.js   # Shared comparison tray (Bandingkan)
 │   │           ├── navigation.js   # Shared breadcrumb navigation component
 │   │           ├── footer.js       # Shared footer component
+│   │           ├── hero.js         # Shared hero section (title, description, stats)
+│   │           ├── index-head.js   # Shared index-page head block (SEO meta)
 │   │           └── translations.js # Shared pre-escaped translations (T)
 │   └── services/
 │       ├── PageBuilder.js       # Page data builders (paths, grouping, search)

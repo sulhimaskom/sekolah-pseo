@@ -210,6 +210,54 @@ Gap analysis of the resilience layer (`src/core/resilience.js` + `scripts/enrich
 - ✅ Timed-out HTTP requests release their socket (`destroy()`), no leak
 - ✅ Zero breaking changes — all new behavior opt-in / additive, full suite green
 
+### [TASK-103] Technical Writing — Doc-Code Alignment (setup.md Structure Tree, README shared/ Tree, blueprint Env Vars)
+
+**Status**: Complete
+**Agent**: Senior Technical Writer (Sisyphus)
+
+### Description
+
+Audited the setup, entry-point, and architecture docs against the current implementation and found three drift clusters left behind by TASK-094 (layer separation: `scripts/` infra → `src/core/`) and TASK-101 (shared hero + index-head components):
+
+1. **docs/setup.md** (setup guide): the Project Structure Overview tree still listed the 8 infrastructure modules under `scripts/` (`config.js`, `logger.js`, `utils.js`, `fs-safe.js`, `resilience.js`, `slugify.js`, `data-schema.js`, `rate-limiter.js`) even though TASK-094 moved them to `src/core/` — a newcomer following the tree would look for files that no longer exist at those paths. The `src/core/` layer was missing entirely; the `src/` tree was also missing the shared/ subdirectory and the services layer was incomplete relative to the actual layout.
+2. **README.md** (entry point): the directory tree's `src/presenters/templates/shared/` listing was missing `hero.js` and `index-head.js` — the two shared components extracted in TASK-101 — so the entry-point doc showed 6 of the 8 actual shared modules.
+3. **docs/blueprint.md** (architecture reference): the Environment Variables table listed only 5 of the 7 documented variables — `LOG_LEVEL` and `ENRICHMENT_ENABLED` (both in `.env.example` and consumed by `src/core/logger.js` / `scripts/enrichment.js`) were missing.
+
+### Changes Made
+
+1. **`docs/setup.md`** — replaced the Project Structure Overview tree with the current layout: `src/core/` layer (8 modules) added, the 8 moved modules removed from `scripts/` (which is now correctly described as "Controllers / CLI entry points"), `shared/` subdirectory noted in the templates entry, services layer completed, `test-helpers.js` + `*.test.js` added.
+2. **`README.md`** — added `hero.js` ("Shared hero section (title, description, stats)") and `index-head.js` ("Shared index-page head block (SEO meta)") to the `shared/` directory tree.
+3. **`docs/blueprint.md`** — added `LOG_LEVEL` (Pino log level, default `info`) and `ENRICHMENT_ENABLED` (Wikipedia enrichment flag, default `false`) to the Environment Variables table, matching `.env.example` (7 variables) and the consuming code.
+4. **`docs/task.md`** — this entry.
+
+### Verification
+
+| Check                                     | Result                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
+| setup.md tree vs disk                     | ✅ All 8 `src/core/` modules present; no infra module listed under `scripts/` (script-verified against `ls src/core/ scripts/`) |
+| README shared/ tree vs disk               | ✅ All 8 `src/presenters/templates/shared/*.js` files present (script-verified)             |
+| blueprint env vars vs `.env.example`      | ✅ 7/7 variables match (SITE_URL, RAW_DATA_PATH, BUILD_CONCURRENCY_LIMIT, VALIDATION_CONCURRENCY_LIMIT, MAX_URLS_PER_SITEMAP, LOG_LEVEL, ENRICHMENT_ENABLED) |
+| Env var consumption                       | ✅ `LOG_LEVEL` read in `src/core/logger.js:23`; `ENRICHMENT_ENABLED` read in `scripts/enrichment.js:81` |
+| JS suite (unchanged, sanity)              | ✅ 1313 tests / 1309 pass / 0 fail / 4 skipped (matches docs/testing.md)                    |
+| ESLint / Prettier                         | ✅ Clean (docs only; no lint targets touched)                                               |
+
+### Files Modified
+
+- `docs/setup.md` — Project Structure Overview tree updated to current layout
+- `README.md` — shared/ tree: `hero.js` + `index-head.js` added
+- `docs/blueprint.md` — Environment Variables table: `LOG_LEVEL` + `ENRICHMENT_ENABLED` added
+- `docs/task.md` — this entry
+- `docs/technical-writer.md` — memory note appended (setup.md tree drift pattern)
+
+### Acceptance Criteria
+
+- [x] `docs/setup.md` structure tree matches actual disk layout (src/core/ layer, no phantom `scripts/` infra modules)
+- [x] `README.md` shared/ listing matches the 8 actual shared template modules
+- [x] `docs/blueprint.md` env var table matches `.env.example` + consuming code (7/7)
+- [x] No code changes — documentation-only alignment; full JS suite still green (1313/1309)
+
+---
+
 ### [TASK-099] Data Integrity — Enforce NPSN Uniqueness as a Hard Constraint at the ETL Boundary
 
 **Status**: Complete

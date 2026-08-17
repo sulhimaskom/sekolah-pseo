@@ -160,6 +160,8 @@ All internal modules have documented API contracts in `docs/api.md`:
 | VALIDATION_CONCURRENCY_LIMIT | Link validation concurrency | 50                  |
 | BUILD_CONCURRENCY_LIMIT      | Page build concurrency      | 100                 |
 | MAX_URLS_PER_SITEMAP         | Max URLs per sitemap file   | 50000               |
+| LOG_LEVEL                    | Pino log level              | info                |
+| ENRICHMENT_ENABLED           | Enable Wikipedia enrichment | false               |
 
 ### Data Schema
 
