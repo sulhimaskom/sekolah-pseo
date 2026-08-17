@@ -70,6 +70,53 @@ ADR-0005 documents the layer separation with dependency flow **inward**: control
 
 - Relocate the 4 remaining business-logic modules that `src/services/BuildOrchestrator.js` still imports from `scripts/` (`manifest.js`, `build-performance.js`, `enrichment.js`, `sitemap.js`) into `src/services/` (or a domain layer) — they are service-layer logic, not controllers; `sitemap.js` also doubles as a CLI entry point, so its controller wrapper must stay in `scripts/`.
 
+### [TASK-094] Technical Writing — Doc-Code Alignment (README, api.md Module Tree, testing.md Counts)
+
+**Status**: Complete
+**Agent**: Senior Technical Writer (Sisyphus)
+
+### Description
+
+Audited the entry-point, API, and testing docs against the current implementation and found three actively-misleading drift clusters caused by recent tasks (TASK-083 homepage filters, TASK-085 shared translations, TASK-092 kabupaten/kecamatan pages, TASK-089/090/091/093):
+
+1. **README.md** (entry point): homepage feature list claimed only 2 filters (province + education type) — the code has **3** since TASK-083 added status filtering; the directory tree was missing `kabupaten-page.js`, `kecamatan-page.js`, `comparison.js`, `translations.js`, and `test-helpers.js`; the data-flow diagram showed only province pages, omitting the kabupaten/kecamatan hierarchy restored in TASK-092.
+2. **docs/api.md**: the Module Organization tree was missing 5 modules — `kabupaten-page.js`, `kecamatan-page.js` (templates), `comparison.js` (shared), `SearchDataService.js`, `ExportService.js` (services) — even though their full sections exist in the same document (lines ~2694-3445); the Dependency Graph similarly omitted the kabupaten/kecamatan template branches and `comparison.js`.
+3. **docs/testing.md**: listed 31 JS test files — **36 exist** (missing `comparison`, `kabupaten-page`, `kecamatan-page`, `test-helpers`, `translations`); coverage counts were stale (claimed 1030 JS cases / 1057 total; actual **1238** cases, 1234 pass, 0 fail, 4 skipped, plus 27 Python standalone / 13 pytest).
+
+### Changes Made
+
+1. **`README.md`** — homepage feature list: added "Filter berdasarkan status (negeri/swasta)"; feature 3 rewritten as "Halaman Provinsi, Kabupaten/Kota, dan Kecamatan" documenting the full hierarchy; data-flow diagram now shows `provinsi/{province}/index.html → kabupaten/{kabupaten}/index.html → kecamatan/{kecamatan}/index.html`; directory tree adds the 5 missing files.
+2. **`docs/api.md`** — Module Organization tree: added `kabupaten-page.js`, `kecamatan-page.js` (templates), `comparison.js` (shared), `SearchDataService.js`, `ExportService.js` (services); Dependency Graph: added kabupaten/kecamatan template nodes under PageBuilder and `comparison.js` to the Shared Template Modules box; Changelog entry `2.1.0 (2026-08-17)`.
+3. **`docs/testing.md`** — added the 5 missing test-file entries; coverage block updated to 36 files / 1238 cases (1234 pass, 0 fail, 4 skipped) + Python 27 standalone / 13 pytest.
+4. **`docs/task.md`** — this entry.
+
+### Verification
+
+| Check                      | Result                                                                   |
+| -------------------------- | ------------------------------------------------------------------------ |
+| Test-file list vs disk     | All 36 `scripts/*.test.js` files present in testing.md (script-verified) |
+| JS suite (actual run)      | 1238 tests, 1234 pass, 0 fail, 4 skipped (36 files)                      |
+| Python suite (actual run)  | 27 pass standalone; 13 pass pytest                                       |
+| README structure vs `ls`   | All 5 missing files added; no phantom entries                            |
+| api.md module tree vs disk | scripts/ + src/ trees now match actual layout (script-verified)          |
+| Prettier / ESLint          | clean on all changed files                                               |
+| Zero regressions           | Docs-only change; no code touched                                        |
+
+### Files Modified
+
+- `README.md` — homepage filters, hierarchy feature, data-flow diagram, directory tree
+- `docs/api.md` — Module Organization tree, Dependency Graph, Changelog 2.1.0
+- `docs/testing.md` — test-file list + coverage counts
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] README homepage features match code (3 filters), directory tree and data-flow match disk layout
+- [x] api.md Module Organization tree and Dependency Graph list every module that has a documented section
+- [x] testing.md test-file list matches the 36 files on disk; counts verified by running the suites
+- [x] No documentation presents a module/filter/hierarchy that does not exist in code
+- [x] Prettier-clean, zero regressions
+
 ---
 
 ### [TASK-093] DevOps — CI Health Audit + Split-Delivery Merge of TASK-089/090/091/092 (TASK-088 Workflow Fix Pending)
