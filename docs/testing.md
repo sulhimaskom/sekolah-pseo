@@ -58,8 +58,12 @@ Located in `scripts/*.test.js`:
 - `logger.test.js` - Logger tests
 - `fetch-data.test.js` - Data fetching tests
 - `check-freshness.test.js` - Data freshness tests
+- `comparison.test.js` - School comparison tray tests
 - `manifest.test.js` - Build manifest tests
 - `province-page.test.js` - Province page template tests
+- `kabupaten-page.test.js` - Kabupaten/kota page template tests
+- `kecamatan-page.test.js` - Kecamatan page template tests
+- `translations.test.js` - Shared translations module tests
 - `enrichment.test.js` - Data enrichment tests
 - `interactive.test.js` - Interactive CLI menu tests
 - `build-performance.test.js` - Build performance tests
@@ -225,9 +229,9 @@ GitHub Actions workflow: `.github/workflows/on-push.yml`
 
 Current test coverage:
 
-- JavaScript: 31 test files, 1030 test cases
-- Python: 27 test cases (standalone runner)
-- Total: 1057 tests, 100% pass rate
+- JavaScript: 36 test files, 1238 test cases (1234 pass, 0 fail, 4 skipped)
+- Python: 27 test cases (standalone runner) / 13 test cases (pytest)
+- Total: 1265 test cases, 1261 passed, 0 failed, 4 skipped
 
 ## Test Output Examples
 

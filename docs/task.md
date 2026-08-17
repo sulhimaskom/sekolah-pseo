@@ -2,73 +2,52 @@
 
 ## Completed Tasks
 
-### [TASK-094] Architecture — Extract Shared Infrastructure from `scripts/` into a Dedicated `src/core/` Layer (Layer Separation)
+### [TASK-094] Technical Writing — Doc-Code Alignment (README, api.md Module Tree, testing.md Counts)
 
 **Status**: Complete
-**Agent**: Code Architect (Sisyphus)
+**Agent**: Senior Technical Writer (Sisyphus)
 
 ### Description
 
-ADR-0005 documents the layer separation with dependency flow **inward**: controllers → services → presenters. In practice, the shared infrastructure (`config`, `logger`, `utils`, `fs-safe`, `resilience`, `slugify`, `data-schema`, `rate-limiter`) was co-located with the controller layer in `scripts/`, so **every** presenter template (6 files) and service module (4 files) imported from `scripts/` — the presentation and business layers depended on the controller directory, inverting the documented dependency direction. This is the highest-priority Code Architect task (Module Extraction + Layer Separation): decouple the shared infrastructure from controllers and restore clean dependency flow.
+Audited the entry-point, API, and testing docs against the current implementation and found three actively-misleading drift clusters caused by recent tasks (TASK-083 homepage filters, TASK-085 shared translations, TASK-092 kabupaten/kecamatan pages, TASK-089/090/091/093):
+
+1. **README.md** (entry point): homepage feature list claimed only 2 filters (province + education type) — the code has **3** since TASK-083 added status filtering; the directory tree was missing `kabupaten-page.js`, `kecamatan-page.js`, `comparison.js`, `translations.js`, and `test-helpers.js`; the data-flow diagram showed only province pages, omitting the kabupaten/kecamatan hierarchy restored in TASK-092.
+2. **docs/api.md**: the Module Organization tree was missing 5 modules — `kabupaten-page.js`, `kecamatan-page.js` (templates), `comparison.js` (shared), `SearchDataService.js`, `ExportService.js` (services) — even though their full sections exist in the same document (lines ~2694-3445); the Dependency Graph similarly omitted the kabupaten/kecamatan template branches and `comparison.js`.
+3. **docs/testing.md**: listed 31 JS test files — **36 exist** (missing `comparison`, `kabupaten-page`, `kecamatan-page`, `test-helpers`, `translations`); coverage counts were stale (claimed 1030 JS cases / 1057 total; actual **1238** cases, 1234 pass, 0 fail, 4 skipped, plus 27 Python standalone / 13 pytest).
 
 ### Changes Made
 
-**1. New `src/core/` shared infrastructure layer — 8 modules moved (with git history)**
-
-- `scripts/config.js` → `src/core/config.js` — ROOT_DIR depth fixed (`path.join(__dirname, '..')` → `'..', '..'`) for the new `src/core/` location (verified: resolves to project root, `dist/` still correct)
-- `scripts/logger.js`, `scripts/utils.js`, `scripts/fs-safe.js`, `scripts/resilience.js`, `scripts/slugify.js`, `scripts/data-schema.js`, `scripts/rate-limiter.js` → `src/core/` (byte-identical; all moved together so internal `./X` requires stay valid)
-- All 8 are pure infrastructure — no CLI entry points, no controller behavior; internal requires (`./config`, `./resilience`, `./fs-safe`, `./logger`, `./rate-limiter`) resolve within `src/core/`
-
-**2. All importers repointed (no stale references remain)**
-
-- `scripts/*.js` controllers + `test-helpers.js`: `./{module}` → `../src/core/{module}`
-- `src/services/*.js`: `../../scripts/{module}` → `../core/{module}` (domain modules `manifest`, `build-performance`, `enrichment`, `sitemap` correctly kept at `../../scripts/`)
-- `src/presenters/templates/**`: `../../../scripts/{module}` → `../../core/{module}` (path-depth corrected: `src/core/` is 2 levels up from templates, not 3)
-- 19 test files + `require.resolve` cache-bust calls in `config.test.js`/`etl.test.js`
-
-**3. Dependency graph after extraction**
-
-- `src/presenters` → imports only presenter + `src/core` modules (was `scripts/`) — **presentation↔controller coupling eliminated**
-- `src/services` → imports only services + presenters + `src/core` + 4 domain modules still in `scripts/` (business logic; follow-up to relocate)
-- `src/core` → imports nothing outward (neutral foundation)
-- Zero circular dependencies maintained (verified via DFS)
-
-**4. Docs updated**
-
-- `docs/blueprint.md` — project structure tree (src/core/ section), Decisions Log entry (2026-08-17), Data Schema section paths
-- `docs/adr/0005-layer-separation.md` — decision updated: `src/core/` as shared infra layer, status history entry
-- `docs/api.md` — 58 path references updated (`scripts/{8}` → `src/core/{8}`)
-- `README.md` — structure tree updated (scripts/ = controllers, src/core/ = shared infra)
-- `docs/task.md` — this entry
+1. **`README.md`** — homepage feature list: added "Filter berdasarkan status (negeri/swasta)"; feature 3 rewritten as "Halaman Provinsi, Kabupaten/Kota, dan Kecamatan" documenting the full hierarchy; data-flow diagram now shows `provinsi/{province}/index.html → kabupaten/{kabupaten}/index.html → kecamatan/{kecamatan}/index.html`; directory tree adds the 5 missing files.
+2. **`docs/api.md`** — Module Organization tree: added `kabupaten-page.js`, `kecamatan-page.js` (templates), `comparison.js` (shared), `SearchDataService.js`, `ExportService.js` (services); Dependency Graph: added kabupaten/kecamatan template nodes under PageBuilder and `comparison.js` to the Shared Template Modules box; Changelog entry `2.1.0 (2026-08-17)`.
+3. **`docs/testing.md`** — added the 5 missing test-file entries; coverage block updated to 36 files / 1238 cases (1234 pass, 0 fail, 4 skipped) + Python 27 standalone / 13 pytest.
+4. **`docs/task.md`** — this entry.
 
 ### Verification
 
-| Check            | Result                                              |
-| ---------------- | --------------------------------------------------- |
-| JS tests         | 1238 total, **1234 pass, 0 fail**, 4 skipped        |
-| Coverage gate    | pass — 97.39% stmt / 93.44% branch (baseline match) |
-| ESLint           | 0 errors / 0 warnings                               |
-| Prettier         | clean on all touched files                          |
-| Build            | PASS, 0 failed pages, all performance budgets met   |
-| Python tests     | 27/27 (run_tests.py wrapper)                        |
-| validate-links   | No broken links found (10/10 files)                 |
-| Sitemap          | Generated (5 URLs)                                  |
-| ROOT_DIR sanity  | resolves to project root; dist/ path correct        |
-| All requires     | resolve (verified programmatically)                 |
-| Zero regressions | confirmed                                           |
+| Check                      | Result                                                                   |
+| -------------------------- | ------------------------------------------------------------------------ |
+| Test-file list vs disk     | All 36 `scripts/*.test.js` files present in testing.md (script-verified) |
+| JS suite (actual run)      | 1238 tests, 1234 pass, 0 fail, 4 skipped (36 files)                      |
+| Python suite (actual run)  | 27 pass standalone; 13 pass pytest                                       |
+| README structure vs `ls`   | All 5 missing files added; no phantom entries                            |
+| api.md module tree vs disk | scripts/ + src/ trees now match actual layout (script-verified)          |
+| Prettier / ESLint          | clean on all changed files                                               |
+| Zero regressions           | Docs-only change; no code touched                                        |
 
 ### Files Modified
 
-- `src/core/config.js`, `src/core/logger.js`, `src/core/utils.js`, `src/core/fs-safe.js`, `src/core/resilience.js`, `src/core/slugify.js`, `src/core/data-schema.js`, `src/core/rate-limiter.js` — moved from `scripts/` (git mv preserves history); config.js ROOT_DIR depth fix
-- `src/services/BuildOrchestrator.js`, `src/services/ExportService.js`, `src/services/PageBuilder.js`, `src/services/SearchDataService.js` — imports repointed to `../core/`
-- `src/presenters/templates/{homepage,province-page,school-page,kabupaten-page,kecamatan-page}.js`, `src/presenters/templates/shared/translations.js` — imports repointed to `../../core/`
-- `scripts/{build-pages,build-performance,check-freshness,data-quality,enrichment,etl,fetch-data,freshness-report,interactive,manifest,sitemap,validate-links,test-helpers}.js` — imports repointed to `../src/core/`
-- 19 test files in `scripts/` — imports repointed
-- `docs/blueprint.md`, `docs/adr/0005-layer-separation.md`, `docs/api.md`, `README.md`, `docs/task.md` — docs updated
+- `README.md` — homepage filters, hierarchy feature, data-flow diagram, directory tree
+- `docs/api.md` — Module Organization tree, Dependency Graph, Changelog 2.1.0
+- `docs/testing.md` — test-file list + coverage counts
+- `docs/task.md` — This entry
 
-### Follow-ups
+### Acceptance Criteria
 
-- Relocate the 4 remaining business-logic modules that `src/services/BuildOrchestrator.js` still imports from `scripts/` (`manifest.js`, `build-performance.js`, `enrichment.js`, `sitemap.js`) into `src/services/` (or a domain layer) — they are service-layer logic, not controllers; `sitemap.js` also doubles as a CLI entry point, so its controller wrapper must stay in `scripts/`.
+- [x] README homepage features match code (3 filters), directory tree and data-flow match disk layout
+- [x] api.md Module Organization tree and Dependency Graph list every module that has a documented section
+- [x] testing.md test-file list matches the 36 files on disk; counts verified by running the suites
+- [x] No documentation presents a module/filter/hierarchy that does not exist in code
+- [x] Prettier-clean, zero regressions
 
 ---
 

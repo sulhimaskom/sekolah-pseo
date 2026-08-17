@@ -135,6 +135,7 @@
 - ~~Fix Error Code Mapping table (missing 4 network error codes)~~ - DONE
 - ~~Update test counts in testing.md (842→875, 25→26 files)~~ - DONE
 - ~~Add shared/ subdirectory to README.md and blueprint.md project structures~~ - DONE
+- ~~Doc-code alignment: README homepage filters (3, incl. status), directory trees, api.md Module Organization tree + Dependency Graph, testing.md counts (TASK-094)~~ - DONE
 
 ## Notes
 
@@ -152,3 +153,5 @@
 - When checking api.md completeness, grep for `module.exports` in `src/presenters/templates/shared/*.js` — shared modules are easy to miss
 - The Error Code Mapping table in api.md's Error Handling Standards section often lags behind the code — check resilience.js ERROR_CODES for the canonical list
 - Shared template modules (head-meta.js, back-to-top.js) have no dependencies — they are standalone string/function exports
+- As of TASK-094 (2026-08-17): JS suite is 36 test files / 1238 tests (1234 pass, 0 fail, 4 skipped); Python 27 standalone / 13 pytest. Always re-run before updating testing.md.
+- TASK-094 lesson: README's feature list and directory tree drift silently as tasks add features/modules — after any task that touches homepage filters, templates, or services, re-verify README.md, api.md Module Organization tree, and api.md Dependency Graph in one pass.
