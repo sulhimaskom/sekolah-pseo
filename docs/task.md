@@ -2,6 +2,67 @@
 
 ## Completed Tasks
 
+### [TASK-088] Security Hardening — Workflow Permission Repair (12th Regression Fix)
+
+**Status**: Complete (local) — **push blocked** (GitHub App token lacks `workflows` permission; PR #775 will carry the fix once pushed with a `workflows`-enabled token)
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted the **12th comprehensive security audit** of the Indonesian School PSEO project. The workflow security fixes (documented in TASK-071 and prior audits) had **regressed again**: the CI security gate `scripts/check-workflow-security.js` failed with **12 violations across 4 workflow files** (2 CRITICAL, 10 HIGH). The regression root cause remains the same as documented in the prior 11 audits — the `main` branch carried the un-hardened workflow versions, and the `main→agent` merge restored the insecure patterns. The fix was applied on `agent` and is being merged back to `main` via PR.
+
+### Changes Made
+
+Fixed **12 security violations** across 4 workflow files + hardened the new-workflow generator template:
+
+- **`.github/workflows/architect-agent.yml`** — Removed `id-token: write` + `actions: write` (top + job level), replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` (1 occurrence)
+- **`.github/workflows/opencode.yml`** — Removed `id-token: write` + `actions: write` (top + job level)
+- **`.github/workflows/orchestrator.yml`** — Removed `id-token: write` + `actions: write` (top + job level), replaced `secrets.GH_TOKEN` → `secrets.GITHUB_TOKEN` (2 occurrences)
+- **`.github/workflows/parallel.yml`** — Removed `id-token: write` + `actions: write`, removed 4× `API_KEY` duplicate of `GEMINI_API_KEY`
+- **`.github/workflows/on-push.yml`** — Removed `API_KEY` duplicate of `GEMINI_API_KEY` (1 occurrence)
+- **`.github/workflows/template.md`** — Removed insecure patterns from the new-workflow generator (`id-token: write` / `actions: write` / `secrets.GH_TOKEN` / `IFLOW_API_KEY`) so new workflows no longer propagate the regression
+
+### Verification
+
+| Check                          | Result                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
+| Workflow Security (txt)        | 6/6 files pass all 5 rules — 0 violations, exit 0                                            |
+| Workflow Security (json)       | `passed: true`, 0 violations, exit 0 (CI gate mode)                                          |
+| YAML validity                  | All 6 workflow files parse cleanly (PyYAML safe_load, permissions verified per job)          |
+| npm audit                      | 0 vulnerabilities                                                                            |
+| npm ls                         | `eslint@10.8.1` + `globals@17.11.0` valid (node_modules resynced via `npm ci`)               |
+| pip-audit (`requirements.txt`) | No known vulnerabilities (urllib3/wheel flags were Ubuntu system packages, not project deps) |
+| Hardcoded secrets scan         | None found in source/config/workflow files (docs/issues audit records excluded)              |
+| JS Tests                       | 1155 total, 1151 pass, **0 fail**, 4 skipped                                                 |
+| Python Tests                   | 27/27 pass                                                                                   |
+| ESLint / Prettier              | 0 errors / all changed files formatted cleanly                                               |
+| Zero regressions               | Confirmed                                                                                    |
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — removed `id-token`/`actions` write (top+job), `GH_TOKEN` → `GITHUB_TOKEN`
+- `.github/workflows/opencode.yml` — removed `id-token`/`actions` write (top+job)
+- `.github/workflows/orchestrator.yml` — removed `id-token`/`actions` write (top+job), `GH_TOKEN` → `GITHUB_TOKEN` ×2
+- `.github/workflows/parallel.yml` — removed `id-token`/`actions` write, removed 4× `API_KEY` dup
+- `.github/workflows/on-push.yml` — removed `API_KEY` dup
+- `.github/workflows/template.md` — hardened new-workflow generator
+- `docs/task.md` — This entry
+- `docs/security-engineer.md` — Updated regression count + dependencies audit
+
+### Acceptance Criteria
+
+- [x] `id-token: write` removed from 4 non-OIDC workflows (top + job level)
+- [x] `actions: write` removed from 4 non-merge workflows (top + job level)
+- [x] `secrets.GH_TOKEN` replaced with `secrets.GITHUB_TOKEN` (orchestrator ×2, architect-agent ×1)
+- [x] `API_KEY` duplicate of `GEMINI_API_KEY` removed (parallel ×4, on-push ×1)
+- [x] template.md no longer propagates insecure permission/secret patterns
+- [x] All 6 workflow files pass security validation (0 violations, exit 0 in txt + json modes)
+- [x] npm audit clean, pip-audit clean for project deps
+- [x] All tests pass (1155 JS, 27 Python), lint + prettier clean
+- [x] Zero regressions
+
+---
+
 ### [TASK-087] Critical Path Testing — CLI Entry-Point Coverage (interactive.js mainMenu, data-quality main, freshness-report main)
 
 **Status**: Complete
@@ -17,7 +78,7 @@ Closed the last remaining coverage gaps in CLI entry-point logic. Health check b
 
 **2. `scripts/interactive.test.js` — `main()` TTY-mode suite (7 new tests):**
 
-- File-level `execSync` mock (installed *before* the module's first require, since `interactive.js` destructures `execSync` at load time) prevents real npm scripts from running when a menu item is selected; preserves the failure semantics the existing `runCommand` tests rely on.
+- File-level `execSync` mock (installed _before_ the module's first require, since `interactive.js` destructures `execSync` at load time) prevents real npm scripts from running when a menu item is selected; preserves the failure semantics the existing `runCommand` tests rely on.
 - `createScriptedRl()` — scripted fake `readline.Interface` that returns answers per call, counts `question`/`close`, and can throw to exercise the error path.
 - `driveMenu()` helper — mocks `console.log/error/clear`, `readline.createInterface`, `process.stdin.isTTY`, `process.argv`, and `process.exit` (throws `PROCESS_EXIT:code`), restores all in `finally`.
 - Scenarios: exit option → `rl.close()` + "Goodbye!"; non-numeric input → invalid-option message + continue; out-of-range → same; category → Back → main menu; category → invalid item → retry → Back; category → select item → `runCommand` + `pressEnter` → Back; readline throws → error logged + `terminate` (`PROCESS_EXIT:1`).
@@ -40,16 +101,16 @@ Closed the last remaining coverage gaps in CLI entry-point logic. Health check b
 
 ### Verification
 
-| Check                     | Result                                                                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------- |
-| `interactive.js` coverage | Lines 79.53% → **100%**; branches 92.85% → **97.82%**; functions 75% → **100%**             |
-| `data-quality.js` coverage| Lines 86.74% → **98.79%** (remaining: `require.main` guard only)                            |
-| `freshness-report.js` cov.| Lines 87.73% → **99.37%** (remaining: `require.main` guard only)                            |
-| JS Tests (full suite)     | 1138 → **1155** total, 1151 pass, **0 fail**, 4 skipped (+17 new)                           |
-| Coverage gate             | All files 95.85% → **97.4%** lines, 93.14% → **93.43%** branches — `npm run coverage` passes |
-| Python tests              | 27/27 pass                                                                                  |
-| ESLint / Prettier         | 0 errors / changed files clean                                                              |
-| Zero regressions          | Confirmed                                                                                   |
+| Check                      | Result                                                                                       |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `interactive.js` coverage  | Lines 79.53% → **100%**; branches 92.85% → **97.82%**; functions 75% → **100%**              |
+| `data-quality.js` coverage | Lines 86.74% → **98.79%** (remaining: `require.main` guard only)                             |
+| `freshness-report.js` cov. | Lines 87.73% → **99.37%** (remaining: `require.main` guard only)                             |
+| JS Tests (full suite)      | 1138 → **1155** total, 1151 pass, **0 fail**, 4 skipped (+17 new)                            |
+| Coverage gate              | All files 95.85% → **97.4%** lines, 93.14% → **93.43%** branches — `npm run coverage` passes |
+| Python tests               | 27/27 pass                                                                                   |
+| ESLint / Prettier          | 0 errors / changed files clean                                                               |
+| Zero regressions           | Confirmed                                                                                    |
 
 ### Files Modified
 
