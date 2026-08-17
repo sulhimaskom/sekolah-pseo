@@ -344,4 +344,12 @@ async function main() {
 
 main();
 
-module.exports = { SCRIPTS, runCommand, pickFromList, printListAsJson, printFlatList, printHelp };
+module.exports = {
+  SCRIPTS,
+  runCommand,
+  pickFromList,
+  printListAsJson,
+  printFlatList,
+  printHelp,
+  main,
+};
