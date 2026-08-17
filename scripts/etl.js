@@ -49,6 +49,7 @@ module.exports = {
   validateLatLon,
   validateCategoricalField,
   checkNpsnUniqueness,
+  enforceNpsnUniqueness,
   generateDataQualityReport,
   run,
 };
@@ -178,6 +179,46 @@ function checkNpsnUniqueness(records) {
     isUnique: duplicates.length === 0,
     duplicates,
   };
+}
+
+/**
+ * Enforce the NPSN primary-key constraint: keep the first occurrence of each
+ * NPSN, reject subsequent duplicates.
+ *
+ * NPSN is the documented unique identifier of the data model. Duplicate NPSNs
+ * in `data/schools.csv` cause silent data loss downstream — two records with
+ * the same NPSN resolve to the same page path (`{npsn}-{slug}.html`), so the
+ * second page write overwrites the first school's page, and the search-data
+ * artifact (schools.json) carries ambiguous duplicate entries.
+ *
+ * Order-preserving and non-destructive: the canonical (first) record for each
+ * NPSN passes through untouched; only the redundant copies are dropped, each
+ * with a descriptive rejection reason.
+ *
+ * @param {Array<Object>} records - Normalized, schema-valid school records
+ * @returns {{kept: Array<Object>, rejected: Array<{npsn: string, reason: string}>}}
+ *   - kept: records with unique NPSN, first occurrence preserved (input order)
+ *   - rejected: duplicate records with the duplicated NPSN and rejection reason
+ */
+function enforceNpsnUniqueness(records) {
+  const kept = [];
+  const rejected = [];
+  const seen = new Set();
+
+  for (const record of records) {
+    const npsn = String(record.npsn || '').trim();
+    if (npsn && seen.has(npsn)) {
+      rejected.push({
+        npsn,
+        reason: `Duplicate NPSN "${npsn}" — first occurrence kept, duplicate record rejected`,
+      });
+    } else {
+      if (npsn) seen.add(npsn);
+      kept.push(record);
+    }
+  }
+
+  return { kept, rejected };
 }
 
 /**
@@ -366,7 +407,24 @@ async function run() {
       terminate('No valid records found after processing');
     }
 
-    const qualityReport = generateDataQualityReport(processed);
+    // NPSN primary-key constraint: keep the first occurrence of each NPSN,
+    // reject subsequent duplicates. Duplicate NPSNs would otherwise resolve to
+    // the same school page path and silently overwrite each other (data loss).
+    const { kept: uniqueRecords, rejected: duplicateRejected } = enforceNpsnUniqueness(processed);
+
+    if (duplicateRejected.length > 0) {
+      logger.warn(
+        `\nNPSN uniqueness enforcement: rejected ${duplicateRejected.length} duplicate record(s)`
+      );
+      for (const dup of duplicateRejected.slice(0, 5)) {
+        logger.warn(`  NPSN ${dup.npsn}: ${dup.reason}`);
+      }
+      if (duplicateRejected.length > 5) {
+        logger.warn(`  ... and ${duplicateRejected.length - 5} more`);
+      }
+    }
+
+    const qualityReport = generateDataQualityReport(uniqueRecords);
 
     logger.info('\n=== Data Quality Report ===');
     logger.info(`Total records: ${qualityReport.totalRecords}`);
@@ -392,7 +450,7 @@ async function run() {
       logger.info('\n=== Enrichment Phase ===');
       logger.info('Enrichment is enabled. Enriching school data...');
       try {
-        const enrichmentData = await enrichSchools(processed, {
+        const enrichmentData = await enrichSchools(uniqueRecords, {
           concurrency: 5,
           onProgress: (processedCount, total) => {
             if (processedCount % 50 === 0 || processedCount === total) {
@@ -401,7 +459,7 @@ async function run() {
           },
         });
         await saveEnrichmentData(enrichmentData);
-        logEnrichmentSummary(enrichmentData, processed.length);
+        logEnrichmentSummary(enrichmentData, uniqueRecords.length);
       } catch (enrichError) {
         logger.warn({ err: enrichError }, 'Enrichment phase failed, continuing without enrichment');
       }
@@ -409,8 +467,8 @@ async function run() {
       logger.info('\nEnrichment disabled. Use --enrich flag or ENRICHMENT_ENABLED=true to enable.');
     }
 
-    await writeCsv(processed, CONFIG.SCHOOLS_CSV_PATH);
-    logger.info(`\nWrote ${processed.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
+    await writeCsv(uniqueRecords, CONFIG.SCHOOLS_CSV_PATH);
+    logger.info(`\nWrote ${uniqueRecords.length} records to ${CONFIG.SCHOOLS_CSV_PATH}`);
     logger.info(`Data schema version: ${SCHEMA.SCHEMA_VERSION}`);
   } catch (error) {
     if (error.name === 'IntegrationError') {

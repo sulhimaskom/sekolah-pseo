@@ -1,4 +1,4 @@
-const { describe, it, before, after } = require('node:test');
+const { describe, it, before, after, mock } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs').promises;
 const path = require('path');
@@ -341,6 +341,63 @@ describe('fs-safe', () => {
       await assert.rejects(fastWriteFile(dirTarget, 'cannot replace a directory'), error =>
         error.message.includes('Failed to write file')
       );
+
+      const entries = await fs.readdir(testDir);
+      assert.deepStrictEqual(
+        entries.filter(e => e.includes('.tmp-')),
+        []
+      );
+    });
+
+    it('writes fresh files via exclusive-create path (no rename call)', async () => {
+      const freshFile = path.join(testDir, 'fast-wx-fresh.txt');
+      const renameMock = mock.method(fs, 'rename');
+
+      try {
+        await fastWriteFile(freshFile, 'Fresh wx content');
+
+        assert.strictEqual(renameMock.mock.callCount(), 0);
+        const result = await fs.readFile(freshFile, 'utf8');
+        assert.strictEqual(result, 'Fresh wx content');
+      } finally {
+        renameMock.mock.restore();
+      }
+    });
+
+    it('falls back to tmp+rename when the target already exists', async () => {
+      const existingFile = path.join(testDir, 'fast-wx-overwrite.txt');
+      await fs.writeFile(existingFile, 'Old content');
+      const renameMock = mock.method(fs, 'rename');
+
+      try {
+        await fastWriteFile(existingFile, 'Updated wx content');
+
+        assert.strictEqual(renameMock.mock.callCount(), 1);
+        const result = await fs.readFile(existingFile, 'utf8');
+        assert.strictEqual(result, 'Updated wx content');
+      } finally {
+        renameMock.mock.restore();
+      }
+    });
+
+    it('throws IntegrationError when parent directory is missing', async () => {
+      const orphanFile = path.join(testDir, 'no-such-dir', 'orphan.txt');
+
+      await assert.rejects(fastWriteFile(orphanFile, 'orphan content'), error =>
+        error.message.includes('Failed to write file')
+      );
+    });
+
+    it('handles concurrent writes to the same fresh target', async () => {
+      const sharedFile = path.join(testDir, 'fast-wx-race.txt');
+
+      await Promise.all([
+        fastWriteFile(sharedFile, 'Writer A'),
+        fastWriteFile(sharedFile, 'Writer B'),
+      ]);
+
+      const result = await fs.readFile(sharedFile, 'utf8');
+      assert(['Writer A', 'Writer B'].includes(result));
 
       const entries = await fs.readdir(testDir);
       assert.deepStrictEqual(

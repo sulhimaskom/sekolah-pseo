@@ -373,7 +373,7 @@ test('run() rejects records with invalid status categorical values', async () =>
 
 // ── Edge Cases ──────────────────────────────────────────────────
 
-test('run() handles duplicate NPSN values (warns but processes both)', async () => {
+test('run() enforces NPSN uniqueness — keeps first occurrence, rejects duplicates', async () => {
   const csv = [
     'npsn,nama,provinsi,kab_kota,kecamatan,bentuk_pendidikan,status',
     '12345,Sekolah A,Jawa Barat,Bandung,Coblong,SD,N',
@@ -387,9 +387,9 @@ test('run() handles duplicate NPSN values (warns but processes both)', async () 
     const output = await fs.readFile(outPath, 'utf8');
     const records = parseCsvSimple(output);
 
-    assert.strictEqual(records.length, 2, 'Both records with duplicate NPSN should be processed');
+    assert.strictEqual(records.length, 1, 'Duplicate NPSN record should be rejected');
     assert.strictEqual(records[0].npsn, '12345');
-    assert.strictEqual(records[1].npsn, '12345');
+    assert.strictEqual(records[0].nama, 'Sekolah A', 'First occurrence should be kept');
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true });
   }
