@@ -113,7 +113,7 @@ All issues in this audit were regressions from prior fixes (TASK-022, TASK-031, 
 
 ## Summary
 
-13th security audit pass of the Indonesian School PSEO project. The workflow security regression gate (`scripts/check-workflow-security.js`, TASK-095) reported **12 violations** — the documented recurring anti-patterns (F037) restored by `main→agent` merge `c190086`. TASK-088's fix (12th attempt) was documented but never applied to the workflow files ("pending workflows-enabled token"). **This pass applies the fix and delivers it to `main` via PR.**
+13th security audit pass of the Indonesian School PSEO project. The workflow security regression gate (`scripts/check-workflow-security.js`, TASK-095) reported **12 violations** — the documented recurring anti-patterns (F037) restored by `main→agent` merge `c190086`. TASK-088's fix (12th attempt) was documented but never applied to the workflow files ("pending workflows-enabled token"). **This pass applies the fix and verifies it (0 violations, exit 0); delivery to `main` is blocked by F050 (token lacks `workflows` permission).**
 
 ## Audit Results
 
@@ -154,6 +154,8 @@ All issues in this audit were regressions from prior fixes (TASK-022, TASK-031, 
 
 ### Root Cause of Regression (11th occurrence)
 
-Security fixes were applied only on the `agent` branch and never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions. **Delivered to `main` via PR with this pass to break the cycle.**
+Security fixes were applied only on the `agent` branch and never merged to `main`. When `main` was subsequently merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions.
+
+**⚠️ Delivery blocked (F050)**: pushing `.github/workflows/*` is refused by the GitHub App token (lacks `workflows` permission) — the documented blocker behind all 11 prior regressions. The fix is committed on `agent` (local `6a371ea`), verified (gate 0 violations, exit 0), and **requires a workflows-enabled token (repo admin PAT or workflows-scoped GitHub App) to reach `main`**. `.husky/pre-commit` baseline stays at 12 until the fix lands, then must be tightened to 0 to prevent recurrence.
 
 ## Score: ⭐⭐⭐⭐⭐ (5/5) - Excellent security posture

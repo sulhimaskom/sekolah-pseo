@@ -4,7 +4,7 @@
 
 ### [TASK-097] Security Audit Pass 13 — Workflow Permission Hardening (11th Regression Fix)
 
-**Status**: Complete
+**Status**: Complete (delivery to `main` blocked by F050 — see below)
 **Agent**: Principal Security Engineer (Sisyphus)
 
 ### Description
@@ -37,7 +37,9 @@ Conducted **13th comprehensive security audit** of the Indonesian School PSEO pr
 
 ### Root Cause of Regression (11th occurrence)
 
-Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-060, TASK-063, TASK-065, TASK-088): workflow file security fixes were applied on the `agent` branch but never merged to `main`. When `main` was merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions. **This pass is being delivered to `main` via PR immediately to break the cycle.**
+Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-060, TASK-063, TASK-065, TASK-088): workflow file security fixes were applied on the `agent` branch but never merged to `main`. When `main` was merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions.
+
+**⚠️ Delivery blocked (F050)**: Pushing `.github/workflows/*` is refused by the GitHub App token (`github-actions[bot]`) — it lacks the `workflows` permission. This is the documented blocker (F050) behind all 11 prior regressions: no workflow in the repo (on-push/parallel/orchestrator all use `secrets.GITHUB_TOKEN`) can push workflow-file changes. The fix is committed on `agent` (local `6a371ea`) and verified (gate 0 violations), but **requires a workflows-enabled token (repo admin PAT or workflows-scoped GitHub App) to reach `main`**. `.husky/pre-commit` baseline deliberately stays at 12 with a note to tighten to 0 in the same commit that lands the workflow fix — a 0 baseline before the fix reaches the remote would deadlock automation commits on `agent`.
 
 ### Verification
 
@@ -63,11 +65,11 @@ Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, 
 
 ### Acceptance Criteria
 
-- [x] All 12 workflow security violations remediated (gate: 0 violations, exit 0)
+- [x] All 12 workflow security violations remediated in working tree (gate: 0 violations, exit 0)
 - [x] No secrets exposed — duplicate API_KEY aliases removed, GITHUB_TOKEN used everywhere
 - [x] Least-privilege enforced — no id-token/actions write on non-OIDC/non-merge workflows
 - [x] Full test suite green (JS 1266 + Python 27), lint + prettier clean
-- [x] Fix delivered to `main` via PR to prevent the 12th regression
+- [ ] ~~Fix delivered to `main`~~ — **BLOCKED by F050**: push of `.github/workflows/*` refused (token lacks `workflows` permission); fix committed on agent (`6a371ea`), requires workflows-enabled token to land on `main`
 
 ---
 
