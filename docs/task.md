@@ -11,7 +11,7 @@
 
 CI health audit found `main` green (schedule `pull` runs 08:34/09:33/10:24 all success, pages deployments green, dependabot PRs #770/#771 merged). Two transient anomalies were investigated and dismissed: (1) a `PR Handler` failure on the globals dependabot PR (`expected an object but got: array` — GraphQL shape bug in the verify step) that did not block the merge (PR #771 merged at 09:21Z by the `pull` workflow); (2) `action_required` runs on the 232nd-verification PR (#778, merged 11:31Z) — stale after merge.
 
-The real blocker: the `agent` branch carried TASK-088's `.github/workflows/*` security fixes (commit `f49fa31`), and the GitHub App token used for pushes lacks `workflows` permission — GitHub refuses *any* push that modifies workflow files with such a token. This left TASK-089/090/091/092 (pure code + docs, fully verified) stranded on `agent` for 4 days across 4 tasks, each marked "push blocked".
+The real blocker: the `agent` branch carried TASK-088's `.github/workflows/*` security fixes (commit `f49fa31`), and the GitHub App token used for pushes lacks `workflows` permission — GitHub refuses _any_ push that modifies workflow files with such a token. This left TASK-089/090/091/092 (pure code + docs, fully verified) stranded on `agent` for 4 days across 4 tasks, each marked "push blocked".
 
 ### Changes Made (split delivery)
 
@@ -23,15 +23,15 @@ The real blocker: the `agent` branch carried TASK-088's `.github/workflows/*` se
 
 ### Verification
 
-| Check | Result |
-| ----- | ------ |
-| JS tests (clean branch) | 1238 total, 1234 pass, 0 fail, 4 skipped |
-| Python tests | 13/13 pass |
-| Coverage gate | pass (97.39% lines / 93.44% branches) |
-| ESLint | 0 errors |
-| Workflow security | 6/6 files, 0 violations (unchanged from `main` baseline) |
+| Check                     | Result                                                    |
+| ------------------------- | --------------------------------------------------------- |
+| JS tests (clean branch)   | 1238 total, 1234 pass, 0 fail, 4 skipped                  |
+| Python tests              | 13/13 pass                                                |
+| Coverage gate             | pass (97.39% lines / 93.44% branches)                     |
+| ESLint                    | 0 errors                                                  |
+| Workflow security         | 6/6 files, 0 violations (unchanged from `main` baseline)  |
 | `.github/` diff vs `main` | 0 files — push not blocked by `workflows` permission rule |
-| Full build | Status: PASS, 0 failed pages, all budgets met |
+| Full build                | Status: PASS, 0 failed pages, all budgets met             |
 
 ### Files Modified
 
