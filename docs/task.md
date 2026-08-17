@@ -2,6 +2,122 @@
 
 ## Completed Tasks
 
+### [TASK-097] Security Audit Pass 13 — Workflow Permission Hardening (11th Regression Fix)
+
+**Status**: Complete (delivery to `main` blocked by F050 — see below)
+**Agent**: Principal Security Engineer (Sisyphus)
+
+### Description
+
+Conducted **13th comprehensive security audit** of the Indonesian School PSEO project. The workflow security regression gate (`scripts/check-workflow-security.js`, built in TASK-095) reported **12 violations** — the documented recurring anti-patterns (F037) present since the `main→agent` merge commit `c190086` restored the insecure workflow versions. TASK-088's fix (12th attempt) was documented but never actually applied to the workflow files (blocked on "workflows-enabled token"), so the insecure state persisted.
+
+### Security Audit Results
+
+| Check | Result |
+| ----- | ------ |
+| npm audit | ✅ 0 vulnerabilities |
+| Python deps | ✅ Test-only; no runtime packages |
+| Hardcoded secrets scan | ✅ None found |
+| Workflow security gate | ❌→✅ 12 violations → 0 (this pass) |
+| Deprecated packages | ✅ None (eslint 10, prettier 3, husky 9, lint-staged 17, c8 12, pino 10) |
+
+### Fixes Applied (This Audit)
+
+| # | File | Violation | Severity | Fix |
+| -- | ---- | --------- | -------- | --- |
+| 1 | `on-push.yml` | Duplicate `API_KEY` = `GEMINI_API_KEY` | 🔴 Critical | Removed duplicate `API_KEY: ${{ secrets.GEMINI_API_KEY }}` |
+| 2 | `on-push.yml` | Incorrect `VITE_SUPABASE_ANON_KEY` → `VITE_SUPABASE_KEY` mapping | 🔴 Critical | Removed wrong mapping (documented in pass 6) |
+| 3 | `parallel.yml` | 4× duplicate `API_KEY` = `GEMINI_API_KEY` (architect, specialists, Fixer, PR-Handler) | 🔴 Critical | Removed all 4 duplicate entries |
+| 4 | `orchestrator.yml` | `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN` (2×: env + checkout token) | 🟠 High | Replaced both with `secrets.GITHUB_TOKEN` |
+| 5 | `architect-agent.yml` | `secrets.GH_TOKEN` instead of `secrets.GITHUB_TOKEN` | 🟠 High | Replaced with `secrets.GITHUB_TOKEN` |
+| 6 | `parallel.yml` | `id-token: write` + `actions: write` (non-OIDC, non-merge) | 🟠 High | Removed both |
+| 7 | `orchestrator.yml` | `id-token: write` + `actions: write` at top-level AND job-level | 🟠 High | Removed from both levels |
+| 8 | `architect-agent.yml` | `id-token: write` + `actions: write` at top-level AND job-level | 🟠 High | Removed from both levels |
+| 9 | `opencode.yml` | `id-token: write` + `actions: write` at top-level AND job-level | 🟠 High | Removed from both levels |
+
+### Root Cause of Regression (11th occurrence)
+
+Same root cause as all 10 prior audits (TASK-022, TASK-031, TASK-036, TASK-044, TASK-047, TASK-048, TASK-049, TASK-052, TASK-054, TASK-055, TASK-060, TASK-063, TASK-065, TASK-088): workflow file security fixes were applied on the `agent` branch but never merged to `main`. When `main` was merged into `agent` during synchronization, the unfixed versions from `main` overwrote the fixed versions.
+
+**⚠️ Delivery blocked (F050)**: Pushing `.github/workflows/*` is refused by the GitHub App token (`github-actions[bot]`) — it lacks the `workflows` permission. This is the documented blocker (F050) behind all 11 prior regressions: no workflow in the repo (on-push/parallel/orchestrator all use `secrets.GITHUB_TOKEN`) can push workflow-file changes. The fix is committed on `agent` (local `6a371ea`) and verified (gate 0 violations), but **requires a workflows-enabled token (repo admin PAT or workflows-scoped GitHub App) to reach `main`**. `.husky/pre-commit` baseline deliberately stays at 12 with a note to tighten to 0 in the same commit that lands the workflow fix — a 0 baseline before the fix reaches the remote would deadlock automation commits on `agent`.
+
+### Verification
+
+| Check | Result |
+| ----- | ------ |
+| `node scripts/check-workflow-security.js` | ✅ 0 violations, exit 0 (was 12, exit 1) |
+| Security gate tests | 32/32 pass |
+| Full JS suite | 1270 tests, 1266 pass, 0 fail, 4 skipped |
+| Python suite | 27/27 pass |
+| ESLint | 0 errors |
+| Prettier | clean on all workflow files |
+
+### Files Modified
+
+- `.github/workflows/architect-agent.yml` — removed id-token/actions write (both levels), GH_TOKEN→GITHUB_TOKEN
+- `.github/workflows/on-push.yml` — removed duplicate API_KEY + wrong VITE_SUPABASE_ANON_KEY mapping
+- `.github/workflows/opencode.yml` — removed id-token/actions write (both levels)
+- `.github/workflows/orchestrator.yml` — removed id-token/actions write (both levels), GH_TOKEN→GITHUB_TOKEN (2×)
+- `.github/workflows/parallel.yml` — removed id-token/actions write + 4× duplicate API_KEY
+- `docs/security-engineer.md` — regression count updated
+- `SECURITY_AUDIT_NOTE.md` — pass 13 summary added
+- `docs/task.md` — this entry
+
+### Acceptance Criteria
+
+- [x] All 12 workflow security violations remediated in working tree (gate: 0 violations, exit 0)
+- [x] No secrets exposed — duplicate API_KEY aliases removed, GITHUB_TOKEN used everywhere
+- [x] Least-privilege enforced — no id-token/actions write on non-OIDC/non-merge workflows
+- [x] Full test suite green (JS 1266 + Python 27), lint + prettier clean
+- [ ] ~~Fix delivered to `main`~~ — **BLOCKED by F050**: push of `.github/workflows/*` refused (token lacks `workflows` permission); fix committed on agent (`6a371ea`), requires workflows-enabled token to land on `main`
+
+---
+
+### [TASK-096] Flaky Test Fix — Test-Runner Protocol Corruption (ERR_TEST_FAILURE)
+
+**Status**: Complete
+**Agent**: Senior QA Engineer (Sisyphus)
+
+### Description
+
+Full-suite runs intermittently failed (1/10 baseline, up to 5/10 under parallel load) with `Unable to deserialize cloned data due to invalid or unsupported version` (ERR_TEST_FAILURE, `uncaughtException`) misattributed to `scripts/data-quality.test.js`. Root cause: the node:test runner parses child **stdout** as a v8-serialized binary protocol, and any stray write landing after a test-end marker desyncs the frame parser. Two writers leaked onto the protocol channel:
+
+1. **pino logger** — `src/core/config.js` emits a `SITE_URL` require-time warning in every test child; build-pages/SearchDataService emit more. pino's default destination is fd 1 (stdout); its async SonicBoom write could race the end-of-test message. Routing pino to stderr did **not** help (verified experimentally: the runner relays child stderr into its own stdout stream), so the output must be dropped entirely in test children.
+2. **`console.log` in `data-quality.js main()`** — three `main()` CLI tests mocked `logger.info`/`logger.warn` but not `console.log`, so `main()`'s human-readable report (`console.log(formatHuman(report))`) leaked to the real stdout pipe. Under parallel load the queued async write landed after the test-end marker.
+
+### Changes Made
+
+1. **`src/core/logger.js`** — in node:test test-file children (detected via `NODE_TEST_CONTEXT` env + `process.argv[1]` ending `.test.js`), pino is constructed with a null sink (`{ write() {} }`) instead of stdout/stderr. CLI children spawned by tests via `execSync` run the script itself (argv[1] = script path, not `.test.js`), so their stdout report streams — parsed by `check-freshness.test.js` / `freshness-report.test.js` — are unaffected (verified: 171 tests pass on the 5 key files).
+2. **`scripts/data-quality.test.js`** — the 3 `main()` tests that exercise report output (`--verbose`, `--threshold` pass, `--threshold` fail) now also mock `console.log` (capturing into an array), matching the pattern already used by the `--json` and human-default tests. No assertions were removed; the verbose/threshold assertions were preserved.
+
+### Verification
+
+| Check                      | Result                                                                 |
+| -------------------------- | ---------------------------------------------------------------------- |
+| Full JS suite (actual)     | 1270 tests, 1266 pass, 0 fail, 4 skipped (37 files)                    |
+| Flake stress test          | 10/10 consecutive full-suite runs clean (was 1/10 baseline, 5/10 mid-fix) |
+| data-quality.test.js solo  | 10/10 runs clean (confirms corruption originates from a concurrent child) |
+| CLI report tests           | check-freshness/freshness-report stdout parsing still passes (execSync children unaffected) |
+| ESLint                     | 0 errors on changed files                                              |
+| Prettier                   | clean on changed files                                                 |
+| Production behavior        | logger output unchanged outside test-file children (guard is env+argv-scoped) |
+
+### Files Modified
+
+- `src/core/logger.js` — null sink for pino in test-file children (stderr redirect proven insufficient)
+- `scripts/data-quality.test.js` — console.log mock added to 3 main() tests
+- `docs/task.md` — This entry
+
+### Acceptance Criteria
+
+- [x] Flaky ERR_TEST_FAILURE eliminated (10/10 consecutive full-suite runs)
+- [x] Root cause identified and fixed at the source (async stdout writes racing test-end marker)
+- [x] No test deleted, no assertion weakened; only added stdout capture mocks
+- [x] CLI children (execSync) report streams unaffected — stdout parsing tests still green
+- [x] Production logging behavior unchanged outside test-file children
+
+---
+
 ### [TASK-095] Critical Path Testing — Workflow Security Gate Coverage (check-workflow-security.js)
 
 **Status**: Complete

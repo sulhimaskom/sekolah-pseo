@@ -151,12 +151,17 @@ WR|
 ### Workflow Security Regression (Recurring)
 
 > **Known recurring issue**: `id-token: write` / `actions: write` over-permission and
-> `secrets.GH_TOKEN` / `API_KEY`-alias patterns have regressed **12 times** (TASK-022
-> through TASK-088) because security fixes on the `agent` branch were historically never
+> `secrets.GH_TOKEN` / `API_KEY`-alias patterns have regressed **13 times** (TASK-022
+> through TASK-097) because security fixes on the `agent` branch were historically never
 > merged to `main`, and subsequent `main→agent` merges restored the insecure versions.
-> The regression gate `scripts/check-workflow-security.js` now exits non-zero in both
-> text and `--json` modes when violations exist. The 12th fix (TASK-088, 2026-08-17)
-> is being merged to `main` via PR. Do NOT reintroduce these patterns when editing workflows:
+> The regression gate `scripts/check-workflow-security.js` exits non-zero in both
+> text and `--json` modes when violations exist. The 13th fix (TASK-097, 2026-08-17)
+> remediated all 12 violations (2 Critical `DUPLICATE_API_KEY` + 10 High) across
+> `architect-agent.yml`, `on-push.yml`, `opencode.yml`, `orchestrator.yml`, `parallel.yml`.
+> **Push-blocked by F050** (GitHub App token lacks `workflows` permission): the fix is
+> committed on `agent` (local `6a371ea`) but cannot reach `main` without a
+> workflows-enabled token — the same blocker that caused all 11 prior regressions.
+> Do NOT reintroduce these patterns when editing workflows:
 >
 > - No `id-token: write` unless the workflow uses OIDC federation
 > - No `actions: write` unless the workflow must manage/merge via actions API

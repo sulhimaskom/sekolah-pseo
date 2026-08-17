@@ -26,15 +26,33 @@ const normalizedLevel = envLogLevel.toLowerCase();
 // Validate the log level
 const validLevel = levelMap[normalizedLevel] !== undefined ? normalizedLevel : 'info';
 
-const logger = pino({
-  level: validLevel,
-  timestamp: pino.stdTimeFunctions.isoTime,
-  formatters: {
-    level: label => {
-      return { level: label };
+// Drop pino output inside node:test test-file children. The test runner parses
+// child STDOUT as a binary protocol AND relays child STDERR into its own stdout
+// stream; a pino NDJSON write landing after the test-end marker desyncs the
+// protocol framing ("Unable to deserialize cloned data" ERR_TEST_FAILURE).
+// A null sink removes the async write entirely, so no output can race the
+// end-of-test message. CLI children spawned from tests (execSync) run the
+// script, not a *.test.js, so their stdout report streams (parsed by
+// check-freshness/freshness-report tests) are unaffected.
+const isTestFileChild =
+  process.env.NODE_TEST_CONTEXT !== undefined &&
+  typeof process.argv[1] === 'string' &&
+  process.argv[1].endsWith('.test.js');
+
+const nullSink = { write() {} };
+
+const logger = pino(
+  {
+    level: validLevel,
+    timestamp: pino.stdTimeFunctions.isoTime,
+    formatters: {
+      level: label => {
+        return { level: label };
+      },
     },
   },
-});
+  isTestFileChild ? nullSink : undefined
+);
 
 // Export convenience methods that match console.* API for easy migration
 module.exports = {

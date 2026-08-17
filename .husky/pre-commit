@@ -5,6 +5,12 @@
 # (F067). Fail-open on parse error so a broken check never false-blocks.
 # The `if` wrapper keeps this safe under `sh -e` (husky invokes hooks with
 # `sh -e`) even though the check exits 1 whenever violations exist.
+# NOTE (TASK-097, 2026-08-17): the workflow-file fix that brings violations
+# to 0 is committed on agent (local 6a371ea) but push-blocked by F050 — the
+# GitHub App token lacks `workflows` permission, so the remote branch still
+# carries the 12 baseline violations. Baseline MUST be tightened to 0 in the
+# same commit that lands the workflow fix to `main`; until then, keeping the
+# hook at 12 prevents a deadlock where automation commits would be blocked.
 if output=$(node scripts/check-workflow-security.js --json 2>/dev/null); then
   :
 fi
