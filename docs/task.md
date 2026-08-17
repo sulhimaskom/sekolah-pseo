@@ -2,6 +2,75 @@
 
 ## Completed Tasks
 
+### [TASK-085] Architecture — Shared Pre-Escaped Translations Module (shared/translations.js, REFACTOR-009)
+
+**Status**: Complete
+**Agent**: Code Architect (Sisyphus)
+
+### Description
+
+Consolidated the three inconsistent text-translation access patterns across page templates into one canonical pattern (backlog REFACTOR-009, Option A — shared module):
+
+- **`school-page.js`** pre-escaped all `CONFIG.TEXT` values into a local `T` object at module load (`Object.fromEntries` over `Object.entries(CONFIG.TEXT).map(escapeHtml)`).
+- **`homepage.js`** wrapped each `CONFIG.TEXT` read in `escapeHtml()` at the use site (2 sites: `SEARCH_ARIA_LABEL`, `SELECT_PROVINCE_HEADING`).
+- **`province-page.js`** hardcoded Indonesian strings (`'Beranda'` breadcrumb, `'Kabupaten/Kota'` stat label) despite matching `CONFIG.TEXT` keys existing (`HOME`, `CITY_REGENCY`).
+
+New template developers had to know which pattern each file followed; a new text key required knowing whether to pre-escape, use-site escape, or hardcode.
+
+### Changes Made
+
+**1. New shared module `src/presenters/templates/shared/translations.js`** (the single implementation of the pattern):
+
+- `T` — frozen plain object mapping every `CONFIG.TEXT` key to its HTML-escaped value.
+- Pre-escape happens exactly **once at module load** (preserves the ~38K-redundant-escapeHtml-call optimization the school-page pattern existed for).
+- `Object.freeze(T)` guards the shared module-level instance against mutation leaking across page renders.
+- New `CONFIG.TEXT` keys automatically available as `T.<KEY>` in every template.
+
+**2. `school-page.js`** — replaced the local `T` construction (7 lines incl. comment) with `const { T } = require('./shared/translations');`. No usage-site changes (all `T.X` references unchanged).
+
+**3. `homepage.js`** — `escapeHtml(CONFIG.TEXT.SEARCH_ARIA_LABEL)` → `T.SEARCH_ARIA_LABEL` and `escapeHtml(CONFIG.TEXT.SELECT_PROVINCE_HEADING)` → `T.SELECT_PROVINCE_HEADING` (T is pre-escaped, so the use-site `escapeHtml` wrapper is redundant). Removed the now-unused `CONFIG` import (ESLint `no-unused-vars`).
+
+**4. `province-page.js`** — `'Beranda'` → `T.HOME` (breadcrumb label) and `<span class="stat-label">Kabupaten/Kota</span>` → `<span class="stat-label">${T.CITY_REGENCY}</span>`. Genuinely unkeyed strings (skip-link, hero descriptions, `Total Sekolah`, `Pilih Kabupaten/Kota`, `sekolah` count suffix) intentionally left hardcoded — no `CONFIG.TEXT` keys exist for them, and externalizing interpolated strings would be scope creep beyond the pattern-consistency goal.
+
+**5. New `scripts/translations.test.js`** (6 tests): key parity with `CONFIG.TEXT` (no missing, no extras), pre-escape correctness (`T[key] === escapeHtml(CONFIG.TEXT[key])`), non-empty string values, attribute-context safety (no raw `"`, `<`, `&`), and frozen-object invariant.
+
+### Verification
+
+| Check                               | Result                                                                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Output identity (gold standard)     | `diff -r` of generated `dist/` before vs after refactor — **byte-identical**                                                               |
+| JS Tests (full suite)               | 1131 total, 1127 pass, 0 fail, 4 skipped (baseline + 6 new translations tests)                                                             |
+| Targeted suites                     | translations 6/6, school-page, homepage, province-page, footer, navigation — 175/175 pass                                                  |
+| Coverage gate                       | 95.59% lines / 93.08% branches (thresholds 80/75); `translations.js` 100%                                                                  |
+| ESLint                              | 0 errors (all 5 changed files)                                                                                                             |
+| Prettier                            | Clean on all changed files                                                                                                                 |
+| Build                               | Status: PASS, 2 school pages + 2 province pages, 0 failed                                                                                  |
+| Generated HTML spot-check           | `aria-label="Cari sekolah berdasarkan nama, NPSN, atau alamat"`, `Pilih Provinsi`, `<a href="/">Beranda</a>`, `Kabupaten/Kota` all present |
+| Residual `CONFIG.TEXT` in templates | Zero — grep for `CONFIG.TEXT` in `src/presenters/templates/` returns no matches                                                            |
+| Zero regressions                    | Confirmed                                                                                                                                  |
+
+### Files Modified
+
+- `src/presenters/templates/shared/translations.js` — NEW shared pre-escaped `T` module (exported, frozen)
+- `src/presenters/templates/school-page.js` — local `T` construction replaced with shared import
+- `src/presenters/templates/homepage.js` — 2 use-site `escapeHtml(CONFIG.TEXT.X)` → `T.X`; unused `CONFIG` import removed
+- `src/presenters/templates/province-page.js` — `T.HOME` breadcrumb, `T.CITY_REGENCY` stat label
+- `scripts/translations.test.js` — NEW 6-test suite
+- `docs/api.md` — Translations Module section in Shared Template Modules + module tree + dependency graph row
+- `docs/blueprint.md` — decisions-log entry 2026-08-17
+- `docs/task.md` — This entry; REFACTOR-009 marked Complete
+
+### Acceptance Criteria
+
+- [x] Single canonical translation access pattern (`T`) across all three templates
+- [x] Pre-escaping performed exactly once at module load (no redundant escapeHtml calls during build)
+- [x] New `CONFIG.TEXT` keys automatically available as `T.<KEY>` in all templates
+- [x] All templates produce byte-identical HTML output (verified via generated-dist diff)
+- [x] All template tests continue to pass (1131 JS total, 0 fail)
+- [x] Backlog REFACTOR-009 marked Complete
+
+---
+
 ### [TASK-084] Technical Writing — Doc-Code Alignment for Homepage Module (api.md, feature.md, REFACTOR-007 follow-up)
 
 **Status**: Complete
@@ -6599,7 +6668,7 @@ Add test file `scripts/interactive.test.js` with coverage for:
 
 ### [REFACTOR-009] Consolidate text translation access patterns across page templates
 
-**Status**: Backlog
+**Status**: Complete (TASK-085)
 **Priority**: Low
 **Effort**: Small
 
