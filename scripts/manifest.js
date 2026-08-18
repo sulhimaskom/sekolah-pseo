@@ -120,9 +120,9 @@ async function saveManifest(manifest) {
  */
 function computeSchoolHash(school) {
   // Fields that affect the generated page content
-  // NOTE: excluded fields that don't affect output:
+  // NOTE: excluded field that doesn't affect output:
   //   - kelurahan: not displayed in school page template
-  //   - lat/lon: not displayed in school page template
+  //   - lat/lon: included — rendered in comparisonData (school-page.js)
   const relevantFields = [
     school.npsn,
     school.nama,
@@ -132,6 +132,8 @@ function computeSchoolHash(school) {
     school.kecamatan,
     school.kab_kota,
     school.provinsi,
+    school.lat,
+    school.lon,
   ]
     .map(field => {
       const value = String(field ?? '');

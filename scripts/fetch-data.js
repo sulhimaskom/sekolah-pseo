@@ -180,6 +180,45 @@ function validateBranchName(branchName) {
 }
 
 /**
+ * Validates the external data directory to prevent command injection in execSync.
+ * Only allows safe path characters: alphanumeric, hyphens, underscores, dots, slashes, colons.
+ * @param {string} dir - The external data directory to validate
+ * @returns {string} The validated directory
+ * @throws {IntegrationError} If directory contains unsafe characters
+ */
+function validateExternalDataDir(dir) {
+  if (typeof dir !== 'string' || dir.length === 0) {
+    throw new IntegrationError(
+      'External data directory must be a non-empty string.',
+      ERROR_CODES.VALIDATION_ERROR,
+      {
+        reason: 'Invalid directory type or empty',
+      }
+    );
+  }
+
+  // Reject any directory with shell metacharacters or whitespace
+  if (!/^[a-zA-Z0-9_\-.\\/:]+$/.test(dir)) {
+    throw new IntegrationError(
+      `Invalid external data directory: "${dir}". Directory paths can only contain alphanumeric characters, hyphens, underscores, dots, slashes, and colons.`,
+      ERROR_CODES.VALIDATION_ERROR,
+      { externalDataDir: dir }
+    );
+  }
+
+  // Prevent path traversal / hidden directories
+  if (dir.split(/[\\/]/).includes('..')) {
+    throw new IntegrationError(
+      `Invalid external data directory: "${dir}". Directory paths cannot contain double dots.`,
+      ERROR_CODES.VALIDATION_ERROR,
+      { externalDataDir: dir }
+    );
+  }
+
+  return dir;
+}
+
+/**
  * Executes a git command synchronously with timeout protection.
  * Wraps execSync with withTimeoutSync to prevent hanging on external operations.
  * @param {string} command - Git command to execute
@@ -207,6 +246,7 @@ function execGitCommand(command, execOptions, operationName) {
 function fetchFromGitHub(repoUrl = DEFAULT_SOURCE_REPO, branch = DEFAULT_BRANCH) {
   const safeRepoUrl = validateRepoUrl(repoUrl);
   const safeBranch = validateBranchName(branch);
+  validateExternalDataDir(EXTERNAL_DATA_DIR);
   logger.info({ repo: safeRepoUrl, branch: safeBranch }, 'Fetching external data');
 
   return fetchCircuitBreaker.execute(() => {
@@ -414,6 +454,7 @@ module.exports = {
   copyToRaw,
   validateRepoUrl,
   validateBranchName,
+  validateExternalDataDir,
   execGitCommand,
   useCachedData,
   fetchCircuitBreaker,

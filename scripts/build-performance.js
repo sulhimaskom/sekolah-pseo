@@ -351,7 +351,6 @@ async function monitorBuild(buildFn, options = {}) {
   let result;
   try {
     result = await buildFn(tracker);
-    return { result, report: tracker.generateReport() };
   } finally {
     tracker.stop();
     tracker.logReport();
@@ -365,6 +364,9 @@ async function monitorBuild(buildFn, options = {}) {
       );
     }
   }
+
+  // Report is generated after stop() so metrics reflect the full build
+  return { result, report: tracker.generateReport() };
 }
 
 module.exports = {
