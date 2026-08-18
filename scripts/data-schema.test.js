@@ -259,7 +259,11 @@ test('validateRecord reports non-numeric NPSN once via the pattern check', () =>
   assert.ok(msg.includes('npsn'));
   assert.ok(msg.includes('pattern'));
   const npsnErrors = errors.filter(e => e.includes('"npsn"'));
-  assert.strictEqual(npsnErrors.length, 1, 'npsn should be reported exactly once (no duplicate legacy check)');
+  assert.strictEqual(
+    npsnErrors.length,
+    1,
+    'npsn should be reported exactly once (no duplicate legacy check)'
+  );
 });
 
 test('validateRecord handles null/undefined record', () => {
