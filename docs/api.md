@@ -3885,6 +3885,61 @@ const html = `<span aria-label="${T.COPY_NPSN}">${T.NPSN}</span>`;
 
 ---
 
+### Comparison Module (`src/presenters/templates/shared/comparison.js`)
+
+#### Purpose
+
+Provides the shared school comparison tray (FEAT-005) — the "Bandingkan" widget that lets visitors compare up to 3 schools side by side. Pure front-end composition with no external dependencies. Each school page embeds its own data as a `<script type="application/json" id="school-data">` payload; the "Bandingkan" button on the school page adds that school to a tray persisted in `localStorage` (max 3). The tray is injected via the shared footer so it is present on every page type and survives navigation between static pages. Mirrors the `back-to-top.js` generator pattern (Html + Script pair).
+
+#### Exports
+
+```javascript
+module.exports = {
+  COMPARISON_STORAGE_KEY: string,
+  COMPARISON_MAX: number,
+  COMPARISON_METRICS: Array<{ key: string, label: string }>,
+  generateComparisonTrayHtml: () => string,
+  generateComparisonScript: () => string,
+};
+```
+
+#### Constants
+
+##### `COMPARISON_STORAGE_KEY`
+
+`'sekolah-pseo:comparison:v1'` — `localStorage` key for the persisted comparison tray.
+
+##### `COMPARISON_MAX`
+
+`3` — maximum number of schools in the tray; a 4th selection is blocked.
+
+##### `COMPARISON_METRICS`
+
+Metrics compared side-by-side, in display order: `npsn`, `status`, `bentuk_pendidikan`, `kecamatan`, `kab_kota`, `provinsi`, `koordinat`.
+
+#### Functions
+
+##### `generateComparisonTrayHtml()`
+
+Returns the tray widget markup (`<aside class="comparison-tray">`), hidden until schools are added. Includes the toggle button, tray list, status region (`role="status"` + `aria-live="polite"`), and the side-by-side comparison table.
+
+##### `generateComparisonScript()`
+
+Returns the client-side script that restores the tray from `localStorage` on load, wires `.btn-compare` buttons on school pages (adds the current `#school-data`), rejects duplicates, blocks a 4th selection, allows removal, and renders the side-by-side table (visible for ≥ 2 selections). All school-derived strings are rendered via `textContent` (never `innerHTML`) to prevent XSS; `localStorage` failures fall back to session-only behavior.
+
+**Dependencies:** None (standalone module)
+
+**Usage:**
+
+```javascript
+const { generateComparisonTrayHtml, generateComparisonScript } = require('./shared/comparison');
+
+const trayHtml = generateComparisonTrayHtml();
+const trayScript = generateComparisonScript();
+```
+
+---
+
 ## Build Pages Controller (`scripts/build-pages.js`)
 
 ### Purpose
@@ -6566,6 +6621,48 @@ Both human-readable and `--json` modes exit non-zero when violations are found, 
   checkedAt: 'ISO-8601'
 }
 ```
+
+---
+
+## Test Helpers Module (`scripts/test-helpers.js`)
+
+### Purpose
+
+Shared utilities for the JavaScript test suite (`scripts/*.test.js`). Many modules read global configuration from the shared CONFIG singleton (`src/core/config.js`). Mutating CONFIG directly inside a test body is brittle: if the test fails before restoring the original value, every later test in the same file observes the mutated state — order-dependent, cascading failures. These helpers make CONFIG overrides exception-safe so tests stay isolated regardless of pass/fail.
+
+### Exports
+
+```javascript
+module.exports = {
+  withConfig: async (overrides: Object<string, *>, fn: Function) => Promise<*>,
+};
+```
+
+### Functions
+
+#### `withConfig(overrides, fn)`
+
+Temporarily overrides CONFIG values for the duration of `fn`, restoring the originals afterward — even if `fn` throws or rejects. Accepts partial overrides so callers only touch the keys they need; all other CONFIG keys are left untouched.
+
+**Arguments:**
+
+- `overrides` — partial CONFIG overrides, e.g. `{ DIST_DIR: '/tmp/x' }`
+- `fn` — sync or async function to run while the overrides are applied
+
+**Returns:** the resolved value of `fn`.
+
+**Usage:**
+
+```javascript
+const { withConfig } = require('./test-helpers');
+
+await withConfig({ SCHOOLS_CSV_PATH: '/tmp/schools.csv' }, async () => {
+  const result = await getDataFreshness();
+  assert.strictEqual(result.exists, true);
+});
+```
+
+**Dependencies:** `src/core/config.js` (CONFIG singleton)
 
 ---
 
