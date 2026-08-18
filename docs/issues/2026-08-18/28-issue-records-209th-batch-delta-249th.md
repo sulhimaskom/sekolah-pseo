@@ -10,7 +10,7 @@
 | ------- | -------- | -------- | ------ | ----------- |
 | F002    | ci       | P1       | HELD   | Token lacks `issues: write` — **403 CONCLUSIVE (51st)** |
 | F004    | security | P2       | HELD   | **57 refs / 10 names** (workflows `*.yml` only) — byte-identical to 248th basis, **zero growth** |
-| F005    | docs     | P3       | HELD   | **144 files** (97th obs): 142 ledger + SECURITY_AUDIT_NOTE.md + **NEW scripts/data-schema.test.js** — ledger-only by convention except the new source-test drift (F251) |
+| F005    | docs     | P3       | HELD   | **143 files** (97th obs): 142 ledger + SECURITY_AUDIT_NOTE.md — ledger-only by convention; **NEW source-test drift resolved this run (F251 FIXED in PR #809 PR-handler pass)** |
 | F007    | refactor | P2       | HELD   | Workflow YAML overcomplexity (2045L) |
 | F011    | release  | P2       | HELD   | 0 tags / no release process (F242 docs-fix landed; automation still absent) |
 | F018    | data     | P2       | HELD   | Data STALE 29 days (threshold 7) |
@@ -52,7 +52,7 @@
 - **Criteria breakdown**: Consistency (−1: single unformatted line in an otherwise prettier-clean source tree); Documentation Accuracy (minor: the F005 "ledger-only" claim in prior reports is now stale).
 - **Impact / Risk**: Low — cosmetic, no runtime effect. Risk is precedent: unchecked format drift creeping into source.
 - **Files affected**: `scripts/data-schema.test.js:262`
-- **Suggested fix (Phase 2 candidate)**: `npx prettier --write scripts/data-schema.test.js` (single line reformat) + run `npm run format:check` to confirm 143 files (ledger + SECURITY_AUDIT_NOTE only).
+- **Resolution**: **FIXED in PR #809 (PR-handler pass)** — `npx prettier --write scripts/data-schema.test.js` applied (single-line reformat); `npx prettier --check scripts/data-schema.test.js` now clean; `npm run format:check` back to **143 files** (142 ledger + SECURITY_AUDIT_NOTE.md only, F005 by convention). "Zero source-test drift" invariant restored. Full suite re-verified after fix: lint 0/0, build 2 pages 0 failed budgets PASS, test:js 1334 pass / 0 fail / 4 skipped, test:py 27/27. Next run to verify holding (1st obs).
 
 ### F252 — [security][P2] Unpinned mutable action tags + unpinned curl|bash installer across all 6 workflows
 
@@ -89,14 +89,14 @@
 | F239 (remaining) | docs     | P2 | 8 tree-listed modules without doc sections — focused docs PR per module |
 | F240 | docs     | P2 | husky `"prepare"` wiring belongs with the husky-rework decision (two competing hook systems) — recorded, deferred |
 | F245 | refactor | P2 | ~700 lines of ES5 inline client JS — conversion to lint-visible modules is a large, risky change |
-| F251 | test     | P3 | single-line prettier fix — trivial, first Phase 2 candidate (does NOT require F050) |
+| F251 | test     | P3 | **FIXED in PR #809** — prettier `--write` applied by PR-handler pass; source-drift invariant restored |
 | F018 | data     | P2 | requires external API credentials (IFLOW/GEMINI) not available to this token — out of scope |
 | F064 | config   | P3 | correct fix (upgrade CI to node 22) is a workflow change — F050-blocked; downgrading `.nvmrc` would codify an EOL version |
-| F005 | docs     | P3 | ledger files exempt by convention (97th obs) — no action; F251 is the actionable exception |
+| F005 | docs     | P3 | ledger files exempt by convention (97th obs) — no action; **F251 exception resolved in PR #809** |
 
 ## Suggested resolutions (ranked)
 
-1. **F251 (P3, unblocked)**: `npx prettier --write scripts/data-schema.test.js` — restores the "zero source drift" invariant. Only fix not blocked by F050.
+1. **F251 (P3, unblocked)**: `npx prettier --write scripts/data-schema.test.js` — restores the "zero source drift" invariant. **APPLIED in PR #809 PR-handler pass** — verify holding next run. (Only fix not blocked by F050.)
 2. **F037/F038/F229/F063/F227/F252/F253 (P1/P2)**: workflow hardening — requires a `workflows`-enabled token (F050). Highest-leverage delivery blocker.
 3. **F233 (full, P2)**: audit callers of `retry()`; rethrow non-transient errors directly where no caller relies on the wrapper.
 4. **F239 (remaining, P2)**: author the 8 missing api.md module sections.

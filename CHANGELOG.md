@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CircuitBreaker.reset()` emitted a misleading `stateChange` payload (F249)
 - Coordinate validation accepted partial numeric matches (`'12abc'`) and npsn
   was reported twice for the same defect (F250)
+- Source-test prettier drift — `scripts/data-schema.test.js` assertion over 80
+  cols reformatted to multiline, restoring the "zero source files" invariant (F251)
 
 ### Security
 
