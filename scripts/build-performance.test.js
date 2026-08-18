@@ -500,6 +500,31 @@ test('monitorBuild handles build function errors', async () => {
   );
 });
 
+test('monitorBuild returns report with real elapsed metrics after stop()', async () => {
+  const result = await monitorBuild(
+    async tracker => {
+      tracker.recordPageCounts(10, 0);
+      await new Promise(resolve => setTimeout(resolve, 5));
+      return { built: true };
+    },
+    {
+      budgets: {
+        MAX_BUILD_TIME_MS: 60000,
+        MAX_MEMORY_BYTES: 2 * 1024 * 1024 * 1024,
+        MIN_THROUGHPUT: 0,
+        MAX_FAILED_PAGES: 5,
+      },
+    }
+  );
+
+  // Regression for F231: the returned report used to be generated before
+  // tracker.stop(), so elapsedMs/throughput/memory were always zeroed.
+  assert.ok(result.report.metrics.elapsedMs > 0, 'elapsedMs must be > 0');
+  assert.ok(result.report.metrics.throughput > 0, 'throughput must be > 0');
+  assert.notStrictEqual(result.report.metrics.memoryDelta, '0 B');
+  assert.strictEqual(result.result.built, true);
+});
+
 test('monitorBuild throws on violation when throwOnViolation is true', async () => {
   await assert.rejects(
     () =>

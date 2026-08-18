@@ -78,6 +78,29 @@ test('computeSchoolHash generates different hash for different school data', () 
   assert.notStrictEqual(hash1, hash2);
 });
 
+test('computeSchoolHash changes when only lat/lon change', () => {
+  const { computeSchoolHash } = require('./manifest');
+
+  const school = {
+    npsn: '12345678',
+    nama: 'SMA Negeri 1',
+    bentuk_pendidikan: 'SMA',
+    status: 'Negeri',
+    alamat: 'Jl. Test No. 1',
+    kelurahan: 'Test Village',
+    kecamatan: 'Test District',
+    kab_kota: 'Test City',
+    provinsi: 'Test Province',
+    lat: '-6.200000',
+    lon: '106.816666',
+  };
+  const moved = { ...school, lat: '-6.300000', lon: '106.900000' };
+
+  // Regression for F232: lat/lon are rendered in the school page
+  // (comparisonData), so a coordinate-only change must invalidate the hash.
+  assert.notStrictEqual(computeSchoolHash(school), computeSchoolHash(moved));
+});
+
 test('computeSchoolHash ignores irrelevant fields', () => {
   const { computeSchoolHash } = require('./manifest');
 

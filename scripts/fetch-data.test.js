@@ -19,6 +19,7 @@ const {
   copyToRaw,
   validateRepoUrl,
   validateBranchName,
+  validateExternalDataDir,
   execGitCommand,
   useCachedData,
   fetchCircuitBreaker,
@@ -634,6 +635,54 @@ describe('fetch-data', () => {
 
     it('rejects branch name with shell metacharacters', () => {
       assert.throws(() => validateBranchName('branch;rm -rf /'), {
+        name: 'IntegrationError',
+      });
+    });
+  });
+
+  describe('validateExternalDataDir', () => {
+    it('accepts safe absolute path', () => {
+      const result = validateExternalDataDir('/tmp/sekolah-pseo-external-data');
+      assert.strictEqual(result, '/tmp/sekolah-pseo-external-data');
+    });
+
+    it('accepts relative path with dots and hyphens', () => {
+      const result = validateExternalDataDir('./external-data');
+      assert.strictEqual(result, './external-data');
+    });
+
+    it('rejects shell metacharacters', () => {
+      assert.throws(() => validateExternalDataDir('/tmp/x; rm -rf /'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects command substitution', () => {
+      assert.throws(() => validateExternalDataDir('/tmp/$(whoami)'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects whitespace', () => {
+      assert.throws(() => validateExternalDataDir('/tmp/my data'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects path traversal', () => {
+      assert.throws(() => validateExternalDataDir('/tmp/../../etc'), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects empty string', () => {
+      assert.throws(() => validateExternalDataDir(''), {
+        name: 'IntegrationError',
+      });
+    });
+
+    it('rejects non-string input', () => {
+      assert.throws(() => validateExternalDataDir(null), {
         name: 'IntegrationError',
       });
     });
