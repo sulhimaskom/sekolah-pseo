@@ -371,6 +371,14 @@ function generateHomepageHtml(schools) {
         });
       }
       
+      // Deterministic province-page fallback for legacy-format schools that
+      // lack a 'u' URL — mirrors the server-side slugify rules (lowercase,
+      // strip diacritics, non-alphanumerics -> hyphens) so the link resolves.
+      function provinceUrlFallback(school) {
+        if (!school.p) return '#';
+        return '/provinsi/' + String(school.p).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '/';
+      }
+
       // Generate DOM element for school result (safe alternative to innerHTML)
       function createSchoolResultElement(school) {
         var statusLabel = school.s === 'S' ? 'Swasta' : 'Negeri';
@@ -381,7 +389,7 @@ function generateHomepageHtml(schools) {
         li.className = 'school-result-item';
         
         var a = document.createElement('a');
-        a.href = school.u || '/provinsi/' + school.provinceSlug + '/';
+        a.href = school.u || provinceUrlFallback(school);
         a.className = 'school-result-link';
         
         var header = document.createElement('div');

@@ -533,6 +533,29 @@ describe('retry', () => {
     });
   });
 
+  test('preserves the original error as cause on exhaustion', async () => {
+    const original = new TypeError('not a number');
+    const fn = () => Promise.reject(original);
+
+    await assert.rejects(retry(fn, { maxAttempts: 2, initialDelayMs: 10 }), error => {
+      assert.strictEqual(error.code, ERROR_CODES.RETRY_EXHAUSTED);
+      assert.strictEqual(error.details.cause, original);
+      return true;
+    });
+  });
+
+  test('non-transient failures keep their original identity in cause', async () => {
+    const original = new Error('EIO: Input/output error');
+    original.code = 'EIO';
+    const fn = () => Promise.reject(original);
+
+    await assert.rejects(retry(fn, { maxAttempts: 2, initialDelayMs: 10 }), error => {
+      assert.strictEqual(error.details.cause.code, 'EIO');
+      assert.strictEqual(error.details.cause.message, 'EIO: Input/output error');
+      return true;
+    });
+  });
+
   test('jitter option does not change retry count or success', async () => {
     let attemptCount = 0;
     const fn = () => {
@@ -906,5 +929,28 @@ describe('CircuitBreaker', () => {
     circuitBreaker.halfOpenProbeInFlight = true;
     circuitBreaker.reset();
     assert.strictEqual(circuitBreaker.getState().probeInFlight, false);
+  });
+
+  test('reset emits stateChange from the actual previous state', () => {
+    const events = [];
+    circuitBreaker.onStateChange(payload => events.push(payload));
+    circuitBreaker.onFailure();
+    circuitBreaker.onFailure();
+    circuitBreaker.onFailure();
+    circuitBreaker.onFailure();
+    circuitBreaker.onFailure();
+    assert.strictEqual(circuitBreaker.getState().state, 'OPEN');
+
+    circuitBreaker.reset();
+    assert.strictEqual(events[events.length - 1].from, 'OPEN');
+    assert.strictEqual(events[events.length - 1].to, 'CLOSED');
+  });
+
+  test('reset from CLOSED emits CLOSED-to-CLOSED transition', () => {
+    const events = [];
+    circuitBreaker.onStateChange(payload => events.push(payload));
+    circuitBreaker.reset();
+    assert.strictEqual(events[events.length - 1].from, 'CLOSED');
+    assert.strictEqual(events[events.length - 1].to, 'CLOSED');
   });
 });

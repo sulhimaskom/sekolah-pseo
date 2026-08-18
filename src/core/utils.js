@@ -204,7 +204,10 @@ function hasCoordinateData(school) {
   if (!school) return false;
   if (!school.lat || !school.lon) return false;
   if (school.lat === '' || school.lon === '') return false;
-  if (parseFloat(school.lat) === 0 || parseFloat(school.lon) === 0) return false;
+  const lat = String(school.lat).trim();
+  const lon = String(school.lon).trim();
+  if (!/^-?\d+(\.\d+)?$/.test(lat) || !/^-?\d+(\.\d+)?$/.test(lon)) return false;
+  if (parseFloat(lat) === 0 || parseFloat(lon) === 0) return false;
   return true;
 }
 

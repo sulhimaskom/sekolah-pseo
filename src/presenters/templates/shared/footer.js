@@ -14,9 +14,6 @@
 
 const { generateComparisonTrayHtml, generateComparisonScript } = require('./comparison');
 
-// Hoisted constant - computed once at module load
-const CURRENT_YEAR = new Date().getFullYear();
-
 /**
  * Generate a consistent footer HTML block, followed by the shared comparison
  * tray widget and its client script.
@@ -24,15 +21,17 @@ const CURRENT_YEAR = new Date().getFullYear();
  * @param {Object} [options] - Footer configuration
  * @param {string} [options.siteName='Sekolah PSEO'] - Site name displayed in copyright
  * @param {string} [options.extraContent=''] - Additional HTML content injected after copyright line
+ * @param {number} [options.year=new Date().getFullYear()] - Copyright year (injectable for deterministic tests)
  * @returns {string} Footer HTML string
  */
 function generateFooterHtml(options = {}) {
   const siteName = options.siteName || 'Sekolah PSEO';
   const extraContent = options.extraContent || '';
+  const year = options.year || new Date().getFullYear();
 
   return `
   <footer role="contentinfo">
-    <p>&copy; ${CURRENT_YEAR} ${siteName}. Data sekolah berasal dari Dapodik.</p>${extraContent}
+    <p>&copy; ${year} ${siteName}. Data sekolah berasal dari Dapodik.</p>${extraContent}
   </footer>
   ${generateComparisonTrayHtml()}
   ${generateComparisonScript()}`;

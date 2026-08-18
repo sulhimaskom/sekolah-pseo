@@ -329,7 +329,8 @@ describe('interactive CLI', () => {
       process.argv = ['node', 'interactive.js', '--help'];
       process.stdin.isTTY = false;
       delete require.cache[require.resolve('./interactive')];
-      require('./interactive');
+      const { main } = require('./interactive');
+      main();
       const text = captured.join('');
       assert.ok(text.includes('Usage:'));
       assert.ok(text.includes('--help'));
@@ -342,7 +343,8 @@ describe('interactive CLI', () => {
       process.argv = ['node', 'interactive.js', '--list'];
       process.stdin.isTTY = false;
       delete require.cache[require.resolve('./interactive')];
-      require('./interactive');
+      const { main } = require('./interactive');
+      main();
       const output = captured.join('');
       assert.doesNotThrow(() => JSON.parse(output));
       const parsed = JSON.parse(output);
@@ -355,7 +357,8 @@ describe('interactive CLI', () => {
       process.argv = ['node', 'interactive.js', '--list=flat'];
       process.stdin.isTTY = false;
       delete require.cache[require.resolve('./interactive')];
-      require('./interactive');
+      const { main } = require('./interactive');
+      main();
       const output = captured.join('');
       assert.doesNotThrow(() => {
         const parsed = JSON.parse(output);
@@ -373,12 +376,21 @@ describe('interactive CLI', () => {
       process.argv = ['node', 'interactive.js'];
       process.stdin.isTTY = false;
       delete require.cache[require.resolve('./interactive')];
-      require('./interactive');
+      const { main } = require('./interactive');
+      main();
       const text = captured.join('');
       assert.ok(text.includes('Sekolah PSEO Interactive CLI'));
       assert.ok(text.includes('npm run'));
       assert.ok(text.includes('test'));
       assert.ok(text.includes('build'));
+    });
+
+    it('requiring the module does not auto-run main (F238)', () => {
+      process.argv = ['node', 'interactive.js', '--help'];
+      process.stdin.isTTY = false;
+      delete require.cache[require.resolve('./interactive')];
+      require('./interactive');
+      assert.strictEqual(captured.join(''), '', 'main() must not run at require time');
     });
   });
 

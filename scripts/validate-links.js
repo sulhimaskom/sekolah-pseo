@@ -14,12 +14,26 @@ const { walkDirectory, processConcurrently, terminate } = require('../src/core/u
 
 /**
  * Checks if a link is a relative link (should be validated locally).
- * Filters out: null/undefined, empty, hash-only/fragment, and external URLs.
+ * Filters out: null/undefined, empty, hash-only/fragment, external http(s)
+ * URLs, non-hierarchical URI schemes (mailto:, tel:, javascript:, data:), and
+ * protocol-relative URLs (//host/path — resolved against the site origin).
  * @param {string|null|undefined} link - The link to check
  * @returns {boolean} True if the link is a relative link
  */
 function isRelativeLink(link) {
-  if (!link || link === '#' || link.startsWith('#') || /^https?:/.test(link)) {
+  if (!link || link === '#' || link.startsWith('#')) {
+    return false;
+  }
+  // External http/https links are not local
+  if (/^https?:/i.test(link)) {
+    return false;
+  }
+  // Non-hierarchical schemes (mailto:, tel:, javascript:, data:, etc.)
+  if (/^[a-z][a-z0-9+.-]*:/i.test(link)) {
+    return false;
+  }
+  // Protocol-relative URLs resolve against the site origin, not dist/
+  if (link.startsWith('//')) {
     return false;
   }
   return true;

@@ -221,7 +221,10 @@ function matchesPattern(value, pattern) {
  */
 function isValidCoordinate(value, min, max) {
   if (!isNonEmpty(value)) return false;
-  const num = parseFloat(value);
+  const str = String(value).trim();
+  // Strict full-string numeric match — parseFloat('12abc') would otherwise pass
+  if (!/^-?\d+(\.\d+)?$/.test(str)) return false;
+  const num = Number(str);
   if (isNaN(num)) return false;
   if (num === 0) return false; // zero typically means unset
   return num >= min && num <= max;
@@ -308,11 +311,6 @@ function validateRecord(record) {
         );
       }
     }
-  }
-
-  // Check numeric pattern for npsn (legacy /^\d+$/ check)
-  if (isNonEmpty(record.npsn) && !/^\d+$/.test(String(record.npsn).trim())) {
-    errors.push(`Field "npsn" value "${record.npsn}" must be numeric`);
   }
 
   return errors;

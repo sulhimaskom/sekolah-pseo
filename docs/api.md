@@ -8,19 +8,11 @@ This document defines the internal API contracts for all modules in the Sekolah 
 
 ```
 scripts/ # Controllers, utilities, and CLI tools
-├── config.js # Configuration module
-├── utils.js # Shared utility functions (CSV, HTML, directory walk)
-├── resilience.js # Resilience patterns (retry, timeout, circuit breaker)
-├── fs-safe.js # Resilient file system wrappers
-├── rate-limiter.js # Rate limiting for concurrent operations
-├── data-schema.js # Centralized data schema definition
-├── slugify.js # URL slug generation
 ├── etl.js # ETL operations (extract, transform, load)
 ├── build-pages.js # Page build controller (delegates to BuildOrchestrator)
 ├── build-performance.js # Build performance tracking and budgets
 ├── sitemap.js # Sitemap generator
 ├── validate-links.js # Link validation
-├── logger.js # Pino-based logging
 ├── fetch-data.js # External data fetch from GitHub
 ├── enrichment.js # School data enrichment (Wikipedia API)
 ├── check-freshness.js # Data freshness check
@@ -28,32 +20,42 @@ scripts/ # Controllers, utilities, and CLI tools
 ├── data-quality.js # Data quality analysis and scoring
 ├── manifest.js # Build manifest for incremental builds
 ├── interactive.js # CLI interactive menu
-└── check-workflow-security.js # Workflow security validation (CI)
+├── check-workflow-security.js # Workflow security validation (CI)
+└── test-helpers.js # Shared test utilities
 
 src/
+├── core/ # Shared infrastructure layer
+│   ├── config.js # Configuration module
+│   ├── data-schema.js # Centralized data schema definition
+│   ├── fs-safe.js # Resilient file system wrappers
+│   ├── logger.js # Pino-based logging
+│   ├── rate-limiter.js # Rate limiting for concurrent operations
+│   ├── resilience.js # Resilience patterns (retry, timeout, circuit breaker)
+│   ├── slugify.js # URL slug generation
+│   └── utils.js # Shared utility functions (CSV, HTML, directory walk)
 ├── services/
 │   ├── PageBuilder.js # Page data builders (paths, grouping, search)
 │   ├── BuildOrchestrator.js # Build pipeline orchestration service
 │   ├── SearchDataService.js # Search data artifact generation (schools.json + gzip)
 │   └── ExportService.js # Static artifact exports (styles.css, schools.csv)
 └── presenters/
-├── design-system.js # Design tokens
-├── styles.js # CSS generator
-└── templates/
-├── school-page.js # School page HTML template
-├── homepage.js # Homepage HTML template
-├── province-page.js # Province page HTML template
-├── kabupaten-page.js # Kabupaten/kota page HTML template
-├── kecamatan-page.js # Kecamatan page HTML template
-└── shared/
-├── head-meta.js # Shared HTML head prefix (security headers, meta)
-├── back-to-top.js # Shared back-to-top button HTML + script
-├── navigation.js # Shared breadcrumb navigation component
-├── footer.js # Shared footer component
-├── hero.js # Shared hero section component (title, description, stats)
-├── index-head.js # Shared index-page <head> block (SEO meta + stylesheet)
-├── comparison.js # Shared school comparison tray (Bandingkan)
-└── translations.js # Shared pre-escaped translations (T)
+    ├── design-system.js # Design tokens
+    ├── styles.js # CSS generator
+    └── templates/
+        ├── school-page.js # School page HTML template
+        ├── homepage.js # Homepage HTML template
+        ├── province-page.js # Province page HTML template
+        ├── kabupaten-page.js # Kabupaten/kota page HTML template
+        ├── kecamatan-page.js # Kecamatan page HTML template
+        └── shared/
+            ├── head-meta.js # Shared HTML head prefix (security headers, meta)
+            ├── back-to-top.js # Shared back-to-top button HTML + script
+            ├── navigation.js # Shared breadcrumb navigation component
+            ├── footer.js # Shared footer component
+            ├── hero.js # Shared hero section component (title, description, stats)
+            ├── index-head.js # Shared index-page <head> block (SEO meta + stylesheet)
+            ├── comparison.js # Shared school comparison tray (Bandingkan)
+            └── translations.js # Shared pre-escaped translations (T)
 ```
 
 ## Configuration Module (`src/core/config.js`)
@@ -5174,7 +5176,7 @@ A dedicated `CircuitBreaker` instance for the external data source. Isolated fro
 
 #### `findCsvFiles(dir)`
 
-(unchanged from previous - see below)
+Recursively finds CSV files under the given directory.
 
 ### Purpose
 

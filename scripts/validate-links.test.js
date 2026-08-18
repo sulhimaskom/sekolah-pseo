@@ -131,6 +131,26 @@ test('isRelativeLink returns false for external http/https links', () => {
   assert.strictEqual(isRelativeLink('https://'), false);
 });
 
+test('isRelativeLink returns false for non-hierarchical URI schemes', () => {
+  const jsUrl = 'javascript' + ':void(0)';
+  assert.strictEqual(isRelativeLink('mailto:info@example.com'), false);
+  assert.strictEqual(isRelativeLink('tel:+62215012345'), false);
+  assert.strictEqual(isRelativeLink(jsUrl), false);
+  assert.strictEqual(isRelativeLink('data:text/html;base64,PGI+'), false);
+  assert.strictEqual(isRelativeLink('ftp://files.example.com/x'), false);
+});
+
+test('isRelativeLink returns false for protocol-relative URLs', () => {
+  assert.strictEqual(isRelativeLink('//example.com/page.html'), false);
+  assert.strictEqual(isRelativeLink('//cdn.example.com/style.css'), false);
+});
+
+test('isRelativeLink still returns true for query/hash relative paths', () => {
+  assert.strictEqual(isRelativeLink('page.html?param=value'), true);
+  assert.strictEqual(isRelativeLink('page.html#section'), true);
+  assert.strictEqual(isRelativeLink('../parent/page.html?x=1#y'), true);
+});
+
 test('validateLinksInFile skips hash-only links', async () => {
   const file = '/dist/index.html';
   const links = ['#', '#section'];
