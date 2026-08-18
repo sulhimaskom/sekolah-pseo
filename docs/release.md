@@ -64,7 +64,11 @@ git push origin main --follow-tags
 
 ### 4. Automated Release
 
-Pushing a tag matching `v*` triggers the **release workflow** (`.github/workflows/release.yml`), which:
+> **Note**: The release workflow (`.github/workflows/release.yml`) is not currently
+> present in the repository. This section is provided as a template for the
+> intended automation — create the workflow file as part of your release setup.
+
+Pushing a tag matching `v*` is intended to trigger a **release workflow** (`.github/workflows/release.yml`), which:
 
 1. Checks out the code
 2. Installs dependencies

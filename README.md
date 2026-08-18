@@ -302,12 +302,16 @@ Repositori ini menggunakan GitHub Actions (`.github/workflows/`) untuk otomatisa
 - **`on-pull.yml`** — dijalankan saat pull request dan terjadwal (setiap jam); menjalankan agent workflow untuk penanganan PR. Build dan test dijalankan secara lokal melalui `npm run build`, `npm run test:js`, dan `npm run test:py`.
 - **`orchestrator.yml`**, **`architect-agent.yml`**, **`opencode.yml`**, **`parallel.yml`** — workflow agent otomatis untuk pemeliharaan repositori.
 
-Semua workflow tervalidasi terhadap aturan keamanan oleh `scripts/check-workflow-security.js` yang memeriksa:
+Semua workflow diperiksa terhadap aturan keamanan oleh `scripts/check-workflow-security.js` yang memeriksa:
 
 1. Tidak ada `API_KEY` yang menduplikasi `GEMINI_API_KEY`
 2. Tidak ada `id-token: write` pada workflow non-OIDC
 3. Tidak ada `actions: write` pada workflow non-merge
 4. Menggunakan `secrets.GITHUB_TOKEN`, bukan `secrets.GH_TOKEN`
+
+> **Catatan**: Validator saat ini melaporkan 12 pelanggaran (2 CRITICAL + 10 HIGH)
+> pada baseline workflow — lihat `SECURITY_AUDIT_NOTE.md` untuk detail dan status
+> perbaikannya.
 
 Jalankan validasi secara lokal:
 

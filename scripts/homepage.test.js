@@ -655,3 +655,61 @@ describe('downloadCsv formula-injection guard (client-side)', () => {
     });
   });
 });
+
+describe('provinceUrlFallback (client-side, F247)', () => {
+  const { generateHomepageHtml } = require('../src/presenters/templates/homepage');
+  const vm = require('node:vm');
+
+  function extractSearchScript(html) {
+    const match = html.match(/<script>([\s\S]*?)<\/script>/g);
+    assert.ok(match, 'homepage should contain a script block');
+    return match[match.length - 1].replace(/<\/?script>/g, '');
+  }
+
+  function extractProvinceUrlFallback(script) {
+    const start = script.indexOf('function provinceUrlFallback(');
+    assert.ok(start !== -1, 'generated script should define provinceUrlFallback');
+    const bodyStart = script.indexOf('{', start);
+    let depth = 0;
+    for (let i = bodyStart; i < script.length; i += 1) {
+      if (script[i] === '{') {
+        depth += 1;
+      } else if (script[i] === '}') {
+        depth -= 1;
+        if (depth === 0) {
+          const sandbox = {};
+          vm.createContext(sandbox);
+          vm.runInContext(script.slice(start, i + 1), sandbox);
+          return sandbox.provinceUrlFallback;
+        }
+      }
+    }
+    assert.fail('provinceUrlFallback function body not terminated');
+  }
+
+  it('builds a province page URL from the provinsi name', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const fallback = extractProvinceUrlFallback(extractSearchScript(html));
+    assert.strictEqual(fallback({ p: 'Jawa Barat' }), '/provinsi/jawa-barat/');
+    assert.strictEqual(fallback({ p: 'DKI Jakarta' }), '/provinsi/dki-jakarta/');
+  });
+
+  it('mirrors the server slugify diacritic stripping', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const fallback = extractProvinceUrlFallback(extractSearchScript(html));
+    assert.strictEqual(fallback({ p: 'D.I. Yogyakarta' }), '/provinsi/d-i-yogyakarta/');
+  });
+
+  it('returns a hash link when provinsi is missing', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    const fallback = extractProvinceUrlFallback(extractSearchScript(html));
+    assert.strictEqual(fallback({}), '#');
+    assert.strictEqual(fallback({ p: '' }), '#');
+  });
+
+  it('never emits /provinsi/undefined/ in the generated page', () => {
+    const html = generateHomepageHtml([{ npsn: '1', nama: 'A', provinsi: 'JB' }]);
+    assert.ok(!html.includes('/provinsi/undefined/'));
+    assert.ok(!html.includes('provinceSlug'));
+  });
+});

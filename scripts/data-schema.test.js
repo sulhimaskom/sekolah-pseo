@@ -140,6 +140,13 @@ test('isValidCoordinate returns false for non-numeric input', () => {
   assert.strictEqual(SCHEMA.isValidCoordinate(null, -11, 6), false);
 });
 
+test('isValidCoordinate rejects partial numeric matches', () => {
+  assert.strictEqual(SCHEMA.isValidCoordinate('12abc', 95, 141), false);
+  assert.strictEqual(SCHEMA.isValidCoordinate('-6.2abc', -11, 6), false);
+  assert.strictEqual(SCHEMA.isValidCoordinate('106.8456abc', 95, 141), false);
+  assert.strictEqual(SCHEMA.isValidCoordinate('abc12', 95, 141), false);
+});
+
 // ── isValidCategoricalValue ─────────────────────────────────────────────────
 
 test('isValidCategoricalValue validates status values', () => {
@@ -237,7 +244,7 @@ test('validateRecord reports invalid optional categorical values', () => {
   assert.ok(msg.includes('INVALID'));
 });
 
-test('validateRecord reports non-numeric NPSN', () => {
+test('validateRecord reports non-numeric NPSN once via the pattern check', () => {
   const record = {
     npsn: 'ABCDE',
     nama: 'Test School',
@@ -250,7 +257,9 @@ test('validateRecord reports non-numeric NPSN', () => {
   assert.ok(errors.length > 0);
   const msg = errors.join(' ');
   assert.ok(msg.includes('npsn'));
-  assert.ok(msg.includes('numeric'));
+  assert.ok(msg.includes('pattern'));
+  const npsnErrors = errors.filter(e => e.includes('"npsn"'));
+  assert.strictEqual(npsnErrors.length, 1, 'npsn should be reported exactly once (no duplicate legacy check)');
 });
 
 test('validateRecord handles null/undefined record', () => {

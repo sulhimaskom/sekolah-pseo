@@ -15,6 +15,12 @@ test('generateFooterHtml includes copyright with current year', () => {
   assert.ok(html.includes('&copy;'));
 });
 
+test('generateFooterHtml accepts an injectable year', () => {
+  const html = generateFooterHtml({ year: 2025 });
+  assert.ok(html.includes('&copy; 2025'));
+  assert.ok(!html.includes(String(new Date().getFullYear())));
+});
+
 test('generateFooterHtml includes default site name', () => {
   const html = generateFooterHtml();
   assert.ok(html.includes('Sekolah PSEO'));

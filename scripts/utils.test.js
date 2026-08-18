@@ -111,6 +111,14 @@ test('hasCoordinateData returns false for null/undefined school', () => {
   assert.strictEqual(hasCoordinateData(undefined), false);
 });
 
+test('hasCoordinateData rejects non-numeric garbage values', () => {
+  assert.strictEqual(hasCoordinateData({ lat: 'abc', lon: '106.8456' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: '-6.2088', lon: 'not-a-number' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: '12abc', lon: '106.8456' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: '-6.2088', lon: '106.8456abc' }), false);
+  assert.strictEqual(hasCoordinateData({ lat: 'NaN', lon: '106.8456' }), false);
+});
+
 // Formula injection protection tests
 test('escapeCsvField handles null and undefined', () => {
   assert.strictEqual(escapeCsvField(null), '');

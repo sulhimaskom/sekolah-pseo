@@ -47,10 +47,10 @@ To provide the most comprehensive, accessible, and user-friendly directory of In
   - ✅ Combined search + filter interface
   - Implemented across commits `037b2b7` and `46e2b0b` (2026-06-08)
 
-- **[FEAT-005] Comparison Tool** (deferred)
-  - Compare up to 3 schools side-by-side
-  - Visual comparison of key metrics
-  - Share comparison results
+- ✅ **[FEAT-005] Comparison Tool (IMPLEMENTED)**
+  - ✅ Compare up to 3 schools side-by-side
+  - ✅ Visual comparison of key metrics
+  - Implemented via shared `comparison.js` tray (rendered on every page type) — see `src/presenters/templates/shared/comparison.js` and `scripts/comparison.test.js`
 
 ### Success Metrics
 

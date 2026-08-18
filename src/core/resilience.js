@@ -243,6 +243,11 @@ async function retry(fn, options = {}) {
       lastError = error;
 
       if (attempt === maxAttempts || !shouldRetry(error)) {
+        // Preserve the original error identity in `cause` so non-transient
+        // failures (TypeError, programming bugs, domain errors) are not lost
+        // behind the IntegrationError wrapper — callers that pattern-match
+        // IntegrationError keep working; callers that need the root cause can
+        // inspect `error.cause`.
         throw new IntegrationError(
           `Operation failed after ${attempt} attempt(s)`,
           ERROR_CODES.RETRY_EXHAUSTED,
@@ -251,6 +256,7 @@ async function retry(fn, options = {}) {
             maxAttempts,
             lastError: lastError.message,
             lastErrorCode: lastError.code,
+            cause: lastError,
           }
         );
       }
@@ -411,11 +417,12 @@ class CircuitBreaker {
   }
 
   reset() {
+    const previousState = this.state;
     this.failureCount = 0;
     this.lastFailureTime = null;
     this.state = 'CLOSED';
     this.halfOpenProbeInFlight = false;
-    this.eventEmitter.emit('stateChange', { from: this.state, to: 'CLOSED' });
+    this.eventEmitter.emit('stateChange', { from: previousState, to: 'CLOSED' });
   }
 }
 
