@@ -5,11 +5,11 @@
 
 ## Phase 0 decision
 
-| Step | Result |
-| ---- | ------ |
-| 0.1 open PRs | **1** — #845 (283rd-run ledger, docs-only) |
-| 0.2 open issues (probe) | **0** |
-| Mode | **1 open PR** → **PR HANDLER MODE** → merged #845 → re-probe **0 open PRs / 0 open issues** → Phase 0.3 EMPTY → **PHASE 1** (AUDIT MODE) |
+| Step                    | Result                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1 open PRs            | **1** — #845 (283rd-run ledger, docs-only)                                                                                               |
+| 0.2 open issues (probe) | **0**                                                                                                                                    |
+| Mode                    | **1 open PR** → **PR HANDLER MODE** → merged #845 → re-probe **0 open PRs / 0 open issues** → Phase 0.3 EMPTY → **PHASE 1** (AUDIT MODE) |
 
 **PR-handler activity this run**: #845 (283rd ledger, 3 docs files) — checked out `docs/283rd-run-audit-records`, synced with origin/main (merge-base identical, 0 commits behind, 1 ahead), full command matrix verified (lint 0/0, build PASS, test:js 1334/0/4skip, test:py 27/27, audit 0), prettier failure set = 246 ledger-only files (F005 convention, zero source) — **merged via `gh pr merge --squash --admin`** (repo disallows merge commits; `--merge` attempt rejected by GraphQL, squash is the permitted path). No comments to resolve, no linked issues. Remote branch auto-deleted on merge. HEAD now `3485fa0`. Environment note: runner `node_modules` absent at start → `npm install` restored 131 packages (0 vulns) before the matrix; environmental, not a code finding.
 
@@ -17,15 +17,15 @@
 
 ### Findings needing action (ranked, 284th basis)
 
-| Priority | Finding | Action phase |
-| -------- | ------- | ------------ |
-| P1 | F037 — 12 workflow security violations (2 CRITICAL + 10 HIGH), 185th obs | Phase 2 candidate — **BLOCKED** by F050 (repo security gate push-blocks non-conforming workflow edits) |
-| P1 | F002 — token lacks `issues: write` (403 conclusive, 86th) | Phase 1 output channel — **BLOCKED** (token permission, external) |
-| P2 | F011 — 0 tags / no release automation | Phase 2 candidate — **BLOCKED** by F050 for workflow changes |
-| P2 | F018 — data stale 31 days (threshold 7) | Phase 2 candidate — requires external data refresh (fetch-data with valid API creds); **BLOCKED** (env credentials unavailable in this runner) |
-| P2 | F229 — unhardened `curl|bash` installer (on-pull.yml:63 / on-push.yml:63) | Phase 2 candidate — **BLOCKED** by F050 gate (workflow edit) |
-| P2 | F004 — 57 secrets.* refs / 10 unique names (zero growth) | Phase 2 candidate — **BLOCKED** by F050 gate (workflow edit) |
-| P3 | F007/F005/F225/F237/F246-F251/F239/F228/F230/F063/F064 | Phase 2/3 non-actionable this run — held monitoring |
+| Priority | Finding                                                                  | Action phase                                                                                                                                   |
+| -------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1       | F037 — 12 workflow security violations (2 CRITICAL + 10 HIGH), 185th obs | Phase 2 candidate — **BLOCKED** by F050 (repo security gate push-blocks non-conforming workflow edits)                                         |
+| P1       | F002 — token lacks `issues: write` (403 conclusive, 86th)                | Phase 1 output channel — **BLOCKED** (token permission, external)                                                                              |
+| P2       | F011 — 0 tags / no release automation                                    | Phase 2 candidate — **BLOCKED** by F050 for workflow changes                                                                                   |
+| P2       | F018 — data stale 31 days (threshold 7)                                  | Phase 2 candidate — requires external data refresh (fetch-data with valid API creds); **BLOCKED** (env credentials unavailable in this runner) |
+| P2       | F229 — unhardened `curl                                                  | bash` installer (on-pull.yml:63 / on-push.yml:63)                                                                                              | Phase 2 candidate — **BLOCKED** by F050 gate (workflow edit) |
+| P2       | F004 — 57 secrets.* refs / 10 unique names (zero growth)                 | Phase 2 candidate — **BLOCKED** by F050 gate (workflow edit)                                                                                   |
+| P3       | F007/F005/F225/F237/F246-F251/F239/F228/F230/F063/F064                   | Phase 2/3 non-actionable this run — held monitoring                                                                                            |
 
 ### Phase 2 (hardening) decision
 
