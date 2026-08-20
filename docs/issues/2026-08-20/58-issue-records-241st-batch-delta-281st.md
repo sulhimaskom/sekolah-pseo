@@ -10,7 +10,7 @@
 | ------- | -------- | -------- | ------ | ----------- |
 | F002    | ci       | P1       | HELD   | Token lacks `issues: write` — **403 CONCLUSIVE (83rd)** (re-probed direct this run) |
 | F004    | security | P2       | HELD   | **57 refs / 10 unique names** (workflows `*.yml` only) — byte-identical to 280th basis, **zero growth** |
-| F005    | docs     | P3       | HELD   | **240 files** (129th obs): 239 ledger + SECURITY_AUDIT_NOTE.md — **zero source files** (F251 verified holding, 32nd clean obs); ledger-only drift by convention (grew by 5 from the 280th ledger merged in #842) |
+| F005    | docs     | P3       | HELD   | **240 files** (129th obs): 239 ledger + SECURITY_AUDIT_NOTE.md — **zero source files** (F251 verified holding, 32nd clean obs); ledger-only drift by convention (237 at post-#842 HEAD; +3 from this run's own ledger files 57/58/59 → 240) |
 | F007    | refactor | P2       | HELD   | Workflow YAML overcomplexity (2045L) |
 | F011    | release  | P2       | HELD   | 0 tags / no release process (F242 docs-fix landed; automation still absent) |
 | F018    | data     | P2       | HELD   | Data STALE **31 days** (threshold 7; held at 31d, same-day re-observation) |
